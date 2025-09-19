@@ -1,0 +1,39 @@
+.sidebar {
+	display: flex; 
+	flex-direction: column; 
+	font-family: Inter; /* Body */
+	font-size: 14px; 
+	line-height: 22px; 
+	font-weight: 400; 
+	width: 256px; 
+	height: 100vh;
+	background: #FFFFFFFF; /* white */
+	border-radius: 0px 0px 0px 0px; 
+	border-width: 1px; 
+	border-color: #DEE1E6FF; /* neutral-300 */
+	border-style: solid; 
+}
+  
+.tab {
+	padding: 16px 16px; 
+	display: flex; 
+	align-items: center; 
+	justify-content: left; 
+	color: #565E6CFF; /* neutral-600 */
+	background: transparent;
+	border-radius: 0px; 
+	gap: 8px; 
+	cursor: pointer; 
+	white-space: nowrap; 
+}
+
+	.tab:hover {
+		color: #2C35E0FF; /* primary-600 */
+		background: #CED0F8FF; /* primary-200 */
+	}
+
+	.tab:hover:active {
+		color: #2C35E0FF; /* primary-600 */
+		background: #CED0F8FF; /* primary-200 */
+	}
+  

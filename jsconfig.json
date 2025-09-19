@@ -1,3 +1,4 @@
+/*
 {
   "compilerOptions": {
     "paths": {
@@ -5,15 +6,15 @@
     }
   }
 }
-/*
+*/
+
 {
 	"compilerOptions": {
 	  "baseUrl": ".",
 	  "paths": {
-		"@components/*": ["src/components/*"],
-		"@utils/*": ["src/utils/*"],
-		"@assets/*": ["public/assets/*"]
+		"@components/*": ["components/*"],
+		"@app/*": ["app/*"]
 	  }
 	}
   }
-*/
+
