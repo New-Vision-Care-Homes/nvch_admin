@@ -1,42 +1,33 @@
+/* globals.css */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	/* Colors */
+	--color-primary: #171A1FFF;
+	--color-secondary: #565D6DFF;
+
+	--font-size-lg: 36px;
+	--font-size-md: 20px;
+	--font-size-sm: 14px;
+
+	--line-height-lg: 40px;
+	--line-height-md: 28px;
+	--line-height-sm: 22px;
+
+	--font-weight-lg: 700;
+	--font-weight-md: 500;
+	--font-weight-sm: 400;
+
+	--font-family-inter: "Inter";
+
+  
+	/* Spacing */
+	--spacing-xs: 4px;
+	--spacing-sm: 8px;
+	--spacing-md: 16px;
+	--spacing-lg: 24px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+*, *::before, *::after {
+	box-sizing: border-box;
   }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
+  

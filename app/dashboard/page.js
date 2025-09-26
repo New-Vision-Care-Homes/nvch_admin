@@ -120,6 +120,70 @@ export default function Page() {
 						<h3>Recent Activity</h3>
 						<Link href="/">View All</Link>
 					</div>
+					<div className={styles.content}>
+						<div className={styles.row}>
+							<div className={styles.left}>
+								<Image
+									src="/img/dashboard/assign.svg"
+									alt="Assign Caregiver"
+									width={20}
+									height={20}
+								/>
+								<span>Client John Doe's care plan updated by Admin</span>
+							</div>
+							<div className={styles.time}>2 hours ago</div>
+						</div>
+
+						<div className={styles.row}>
+							<div className={styles.left}>
+								<Image
+									src="/img/dashboard/assign.svg"
+									alt="Assign Caregiver"
+									width={20}
+									height={20}
+								/>
+								<span>Client John Doe's care plan updated by Admin</span>
+							</div>
+							<div className={styles.time}>2 hours ago</div>
+						</div>
+
+						<div className={styles.row}>
+							<div className={styles.left}>
+								<Image
+									src="/img/dashboard/assign.svg"
+									alt="Assign Caregiver"
+									width={20}
+									height={20}
+								/>
+								<span>Client John Doe's care plan updated by Admin</span>
+							</div>
+							<div className={styles.time}>2 hours ago</div>
+						</div>
+						<div className={styles.row}>
+							<div className={styles.left}>
+								<Image
+									src="/img/dashboard/assign.svg"
+									alt="Assign Caregiver"
+									width={20}
+									height={20}
+								/>
+								<span>Client John Doe's care plan updated by Admin</span>
+							</div>
+							<div className={styles.time}>2 hours ago</div>
+						</div>
+						<div className={styles.row}>
+							<div className={styles.left}>
+								<Image
+									src="/img/dashboard/assign.svg"
+									alt="Assign Caregiver"
+									width={20}
+									height={20}
+								/>
+								<span>Client John Doe's care plan updated by Admin</span>
+							</div>
+							<div className={styles.time}>2 hours ago</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
