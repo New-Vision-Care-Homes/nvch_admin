@@ -14,9 +14,35 @@ export function CardContent({ children, className }) {
 	return <div className={`${styles.content} ${className || ""}`}>{children}</div>;
 }
 
+//up label, down input
 export default function InputField({ label, value, onChange, type = "input", rows = 1 }) {
 	return (
 		<div className={styles.field}>
+			<label className={styles.label}>{label}</label>
+			{type === "textarea" ? (
+				<textarea
+				 className={styles.input}
+				 value={value}
+				 onChange={onChange}
+				 rows={rows}
+				/>
+			) : (
+				<input
+				 className={styles.input}
+				 value={value}
+				 onChange={onChange}
+				/>
+			)}
+		</div>
+	);
+}
+
+// left label, right input
+export function InputFieldLR({ label, value, onChange, type = "input", rows = 1 }) {
+	return (
+		<div className={styles.field}
+			style={{ flexDirection: "row" }}
+		>
 			<label className={styles.label}>{label}</label>
 			{type === "textarea" ? (
 				<textarea
