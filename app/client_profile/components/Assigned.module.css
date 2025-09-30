@@ -1,0 +1,58 @@
+.container {
+	padding: 2rem;
+}
+
+.title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 1rem;
+}
+
+	.title h1 {
+		font-family: var(--font-family-roboto); 
+		font-size: var(--font-size-md-24);
+		line-height: var(--line-height-md-32); 
+		font-weight: var(--font-weight-md-600); 
+		color: var(--color-primary); /* neutral-900 */
+	}
+
+.table {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+	
+.header {
+	display: flex;
+	font-weight: bold;
+	padding: 1rem 8px;
+	border-bottom: 1px solid #ddd;
+}
+
+.row {
+	display: flex;
+	padding: 3rem 8px;
+	border-bottom: 1px solid #ddd;
+}
+
+.row:last-child {
+	border-bottom: none;
+}
+
+.cell {
+	flex: 1;
+}
+
+.deleteBtn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: red;
+}
+
+.deleteBtn:hover {
+	color: #dc2626;
+}
+  
+  

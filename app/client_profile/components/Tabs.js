@@ -2,6 +2,7 @@ import { useState } from "react";
 import styles from "./Tabs.module.css";
 import Info from "./Info";
 import CarePlan from "./CarePlan";
+import Assigned from "./Assigned"
 
 const AssignedCaregivers = () => <div>Assigned Caregivers Content</div>;
 const VisitHistory = () => <div>Visit History Content</div>;
@@ -13,7 +14,7 @@ export default function Tabs() {
 	const tabs = [
 		{ id: "personal", label: "Personal Info", component: <Info /> },
 		{ id: "care", label: "Care Plan", component: <CarePlan /> },
-		{ id: "caregivers", label: "Assigned Caregivers", component: <AssignedCaregivers /> },
+		{ id: "caregivers", label: "Assigned Caregivers", component: <Assigned /> },
 		{ id: "history", label: "Visit History", component: <VisitHistory /> },
 		{ id: "billing", label: "Billing/Invoices", component: <BillingInvoices /> },
 	];

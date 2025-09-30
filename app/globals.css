@@ -6,14 +6,17 @@
 	--color-secondary: #565D6DFF;
 
 	--font-size-lg: 36px;
+	--font-size-md-24: 24px;
 	--font-size-md: 20px;
 	--font-size-sm: 14px;
 
 	--line-height-lg: 40px;
+	--line-height-md-32: 32px;
 	--line-height-md: 28px;
 	--line-height-sm: 22px;
 
 	--font-weight-lg: 700;
+	--font-weight-md-600: 600;
 	--font-weight-md: 500;
 	--font-weight-sm: 400;
 
