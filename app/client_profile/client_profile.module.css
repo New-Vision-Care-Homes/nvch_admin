@@ -12,6 +12,15 @@
 	overflow: hidden;
 }
 
+.body {
+	display: flex;
+	flex-direction: column;
+	flex: 1; 
+	height: 100%;
+	padding: 20px;
+	overflow-y: auto;
+}
+
 .main {
 	flex: 1;
 	padding: 70px;
@@ -25,6 +34,7 @@
 	justify-content: space-between;
 	margin-bottom: 1rem;
 	border-bottom: 1px solid #DEE1E6;
+	padding-bottom: 1rem;
 }
   
 .title {
@@ -58,16 +68,6 @@
 		gap: 8px; 
 	}
  
-
-
-.body {
-	display: flex;
-	flex-direction: column;
-	flex: 1; 
-	height: 100%;
-	padding: 20px;
-	overflow-y: auto;
-}
 
 .content {
 	display: flex;

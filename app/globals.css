@@ -5,6 +5,26 @@
 	--color-primary: #171A1FFF;
 	--color-secondary: #565D6DFF;
 
+	/* new */
+	--font-size-lg: 3rem;
+	--font-size-title-md: 1.5rem;
+	--font-size-title-xs: 1rem;
+	--font-size-text-md: 0.8rem;
+
+	--font-family-primary: "Inter";
+	--font-family-secondary: "Roboto";
+
+	--line-height-title-md: 3rem;
+	--line-height-title-xs: 1.5rem;
+	--line-height-text-md: 1.3rem;
+
+	--font-weight-lg: 700;
+	--font-weight-md: 600;
+	--font-weight-xs: 400;
+
+	--color-text-primary: #171A1FFF;
+	--color-text-secondary: #565D6DFF; 
+
 	--font-size-lg: 36px;
 	--font-size-md-24: 24px;
 	--font-size-md: 20px;
@@ -21,6 +41,7 @@
 	--font-weight-sm: 400;
 
 	--font-family-inter: "Inter";
+	--font-family-roboto: "Roboto";
 
   
 	/* Spacing */
@@ -33,4 +54,31 @@
 *, *::before, *::after {
 	box-sizing: border-box;
   }
+
+h1 {
+	font-family: var(--font-family-primary); 
+	font-size: var(--font-size-lg);
+	line-height: var(--line-height-title-md); 
+	font-weight: var(--font-weight-lg); 
+	color: var(--color-text-primary);
+	margin: 0;
+}
+
+h2 {
+	font-family: var(--font-family-primary); 
+	font-size: var(--font-size-title-md);
+	line-height: var(--line-height-title-md); 
+	font-weight: var(--font-weight-md); 
+	color: var(--color-text-primary);
+	margin: 0;
+}
+
+h6 {
+	font-family: var(--font-family-secondary); 
+	font-size: var(--font-size-title-xs);
+	line-height: var(--line-height-title-xs); 
+	font-weight: var(--font-weight-xs); 
+	color: var(--color-text-secondary);
+	margin: 0;
+}
   
