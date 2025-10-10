@@ -1,0 +1,32 @@
+.table {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+}
+
+.header {
+	display: flex;
+	flex-direction: row;
+	font-weight: bold;
+	padding: 1rem 8px;
+	border-bottom: 1px solid #ddd;
+}
+
+.cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	gap: 1rem;
+}
+
+.content {
+	display: flex;
+	flex-direction: row;
+	padding: 3rem 8px;
+	border-bottom: 1px solid #ddd;
+}
+
+.column:last-child {
+	border-bottom: none;
+}

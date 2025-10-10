@@ -17,11 +17,10 @@ export default function Page() {
 				<h1>
 					Dashboard
 				</h1>
-				<h2>
+				<h2 style={{ marginTop: "2rem" }}>
 					Overview
 				</h2>
 				<div className={styles.overview}>
-
 					<div className={styles.card}>
 						<div className={styles.c1}>
 							<Image
@@ -75,7 +74,7 @@ export default function Page() {
 					</div>
 				</div>
 
-				<h2>Quick Actions</h2>
+				<h2 style={{ marginTop: "2rem" }}>Quick Actions</h2>
 				<div className={styles.actions}>
 					<Link href="/" className={styles.action}>
 						<Image
@@ -117,7 +116,7 @@ export default function Page() {
 
 				<div className={styles.activity}>
 					<div className={styles.title}>
-						<h3>Recent Activity</h3>
+						<h2>Recent Activity</h2>
 						<Link href="/">View All</Link>
 					</div>
 					<div className={styles.content}>

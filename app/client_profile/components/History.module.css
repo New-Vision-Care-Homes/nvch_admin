@@ -1,0 +1,175 @@
+.container {
+	width: 100%;
+	padding: 2rem;
+}
+  
+.header {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin-bottom: 2rem;
+}
+
+.filters {
+	display: flex;
+	gap: 1rem;
+	margin-bottom: 2rem;
+	flex-wrap: wrap;
+}
+
+.searchInput {
+	flex: 1;
+	transition: all 0.2s ease;
+	width: 65%; 
+	padding: 0.75rem 1rem;
+	font-family: var(--font-family-secondary); 
+	font-size: var(--font-size-text-md); 
+	line-height: var(--line-height-text-md); 
+	font-weight: var(--font-weight-xs); 
+	background: #FFFFFFFF; /* white */
+	border-radius: 6px; 
+	border-width: 1px; 
+	border-color: #DEE1E6FF; /* neutral-300 */
+	border-style: solid; 
+	outline: none; 
+}
+
+.searchInput:focus {
+	outline: none;
+	border-color: black;
+}
+
+.dateWrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.dateButton {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	width: auto;
+	padding: 0.75rem 2.5rem 0.75rem 1rem;
+	font-family: var(--font-family-secondary);
+	font-size: var(--font-size-text-md);
+	line-height: var(--line-height-text-md);
+	font-weight: var(--font-weight-xs);
+	background: #ffffff;
+	border-radius: 6px;
+	border: 1px solid #DEE1E6FF;
+	outline: none;
+}
+
+.dateIcon {
+	height: 1rem;
+	width: 1rem;
+	position: absolute;
+	right: 0.75rem;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+	color: #565D6DFF; 
+}
+  
+
+.tableWrapper {
+	opacity: 1; 
+	border-radius: 6px;
+	border: 1px solid #DEE1E6FF;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.tableHeader {
+
+	border-bottom: 1px solid hsl(var(--border));
+}
+
+.tableHeader th {
+	padding: 1rem;
+	text-align: left;
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: hsl(var(--foreground));
+	white-space: nowrap;
+}
+
+.sortableHeader {
+	cursor: pointer;
+	user-select: none;
+	transition: color 0.2s ease;
+}
+
+.sortableHeader:hover {
+	color: hsl(var(--primary));
+}
+
+.sortableHeader span {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.sortIcon {
+	width: 16px;
+	height: 16px;
+	opacity: 0.5;
+	transition: opacity 0.2s ease;
+}
+
+.sortableHeader:hover .sortIcon {
+	opacity: 1;
+}
+
+.tableBody tr {
+	border-bottom: 1px solid hsl(var(--border));
+	transition: background-color 0.2s ease;
+}
+
+.tableBody tr:last-child {
+	border-bottom: none;
+}
+
+.tableBody tr:hover {
+	background: hsl(var(--table-row-hover));
+}
+
+.tableBody td {
+	padding: 1.25rem 1rem;
+	font-size: 0.95rem;
+	color: hsl(var(--foreground));
+	vertical-align: top;
+}
+
+.visitDate {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.caregiverName {
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.visitNotes {
+	line-height: 1.6;
+	max-width: 500px;
+}
+
+.incidents {
+	line-height: 1.6;
+	max-width: 500px;
+}
+
+.emptyState {
+	padding: 3rem;
+	text-align: center;
+	color: hsl(var(--muted-foreground));
+	font-size: 1rem;
+}

@@ -10,28 +10,14 @@
 }
   
 .main {
+	display: flex;
+	flex-direction: column;
 	flex: 1;
 	padding: 70px;
 	background-color: transparent;
 	border-radius: 0px 0px 0px 0px; 
+	gap: 1rem;
 }
-
-	.main h1{
-		font-family: Inter; /* Body */
-		font-size: 30px; 
-		line-height: 36px; 
-		font-weight: 700; 
-		color: #171A1FFF; /* neutral-900 */
-	}
-
-	.main h2 {
-		font-family: Inter; /* Body */
-		font-size: 24px; 
-		line-height: 32px; 
-		font-weight: 600; 
-		color: #171A1FFF; /* neutral-900 */
-		margin-top: 30px;
-	}
 
 	.overview {
 		display: flex;
@@ -142,14 +128,6 @@
 			line-height: 22px; 
 			font-weight: 500; 
 
-		}
-
-		.title h3 {
-			font-family: Inter; /* Body */
-			font-size: 24px; 
-			line-height: 32px; 
-			font-weight: 600; 
-			color: #171A1FFF; /* neutral-900 */
 		}
 
 		.content {
