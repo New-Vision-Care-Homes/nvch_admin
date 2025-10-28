@@ -2,13 +2,14 @@
 
 :root {
 	/* Colors */
-	--color-primary: #171A1FFF;
+	--color-primary: #1C4A6EFF;
 	--color-secondary: #565D6DFF;
 
 	/* new */
 	--font-size-lg: 3rem;
 	--font-size-title-md: 1.5rem;
 	--font-size-title-xs: 1rem;
+	--font-size-text-lg: 1rem;
 	--font-size-text-md: 0.8rem;
 
 	--font-family-primary: "Inter";

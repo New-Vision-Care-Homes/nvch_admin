@@ -15,7 +15,7 @@ export function CardContent({ children, className }) {
 }
 
 //up label, down input
-export default function InputField({ label, value, onChange, type = "input", rows = 1 }) {
+export function InputField({ label, value, onChange, type = "input", rows = 1 }) {
 	return (
 		<div className={styles.field}>
 			<label className={styles.label}>{label}</label>

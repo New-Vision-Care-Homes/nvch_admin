@@ -90,9 +90,11 @@ export default function LoginPage() {
 					</label>
 
 					<div className={styles.button}>
-						<button type="submit" className={styles.loginButton}>
-							Login
-						</button>
+						<Link href="/dashboard">
+							<button type="submit" className={styles.loginButton}>
+								Login
+							</button>
+						</Link>
 						<Link href="/forget_password">
 							<button className={styles.forgetButton}>
 								Forgot Password?

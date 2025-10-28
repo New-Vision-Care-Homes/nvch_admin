@@ -7,58 +7,85 @@ import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircl
 
 // Define all the tabs in the sidebar
 const tabs = [
-  { id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
-  { id: 2, label: "Clients", icon: Users, href: "/clients" },
-  { id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
-  { id: 4, label: "Scheduling", icon: Calendar, href: "/scheduling" },
-  { id: 5, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
-  { id: 6, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
-  { id: 7, label: "Messaging", icon: MessageCircle, href: "/messaging" },
-  { id: 8, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
-  { id: 9, label: "Settings", icon: Settings, href: "/settings" }
+	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
+	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
+	{ id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
+	{ id: 4, label: "Scheduling", icon: Calendar, href: "/scheduling" },
+	{ id: 5, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
+	{ id: 6, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
+	{ id: 7, label: "Messaging", icon: MessageCircle, href: "/messaging" },
+	{ id: 8, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
+	{ id: 9, label: "Settings", icon: Settings, href: "/setting" }
 ];
 
+// Map keywords to specific tab ids
+// If pathname includes the keyword, the corresponding tab will be active
+const keywordToTabMap = {
+	"/client": 2,       // any path containing "/client" -> Clients tab
+	"/caregiver": 3,    // any path containing "/caregiver" -> Caregivers tab
+	"/billing": 5,      // any path containing "/billing" -> Billing tab
+};
+
 export default function Sidebar() {
-	// Get the current URL path
 	const pathname = usePathname();
 
-	// Initialize active tab
-	// If the pathname matches a tab, use that tab's id
-	// Otherwise, default to Dashboard (id: 1)
+	// Determine initial active tab
 	const [activeTab, setActiveTab] = useState(() => {
-		const current = tabs.find(tab => tab.href === pathname);
-		return current ? current.id : 1; 
+		// First, try to find exact match with tab href
+		const tabMatch = tabs.find(tab => tab.href === pathname);
+		if (tabMatch) return tabMatch.id;
+
+		// Then, check keyword mapping
+		for (const key in keywordToTabMap) {
+			if (pathname.includes(key)) return keywordToTabMap[key];
+		}
+
+		// Default to Dashboard
+		return 1;
 	});
 
-	// Update active tab if user navigates directly by URL
+	// Update active tab when pathname changes
 	useEffect(() => {
-		const current = tabs.find(tab => tab.href === pathname);
-		if (current) setActiveTab(current.id);
+		const tabMatch = tabs.find(tab => tab.href === pathname);
+		if (tabMatch) {
+			setActiveTab(tabMatch.id);
+			return;
+		}
+
+		for (const key in keywordToTabMap) {
+			if (pathname.includes(key)) {
+				setActiveTab(keywordToTabMap[key]);
+				return;
+			}
+		}
+
+		setActiveTab(1); // fallback
 	}, [pathname]);
 
 	return (
 		<div className={styles.sidebar}>
 			{tabs.map(tab => {
 				const Icon = tab.icon;
-				const isActive = tab.id === activeTab; // Determine if this tab should be highlighted
+				const isActive = tab.id === activeTab;
 
 				return (
-				<Link
-					key={tab.id}
-					href={tab.href}
-					className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
-					onClick={() => setActiveTab(tab.id)} // Update active tab when clicked
-				>
-					<div className={styles.iconWrapper}>
-						<Icon size={24} /> {/* Render the tab icon */}
-					</div>
-					<div>{tab.label}</div> {/* Render the tab label */}
-				</Link>
+					<Link
+						key={tab.id}
+						href={tab.href}
+						className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
+						onClick={() => setActiveTab(tab.id)}
+					>
+						<div className={styles.iconWrapper}>
+							<Icon size={24} />
+						</div>
+						<div>{tab.label}</div>
+					</Link>
 				);
 			})}
 		</div>
 	);
 }
+
 
 
 

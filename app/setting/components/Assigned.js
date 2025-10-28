@@ -5,7 +5,7 @@ import styles from "./Assigned.module.css";
 import { Trash2, CirclePlus } from "lucide-react";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
-import InputFieldLR from "@components/UI/Card";
+import { InputFieldLR } from "@components/UI/Card";
 
 export default function Assigned() {
 	const [caregivers, setCaregivers] = useState([

@@ -1,0 +1,41 @@
+/* Calendar container */
+.my_calendar {
+	background-color: white;
+	margin-top: 2rem;
+}
+  
+	/* Event blocks */
+	.my_calendar .rbc-event {
+		padding: 1rem;
+		background-color: var(--color-primary);
+		color: white;
+		border-radius: 6px;
+		font-size: 0.85rem;
+	}
+	
+	/* Day/week background cells */
+	.my_calendar .rbc-day-bg {
+		background-color: #f9f9f9;
+	}
+	
+	/* Time gutter width */
+	.my_calendar .rbc-time-gutter {
+		width: 60px;
+	}
+
+	.my_calendar .rbc-toolbar-label {
+		font-size: 1.5rem;
+		font-weight: 800;
+	}
+	
+	/* Toolbar buttons */
+	.my_calendar .rbc-toolbar button {
+		background-color: white;
+		font-size: var(--font-size-text-lg);
+		color: var(--color-primary);
+		border: 2px solid var(--color-primary);
+		border-radius: 4px;
+		padding: 0.4rem 0.8rem;
+		margin: 0 0.1rem;
+	}
+  

@@ -6,7 +6,6 @@ import Assigned from "./Assigned"
 import History from "./History";
 import Billing from "./Billing"
 
-const BillingInvoices = () => <div>Billing/Invoices Content</div>;
 
 export default function Tabs() {
 	const [activeTab, setActiveTab] = useState("personal");

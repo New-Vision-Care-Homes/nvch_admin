@@ -7,9 +7,9 @@
 	background: rgba(0,0,0,0.5);
 	backdrop-filter: blur(4px);
 	z-index: 1000;
-  }
+}
   
-  .modal {
+.modal {
 	position: fixed;
 	top: 50%;
 	left: 50%;
@@ -17,12 +17,13 @@
 	background: white;
 	border-radius: 8px;
 	padding: 24px;
-	min-width: 400px;
+	min-width: 40%;
 	z-index: 1001;
 	box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  
-  .closeBtn {
+	padding: 3rem;
+}
+
+.closeBtn {
 	position: absolute;
 	top: 12px;
 	right: 12px;
@@ -30,5 +31,5 @@
 	background: none;
 	cursor: pointer;
 	font-size: 16px;
-  }
+}
   

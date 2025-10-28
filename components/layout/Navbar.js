@@ -49,7 +49,7 @@ export default function Navbar() {
 					</Link>
 
 					{/* Logout */}
-					<Link href='/' className={styles.logout}>
+					<Link href='/login' className={styles.logout}>
 						<Image
 							src="/img/navbar/logout.svg"
 							alt="Logout"

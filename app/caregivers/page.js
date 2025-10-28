@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import styles from "./caregivers.module.css";
-import { Plus } from "lucide-react"; 
+import { Plus, Edit } from "lucide-react"; 
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
@@ -87,7 +88,9 @@ export default function Caregivers() {
 				<div className={styles.body}>
 					<div className={styles.header}>
 						<h1>Caregiver Management</h1>
-						<Button variant="primary" icon={<Plus />} onClick={() => alert("Added")}>Add New Caregiver</Button>
+						<Link href="/caregivers/add_new_caregiver">
+							<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+						</Link>
 					</div>
 
 					<div className={styles.filter_row}>
@@ -134,7 +137,11 @@ export default function Caregivers() {
 									<TableCell>{client.contact}</TableCell>
 									<TableCell>{client.status}</TableCell>
 									<TableCell>{client.lastVisit}</TableCell>
-									<TableCell>{client.lastVisit}</TableCell>
+									<TableCell>
+										<Link href="/caregivers/caregiver_profile">
+											  <Edit />
+										</Link>
+									</TableCell>
 								</TableContent>
 							))}
 						</Table>
