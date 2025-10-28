@@ -1,0 +1,26 @@
+.body {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+/* 2 input field in one row */
+.card_row_2 {
+	display: grid;
+	width: 100%;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+/* 1 input field in one row */
+.card_row_1 {
+	width: 100%;
+}
+
+.buttons {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 1rem;
+	margin-top: 2rem;
+}

@@ -6,6 +6,7 @@ import Navbar from "@components/layout/Navbar";
 import styles from "./dashboard.module.css";
 import Image from "next/image";
 import Link from "next/link";
+import { Users, Calendar, Clock, TriangleAlert } from "lucide-react";
 
 export default function Page() {
   return (
@@ -23,12 +24,7 @@ export default function Page() {
 				<div className={styles.overview}>
 					<div className={styles.card}>
 						<div className={styles.c1}>
-							<Image
-								src="/img/sidebar/clients.svg"
-								alt="active clients"
-								width={32}
-								height={32}
-							/>
+							<Users size={32} />
 							<span className={styles.text}>Active Clients</span>
 						</div>
 						<div className={styles.c2}>125</div>					
@@ -36,41 +32,26 @@ export default function Page() {
 
 					<div className={styles.card}>
 						<div className={styles.c1}>
-							<Image
-								src="/img/sidebar/clients.svg"
-								alt="active clients"
-								width={32}
-								height={32}
-							/>
-							<span className={styles.text}>Active Clients</span>
+							<Calendar size={32} />
+							<span className={styles.text}>Caregivers on Shift</span>
 						</div>
-						<div className={styles.c2}>125</div>					
+						<div className={styles.c2}>48</div>					
 					</div>
 
 					<div className={styles.card}>
 						<div className={styles.c1}>
-							<Image
-								src="/img/sidebar/clients.svg"
-								alt="active clients"
-								width={32}
-								height={32}
-							/>
-							<span className={styles.text}>Active Clients</span>
+							<Clock size={32} />
+							<span className={styles.text}>Pending Approvals</span>
 						</div>
-						<div className={styles.c2}>125</div>					
+						<div className={styles.c2}>12</div>					
 					</div>
 
 					<div className={styles.card}>
 						<div className={styles.c1}>
-							<Image
-								src="/img/sidebar/clients.svg"
-								alt="active clients"
-								width={32}
-								height={32}
-							/>
-							<span className={styles.text}>Active Clients</span>
+							<TriangleAlert size={32} />
+							<span className={styles.text}>Urgent Alerts</span>
 						</div>
-						<div className={styles.c2}>125</div>					
+						<div className={styles.c2}>3</div>					
 					</div>
 				</div>
 
@@ -92,7 +73,7 @@ export default function Page() {
 							width={16}
 							height={16}
 						/>
-						<span className={styles.text}>Assign Caregiver</span>
+						<span className={styles.text}>Approve Shifts</span>
 					</Link>
 					<Link href="/" className={styles.action}>
 						<Image
@@ -101,7 +82,7 @@ export default function Page() {
 							width={16}
 							height={16}
 						/>
-						<span className={styles.text}>Assign Caregiver</span>
+						<span className={styles.text}>View Incidents</span>
 					</Link>
 					<Link href="/" className={styles.action}>
 						<Image
@@ -154,7 +135,7 @@ export default function Page() {
 									width={20}
 									height={20}
 								/>
-								<span>Client John Doe's care plan updated by Admin</span>
+								<span>Shift for Jane Smith (Caregiver) approved for 2024-07-25</span>
 							</div>
 							<div className={styles.time}>2 hours ago</div>
 						</div>

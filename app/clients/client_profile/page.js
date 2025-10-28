@@ -1,16 +1,37 @@
 "use client";
 
-import {React, useState} from "react";
+import {act, React, use, useState} from "react";
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import Tabs from "./components/Tabs";
+import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, Archive } from "lucide-react";
+import { Edit, Activity, Undo2 } from "lucide-react";
+import Modal from "@components/UI/Modal";
 
 export default function Page() {
+
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [message, setMessage] = useState("");
+	const [active, setActive] = useState("Inactive");
+
+	function handleActive(){
+		setActive(active === "Inactive" ? "Active" : "Inactive" );
+		setIsModalOpen(true);
+		if(active == "Inactive"){
+			setMessage("The user has been inactivated")
+		}
+		else{
+			setMessage("The user has been activated")
+		}
+	}
+
+	function handleCancel() {
+		setIsModalOpen(false);
+	}
 
 	return (
 		<div className={styles.page}>
@@ -20,16 +41,21 @@ export default function Page() {
 				<div className={styles.body}>
 					{/* Header */}
 					<div className={styles.header}>
-						<h1 className={styles.title}>Client Profile: Eleanor Vance</h1>
+						<h1>Client Profile: Eleanor Vance</h1>
 						<div className={styles.headerActions}>
-							<button className={styles.actionbtn}>
-								<Edit size={16} />
-								Edit Client
-							</button>
-							<button className={styles.actionbtn} style={{ backgroundColor: "red", color: "white" }}>
-								<Archive size={16} />
-								Archive Client
-							</button>
+							<Button 
+								variant="primary" 
+								icon={<Activity size={16} />}
+								onClick={handleActive}
+								className={`${
+									active === "Active" ? styles.active : styles.inactive
+								}`}
+							>
+								{active}
+							</Button>
+							<Link href="/clients">
+								<Button variant="secondary" icon={<Undo2 size={16}/>}>Back</Button>
+							</Link>
 						</div>
 					</div>
 
@@ -56,7 +82,9 @@ export default function Page() {
 									alt="Profile Photo"
 									width={100}
 									height={100}
+									className={styles.image}
 								/>
+								<Button variant="secondary" size="sm" icon={<Edit size={16}/>}>Edit</Button>
 							</div>
 						</div>
 					</Card>
@@ -69,6 +97,9 @@ export default function Page() {
 					{/* End Tabbed Content */}
 				</div>
 			</div>
+			<Modal isOpen={isModalOpen} onClose={handleCancel}>
+				<h2>{message}</h2>
+			</Modal>
 		</div>
 	);
 }

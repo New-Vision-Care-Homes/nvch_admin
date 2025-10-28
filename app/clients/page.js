@@ -9,6 +9,8 @@ import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
 import ReactPaginate from "react-paginate";
+import Link from "next/link";
+import { Edit } from "lucide-react";
 
 export default function Clients() {
 	const [search, setSearch] = useState("");
@@ -87,7 +89,9 @@ export default function Clients() {
 				<div className={styles.body}>
 					<div className={styles.header}>
 						<h1>Client Management</h1>
-						<Button variant="primary" icon={<Plus />} onClick={() => alert("Added")}>Add New Client</Button>
+						<Link href="/clients/add_new_client">
+							<Button variant="primary" icon={<Plus />}>Add New Client</Button>
+						</Link>
 					</div>
 
 					<div className={styles.filter_row}>
@@ -134,7 +138,11 @@ export default function Clients() {
 									<TableCell>{client.contact}</TableCell>
 									<TableCell>{client.status}</TableCell>
 									<TableCell>{client.lastVisit}</TableCell>
-									<TableCell>{client.lastVisit}</TableCell>
+									<TableCell>
+										<Link href="/clients/client_profile">
+											  <Edit />
+										</Link>
+									</TableCell>
 								</TableContent>
 							))}
 						</Table>

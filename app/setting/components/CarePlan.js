@@ -1,8 +1,7 @@
 "use client";
 
 import {React, useState} from "react";
-import { Card, CardHeader, CardContent } from "@components/UI/Card";
-import InputField from "@components/UI/Card"; 
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 
