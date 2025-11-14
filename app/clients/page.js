@@ -1,21 +1,62 @@
 "use client";
 
-import React, { useState } from "react";
-import Sidebar from "@components/layout/Sidebar";
-import Navbar from "@components/layout/Navbar";
+import React, { useState, useEffect, forwardRef } from "react";
+import PageLayout from "@components/layout/PageLayout";
 import styles from "./clients.module.css";
-import { Plus } from "lucide-react"; 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
 import ReactPaginate from "react-paginate";
 import Link from "next/link";
-import { Edit } from "lucide-react";
+import { Plus, Edit, Calendar, ChevronDown } from "lucide-react";
 
 export default function Clients() {
 	const [search, setSearch] = useState("");
+	const [dateFilter, setDateFilter] = useState("");
+	const [statusFilter, setStatusFilter] = useState("");
+	const [showDropdown, setShowDropdown] = useState(false);
+	const [clients, setClients] = useState([]);
 
-	const clients = [
+	useEffect(() => {
+		const fetchUsers = async () => {
+			const token = localStorage.getItem("token");
+			if (!token) {
+				console.log("No token found. Please log in as admin.");
+				return;
+			}
+		
+			try {
+				const res = await fetch(
+				"https://nvch-server.onrender.com/api/auth/admin/users?role=client",
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						"Authorization": `Bearer ${token}`,
+					},
+				}
+				);
+		
+				const data = await res.json();
+		
+				if (res.ok) {
+					setClients(data.data.users);
+					console.log(data.data.users);
+				} else {
+					console.log(data.message || "Failed to fetch users")
+				}
+			} catch (err) {
+				console.error(err);
+				setError("Error connecting to server");
+			}
+		};
+	
+		fetchUsers();
+	  }, []); 
+
+	const clients_2 = [
 		{
 			id: "C001",
 			name: "Jane Doe",
@@ -66,8 +107,34 @@ export default function Clients() {
 		},
 	];
 
-	const filtered = clients.filter((client) =>
-		client.name.toLowerCase().includes(search.toLowerCase())
+	// Filter the 'clients' array to only include items
+	// whose name contains the current search text (case-insensitive)
+	const filtered = clients.filter((client) =>{
+		const matchesFSearch = client.firstName.toLowerCase().includes(search.toLowerCase());
+		const matchesLSearch = client.lastName.toLowerCase().includes(search.toLowerCase());
+		const matchesDate = dateFilter ? client.lastVisit === dateFilter : true;
+		const matchesStatus = statusFilter ? client.status === statusFilter : true;
+		return matchesFSearch && matchesLSearch && matchesDate && matchesStatus;
+	});
+
+	const StatusDropdown = () => (
+		<div className={styles.dropdownContainer}>
+			<Button
+				
+				onClick={() => setShowDropdown((prev) => !prev)}
+			>
+				{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
+				<ChevronDown className={styles.dropdownIcon} />
+			</Button>
+			{showDropdown && (
+				<div className={styles.dropdownMenu}>
+					<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
+					<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
+					<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+					<div onClick={() => { setStatusFilter("On Hold"); setShowDropdown(false); }}>On Hold</div>
+				</div>
+			)}
+		</div>
 	);
 
 	const itemsPerPage = 4;
@@ -81,88 +148,118 @@ export default function Clients() {
 	  setCurrentPage(event.selected);
 	};
 
+	const CustomInput = forwardRef(({ value, onClick }, ref) => (
+		<div className={styles.dateWrapper} onClick={onClick} ref={ref}>
+			<input
+				type="text"
+				value={value}
+				readOnly
+				placeholder="Filter by visit date"
+				className={styles.dateButton}
+			/>
+			<Calendar className={styles.dateIcon} />
+		</div>
+	));
+
 	return (
-		<div className={styles.page}>
-			<Navbar />
-			<div className={styles.container}>
-				<Sidebar />
-				<div className={styles.body}>
-					<div className={styles.header}>
-						<h1>Client Management</h1>
-						<Link href="/clients/add_new_client">
-							<Button variant="primary" icon={<Plus />}>Add New Client</Button>
-						</Link>
-					</div>
+		<PageLayout>
+			<div className={styles.header}>
+				<h1>Client Management</h1>
+				<Link href="/clients/add_new_client">
+					<Button variant="primary" icon={<Plus />}>Add New Client</Button>
+				</Link>
+			</div>
 
-					<div className={styles.filter_row}>
-						<input
-							type="text"
-							placeholder="Search clients..."
-							className={styles.search}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
+			<div className={styles.filter_row}>
+				<input
+					type="text"
+					placeholder="Search clients..."
+					className={styles.search}
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+				/>
 
-						<div className={styles.filter}>
-							<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Status</Button>
-							<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Last Visit</Button>
-						</div>
-					</div>
+				<div className={styles.filter}>
 
-					<div className={styles.tableWrapper}>
-						<h2 style={{ marginBottom: "1.5rem" }}>All Clients</h2>
-						<Table>
-							<TableHeader>
-								<TableCell>Client Name</TableCell>
-								<TableCell>Client ID</TableCell>
-								<TableCell>Contact</TableCell>
-								<TableCell>Status</TableCell>
-								<TableCell>Last Visit</TableCell>
-								<TableCell>Actions</TableCell>
-							</TableHeader>
-							{currentItems.map((client) => (
-								<TableContent key={client.id}>
-									<TableCell>
-										<Image 
-											src={client.img} 
-											width={50}
-											height={50}
-											style={{
-												borderRadius: "50%",
-												objectFit: "cover",
-											  }}
-										/>
-										<span>{client.name}</span>
-									</TableCell>
-									<TableCell>{client.id}</TableCell>
-									<TableCell>{client.contact}</TableCell>
-									<TableCell>{client.status}</TableCell>
-									<TableCell>{client.lastVisit}</TableCell>
-									<TableCell>
-										<Link href="/clients/client_profile">
-											  <Edit />
-										</Link>
-									</TableCell>
-								</TableContent>
-							))}
-						</Table>
-						<ReactPaginate
-							pageCount={pageCount}
-							onPageChange={handlePageClick}
-							previousLabel={"Prev"}
-							nextLabel={"Next"}
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.active}
-						/>
+					<DatePicker
+						selected={dateFilter ? new Date(dateFilter) : null}
+						onChange={date => setDateFilter(date.toISOString().split("T")[0])}
+						customInput={<CustomInput />}
+					/>
+
+					<div className={styles.dropdownContainer}>
+						<Button
+							variant="secondary"
+							icon={<ChevronDown />}
+							onClick={() => setShowDropdown((prev) => !prev)}
+						>
+							{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
+						</Button>
+						{showDropdown && (
+							<div className={styles.dropdownMenu}>
+								<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
+								<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
+								<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+								<div onClick={() => { setStatusFilter("On Hold"); setShowDropdown(false); }}>On Hold</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
-		</div>		
+
+			<div className={styles.tableWrapper}>
+				<h2 style={{ marginBottom: "1.5rem" }}>All Clients</h2>
+				<Table>
+					<TableHeader>
+						<TableCell>Client Name</TableCell>
+						<TableCell>Client ID</TableCell>
+						<TableCell>Contact</TableCell>
+						<TableCell>Status</TableCell>
+						<TableCell>Last Visit</TableCell>
+						<TableCell>Actions</TableCell>
+					</TableHeader>
+					{currentItems.map((client) => (
+						<TableContent key={client.id}>
+							<TableCell>
+								<Image 
+									src={client.img} 
+									width={50}
+									height={50}
+									style={{
+										borderRadius: "50%",
+										objectFit: "cover",
+										}}
+								/>
+								<span>{client.firstName}</span>
+								<span>{client.lastName}</span>
+							</TableCell>
+							<TableCell>{client.clientId}</TableCell>
+							<TableCell>contact</TableCell>
+							<TableCell>status</TableCell>
+							<TableCell>lastVisit</TableCell>
+							<TableCell>
+								<Link href={`/clients/${client.id}`}>
+										<Edit />
+								</Link>
+							</TableCell>
+						</TableContent>
+					))}
+				</Table>
+				<ReactPaginate
+					pageCount={pageCount}
+					onPageChange={handlePageClick}
+					previousLabel={"Prev"}
+					nextLabel={"Next"}
+					containerClassName={styles.pagination}
+					pageClassName={styles.pageItem}
+					pageLinkClassName={styles.pageLink}
+					previousClassName={styles.pageItem}
+					previousLinkClassName={styles.pageLink}
+					nextClassName={styles.pageItem}
+					nextLinkClassName={styles.pageLink}
+					activeClassName={styles.active}
+				/>
+			</div>
+		</PageLayout>
 	);
 }

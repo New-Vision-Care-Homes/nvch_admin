@@ -11,10 +11,12 @@ const tabs = [
 	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
 	{ id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
 	{ id: 4, label: "Scheduling", icon: Calendar, href: "/scheduling" },
+	/*
 	{ id: 5, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
 	{ id: 6, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
 	{ id: 7, label: "Messaging", icon: MessageCircle, href: "/messaging" },
 	{ id: 8, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
+	 */
 	{ id: 9, label: "Settings", icon: Settings, href: "/setting" }
 ];
 

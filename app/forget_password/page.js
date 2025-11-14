@@ -3,15 +3,49 @@ import React, { useState } from "react";
 import Image from "next/image";
 import styles from "./forget_password_page.module.css";
 import Link from "next/link";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
+
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { emailRule } from "@app/validation";
+
+const schema = yup.object({
+	email: emailRule,
+});
 
 export default function ForgetPasswordPage() {
 
-	const [email, setEmail] = useState('');
+	const [message, setMessage] = useState("");
 
-	function handleSubmit(e){
-		e.preventDefault();
-		console.log("Email:", email);
-	}
+	const { register, handleSubmit, formState: { errors } } = useForm({
+		resolver: yupResolver(schema),
+	});
+
+	const onSubmit = async (formData) => {
+		setMessage("");
+	  
+		try {
+			const res = await fetch("https://nvch-server.onrender.com/api/auth/forgot-password", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email: formData.email }),
+		  	});
+	  
+			const data = await res.json();
+		
+			if (res.ok) {
+				setMessage(data.message || "If an account exists, a reset link has been sent.");
+			} else {
+				setMessage(data.message || "Something went wrong.");
+			}
+		} catch (err) {
+			console.error("Error connecting to server:", err);
+			setMessage("Error connecting to server");
+		}
+	};
 
 	return (
 		<div className={styles.page}>
@@ -29,18 +63,8 @@ export default function ForgetPasswordPage() {
 					<h1>Forgot Password</h1>
 				</div>
 
-				<form className={styles.form} onSubmit={handleSubmit}>
-
-					<label htmlFor="email">Email Address</label>
-					<input
-						type="email"
-						id="email"
-						name="email"
-						placeholder="Enter your registered email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						required
-					/>
+				<form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+					<InputField label="Email Address" name="email" register={register} error={errors.email} placeholder="Enter your registered email"/>
 
 					<button type="submit" className={styles.resetButton}>
 						Send Reset Link
@@ -55,6 +79,7 @@ export default function ForgetPasswordPage() {
 						</Link>
 					</div>
 				</form>
+				<div>{message}</div>
 			</div>
 		</div>
 	);

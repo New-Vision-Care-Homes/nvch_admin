@@ -4,9 +4,22 @@
 	/* Colors */
 	--color-primary: #1C4A6EFF;
 	--color-secondary: #565D6DFF;
+	--color-black: #171A1FFF;
+	--color-grey: #565D6DFF; 
+
+	--shadow-md: 0 0 0.06rem #171a1f12, 0 0 0.12rem #171a1f1F;	/* input shadow */
+	--shadow-lg: 0 0 0.12rem #171a1f12, 0 0 0.24rem #171a1f1F;	/* div shadow */
+	--border-primary: 0.06rem solid #DEE1E6FF; 	/* div border */
+	--border-secondary: 0.06rem solid #ccc; 		/* input field border */
+	--border-size-md: 0.8rem; 						 /* div border */
+	--border-size-sm: 0.4rem; 						 /* input field border */
 
 	/* new */
-	--font-size-lg: 3rem;
+	--font-size-xl: 3rem;
+	--font-size-lg: 1.6rem;
+	--font-size-md: 1rem;
+	--font-size-sm: 0.9rem;
+
 	--font-size-title-md: 1.5rem;
 	--font-size-title-xs: 1rem;
 	--font-size-text-lg: 1rem;
@@ -26,10 +39,7 @@
 	--color-text-primary: #171A1FFF;
 	--color-text-secondary: #565D6DFF; 
 
-	--font-size-lg: 36px;
-	--font-size-md-24: 24px;
-	--font-size-md: 20px;
-	--font-size-sm: 14px;
+
 
 	--line-height-lg: 40px;
 	--line-height-md-32: 32px;
@@ -40,9 +50,6 @@
 	--font-weight-md-600: 600;
 	--font-weight-md: 500;
 	--font-weight-sm: 400;
-
-	--font-family-inter: "Inter";
-	--font-family-roboto: "Roboto";
 
   
 	/* Spacing */
@@ -58,8 +65,7 @@
 
 h1 {
 	font-family: var(--font-family-primary); 
-	font-size: var(--font-size-lg);
-	line-height: var(--line-height-title-md); 
+	font-size: var(--font-size-xl);
 	font-weight: var(--font-weight-lg); 
 	color: var(--color-text-primary);
 	margin: 0;
@@ -67,11 +73,17 @@ h1 {
 
 h2 {
 	font-family: var(--font-family-primary); 
-	font-size: var(--font-size-title-md);
-	line-height: var(--line-height-title-md); 
+	font-size: var(--font-size-lg);
 	font-weight: var(--font-weight-md); 
 	color: var(--color-text-primary);
-	margin: 0;
+	margin-top: 2rem;
+}
+
+h3 {
+	font-family: var(--font-family-primary); 
+	font-size: var(--font-size-md);
+	font-weight: var(--font-weight-md); 
+	color: var(--color-text-primary);
 }
 
 h6 {

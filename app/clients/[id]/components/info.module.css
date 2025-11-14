@@ -9,7 +9,7 @@
 	display: grid;
 	width: 100%;
 	grid-template-columns: repeat(2, 1fr);
-	gap: 16px;
+	gap: 1rem;
 }
 
 /* 1 input field in one row */

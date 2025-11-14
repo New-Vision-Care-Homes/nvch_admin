@@ -48,12 +48,7 @@
 	justify-content: space-between;
 	margin-bottom: 1rem;
   }
-  
-  .sectionTitle {
-	font-size: 1rem;
-	font-weight: 600;
-	color: black;
-  }
+
   
   .addButton {
 	padding: 0.25rem;
