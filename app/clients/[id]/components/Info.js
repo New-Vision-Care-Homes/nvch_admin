@@ -11,71 +11,60 @@ import { nameRule, emailRule, phoneRule, addressRule, dateRule } from "@app/vali
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
-	birth: dateRule,
 	gender: yup.string().required("Gender is required"),
-	address: addressRule,
-	notes: yup.string().max(300, "Notes too long"),
+	birth: dateRule,
 	phone: phoneRule,
 	email: emailRule,
+	address: addressRule,
 	emergencyFName: nameRule,
 	emergencyLName: nameRule,
 	emergencyPhone: phoneRule,
+	relationship: yup.string().trim().max(50, "Relationship too long"),
+	sdmFName: nameRule.required("SDM first name is required"),
+	sdmLName: nameRule.required("SDM last name is required"),
+	sdmPhone: phoneRule,
+	sdmEmail: emailRule,
 });
 
 export default function Info() {
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-	} = useForm({
+	const { register, handleSubmit, formState: { errors } } = useForm({
 		resolver: yupResolver(schema),
 	});
 
 	const onSubmit = (data) => {
-		alert("✅ Form submitted: " + JSON.stringify(data, null, 2));
+		alert("✅ Form submitted:", data);
 	};
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<div className={styles.body}>
-				{/* Personal Details */}
 				<Card>
-					<CardHeader>Personal Details</CardHeader>
+					<CardHeader>Basic Information</CardHeader>
 					<CardContent>
 						<div className={styles.card_row_2}>
 							<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
 							<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
 						</div>
-
 						<div className={styles.card_row_2}>
 							<InputField label="Date of Birth" name="birth" register={register} error={errors.birth} />
-							<InputField
-								label="Gender"
-								name="gender"
-								type="select"
-								register={register}
-								error={errors.gender}
+							<InputField label="Gender" name="gender" type="select" register={register} error={errors.gender}   
 								options={[
 									{ label: "Male", value: "male" },
 									{ label: "Female", value: "female" },
 									{ label: "Other", value: "other" },
-								]}
-							/>
+								]} />
 						</div>
-
 						<div className={styles.card_row_1}>
 							<InputField label="Address" name="address" register={register} error={errors.address} />
 						</div>
-
 						<div className={styles.card_row_1}>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
 						</div>
 					</CardContent>
 				</Card>
 
-				{/* Contact Information */}
 				<Card>
-					<CardHeader>Contact Information</CardHeader>
+					<CardHeader>Contact Details</CardHeader>
 					<CardContent>
 						<div className={styles.card_row_2}>
 							<InputField label="Phone" name="phone" register={register} error={errors.phone} />
@@ -84,7 +73,6 @@ export default function Info() {
 					</CardContent>
 				</Card>
 
-				{/* Emergency Contact */}
 				<Card>
 					<CardHeader>Emergency Contact</CardHeader>
 					<CardContent>
@@ -98,15 +86,25 @@ export default function Info() {
 						</div>
 					</CardContent>
 				</Card>
+
+				<Card>
+					<CardHeader>Statutory Decision Maker (SDM)</CardHeader>
+					<CardContent>
+						<div className={styles.card_row_2}>
+							<InputField label="First Name" name="sdmFName" register={register} error={errors.sdmFName} />
+							<InputField label="Last Name" name="sdmLName" register={register} error={errors.sdmLName} />
+						</div>
+						<div className={styles.card_row_2}>
+							<InputField label="Phone" name="sdmPhone" register={register} error={errors.sdmPhone} />
+							<InputField label="Email" name="sdmEmail" register={register} error={errors.sdmEmail} />
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 
 			<div className={styles.buttons}>
-				<Button variant="secondary" type="button" onClick={() => console.log("Cancel")}>
-					Cancel
-				</Button>
-				<Button variant="primary" type="submit">
-					Save Changes
-				</Button>
+				<Button variant="secondary" onClick={() => console.log("Cancel")}>Cancel</Button>
+				<Button type="submit" variant="primary">Save Changes</Button>
 			</div>
 		</form>
 	);

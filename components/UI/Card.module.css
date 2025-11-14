@@ -7,18 +7,9 @@
 	width: 100%; 
 	height: auto; 
 	background: #FFFFFFFF; /* white */
-	border-radius: 10px; 
-	box-shadow: 0px 0px 1px #171a1f12, 0px 0px 2px #171a1f1F; /* shadow-xs */
-	padding: 3rem;
-}
-
-.header {
-	font-family: var(--font-family-inter);
-	font-size: var(--font-size-md); 
-	line-height: var(--line-height-md); 
-	font-weight: var(--font-weight-md); 
-	color: var(--color-primary);
-	margin-bottom: 20px;
+	border-radius: var(--border-size-md); 
+	box-shadow: var(--shadow-lg);
+	padding: 2rem;
 }
 
 .content {
@@ -32,13 +23,12 @@
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	gap: 5px;
+	gap: 0.2rem;
 }
 
 .label {
 	font-family: var(--font-family-inter);
-	font-size: var(--font-size-sm); 
-	line-height: var(--line-height-sm); 
+	font-size: var(--font-size-md); 
 	font-weight: var(--font-weight-md); 
 	color: var(--color-primary);
 }
@@ -47,35 +37,36 @@
 	width: 100%;
 	font-family: var(--font-family-inter);
 	font-size: var(--font-size-sm); 
-	line-height: var(--line-height-sm); 
 	font-weight: var(--font-weight-sm); 
 	background: #FFFFFFFF; /* white */
-	border-radius: 6px; 
-	border-width: 1px; 
-	border-color: #DEE1E6FF; /* neutral-300 */
-	border-style: solid; 
+	border-radius: var(--border-size-sm); 
+	border: var(--border-secondary);
 	outline: none; 
-	padding: 8px;
+	padding: 0.5rem;
 }
 
 	/* hover */
 	.input:hover {
-		color: var(--color-primary);
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
+
 	}
 	/* focused */
-	.input:focused {
-		color: var(--color-primary);
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
+	.input:focus {
+		border-color: var(--color-primary); /* neutral-300 */
 	}
 	/* disabled */
 	.input:disabled {
-		color: var(--color-primary);
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
 	}
+
+.input_error {
+	border-color: #E53E3E;
+	background: #FFF5F5;
+}
+
+.error_text {
+	font-size: var(--font-size-sm);
+	color: #E53E3E;
+	margin-top: 2px;
+}
 
 
 .info_field {

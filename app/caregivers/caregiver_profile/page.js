@@ -1,8 +1,7 @@
 "use client";
 
-import {act, React, use, useState} from "react";
-import Sidebar from "@components/layout/Sidebar";
-import Navbar from "@components/layout/Navbar";
+import {React, useState} from "react";
+import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
@@ -34,72 +33,69 @@ export default function Page() {
 	}
 
 	return (
-		<div className={styles.page}>
-			<Navbar />
-			<div className={styles.container}>
-				<Sidebar />
-				<div className={styles.body}>
-					{/* Header */}
-					<div className={styles.header}>
-						<h1>Caregiver Profile: Eleanor Vance</h1>
-						<div className={styles.headerActions}>
-							<Button 
-								variant="primary" 
-								icon={<Activity size={16} />}
-								onClick={handleActive}
-								className={`${
-									active === "Active" ? styles.active : styles.inactive
-								}`}
-							>
-								{active}
-							</Button>
-							<Link href="/caregiver">
-								<Button variant="secondary" icon={<Undo2 size={16}/>}>Back</Button>
-							</Link>
-						</div>
+		<>
+			<PageLayout>
+				{/* Header */}
+				<div className={styles.header}>
+					<h1>Caregiver Profile: Eleanor Vance</h1>
+					<div className={styles.headerActions}>
+						<Button 
+							variant="primary" 
+							icon={<Activity size={16} />}
+							onClick={handleActive}
+							className={`${
+								active === "Active" ? styles.active : styles.inactive
+							}`}
+						>
+							{active}
+						</Button>
+						<Link href="/caregiver">
+							<Button variant="secondary" icon={<Undo2 size={16}/>}>Back</Button>
+						</Link>
 					</div>
-
-					{/* Caregiver Overview */}
-					<Card>
-						<CardHeader>Caregiver Overview</CardHeader>
-						<div className={styles.content}>
-							<div className={styles.text}>
-								<div className={styles.column}>
-									<InfoField label="Caregiver ID">CC-00123</InfoField>
-									<InfoField label="Next Appointment">2024-08-05 (10:00 AM)</InfoField>
-								</div>
-								<div className={styles.column}>
-									<InfoField label="Status">Active</InfoField>
-									<InfoField label="------">On Track</InfoField>
-								</div>
-								<div className={styles.column}>
-									<InfoField label="------">2024-07-28</InfoField>
-								</div>
-							</div>
-							<div className={styles.picture}>
-								<Image
-									src="/img/navbar/avatar.jpg"
-									alt="Profile Photo"
-									width={100}
-									height={100}
-									className={styles.image}
-								/>
-								<Button variant="secondary" size="sm" icon={<Edit size={16}/>}>Edit</Button>
-							</div>
-						</div>
-					</Card>
-
-
-					{/* Tabbed Content */}
-					<div className={styles.tabs}>
-						<Tabs />
-					</div>
-					{/* End Tabbed Content */}
 				</div>
-			</div>
+
+				{/* Caregiver Overview */}
+				<Card>
+					<CardHeader>Caregiver Overview</CardHeader>
+					<div className={styles.content}>
+						<div className={styles.text}>
+							<div className={styles.column}>
+								<InfoField label="Caregiver ID">CC-00123</InfoField>
+								<InfoField label="Next Appointment">2024-08-05 (10:00 AM)</InfoField>
+							</div>
+							<div className={styles.column}>
+								<InfoField label="Status">Active</InfoField>
+								<InfoField label="------">On Track</InfoField>
+							</div>
+							<div className={styles.column}>
+								<InfoField label="------">2024-07-28</InfoField>
+							</div>
+						</div>
+						<div className={styles.picture}>
+							<Image
+								src="/img/navbar/avatar.jpg"
+								alt="Profile Photo"
+								width={100}
+								height={100}
+								className={styles.image}
+							/>
+							<Button variant="secondary" size="sm" icon={<Edit size={16}/>}>Edit</Button>
+						</div>
+					</div>
+				</Card>
+
+
+				{/* Tabbed Content */}
+				<div className={styles.tabs}>
+					<Tabs />
+				</div>
+				{/* End Tabbed Content */}			
+			</PageLayout>
+			
 			<Modal isOpen={isModalOpen} onClose={handleCancel}>
 				<h2>{message}</h2>
 			</Modal>
-		</div>
+		</>
 	);
 }

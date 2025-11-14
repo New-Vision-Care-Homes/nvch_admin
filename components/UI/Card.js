@@ -7,57 +7,66 @@ export function Card({ children, className }) {
 }
 
 export function CardHeader({ children, className }) {
-  	return <div className={`${styles.header} ${className || ""}`}>{children}</div>;
+	return (
+		<h2 style={{ marginTop: "0rem", marginBottom: "2.5rem" }} className={className}>
+			{children}
+		</h2>
+	);
 }
-
+  
 export function CardContent({ children, className }) {
 	return <div className={`${styles.content} ${className || ""}`}>{children}</div>;
 }
 
 //up label, down input
-export function InputField({ label, value, onChange, type = "input", rows = 1 }) {
+export function InputField({ label, name, register, type = "input", rows = 1, error, options = [], placeholder }) {
 	return (
 		<div className={styles.field}>
 			<label className={styles.label}>{label}</label>
+	
 			{type === "textarea" ? (
-				<textarea
-				 className={styles.input}
-				 value={value}
-				 onChange={onChange}
-				 rows={rows}
-				/>
+				<textarea {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
+			) : type === "select" ? (
+				<select {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`}>
+					<option value="">Select...</option>
+					{options.map(opt => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
 			) : (
-				<input
-				 className={styles.input}
-				 value={value}
-				 onChange={onChange}
-				/>
+				<input {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} placeholder={placeholder} />
 			)}
+	
+			{error && <p className={styles.error_text}>{error.message}</p>}
 		</div>
 	);
 }
+  
 
 // left label, right input
 export function InputFieldLR({ label, value, onChange, type = "input", rows = 1 }) {
 	return (
-		<div className={styles.field}
-			style={{ flexDirection: "row" }}
-		>
+		<div className={styles.field} style={{ flexDirection: "row" }}>
 			<label className={styles.label}>{label}</label>
+
 			{type === "textarea" ? (
-				<textarea
-				 className={styles.input}
-				 value={value}
-				 onChange={onChange}
-				 rows={rows}
-				/>
+				<textarea {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
+			) : type === "select" ? (
+				<select {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`}>
+					<option value="">Select...</option>
+					{options.map(opt => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
 			) : (
-				<input
-				 className={styles.input}
-				 value={value}
-				 onChange={onChange}
-				/>
+				<input {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} />
 			)}
+
+			{error && <p className={styles.error_text}>{error.message}</p>}
 		</div>
 	);
 }

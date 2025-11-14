@@ -3,20 +3,55 @@ import React, { useState } from "react";
 import Image from "next/image";
 import styles from "./login_page.module.css";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 
 export default function LoginPage() {
 
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
+	const [errorMsg ,setErrorMsg] = useState("");
 	const [checkbox, setCheckBox] = useState(false);
 
-	function handleSubmit(e){
+	const router = useRouter();
+
+	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log("Email:", email);
-		console.log("Password:", password);
-		console.log("Remember me:", checkbox);
-	}
+		setErrorMsg("");
+	  
+		try {
+			const res = await fetch("https://nvch-server.onrender.com/api/auth/login", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ email, password }),
+		  	});
+	  
+			const data = await res.json();
+		
+			if (res.ok) {
+				const token = data?.data?.token;
+				if (!token) {
+					setErrorMsg("Login failed");
+					console.log("Login failed: no token received");
+					return;
+				}
+				localStorage.setItem("token", token);	  
+				localStorage.setItem("user", JSON.stringify(data.data.user));  
+				router.push("/dashboard");
+				console.log("login successfully")
+			} else {
+				setErrorMsg(data.message || "Wrong Email or Password");
+			}
+		} catch (err) {
+			console.error("Error connecting to server:", err);
+			setErrorMsg("Error connecting to server");
+		}
+	};
+	  
+	  
 
 	return (
 		<div className={styles.page}>
@@ -77,6 +112,7 @@ export default function LoginPage() {
 							/>
 						</div>
 					</div>
+					{/*
 					<label className={styles.checkbox}>
 						<input
 							type="checkbox"
@@ -89,18 +125,22 @@ export default function LoginPage() {
 						Remember me
 					</label>
 
+
+					 */}
+					
 					<div className={styles.button}>
-						<Link href="/dashboard">
-							<button type="submit" className={styles.loginButton}>
-								Login
-							</button>
-						</Link>
+
+						<button type="submit" className={styles.loginButton} onClick={handleSubmit}>
+							Login
+						</button>
+
 						<Link href="/forget_password">
 							<button className={styles.forgetButton}>
 								Forgot Password?
 							</button>
 						</Link>
 					</div>
+					<div>{errorMsg}</div>
 				</form>
 			</div>
 		</div>

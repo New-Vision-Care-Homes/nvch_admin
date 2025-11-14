@@ -169,10 +169,7 @@ export default function SchedulingPage() {
 					{/* Open Shifts */}
 					<div className={styles.section}>
 						<div className={styles.sectionHeader}>
-							<h2 className={styles.sectionTitle}>Open Shifts</h2>
-							<button className={styles.addButton}>
-								<Plus size={16} />
-							</button>
+							<h2>Open Shifts</h2>
 						</div>
 
 						<div className={styles.sectionContent}>

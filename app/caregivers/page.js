@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Sidebar from "@components/layout/Sidebar";
-import Navbar from "@components/layout/Navbar";
+import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
 import { Plus, Edit } from "lucide-react"; 
 import Button from "@components/UI/Button";
@@ -81,87 +80,81 @@ export default function Caregivers() {
 	};
 
 	return (
-		<div className={styles.page}>
-			<Navbar />
-			<div className={styles.container}>
-				<Sidebar />
-				<div className={styles.body}>
-					<div className={styles.header}>
-						<h1>Caregiver Management</h1>
-						<Link href="/caregivers/add_new_caregiver">
-							<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
-						</Link>
-					</div>
+		<PageLayout>
+			<div className={styles.header}>
+				<h1>Caregiver Management</h1>
+				<Link href="/caregivers/add_new_caregiver">
+					<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+				</Link>
+			</div>
 
-					<div className={styles.filter_row}>
-						<input
-							type="text"
-							placeholder="Search caregivers..."
-							className={styles.search}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
+			<div className={styles.filter_row}>
+				<input
+					type="text"
+					placeholder="Search caregivers..."
+					className={styles.search}
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+				/>
 
-						<div className={styles.filter}>
-							<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Status</Button>
-							<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Certifications</Button>
-						</div>
-					</div>
-
-					<div className={styles.tableWrapper}>
-						<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
-						<Table>
-							<TableHeader>
-								<TableCell>Caregiver Name</TableCell>
-								<TableCell>Caregiver ID</TableCell>
-								<TableCell>Contact</TableCell>
-								<TableCell>Certifications</TableCell>
-								<TableCell>Status</TableCell>
-								<TableCell>Actions</TableCell>
-							</TableHeader>
-							{currentItems.map((client) => (
-								<TableContent key={client.id}>
-									<TableCell>
-										<Image 
-											src={client.img} 
-											width={50}
-											height={50}
-											style={{
-												borderRadius: "50%",
-												objectFit: "cover",
-											  }}
-										/>
-										<span>{client.name}</span>
-									</TableCell>
-									<TableCell>{client.id}</TableCell>
-									<TableCell>{client.contact}</TableCell>
-									<TableCell>{client.status}</TableCell>
-									<TableCell>{client.lastVisit}</TableCell>
-									<TableCell>
-										<Link href="/caregivers/caregiver_profile">
-											  <Edit />
-										</Link>
-									</TableCell>
-								</TableContent>
-							))}
-						</Table>
-						<ReactPaginate
-							pageCount={pageCount}
-							onPageChange={handlePageClick}
-							previousLabel={"Prev"}
-							nextLabel={"Next"}
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.active}
-						/>
-					</div>
+				<div className={styles.filter}>
+					<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Status</Button>
+					<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Certifications</Button>
 				</div>
 			</div>
-		</div>		
+
+			<div className={styles.tableWrapper}>
+				<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
+				<Table>
+					<TableHeader>
+						<TableCell>Caregiver Name</TableCell>
+						<TableCell>Caregiver ID</TableCell>
+						<TableCell>Contact</TableCell>
+						<TableCell>Certifications</TableCell>
+						<TableCell>Status</TableCell>
+						<TableCell>Actions</TableCell>
+					</TableHeader>
+					{currentItems.map((client) => (
+						<TableContent key={client.id}>
+							<TableCell>
+								<Image 
+									src={client.img} 
+									width={50}
+									height={50}
+									style={{
+										borderRadius: "50%",
+										objectFit: "cover",
+										}}
+								/>
+								<span>{client.name}</span>
+							</TableCell>
+							<TableCell>{client.id}</TableCell>
+							<TableCell>{client.contact}</TableCell>
+							<TableCell>{client.status}</TableCell>
+							<TableCell>{client.lastVisit}</TableCell>
+							<TableCell>
+								<Link href="/caregivers/caregiver_profile">
+										<Edit />
+								</Link>
+							</TableCell>
+						</TableContent>
+					))}
+				</Table>
+				<ReactPaginate
+					pageCount={pageCount}
+					onPageChange={handlePageClick}
+					previousLabel={"Prev"}
+					nextLabel={"Next"}
+					containerClassName={styles.pagination}
+					pageClassName={styles.pageItem}
+					pageLinkClassName={styles.pageLink}
+					previousClassName={styles.pageItem}
+					previousLinkClassName={styles.pageLink}
+					nextClassName={styles.pageItem}
+					nextLinkClassName={styles.pageLink}
+					activeClassName={styles.active}
+				/>
+			</div>
+		</PageLayout>	
 	);
 }
