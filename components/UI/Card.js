@@ -19,29 +19,34 @@ export function CardContent({ children, className }) {
 }
 
 //up label, down input
-export function InputField({ label, name, register, type = "input", rows = 1, error, options = [], placeholder }) {
-	return (
-		<div className={styles.field}>
-			<label className={styles.label}>{label}</label>
-	
-			{type === "textarea" ? (
-				<textarea {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
-			) : type === "select" ? (
-				<select {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`}>
-					<option value="">Select...</option>
-					{options.map(opt => (
-						<option key={opt.value} value={opt.value}>
-							{opt.label}
-						</option>
-					))}
-				</select>
-			) : (
-				<input {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} placeholder={placeholder} />
-			)}
-	
-			{error && <p className={styles.error_text}>{error.message}</p>}
-		</div>
-	);
+export function InputField({ label, name, register, type = "text", rows = 1, error, options = [], placeholder }) {
+    return (
+        <div className={styles.field}>
+            <label className={styles.label}>{label}</label>
+    
+            {type === "textarea" ? (
+                <textarea {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
+            ) : type === "select" ? (
+                <select {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`}>
+                    <option value="">Select...</option>
+                    {options.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+            ) : (
+                <input 
+                    type={type}
+                    {...register(name)} 
+                    className={`${styles.input} ${error ? styles.input_error : ""}`} 
+                    placeholder={placeholder} 
+                />
+            )}
+    
+            {error && <p className={styles.error_text}>{error.message}</p>}
+        </div>
+    );
 }
   
 
