@@ -245,10 +245,17 @@ export default function Clients() {
 								{/*<TableCell>lastVisit</TableCell>*/}
 								<TableCell>
 									<Link href={`/clients/${client.id}`}>
-											<Edit />
+										<Edit 
+											color="#1C4A6EFF" 
+											style={{ width: '1.5rem', height: '1.5rem' }} 
+										/>
 									</Link>
 									<div>
-										<Trash2 onClick={()=> deleteHandler(client.id)}/>
+										<Trash2 
+											color="#ef4444" 
+											style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }} 
+											onClick={()=> deleteHandler(client.id)} 
+										/>
 									</div>
 								</TableCell>
 							</TableContent>
