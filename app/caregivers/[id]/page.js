@@ -5,7 +5,7 @@ import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
 import { Card, CardHeader, InfoField } from "@components/UI/Card";
-import styles from "./client_profile.module.css";
+import styles from "./caregiver_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
 import { Edit, Activity, Undo2 } from "lucide-react";
@@ -88,8 +88,6 @@ export default function Page() {
             
             if (res.ok) {
                 const statusText = newActiveStatus ? "active" : "inactive";
-                
-                // OPTIMIZED UPDATE: Update the local user object with the new status
                 setUser(prevUser => ({
                     ...prevUser,
                     isActive: newActiveStatus,
@@ -126,7 +124,7 @@ export default function Page() {
             <PageLayout>
                 {/* Header */}
                 <div className={styles.header}>
-                    <h1>Client Profile: {user.firstName} {user.lastName}</h1>
+                    <h1>Caregiver Profile: {user.firstName} {user.lastName}</h1>
                     <div className={styles.headerActions}>
                         <Button
                             variant="primary"
@@ -137,19 +135,19 @@ export default function Page() {
                         >
                             {activeStatus ? "Inactive" : "Active"}
                         </Button>
-                        <Link href="/clients">
+                        <Link href="/caregivers">
                             <Button variant="secondary" icon={<Undo2 size={16}/>}>Back</Button>
                         </Link>
                     </div>
                 </div>
 
-                {/* Client Overview */}
+                {/* Caregiver Overview */}
                 <Card>
-                    <CardHeader>Client Overview</CardHeader>
+                    <CardHeader>Caregiver Overview</CardHeader>
                     <div className={styles.content}>
                         <div className={styles.text}>
                             <div className={styles.column}>
-                                <InfoField label="Client ID">{user.clientId}</InfoField>
+                                <InfoField label="Caregiver ID">{user.employeeId}</InfoField>
                                 <InfoField label="Next Appointment">2024-08-05 (10:00 AM)</InfoField>
                             </div>
                             <div className={styles.column}>
@@ -186,4 +184,3 @@ export default function Page() {
         </>
     );
 }
-

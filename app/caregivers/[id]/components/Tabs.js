@@ -14,8 +14,8 @@ export default function Tabs() {
 		{ id: "certification", label: "Certification", component: <Certification /> },
 		{ id: "shifts", label: "Shifts & Schedule", component: <Shifts /> },
 		{ id: "timesheets", label: "Timesheets & Approvals", component: <Timesheet /> },
-		{ id: "Performance", label: "Performance & Feedback", component: <div>performance</div> },
-		{ id: "payroll", label: "Payroll & Payments", component: <div>payroll</div> },
+		//{ id: "Performance", label: "Performance & Feedback", component: <div>performance</div> },
+		//{ id: "payroll", label: "Payroll & Payments", component: <div>payroll</div> },
 	];
 
 	return (

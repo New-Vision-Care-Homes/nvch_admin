@@ -41,7 +41,7 @@ export default function LoginPage() {
 				localStorage.setItem("token", token);	  
 				localStorage.setItem("user", JSON.stringify(data.data.user));  
 				router.push("/dashboard");
-				console.log("login successfully")
+				console.log("login successfull")
 			} else {
 				setErrorMsg(data.message || "Wrong Email or Password");
 			}

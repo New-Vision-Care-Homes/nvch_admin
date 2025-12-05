@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
-import { Plus, Edit } from "lucide-react"; 
+import { Plus, Edit } from "lucide-react";
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
@@ -12,71 +12,58 @@ import ReactPaginate from "react-paginate";
 
 export default function Caregivers() {
 	const [search, setSearch] = useState("");
+	const [caregivers, setCaregivers] = useState([]);
+	const [currentPage, setCurrentPage] = useState(0);
 
-	const clients = [
-		{
-			id: "C001",
-			name: "Jane Doe",
-			contact: "jane.doe@example.com",
-			status: "Active",
-			lastVisit: "2023-11-20",
-			img: "https://i.pravatar.cc/40?img=1",
-		},
-		{
-			id: "C002",
-			name: "John Smith",
-			contact: "+1-555-123-4567",
-			status: "On Hold",
-			lastVisit: "2023-10-15",
-			img: "https://i.pravatar.cc/40?img=2",
-		},
-		{
-			id: "C003",
-			name: "Emily White",
-			contact: "emily.white@example.com",
-			status: "Active",
-			lastVisit: "2023-11-25",
-			img: "https://i.pravatar.cc/40?img=3",
-		},
-		{
-			id: "C004",
-			name: "Michael Brown",
-			contact: "+1-555-987-6543",
-			status: "Inactive",
-			lastVisit: "2023-09-01",
-			img: "https://i.pravatar.cc/40?img=4",
-		},
-		{
-			id: "C005",
-			name: "Sarah Green",
-			contact: "sarah.green@example.com",
-			status: "Active",
-			lastVisit: "2023-11-18",
-			img: "https://i.pravatar.cc/40?img=5",
-		},
-		{
-			id: "C006",
-			name: "Sarah Green",
-			contact: "sarah.green@example.com",
-			status: "Active",
-			lastVisit: "2023-11-18",
-			img: "https://i.pravatar.cc/40?img=5",
-		},
-	];
+	useEffect(() => {
+		const fetchUsers = async () => {
+			const token = localStorage.getItem("token");
+			if (!token) {
+				console.log("No token found. Please log in as admin.");
+				return;
+			}
 
-	const filtered = clients.filter((client) =>
-		client.name.toLowerCase().includes(search.toLowerCase())
-	);
+			try {
+				const res = await fetch(
+					"https://nvch-server.onrender.com/api/auth/admin/users?role=caregiver",
+				{
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+				}
+				);
+
+				const data = await res.json();
+
+				if (res.ok) {
+					setCaregivers(data.data.users);
+					console.log("success: ", data.data);
+				} else {
+					console.log(data.message || "Failed to fetch users");
+				}
+			} catch (err) {
+				console.error(err);
+			}
+		};
+
+		fetchUsers();
+	}, []);
+
+	const filtered = caregivers.filter((caregiver) => {
+		const fullName = `${caregiver.firstName} ${caregiver.lastName}`.toLowerCase();
+		return fullName.includes(search.toLowerCase());
+	});
+
 
 	const itemsPerPage = 4;
-	const [currentPage, setCurrentPage] = useState(0);
-  
 	const offset = currentPage * itemsPerPage;
 	const currentItems = filtered.slice(offset, offset + itemsPerPage);
 	const pageCount = Math.ceil(filtered.length / itemsPerPage);
-  
+
 	const handlePageClick = (event) => {
-	  setCurrentPage(event.selected);
+		setCurrentPage(event.selected);
 	};
 
 	return (
@@ -84,7 +71,9 @@ export default function Caregivers() {
 			<div className={styles.header}>
 				<h1>Caregiver Management</h1>
 				<Link href="/caregivers/add_new_caregiver">
-					<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+					<Button variant="primary" icon={<Plus />}>
+						Add New Caregiver
+					</Button>
 				</Link>
 			</div>
 
@@ -98,8 +87,12 @@ export default function Caregivers() {
 				/>
 
 				<div className={styles.filter}>
-					<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Status</Button>
-					<Button variant="secondary" onClick={() => alert("filter")} className={styles.button}>Filter by Certifications</Button>
+					<Button variant="secondary" className={styles.button}>
+						Filter by Status
+					</Button>
+					<Button variant="secondary" className={styles.button}>
+						Filter by Certifications
+					</Button>
 				</div>
 			</div>
 
@@ -114,47 +107,52 @@ export default function Caregivers() {
 						<TableCell>Status</TableCell>
 						<TableCell>Actions</TableCell>
 					</TableHeader>
-					{currentItems.map((client) => (
-						<TableContent key={client.id}>
+
+					{currentItems.map((caregiver) => (
+						<TableContent key={caregiver.id}>
 							<TableCell>
-								<Image 
-									src={client.img} 
+								<Image
+									src={caregiver.img || "/default-avatar.png"}
 									width={50}
 									height={50}
 									style={{
 										borderRadius: "50%",
 										objectFit: "cover",
-										}}
+									}}
+									alt="avatar"
 								/>
-								<span>{client.name}</span>
+								<span>{caregiver.firstName} {caregiver.lastName}</span>
 							</TableCell>
-							<TableCell>{client.id}</TableCell>
-							<TableCell>{client.contact}</TableCell>
-							<TableCell>{client.status}</TableCell>
-							<TableCell>{client.lastVisit}</TableCell>
+
+							<TableCell>{caregiver.employeeId}</TableCell>
+							<TableCell>-</TableCell>
+							<TableCell>-</TableCell>
+							<TableCell>-</TableCell>
+
 							<TableCell>
-								<Link href="/caregivers/caregiver_profile">
-										<Edit />
+								<Link href={`/caregivers/${caregiver.id}`}>
+									<Edit />
 								</Link>
 							</TableCell>
 						</TableContent>
 					))}
 				</Table>
-				<ReactPaginate
-					pageCount={pageCount}
-					onPageChange={handlePageClick}
-					previousLabel={"Prev"}
-					nextLabel={"Next"}
-					containerClassName={styles.pagination}
-					pageClassName={styles.pageItem}
-					pageLinkClassName={styles.pageLink}
-					previousClassName={styles.pageItem}
-					previousLinkClassName={styles.pageLink}
-					nextClassName={styles.pageItem}
-					nextLinkClassName={styles.pageLink}
-					activeClassName={styles.active}
-				/>
 			</div>
-		</PageLayout>	
+
+			<ReactPaginate
+				pageCount={pageCount}
+				onPageChange={handlePageClick}
+				previousLabel={"Prev"}
+				nextLabel={"Next"}
+				containerClassName={styles.pagination}
+				pageClassName={styles.pageItem}
+				pageLinkClassName={styles.pageLink}
+				previousClassName={styles.pageItem}
+				previousLinkClassName={styles.pageLink}
+				nextClassName={styles.pageItem}
+				nextLinkClassName={styles.pageLink}
+				activeClassName={styles.active}
+			/>
+		</PageLayout>
 	);
 }
