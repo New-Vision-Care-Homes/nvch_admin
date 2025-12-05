@@ -8,42 +8,43 @@ import * as yup from "yup";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
-import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@app/validation";
+// Importing validation rules used in the Client page for consistency
+import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@app/validation"; 
 import { useParams } from "next/navigation";
 
-// API Endpoint for user management
+// API Endpoint for Caregiver management (assuming a slightly different URL)
 const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
 
 // --- 1. Data Cleaning/Flattening Function ---
 /**
  * Transforms nested API data into a flat structure suitable for the form's fields.
  * Also ensures all fields have safe default values (e.g., "" instead of null/undefined).
- * @param {object} apiData - Raw user data from the API.
+ * @param {object} apiData - Raw caregiver data from the API.
  * @returns {object} Flattened object with safe default values for use with RHF's reset().
  */
 const cleanFetchedData = (apiData) => {
-    // Return empty object if no API data is provided (used for initial defaultValues)
     if (!apiData) return {};
 	console.log("apidata: ", apiData);
     
-    // Base fields (using optional chaining and nullish coalescing for safety)
+    // Base fields
     const cleanData = {
         firstName: apiData.firstName || "",
         lastName: apiData.lastName || "",
-        gender: apiData.gender || "",
-        // Format date string for HTML input type="date" (YYYY-MM-DD)
-        birth: apiData.dateOfBirth?.split('T')[0] || "", 
+        gender: apiData.gender || "", 
+        notes: apiData.notes || "", 
+        birth: apiData.dateOfBirth?.split('T')[0] || "",        
         phone: apiData.phone || "",
         email: apiData.email || "",
+        
+        // Address field
 		street: apiData.address.street || "",
 		city: apiData.address.city || "",
 		state: apiData.address.state || "",
 		country: apiData.address.country || "",
 		pincode: apiData.address.pinCode || "",
+		
         notes: apiData.notes || "",
     };
-
-    // --- Flattening Nested Objects ---
     
     // Emergency Contact
     const emergencyContact = apiData.emergencyContact || {};
@@ -54,13 +55,7 @@ const cleanFetchedData = (apiData) => {
     cleanData.emergencyPhone = emergencyContact.phone || "";
     cleanData.relationship = emergencyContact.relationship || "";
 
-    // Statutory Decision Maker (SDM)
-    const sdm = apiData.statutoryDecisionMaker || {};
-    const sdmNameParts = sdm.name?.split(' ') || [];
-    cleanData.sdmFName = sdmNameParts[0] || "";
-    cleanData.sdmLName = sdmNameParts.slice(1).join(' ') || "";
-    cleanData.sdmPhone = sdm.phoneNumber || "";
-    cleanData.sdmEmail = sdm.email || "";
+    // SDM fields are correctly omitted for Caregiver
     
     return cleanData;
 };
@@ -68,31 +63,28 @@ const cleanFetchedData = (apiData) => {
 
 // --- 2. Yup Validation Schema ---
 const schema = yup.object({
-	firstName: nameRule.required("First name is required"),
-	lastName: nameRule.required("Last name is required"),
-	email: emailRule,
-	phone: phoneRule,
-	gender: shortTextRule.required("Gender is required"),
-	birth: birthRule,
-	notes: longTextRule,
-	// Address
-	street: shortTextRule.required(),
-	city: shortTextRule.required(),
-	state: shortTextRule.required(),
-	pincode: pinRule,
-	country: shortTextRule.required(),
-	latitude: null,
-	longitude: null,
-	// Emergency Contact
-	emergencyFName: nameRule.optional(),
-	emergencyLName: nameRule.optional(),
-	emergencyPhone: phoneRule.optional(),
-	relationship: shortTextRule.optional(),
-	// SDM
-	sdmFName: nameRule,
-	sdmLName: nameRule,
-	sdmPhone: phoneRule,
-	sdmEmail: emailRule,
+    firstName: nameRule.required("First name is required"),
+    lastName: nameRule.required("Last name is required"),
+    email: emailRule.optional(),
+    phone: phoneRule.optional(),
+    gender: shortTextRule.required("Gender is required"),
+    birth: birthRule.optional(),
+    notes: longTextRule.optional(),
+    
+    // Address fields (Matching validation rules from Client page)
+    street: shortTextRule.required("Street is required"),
+    city: shortTextRule.required("City is required"),
+    state: shortTextRule.required("State/Province is required"),
+    pincode: pinRule.optional(),
+    country: shortTextRule.required("Country is required"),
+    
+    // Emergency Contact
+    emergencyFName: nameRule.optional(),
+    emergencyLName: nameRule.optional(),
+    emergencyPhone: phoneRule.optional(),
+    relationship: shortTextRule.optional(),
+    
+    // Statutory Decision Maker (SDM) fields removed for Caregiver
 });
 
 
@@ -106,15 +98,15 @@ export default function Info() {
         register, 
         handleSubmit, 
         formState: { errors }, 
-        reset, // Key function for loading data and implementing "Cancel"
-        watch // Used for displaying the user's name in the header
+        reset, // Key function for data loading and implementing "Cancel"
+        watch // Used for displaying the name in the header
     } = useForm({
         resolver: yupResolver(schema),
-        // Initialize form with safe, empty defaults using cleanFetchedData(null)
+        // Initialize form with safe, empty defaults
         defaultValues: cleanFetchedData(null), 
     });
 
-    // --- 3. Data Loading (Fetch User Data) ---
+    // --- 3. Data Loading (Fetch Caregiver Data) ---
     const fetchUser = useCallback(async () => {
         setIsLoading(true);
         setMessage(null);
@@ -136,25 +128,26 @@ export default function Info() {
             });
 
             const data = await res.json();
+			console.log("user: ", data.data.user);
 
-            if (res.ok && data.data.user) {
-                const cleanedData = cleanFetchedData(data.data.user);
-				console.log("data: ", cleanedData);
+            // Assuming API response structure is similar to Client
+            if (res.ok && data.data.user) { 
+                const cleanedData = cleanFetchedData(data.data.user); 
+				console.log("Cleaned Data for Form:", cleanedData);
                 // Use reset() to populate the form fields with fetched data
-                // This also sets the starting point for the "Cancel" action
                 reset(cleanedData); 
-                setMessage("Profile data loaded successfully.");
+                setMessage("Caregiver profile loaded successfully.");
             } else {
-                const errorMsg = data.error || data.message || "Failed to fetch user data.";
-                setMessage(`Error fetching user: ${errorMsg}`);
+                const errorMsg = data.error || data.message || "Failed to fetch caregiver data.";
+                setMessage(`Error fetching caregiver: ${errorMsg}`);
             }
         } catch (err) {
-            console.error("Fetch User Error:", err);
-            setMessage("Error connecting to server to fetch user data.");
+            console.error("Fetch Caregiver Error:", err);
+            setMessage("Error connecting to server to fetch caregiver data.");
         } finally {
             setIsLoading(false);
         }
-    }, [id, reset]); // Dependencies: id for endpoint, reset for RHF
+    }, [id, reset]); 
 
     useEffect(() => {
         // Fetch data only once the component mounts and the ID is available
@@ -164,52 +157,49 @@ export default function Info() {
     }, [id, fetchUser]);
 
 
-    // --- 4. Form Submission (Update User Data) ---
+    // --- 4. Form Submission (Update Caregiver Data) ---
     const onSubmit = async (data) => {
-		console.log("check if onsubmit is working");
         setIsSubmitting(true);
         setMessage(null);
         const token = localStorage.getItem("token");
 
         // --- Re-nest/Structure data for API Submission ---
-		const submissionBody = {
-			email: data.email,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			phone: data.phone,
-			dateOfBirth: data.birth,
-			notes: data.notes ? data.notes : null,
-		  
-			address: {
-				street: data.street,
-				city: data.city,
-				state: data.state,
-				pinCode: data.pincode,
-				country: data.country,
-				gpsCoordinates: {
-					"latitude": 44.6488,
-      				"longitude": -63.5752
-				},
-			},
+        const submissionBody = {
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            dateOfBirth: data.birth,
+            gender: data.gender,
+            notes: data.notes ? data.notes : null,
+          
+            // Address structure re-nesting
+            address: {
+                street: data.street,
+                city: data.city,
+                state: data.state,
+                pinCode: data.pincode,
+                country: data.country,
+                // Including GPS coordinates placeholder as in the Client submission
+                gpsCoordinates: {
+                    "latitude": 44.6488,
+                    "longitude": -63.5752
+                },
+            },
 
-			emergencyContact: {
-				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
-				phone: data.emergencyPhone,
-				relationship: data.relationship
-			},
-		  
-			statutoryDecisionMaker: {
-				name: `${data.sdmFName} ${data.sdmLName}`.trim(),
-				phoneNumber: data.sdmPhone,
-				email: data.sdmEmail,
-			},
+            // Emergency Contact structure re-nesting
+            emergencyContact: {
+                name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
+                phone: data.emergencyPhone,
+                relationship: data.relationship
+            },
+            
+            // StatutoryDecisionMaker (SDM) object is omitted for Caregiver
         };
-
-		console.log("submitbody: ", submissionBody)
 
         try {
             const res = await fetch(`${API_BASE_URL}/${id}`, {
-                method: "PUT", // Use PUT or PATCH for updating resources
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -220,13 +210,10 @@ export default function Info() {
             const resData = await res.json();
 
             if (res.ok) {
-                // If update is successful, reset the form again with the *latest* data
-                // This ensures "Cancel" will revert to this newly saved state.
-                const updatedData = cleanFetchedData(resData.data.user); 
-                reset(updatedData); 
-                setMessage("✅ User data updated successfully!");
-            } else {
-                const errorMsg = resData.error || resData.message || `Failed to update user (Status ${res.status}).`;
+                // Reset the form with the latest data from the API response
+				reset(data); 
+   				setMessage("✅ Caregiver data updated successfully!");
+                const errorMsg = resData.error || resData.message || `Failed to update caregiver (Status ${res.status}).`;
                 setMessage(`Error saving: ${errorMsg}`);
             }
         } catch (err) {
@@ -239,15 +226,14 @@ export default function Info() {
 
     // --- 5. Cancel Action ---
     const handleCancel = () => {
-        // Calling reset() without arguments reverts the form to the last state 
-        // that was passed to reset() (i.e., the state loaded from the API).
+        // Reverts the form to the last state that was passed to reset() (loaded data).
         reset(); 
         setMessage("Changes cancelled. Form restored to last saved state.");
     };
 
 
     if (isLoading) {
-        return <div className={styles.loading}>Loading user profile...</div>;
+        return <div className={styles.loading}>Loading caregiver profile...</div>;
     }
 
     return (
@@ -257,7 +243,7 @@ export default function Info() {
 
             <div className={styles.body}>
                 <Card>
-                    <CardHeader>Basic Information</CardHeader>
+                    <CardHeader>Personal Details</CardHeader>
                     <CardContent>
                         <div className={styles.card_row_2}>
                             <InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
@@ -272,12 +258,19 @@ export default function Info() {
                                     { label: "Other", value: "other" },
                                 ]} />
                         </div>
+                        {/* Address fields matching Client page structure */}
                         <div className={styles.card_row_2}>
                             <InputField label="Street" name="street" register={register} error={errors.street} />
-							<InputField label="City" name="city" register={register} error={errors.city} />
-							<InputField label="State" name="state" register={register} error={errors.state} />
-							<InputField label="Country" name="country" register={register} error={errors.country} />
-							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
+                            <InputField label="City" name="city" register={register} error={errors.city} />
+                        </div>
+                        <div className={styles.card_row_2}>
+                            <InputField label="State" name="state" register={register} error={errors.state} />
+                            <InputField label="Country" name="country" register={register} error={errors.country} />
+                        </div>
+                        <div className={styles.card_row_2}>
+                            <InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
+                            {/* Placeholder to maintain layout alignment */}
+                            <div style={{ flex: 1 }} /> 
                         </div>
                         <div className={styles.card_row_1}>
                             <InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
@@ -310,24 +303,11 @@ export default function Info() {
                     </CardContent>
                 </Card>
 
-                {/* Statutory Decision Maker (SDM) */}
-                <Card>
-                    <CardHeader>Statutory Decision Maker (SDM)</CardHeader>
-                    <CardContent>
-                        <div className={styles.card_row_2}>
-                            <InputField label="First Name" name="sdmFName" register={register} error={errors.sdmFName} />
-                            <InputField label="Last Name" name="sdmLName" register={register} error={errors.sdmLName} />
-                        </div>
-                        <div className={styles.card_row_2}>
-                            <InputField label="Phone" name="sdmPhone" register={register} error={errors.sdmPhone} />
-                            <InputField label="Email" name="sdmEmail" register={register} error={errors.sdmEmail} />
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Statutory Decision Maker (SDM) Section Removed */}
+
             </div>
 
             <div className={styles.buttons}>
-                {/* The type="button" prevents accidental form submission on click */}
                 <Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
                 <Button type="submit" variant="primary" disabled={isSubmitting}>
                     {isSubmitting ? "Saving..." : "Save Changes"}
