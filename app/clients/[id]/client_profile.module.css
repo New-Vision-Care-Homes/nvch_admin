@@ -43,11 +43,18 @@
 }
 
 	.active {
-		background-color: greenyellow;
+		background-color: #16A34A;
+		color: #fff;
+		border-color: #16A34A;
 	}
+
 	.inactive {
-		background-color: #ef4444;
+		background-color: #D1D5DB;
+		color: #6B7280;
+		border-color: #D1D5DB;
 	}
+
+	
  
 
 .content {

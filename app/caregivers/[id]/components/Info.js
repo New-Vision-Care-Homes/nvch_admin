@@ -30,7 +30,6 @@ const cleanFetchedData = (apiData) => {
     const cleanData = {
         firstName: apiData.firstName || "",
         lastName: apiData.lastName || "",
-        gender: apiData.gender || "", 
         notes: apiData.notes || "", 
         birth: apiData.dateOfBirth?.split('T')[0] || "",        
         phone: apiData.phone || "",
@@ -67,7 +66,6 @@ const schema = yup.object({
     lastName: nameRule.required("Last name is required"),
     email: emailRule.optional(),
     phone: phoneRule.optional(),
-    gender: shortTextRule.required("Gender is required"),
     birth: birthRule.optional(),
     notes: longTextRule.optional(),
     
@@ -170,7 +168,6 @@ export default function Info() {
             lastName: data.lastName,
             phone: data.phone,
             dateOfBirth: data.birth,
-            gender: data.gender,
             notes: data.notes ? data.notes : null,
           
             // Address structure re-nesting
@@ -251,26 +248,14 @@ export default function Info() {
                         </div>
                         <div className={styles.card_row_2}>
                             <InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
-                            <InputField label="Gender" name="gender" type="select" register={register} error={errors.gender}   
-                                options={[
-                                    { label: "Male", value: "male" },
-                                    { label: "Female", value: "female" },
-                                    { label: "Other", value: "other" },
-                                ]} />
+							<InputField label="Address" name="street" register={register} error={errors.street} />
                         </div>
                         {/* Address fields matching Client page structure */}
                         <div className={styles.card_row_2}>
-                            <InputField label="Street" name="street" register={register} error={errors.street} />
                             <InputField label="City" name="city" register={register} error={errors.city} />
-                        </div>
-                        <div className={styles.card_row_2}>
-                            <InputField label="State" name="state" register={register} error={errors.state} />
+							<InputField label="State" name="state" register={register} error={errors.state} />
                             <InputField label="Country" name="country" register={register} error={errors.country} />
-                        </div>
-                        <div className={styles.card_row_2}>
-                            <InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
-                            {/* Placeholder to maintain layout alignment */}
-                            <div style={{ flex: 1 }} /> 
+							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
                         </div>
                         <div className={styles.card_row_1}>
                             <InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />

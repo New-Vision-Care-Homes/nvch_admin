@@ -16,8 +16,8 @@ const tabs = [
 	{ id: 6, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
 	{ id: 7, label: "Messaging", icon: MessageCircle, href: "/messaging" },
 	{ id: 8, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
-	 */
-	{ id: 9, label: "Settings", icon: Settings, href: "/setting" }
+	 
+	{ id: 9, label: "Settings", icon: Settings, href: "/setting" }*/
 ];
 
 // Map keywords to specific tab ids
