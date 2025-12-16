@@ -36,10 +36,15 @@
 }
 
 	.active {
-		background-color: greenyellow;
+		background-color: #16A34A;
+		color: #fff;
+		border-color: #16A34A;
 	}
+
 	.inactive {
-		background-color: #ef4444;
+		background-color: #D1D5DB;
+		color: #6B7280;
+		border-color: #D1D5DB;
 	}
  
 
@@ -71,7 +76,50 @@
 	border-radius: 50%; 
 }
 
+.fileInputLabel {
+	background-color: #2563eb;
+	color: white;
+	padding: 6px 12px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 0.875rem;
+	display: inline-block;
+	text-align: center;
+	margin-top: 1rem;
+}
+
+.hiddenInput {
+	display: none;
+}
+
+.fileNote {
+	margin-top: 1rem;
+}
+
 .column {
 	display: flex;
 	flex-direction: column;
+}
+
+.centeredModalContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers items horizontally */
+    text-align: center; 
+    padding: 10px;
+}
+
+.uploadModalContent {
+    display: flex;
+    flex-direction: column; 
+    align-items: center; /* Centers content within the upload block */
+    padding: 10px 0;
+    width: 100%;
+    /* Add any other necessary styling */
+}
+
+.modalActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
 }

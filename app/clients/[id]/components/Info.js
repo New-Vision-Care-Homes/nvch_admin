@@ -265,15 +265,17 @@ export default function Info() {
                         </div>
                         <div className={styles.card_row_2}>
                             <InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
+							{/*
                             <InputField label="Gender" name="gender" type="select" register={register} error={errors.gender}   
                                 options={[
                                     { label: "Male", value: "male" },
                                     { label: "Female", value: "female" },
                                     { label: "Other", value: "other" },
                                 ]} />
+							*/}
+							<InputField label="Address" name="street" register={register} error={errors.street} />
                         </div>
                         <div className={styles.card_row_2}>
-                            <InputField label="Street" name="street" register={register} error={errors.street} />
 							<InputField label="City" name="city" register={register} error={errors.city} />
 							<InputField label="State" name="state" register={register} error={errors.state} />
 							<InputField label="Country" name="country" register={register} error={errors.country} />

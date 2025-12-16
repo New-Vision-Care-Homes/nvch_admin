@@ -6,10 +6,9 @@
 
 /* 2 input field in one row */
 .card_row_2 {
-	display: grid;
+	display: flex;
+	gap: 1rem;
 	width: 100%;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 16px;
 }
 
 /* 1 input field in one row */

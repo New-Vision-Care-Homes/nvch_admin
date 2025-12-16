@@ -228,9 +228,9 @@ export default function SchedulingPage() {
                     />
                 </div>
                 
-                {/* ... (Your existing sidebar content remains the same) */}
+                {/* ... (Your existing sidebar content remains the same) }
                 <div className={styles.sidebar}>
-                    {/* Open Shifts */}
+                    {/* Open Shifts }
                     <div className={styles.section}>
                         <div className={styles.sectionHeader}>
                             <h2>Open Shifts</h2>
@@ -256,7 +256,7 @@ export default function SchedulingPage() {
                         </div>
                     </div>
 
-                    {/* Shift Approvals */}
+                    {/* Shift Approvals }
                     <div className={styles.section}>
                         <div className={styles.sectionHeader}>
                             <h2 className={styles.sectionTitle}>Shift Approvals</h2>
@@ -277,7 +277,7 @@ export default function SchedulingPage() {
                         </div>
                     </div>
 
-                    {/* Alerts */}
+                    {/* Alerts }
                     <div className={styles.section}>
                         <div className={styles.sectionHeader}>
                             <h2 className={styles.sectionTitle}>Alerts</h2>
@@ -294,6 +294,7 @@ export default function SchedulingPage() {
                         </div>
                     </div>
                 </div>
+				{*/}
             </div>
         </div>
     );

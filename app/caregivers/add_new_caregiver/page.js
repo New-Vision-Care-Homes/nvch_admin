@@ -350,7 +350,7 @@ export default function Page() {
                             </CardContent>
                         </Card>
 
-                        {/* Certifications (Dynamic Array using useFieldArray) */}
+                        {/* Certifications (Dynamic Array using useFieldArray) }
                         <Card>
                             <CardHeader>Certifications</CardHeader>
                             <CardContent>
@@ -359,7 +359,7 @@ export default function Page() {
                                         <div key={field.id} className={styles.fieldArrayItem}>
                                             <h4>Certificate {index+1}</h4>
                                             
-                                            {/* Dynamic Certification Name */}
+                                            {/* Dynamic Certification Name }
                                             <InputField 
                                                 label="Certification Name" 
                                                 name={`certifications.${index}.name`} 
@@ -368,7 +368,7 @@ export default function Page() {
                                                 placeholder="e.g., First Aid"
                                             />
                                             
-                                            {/* Dynamic Date Inputs */}
+                                            {/* Dynamic Date Inputs}
                                             <div className={styles.row2}>
                                                 <InputField 
                                                     label="Start Date" 
@@ -386,7 +386,7 @@ export default function Page() {
                                                 />
                                             </div>
                                             
-                                            {/* File Upload Placeholder UI */}
+                                            {/* File Upload Placeholder UI }
                                             <div className={styles.uploadRow}>
                                                 {/* Hidden field to carry the static URL or actual URL if implemented }
                                                 <input 
@@ -409,7 +409,7 @@ export default function Page() {
                                                         {watch(`certifications.${index}.uploadFile`)?.[0]?.name || "Upload Certificate (PDF/Image) - Static"}
                                                     </span>
                                                 </label> }
-                                                {/* Remove Button - DISABLED REMOVED */}
+                                                {/* Remove Button - DISABLED REMOVED }
                                                 <Button 
                                                     variant="danger" 
                                                     size="sm"
@@ -423,8 +423,9 @@ export default function Page() {
                                             </div>
                                         </div>
                                     ))}
+									
                                     
-                                    {/* Add Button */}
+                                    {/* Add Button }
                                     <Button 
                                         variant="secondary" 
                                         icon={<Plus size={16} />}
@@ -437,6 +438,7 @@ export default function Page() {
                                 </div>
                             </CardContent>
                         </Card>
+						{*/}
 
                         {/* Availability (Dynamic Array) */}
                         <Card>
