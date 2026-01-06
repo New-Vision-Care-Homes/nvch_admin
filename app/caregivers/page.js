@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, forwardRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
-import UserAvatar from "@components/UI/UserAvatar";
 import styles from "./caregivers.module.css"; // Use client CSS for consistency
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
@@ -12,12 +11,18 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useCaregivers} from "@/hooks/useCaregivers";
+
 export default function Caregivers() {
+	const queryClient = useQueryClient();
+	const { data: caregivers = [], isLoading, isError, error } = useCaregivers();
+	console.log("caregivers: ", caregivers);
+
     // --- State ---
     const [search, setSearch] = useState(""); // Search input
     const [statusFilter, setStatusFilter] = useState(""); // Status filter (Active/Inactive)
     const [showDropdown, setShowDropdown] = useState(false); // Dropdown visibility
-    const [caregivers, setCaregivers] = useState([]); // List of caregivers
 
     const [showModal, setShowModal] = useState(false); // Delete confirmation modal
     const [deletedCaregiverId, setDeletedCaregiverId] = useState(null); // ID to delete
@@ -31,27 +36,6 @@ export default function Caregivers() {
     const handleModalCancel = () => {
         setShowModal(false);
     };
-
-    // --- Fetch caregivers from API ---
-    useEffect(() => {
-        const fetchCaregivers = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            try {
-                const res = await fetch(
-                    "https://nvch-server.onrender.com/api/auth/admin/users?role=caregiver",
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                const data = await res.json();
-				console.log("data: ", data);
-                if (res.ok) setCaregivers(data.data.users);
-            } catch (err) {
-                console.error("Fetch caregivers error:", err);
-            }
-        };
-        fetchCaregivers();
-    }, []);
 	
 
     // --- Confirm delete ---
@@ -64,7 +48,7 @@ export default function Caregivers() {
                 `https://nvch-server.onrender.com/api/auth/admin/users/${deletedCaregiverId}`,
                 { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
             );
-            if (res.ok) setCaregivers(prev => prev.filter(c => c.id !== deletedCaregiverId));
+            if (res.ok) queryClient.invalidateQueries({ queryKey: ["caregivers"] });
         } catch (err) {
             console.error("Delete error:", err);
         }
@@ -94,6 +78,9 @@ export default function Caregivers() {
     const currentItems = filteredCaregivers.slice(offset, offset + itemsPerPage);
     const pageCount = Math.ceil(filteredCaregivers.length / itemsPerPage);
     const handlePageClick = (event) => setCurrentPage(event.selected);
+
+	if (isLoading) return <div>Loading clients...</div>;
+    if (isError) return <div>Error: {error.message}</div>;
 
     return (
         <>
@@ -154,7 +141,14 @@ export default function Caregivers() {
                                 <TableContent key={caregiver.id}>
                                     {/* Name & Avatar */}
                                     <TableCell>
-										<UserAvatar userId={caregiver.id} />
+										<Image
+											src={caregiver.profilePictureUrl}
+											width={50}
+											height={50}
+											alt="avatar"
+											style={{ borderRadius: "50%", objectFit: "cover" }}
+											unoptimized
+										/>
                                         <span>{caregiver.firstName} {caregiver.lastName}</span>
                                     </TableCell>
 
