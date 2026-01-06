@@ -26,6 +26,7 @@ export default function Page() {
     const { id } = useParams(); // The userId (MongoDB ObjectId) for the caregiver
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+	const [displayImageUrl, setDisplayImageUrl] = useState("/img/navbar/avatar.jpg");
     
     // --- Image Upload States ---
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -91,7 +92,6 @@ export default function Page() {
             const { uploadUrl, fileKey } = presignData.data;
 
             // --- Step 2: Upload File Directly to S3 (PUT to the signed URL) ---
-			//Error
 			console.log("uploadUrl: ", uploadUrl);
             const s3UploadRes = await fetch(uploadUrl, {
                 method: "PUT",
@@ -141,45 +141,67 @@ export default function Page() {
 
     // --- API Calls and Handlers (User Data) ---
 
-    // 1. Fetch User Data (GET)
-    const fetchUser = useCallback(async () => {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
-            setMessage("Authentication failed. Please log in again.");
-            setLoading(false);
-            return;
-        }
+	// 1. Simplified fetchUser
+	const fetchUser = useCallback(async () => {
+		setLoading(true);
+		const token = localStorage.getItem("token");
+		try {
+			const res = await fetch(`${API_BASE_URL}/${id}`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			});
+			const data = await res.json();
+			if (data.success) {
+				setUser(data.data.user); // Only store the raw user data here
+			} else {
+				setMessage(data.message || "Failed to fetch user data.");
+				setIsGeneralModalOpen(true);
+			}
+		} catch (err) {
+			setMessage("Error connecting to server.");
+			setIsGeneralModalOpen(true);
+		} finally {
+			setLoading(false);
+		}
+	}, [id]);
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/${id}`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
-                setUser(data.data.user); 
-            } else {
-                setMessage(data.message || "Failed to fetch user data.");
-                setIsGeneralModalOpen(true);
-            }
-        } catch (err) {
-            console.error("Fetch User Error:", err);
-            setMessage("Error connecting to server to fetch user data.");
-            setIsGeneralModalOpen(true);
-        } finally {
-            setLoading(false);
-        }
-    }, [id]);
-
-    useEffect(() => {
+	useEffect(() => {
         fetchUser();
     }, [fetchUser]);
+
+	// 2. getImageUrl
+	const getImageUrl = async (fileKey) => {
+		if (!fileKey) return null;
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${S3_API_BASE_URL}/file-url?fileKey=${encodeURIComponent(fileKey)}`, {
+				method: "GET",
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			const result = await res.json();
+			console.log("result: ", result);
+			return result ? result : null; // Directly return the string URL
+		} catch (err) {
+			console.error("Failed to get signed image URL:", err);
+			return null;
+		}
+	};
+
+	// 3. Image sync effect
+	useEffect(() => {
+		console.log("refresh");
+		const refreshImageUrl = async () => {
+			// Only fetch if profilePicture is a key (not the default path)
+			if (user?.profilePicture && !user.profilePicture.startsWith("/img")) {
+				const signedUrl = await getImageUrl(user.profilePicture);
+				if (signedUrl) setDisplayImageUrl(signedUrl);
+			}
+		};
+		refreshImageUrl();
+	}, [user?.profilePicture]);
 
     // 2. Handle Active/Inactive Status Update (PUT)
     const handleActive = async () => {  
@@ -272,12 +294,7 @@ export default function Page() {
     if (!user) return <p>User data not found or failed to load.</p>;
 
     const activeStatus = user.isActive;
-    
-    // Construct the image URL from the stored S3 key
-    // This URL is used to display the existing picture fetched from the backend.
-    const profileImageUrl = user.profilePictureKey 
-        ? `${S3_API_BASE_URL}/get-image?key=${user.profilePictureKey}` 
-        : "/img/navbar/avatar.jpg"; // Default placeholder image
+
 
     return (
         <>
@@ -319,12 +336,12 @@ export default function Page() {
                         </div>
                         <div className={styles.picture}>
                             <Image
-                                src={profileImageUrl}
+                                src={displayImageUrl}
                                 alt="Profile Photo"
                                 width={100}
                                 height={100}
                                 className={styles.image}
-                                unoptimized={profileImageUrl !== "/img/navbar/avatar.jpg"} 
+                                unoptimized={user.profilePicture !== "/img/navbar/avatar.jpg"} 
                             />
                             {/* Button to open the image upload modal */}
                             <Button 
@@ -358,7 +375,7 @@ export default function Page() {
                         <div className={styles.imagePreview}>
                             <Image
                                 // Show selected file preview, or current profile image as fallback
-                                src={previewUrl || profileImageUrl}
+                                src={previewUrl || displayImageUrl}
                                 alt="Preview"
                                 width={150}
                                 height={150}

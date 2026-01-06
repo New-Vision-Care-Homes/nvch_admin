@@ -5,6 +5,7 @@ import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Tabl
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
+import Certification from "./Certification";
 
 // Helper function to map day names and group slots for display.
 // This transforms the flat backend array (e.g., slot 1, slot 2, slot 3...) 
@@ -147,9 +148,68 @@ export default function Timesheet() {
     }
 
     // Handles saving the changes (sends data back to backend in a real app)
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsModalOpen(false);
         // TODO: Implement actual API call to save 'availability' state back to backend
+		const submissionBody = {
+            employeeId: data.employeeId,
+			Certification: [],
+			availability: [],
+        
+
+            // Emergency Contact structure re-nesting
+            emergencyContact: {
+                name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
+                phone: data.emergencyPhone,
+                relationship: data.relationship
+            },
+            
+        };
+
+		const token = localStorage.getItem("token");
+		if (!token) {
+			console.log("No token found. Please log in.");
+			return;
+		}
+	
+		try {
+			const res = await fetch(
+				`https://nvch-server.onrender.com/api/auth/admin/users/${id}`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+				}
+			);
+	
+			const data = await res.json();
+			console.log("Fetched user data:", data);
+	
+			if (res.ok && data.data) {
+				// Set availability directly from backend (flat array)
+				const backendAvailability = data.data.user.availability || [];
+				setAvailability(backendAvailability);
+				setOriginalAvailability(backendAvailability); // Store the original for reset
+		
+				// Set other user data, defaulting if necessary
+				setShifts(data.data.shifts || []); // If backend returns null, use []
+				setStats(data.data.stats || [
+					{ label: "Total Hours Worked (Bi-Weekly)", value: 0 },
+					{ label: "Total Overtime Hours", value: 0 },
+					{ label: "Pending Approvals", value: 0 },
+				]);
+				setMaxHours(data.data.maxHours || 80);
+				setLastPeriodHours(data.data.lastPeriodHours || 72);
+			} else {
+				console.error(data.message || "Failed to fetch user data");
+			}
+		} catch (err) {
+			console.error("Error fetching user data:", err);
+		}
+	
+
         console.log("Availability to save:", availability);
         alert("✅ Availability updated successfully!");
         setOriginalAvailability(availability); // Update the original state after saving

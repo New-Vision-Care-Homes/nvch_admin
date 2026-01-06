@@ -163,9 +163,14 @@ export default function Page() {
                 startTime: new Date(data.startTime).toISOString(),
                 endTime: new Date(data.endTime).toISOString(),
                 servicesRequired: data.serviceInput.split(',').map(s => s.trim()),
+				notes: data.shiftNotes,
+
                 tasks: tasks.map(t => ({ description: t.text, completed: false })),
                 isOpenShift: data.openShift || false,
-                notes: data.shiftNotes,
+				recurringShift: {
+					isRecurring: false
+				},
+				tags: selectedTags,
                 geofence: { 
                     center: { latitude: 44.6488, longitude: -63.5752 }, 
                     radius: data.geofenceRadius || 500, 
@@ -193,8 +198,8 @@ export default function Page() {
 	// ==========================================
     // --- 7. TAGS MANAGEMENT ---
     // ==========================================
-    const quickTags = ["Urgent", "New Client", "Recurring"];
-    const [selectedTags, setSelectedTags] = useState(["Urgent"]); // Initial default tags
+    const quickTags = ["Urgent", "New Client"];
+    const [selectedTags, setSelectedTags] = useState([]); //Initial default tags
     const [tagInput, setTagInput] = useState('');
 
     // Toggle a tag (Add if not there, remove if it is)
@@ -208,13 +213,16 @@ export default function Page() {
 
     // Add a custom tag from the input
     const addCustomTag = (e) => {
-        if (e.key === 'Enter' && tagInput.trim()) {
-            e.preventDefault();
-            if (!selectedTags.includes(tagInput.trim())) {
-                setSelectedTags([...selectedTags, tagInput.trim()]);
-            }
-            setTagInput('');
+		const trimmedValue = tagInput.trim();
+        if (trimmedValue && !selectedTags.includes(trimmedValue)) {
+            setSelectedTags([...selectedTags, trimmedValue]);
         }
+		setTagInput('');
+    };
+
+	// Explicitly remove a tag (called by the 'X' button)
+    const removeTag = (tagToRemove) => {
+        setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
     };
 
     // Sync with React Hook Form (so it gets sent to API)
@@ -360,67 +368,77 @@ export default function Page() {
 
 					{/* 6. ADDITIONAL OPTIONS CARD */}
 					<Card>
-                        <CardHeader>Additional Options</CardHeader>
-                        <CardContent>
-                            
-                            {/* --- Recurring Shift Toggle --- */}
-                            <div className={styles.toggleRow}>
-                                <div className={styles.toggleInfo}>
-                                    <label className={styles.label}>Recurring Shift</label>
-                                </div>
-                                <label className={styles.switch}>
-                                    <input 
-                                        type="checkbox" 
-                                        {...register("isRecurring")} 
-                                    />
-                                    <span className={styles.slider}></span>
-                                </label>
-                            </div>
+						<CardHeader>Additional Options</CardHeader>
+						<CardContent>
+							
+							{/* --- Recurring Shift Toggle --- */}
+							<div className={styles.toggleRow}>
+								<label className={styles.label}>Recurring Shift</label>
+								<label className={styles.switch}>
+									<input type="checkbox" {...register("isRecurring")} />
+									<span className={styles.slider}></span>
+								</label>
+							</div>
 
-                            {/* 
-                            {isRecurring && (
-                                <div className={styles.recurringOptions}>
-                                    <p className={styles.helperText}>* Recurring settings can be configured after saving.</p>
-                                </div>
-                            )}
-							*/}
+							<hr className={styles.divider} />
 
-                            <hr className={styles.divider} />
+							{/* --- Selected Tags (The Pills with Delete button) --- */}
+							<div className={styles.selectedTagsContainer}>
+								{selectedTags.map(tag => (
+									<span key={tag} className={styles.pill}>
+										{tag}
+										<button 
+											type="button" 
+											className={styles.removeTagBtn} 
+											onClick={() => removeTag(tag)}
+										>
+											✕
+										</button>
+									</span>
+								))}
+							</div>
 
+							{/* --- Tag Input Area --- */}
 							<div className={styles.tagsGroup}>
 								<div className={styles.searchWrapper}>
-                                    <Plus size={16} className={styles.searchIcon} />
-                                    <input 
-                                        type="text"
+									<Plus size={16} className={styles.searchIcon} />
+									<input 
+										type="text"
 										className={styles.input} 
-                                        placeholder="Add custom tag and press Enter..."
-                                        value={tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
-										onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(),addCustomTag())}
-                                    />
-                                </div>
+										placeholder="Add custom tag..."
+										value={tagInput}
+										onChange={(e) => setTagInput(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') {
+												e.preventDefault();
+												addCustomTag();
+											}
+										}}
+									/>
+								</div>
 								<Button type="button" onClick={addCustomTag}>Add</Button>
 							</div>
 
+							{/* --- Quick Selection Tags (Candidates) --- */}
+							<div className={styles.formGroup} style={{ marginTop: '15px' }}>
+								<label className={styles.subLabel}>Quick Tags:</label>
+								<div className={styles.tagCandidateList}>
+									{quickTags.map(tag => (
+										<button
+											key={tag}
+											type="button"
+											className={`${styles.candidateTag} ${selectedTags.includes(tag) ? styles.activeCandidate : ''}`}
+											onClick={() => toggleTag(tag)}
+										>
+											{selectedTags.includes(tag) ? '✓ ' : '+ '}
+											{tag}
+										</button>
+									))}
+								</div>
+							</div>
 
-                            {/* --- Tags Section --- */}
-                            <div className={styles.formGroup}>
-                                <label className={styles.label}>Quick Tags (Click to toggle)</label>
-                                <div className={styles.tagContainer}>
-                                    {quickTags.map(tag => (
-                                        <span 
-                                            key={tag} 
-                                            className={`${styles.tag} ${selectedTags.includes(tag) ? styles.tagActive : ''}`}
-                                            onClick={() => toggleTag(tag)}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                        </CardContent>
-                    </Card>
+						</CardContent>
+					</Card>
                 </div>
 
                 {/* 7. GEOFENCE & MAP CARD */}
