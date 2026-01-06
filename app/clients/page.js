@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, forwardRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
-import UserAvatar from "@components/UI/UserAvatar";
 import styles from "./clients.module.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -14,13 +13,20 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, Calendar, ChevronDown, Trash2 } from "lucide-react";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useClients } from "@/hooks/useClients";
+
 export default function Clients() {
+	const queryClient = useQueryClient();
+	const { data: clients = [], isLoading, isError, error } = useClients();
+	console.log("clients: ", clients);
+
     // --- State ---
     const [search, setSearch] = useState(""); // Search text
     const [dateFilter, setDateFilter] = useState(""); // Filter by last visit date
     const [statusFilter, setStatusFilter] = useState(""); // Filter by status (Active/Inactive)
     const [showDropdown, setShowDropdown] = useState(false); // Dropdown visibility
-    const [clients, setClients] = useState([]); // All client data
+    //const [clients, setClients] = useState([]); // All client data
 
     const [showModal, setShowModal] = useState(false); // Delete confirmation modal
     const [deletedClientId, setDeletedClientId] = useState(null); // ID of client to delete
@@ -35,25 +41,6 @@ export default function Clients() {
         setShowModal(false);
     };
 
-    // --- Fetch Clients from API ---
-    useEffect(() => {
-        const fetchClients = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            try {
-                const res = await fetch("https://nvch-server.onrender.com/api/auth/admin/users?role=client", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const data = await res.json();
-                if (res.ok) setClients(data.data.users);
-				console.log("data: ", data);
-            } catch (err) {
-                console.error("Fetch clients error:", err);
-            }
-        };
-        fetchClients();
-    }, []);
 
     // --- Confirm Delete ---
     const confirmDelete = async () => {
@@ -66,7 +53,8 @@ export default function Clients() {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (res.ok) setClients(prev => prev.filter(c => c.id !== deletedClientId));
+            if (res.ok) queryClient.invalidateQueries({ queryKey: ["clients"] });
+
         } catch (err) {
             console.error("Delete error:", err);
         }
@@ -108,6 +96,9 @@ export default function Clients() {
             <Calendar className={styles.dateIcon} />
         </div>
     ));
+
+	if (isLoading) return <div>Loading clients...</div>;
+    if (isError) return <div>Error: {error.message}</div>;
 
     return (
         <>
@@ -171,7 +162,14 @@ export default function Clients() {
                                 <TableContent key={client.id}>
                                     {/* Client Info */}
                                     <TableCell>
-                                        <UserAvatar userId={client.id} />
+										<Image
+											src={client.profilePictureUrl}
+											width={50}
+											height={50}
+											alt="avatar"
+											style={{ borderRadius: "50%", objectFit: "cover" }}
+											unoptimized
+										/>
                                         <span>{client.firstName}</span>
                                         <span>{client.lastName}</span>
                                     </TableCell>

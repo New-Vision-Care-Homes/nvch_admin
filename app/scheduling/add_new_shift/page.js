@@ -12,21 +12,17 @@ import PageLayout from "@components/layout/PageLayout";
 import styles from "./add_new_shift.module.css";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
-import { IdRule, nameRule, phoneRule, shortTextRule, pinRule } from "@app/validation"; 
+import { IdRule, nameRule, phoneRule, shortTextRule, pinRule, longTextRule } from "@app/validation"; 
 
 // --- 1. VALIDATION SCHEMA ---
 const schema = yup.object({
     caregiverId: IdRule.required("Caregiver is required"), 
     clientId: IdRule.required("Client is required"),
     clientPhone: phoneRule.required("Client Phone is required"), 
-    street: shortTextRule.required("Street is required"),
-    city: shortTextRule.required("City is required"),
-    state: shortTextRule.required("State/Province is required"),
-    country: shortTextRule.required("Country is required"),
+	clientAddress: longTextRule.optional(),
     startTime: yup.string().required("Start Time is required"), 
     endTime: yup.string().required("End Time is required"), 
     serviceInput: shortTextRule.required("Services Required is required"), 
-    pinCode: pinRule,
     contactFName: nameRule.optional(),
     contactLName: nameRule.optional(),
     contactPhone: phoneRule.optional(),
@@ -70,12 +66,12 @@ export default function Page() {
         if (search.length < 2) return;
         const token = localStorage.getItem("token");
         try {
-            const url = `https://nvch-server.onrender.com/api/auth/admin/users?role=client&limit=5&search=${encodeURIComponent(search)}`;
+            const url = `https://nvch-server.onrender.com/api/auth/admin/clients?page=1&limit=5&search=${encodeURIComponent(search)}`;
             const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
 			//test
-			console.log("searched result: ", data.data.users);
-            setClientResults(data.data.users || []);
+			console.log("searched result: ", data.data.clients);
+            setClientResults(data.data.clients || []);
             setShowClientResults(true);
         } catch (err) { console.error("Client fetch error", err); }
     };
@@ -90,6 +86,7 @@ export default function Page() {
         const fullName = `${client.firstName} ${client.lastName}`;
         setValue('clientId', client.clientId);
         setValue('clientPhone', client.phone || '');
+		setValue('clientAddress', client.address.street + " " + client.address.city + " " + client.address.state + " " + client.address.pinCode || '');
         setSelectedClientName(fullName);
         setClientSearchTerm(fullName);
         setShowClientResults(false);
@@ -108,10 +105,10 @@ export default function Page() {
         if (search.length < 2) return;
         const token = localStorage.getItem("token");
         try {
-            const url = `https://nvch-server.onrender.com/api/auth/admin/users?role=caregiver&limit=5&search=${encodeURIComponent(search)}`;
+            const url = `https://nvch-server.onrender.com/api/auth/admin/caregivers?page=1&limit=5&search=${encodeURIComponent(search)}`;
             const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
             const data = await res.json();
-            setCgResults(data.data.users || []);
+            setCgResults(data.data.caregivers || []);
             setShowCgResults(true);
         } catch (err) { console.error("Caregiver fetch error", err); }
     };
@@ -157,7 +154,7 @@ export default function Page() {
             const shiftData = {
                 caregiverId: data.caregiverId,
                 clientId: data.clientId,
-                clientAddress: `${data.street}, ${data.city}, ${data.state}, ${data.pinCode}`,
+                clientAddress: data.clientAddress,
                 clientPhone: data.clientPhone,
                 contactPerson: { name: `${data.contactFName} ${data.contactLName}`, phone: data.contactPhone },
                 startTime: new Date(data.startTime).toISOString(),
@@ -174,8 +171,8 @@ export default function Page() {
                 geofence: { 
                     center: { latitude: 44.6488, longitude: -63.5752 }, 
                     radius: data.geofenceRadius || 500, 
-                    alertOnEntry: data.alertOnEntry, 
-                    alertOnExit: data.alertOnExit 
+                    alertOnEntry: data.alertOnEntry || "00", 
+                    alertOnExit: data.alertOnExit || "00"
                 }
             };
 
@@ -279,14 +276,15 @@ export default function Page() {
                                 <InputField label="Client ID" name="clientId" register={register} error={errors.clientId?.message} readOnly />
                                 <InputField label="Client Phone" name="clientPhone" register={register} error={errors.clientPhone?.message} />
                             </div>
-                            <div className={styles.card_row_2}>
-                                <InputField label="Street" name="street" register={register} />
-                                <InputField label="City" name="city" register={register} />
-                                <InputField label="State" name="state" register={register} />
+                            <div className={styles.card_row_1}>
+                                <InputField label="Address" name="clientAddress" register={register} error={errors.clientAddress} />
                             </div>
                             <div className={styles.card_row_2}>
-                                <InputField label="Postal Code" name="pinCode" register={register} />
-                                <InputField label="Country" name="country" register={register} />
+                                <InputField label="Contact First Name" name="contactFName" register={register} error={errors.contactFName} />
+                                <InputField label="Contact Last Name" name="contactLName" register={register} error={errors.contactLName} />
+                            </div>
+							<div className={styles.card_row_1}>
+                                <InputField label="Contact Phone" name="contactPhone" register={register} error={errors.contactPhone} />
                             </div>
                         </CardContent>
                     </Card>

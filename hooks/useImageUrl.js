@@ -19,6 +19,7 @@ export const useImageUrl = (fileKey) => {
 			if (!res.ok) throw new Error("Failed to fetch signed image URL");
 			return res.json();
 		},
+		staleTime: 1000 * 60 * 30,
 	});
 
 	return {
