@@ -177,6 +177,7 @@
 .searchWrapper {
     position: relative;
     display: flex;
+	flex: 1;
     align-items: center;
 }
 
@@ -289,68 +290,88 @@
     background-color: #f0f0f0;
 }
 
-.tagContainer {
+
+.selectedTagsContainer {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    margin-bottom: 12px;
 }
 
 
-.tag {
-    padding: 6px 12px;
-    background-color: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-}
-
-.tag:hover {
-    background-color: #e5e5e5;
-}
-
-/* Style for when a tag is selected */
-.tagActive {
-    background-color: #007bff;
-    color: white;
-    border-color: #0056b3;
-}
-
-.tagActive:hover {
-    background-color: #0056b3;
-}
-
-
-.toggleRow {
+.pill {
     display: flex;
-    justify-content: flex-start;
     align-items: center;
-    margin-bottom: 0.5rem;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #bae6fd;
+}
+
+
+.removeTagBtn {
+    background: none;
+    border: none;
+    color: #0369a1;
+    margin-left: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+}
+
+.removeTagBtn:hover {
+    color: #ef4444;
+}
+
+
+.tagCandidateList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.candidateTag {
+    background-color: #f3f4f6;
+    border: 1px dashed #d1d5db;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.candidateTag:hover {
+    background-color: #e5e7eb;
+}
+
+
+.activeCandidate {
+    background-color: #dcfce7;
+    color: #15803d;
+    border-style: solid;
+    border-color: #bbf7d0;
+}
+
+.tagsGroup {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+
+/* --- Switch (Toggle) Style --- */
+.toggleRow {
+	display: flex;
 	gap: 1rem;
 }
 
-.toggleInfo {
-    display: flex;
-    flex-direction: column;
-}
-
-.divider {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 0.3rem 0rem;
-}
-
-/* add tags */
-.tagsGroup {
-    display: flex;
-    width: 100%;
-    gap: 0.75rem; 
-    padding: 1rem 0; 
-}
-
-/* --- Switch (Toggle) Style --- */
 .switch {
     position: relative;
     display: inline-block;

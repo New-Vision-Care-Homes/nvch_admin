@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, forwardRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import UserAvatar from "@components/UI/UserAvatar";
 import styles from "./clients.module.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -46,6 +47,7 @@ export default function Clients() {
                 });
                 const data = await res.json();
                 if (res.ok) setClients(data.data.users);
+				console.log("data: ", data);
             } catch (err) {
                 console.error("Fetch clients error:", err);
             }
@@ -169,7 +171,7 @@ export default function Clients() {
                                 <TableContent key={client.id}>
                                     {/* Client Info */}
                                     <TableCell>
-                                        <Image src={client.img} width={50} height={50} style={{ borderRadius: "50%", objectFit: "cover" }} />
+                                        <UserAvatar userId={client.id} />
                                         <span>{client.firstName}</span>
                                         <span>{client.lastName}</span>
                                     </TableCell>

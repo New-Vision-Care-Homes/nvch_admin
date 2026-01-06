@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, forwardRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import UserAvatar from "@components/UI/UserAvatar";
 import styles from "./caregivers.module.css"; // Use client CSS for consistency
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
@@ -43,6 +44,7 @@ export default function Caregivers() {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const data = await res.json();
+				console.log("data: ", data);
                 if (res.ok) setCaregivers(data.data.users);
             } catch (err) {
                 console.error("Fetch caregivers error:", err);
@@ -50,6 +52,7 @@ export default function Caregivers() {
         };
         fetchCaregivers();
     }, []);
+	
 
     // --- Confirm delete ---
     const confirmDelete = async () => {
@@ -151,13 +154,7 @@ export default function Caregivers() {
                                 <TableContent key={caregiver.id}>
                                     {/* Name & Avatar */}
                                     <TableCell>
-                                        <Image
-                                            src={caregiver.img || "/default-avatar.png"}
-                                            width={50}
-                                            height={50}
-                                            style={{ borderRadius: "50%", objectFit: "cover" }}
-                                            alt="avatar"
-                                        />
+										<UserAvatar userId={caregiver.id} />
                                         <span>{caregiver.firstName} {caregiver.lastName}</span>
                                     </TableCell>
 
