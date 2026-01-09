@@ -142,7 +142,7 @@ export default function Caregivers() {
                                     {/* Name & Avatar */}
                                     <TableCell>
 										<Image
-											src={caregiver.profilePictureUrl}
+											src={caregiver.profilePictureUrl || "/img/navbar/avatar.jpg"}
 											width={50}
 											height={50}
 											alt="avatar"

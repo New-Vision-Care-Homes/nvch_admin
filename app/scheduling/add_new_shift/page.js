@@ -14,14 +14,24 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import { IdRule, nameRule, phoneRule, shortTextRule, pinRule, longTextRule } from "@app/validation"; 
 
+const now = new Date().toISOString().slice(0, 16);
 // --- 1. VALIDATION SCHEMA ---
 const schema = yup.object({
     caregiverId: IdRule.required("Caregiver is required"), 
     clientId: IdRule.required("Client is required"),
     clientPhone: phoneRule.required("Client Phone is required"), 
 	clientAddress: longTextRule.optional(),
-    startTime: yup.string().required("Start Time is required"), 
-    endTime: yup.string().required("End Time is required"), 
+    startTime: yup.string()
+        .required("Start Time is required")
+        .test("is-future", "Start time must be in the future", (value) => {
+            return new Date(value) > new Date();
+        }),
+    endTime: yup.string()
+        .required("End Time is required")
+        .test("is-after-start", "End time must be after start time", function(value) {
+            const { startTime } = this.parent;
+            return new Date(value) > new Date(startTime);
+        }),
     serviceInput: shortTextRule.required("Services Required is required"), 
     contactFName: nameRule.optional(),
     contactLName: nameRule.optional(),
@@ -41,6 +51,19 @@ export default function Page() {
     const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm({
         resolver: yupResolver(schema),
     });
+
+	const selectedStartTime = watch("startTime");
+	const selectedEndTime = watch("endTime");
+	useEffect(() => {
+		if (selectedStartTime && selectedEndTime) {
+			const start = new Date(selectedStartTime).getTime();
+			const end = new Date(selectedEndTime).getTime();
+			
+			if (end <= start) {
+				setValue("endTime", ""); 
+			}
+		}
+	}, [selectedStartTime, selectedEndTime, setValue]);
 
 	const isOpenShift = watch("openShift");
 
@@ -84,7 +107,7 @@ export default function Page() {
 
     const handleClientSelect = (client) => {
         const fullName = `${client.firstName} ${client.lastName}`;
-        setValue('clientId', client.clientId);
+        setValue('clientId', client.id);
         setValue('clientPhone', client.phone || '');
 		setValue('clientAddress', client.address.street + " " + client.address.city + " " + client.address.state + " " + client.address.pinCode || '');
         setSelectedClientName(fullName);
@@ -101,17 +124,45 @@ export default function Page() {
     const [showCgResults, setShowCgResults] = useState(false);
     const [selectedCgName, setSelectedCgName] = useState('');
 
-    const fetchCaregivers = async (search) => {
-        if (search.length < 2) return;
-        const token = localStorage.getItem("token");
-        try {
-            const url = `https://nvch-server.onrender.com/api/auth/admin/caregivers?page=1&limit=5&search=${encodeURIComponent(search)}`;
-            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-            const data = await res.json();
-            setCgResults(data.data.caregivers || []);
-            setShowCgResults(true);
-        } catch (err) { console.error("Caregiver fetch error", err); }
-    };
+	const fetchCaregivers = async (search) => {
+		if (search.length < 2) return;
+		
+		const startVal = watch("startTime");
+		const endVal = watch("endTime");
+	
+		const token = localStorage.getItem("token");
+		
+		try {
+			let url = `https://nvch-server.onrender.com/api/auth/admin/caregivers?page=1&limit=10&search=${encodeURIComponent(search)}&isActive=true`;
+	
+			if (startVal) {
+				const startDate = new Date(startVal);
+				
+				const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+				const day = dayNames[startDate.getDay()];
+				
+				const formatTime = (date) => {
+					return date.toTimeString().slice(0, 5);
+				};
+	
+				url += `&availabilityDay=${day}`;
+				url += `&availabilityStartTime=${formatTime(startDate)}`;
+	
+				if (endVal) {
+					const endDate = new Date(endVal);
+					url += `&availabilityEndTime=${formatTime(endDate)}`;
+				}
+			}
+	
+			const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+			const data = await res.json();
+			
+			setCgResults(data.data.caregivers || []);
+			setShowCgResults(true);
+		} catch (err) { 
+			console.error("Caregiver fetch error", err); 
+		}
+	};
 
     const debouncedFetchCgs = useCallback(debounce(fetchCaregivers, 500), []);
 
@@ -121,7 +172,7 @@ export default function Page() {
 
     const handleCgSelect = (cg) => {
         const fullName = `${cg.firstName} ${cg.lastName}`;
-        setValue('caregiverId', cg.caregiverId || cg.id);
+        setValue('caregiverId', cg.id || cg.id);
         setValue('assignedCaregiver', fullName);
         setSelectedCgName(fullName);
         setCgSearchTerm(fullName);
@@ -157,8 +208,8 @@ export default function Page() {
                 clientAddress: data.clientAddress,
                 clientPhone: data.clientPhone,
                 contactPerson: { name: `${data.contactFName} ${data.contactLName}`, phone: data.contactPhone },
-                startTime: new Date(data.startTime).toISOString(),
-                endTime: new Date(data.endTime).toISOString(),
+                startTime: data.startTime,
+                endTime: data.endTime,
                 servicesRequired: data.serviceInput.split(',').map(s => s.trim()),
 				notes: data.shiftNotes,
 
@@ -171,10 +222,12 @@ export default function Page() {
                 geofence: { 
                     center: { latitude: 44.6488, longitude: -63.5752 }, 
                     radius: data.geofenceRadius || 500, 
-                    alertOnEntry: data.alertOnEntry || "00", 
-                    alertOnExit: data.alertOnExit || "00"
+                    alertOnEntry: data.alertOnEntry || false, 
+                    alertOnExit: data.alertOnExit || false
                 }
             };
+
+			console.log("shiftdata: ", shiftData);
 
             const token = localStorage.getItem("token");
             const response = await fetch("https://nvch-server.onrender.com/api/shifts", {
@@ -183,8 +236,11 @@ export default function Page() {
                 body: JSON.stringify(shiftData),
             });
 
-            if (!response.ok) throw new Error("API request failed");
-            router.push("/shifts");
+			const resultData = await response.json();
+			if (!response.ok) {
+				throw new Error(resultData.error || resultData.message || "Unknown error occurred");
+			}
+            router.push("/scheduling");
         } catch (error) {
             alert(`Error: ${error.message}`);
         } finally {
@@ -295,8 +351,22 @@ export default function Page() {
                             <CardHeader>Shift Information</CardHeader>
                             <CardContent>
                                 <div className={styles.card_row_2}>
-                                    <InputField label="Start" type="datetime-local" name="startTime" register={register} />
-                                    <InputField label="End" type="datetime-local" name="endTime" register={register} />
+								<InputField 
+    								label="Start" 
+									type="datetime-local" 
+									name="startTime" 
+									register={register} 
+									error={errors.startTime}
+									min={now}
+								/>
+								<InputField 
+									label="End" 
+									type="datetime-local" 
+									name="endTime" 
+									register={register} 
+									error={errors.endTime}
+									min={selectedStartTime || now}
+								/>
                                 </div>
                                 <InputField label="Services Required" name="serviceInput" register={register} placeholder="e.g. Cooking, Bathing" />
                                 <InputField label="Shift Notes" name="shiftNotes" register={register} />
