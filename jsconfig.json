@@ -14,6 +14,7 @@
 	  "paths": {
 		"@components/*": ["components/*"],
 		"@app/*": ["app/*"],
+		"@public/*": ["public/*"],
 		"@/*": ["*"],
 	  }
 	}

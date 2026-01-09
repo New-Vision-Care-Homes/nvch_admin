@@ -163,7 +163,7 @@ export default function Clients() {
                                     {/* Client Info */}
                                     <TableCell>
 										<Image
-											src={client.profilePictureUrl}
+											src={client.profilePictureUrl || "/img/navbar/avatar.jpg"}
 											width={50}
 											height={50}
 											alt="avatar"

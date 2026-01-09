@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enCA from "date-fns/locale/en-CA";
@@ -13,6 +13,9 @@ import styles from "./scheduling.module.css";
 import "./calendar.css";
 import Button from "@components/UI/Button";
 import Link from "next/link";
+
+import { useQueryClient } from "@tanstack/react-query";
+import { useShifts } from "@/hooks/useShifts";
 
 const locales = {
     "en-CA": enCA,
@@ -28,155 +31,30 @@ const localizer = dateFnsLocalizer({
 
 export default function SchedulingPage() {
 
+	const queryClient = useQueryClient();
+	const { data: shifts = [], isLoading, isError, error } = useShifts();
+	console.log("shifts: ", shifts);
+
+	const getEvents = useMemo(() => {
+		if (!shifts || !Array.isArray(shifts)) return [];
+	
+		return shifts.map((shift) => ({
+			...shift,
+			start: new Date(shift.startTime), 
+			end: new Date(shift.endTime),
+			title: `${shift.caregiver.firstName} ${shift.caregiver.lastName}`, 
+			location: shift.clientAddress
+		}));
+	}, [shifts]);
+
     // --- 1. ADD STATE FOR CALENDAR VIEW ---
     const [view, setView] = useState('week'); // Default to 'week' or 'month'
+	const [date, setDate] = useState(new Date());
 
-    // Your existing state for events and other data
-    const [events, setEvents] = useState([
-        // ... (your initial dummy events remain the same)
-        {
-          id: 1,
-          title: "Morning Shift - Maria Lopez",
-          start: new Date(2025, 9, 29, 9, 0),
-          end: new Date(2025, 9, 29, 13, 0),
-          employee: "Maria Lopez",
-          location: "202 Elm St",
-        },
-        {
-          id: 2,
-          title: "Evening Shift - David Lee",
-          start: new Date(2025, 9, 30, 17, 0),
-          end: new Date(2025, 9, 30, 21, 0),
-          employee: "David Lee",
-          location: "45 Pine St",
-        },
-        {
-          id: 3,
-          title: "Afternoon Shift - Eleanor Vance",
-          start: new Date(2025, 10, 3, 13, 0),
-          end: new Date(2025, 10, 3, 17, 0),
-          employee: "Eleanor Vance",
-          location: "123 Oak Ave",
-        },
-        {
-          id: 4,
-          title: "Night Shift - Robert Green",
-          start: new Date(2025, 10, 5, 22, 0),
-          end: new Date(2025, 10, 6, 6, 0),
-          employee: "Robert Green",
-          location: "101 Cedar Dr",
-        },
-        {
-          id: 5,
-          title: "Morning Shift - Susan Chen",
-          start: new Date(2025, 10, 8, 8, 0),
-          end: new Date(2025, 10, 8, 12, 0),
-          employee: "Susan Chen",
-          location: "789 Birch Ln",
-        },
-        {
-          id: 6,
-          title: "Afternoon Shift - James Wilson",
-          start: new Date(2025, 10, 15, 13, 0),
-          end: new Date(2025, 10, 15, 18, 0),
-          employee: "James Wilson",
-          location: "456 Maple Rd",
-        },
-        {
-          id: 7,
-          title: "Morning Shift - Patricia Brown",
-          start: new Date(2025, 10, 22, 9, 0),
-          end: new Date(2025, 10, 22, 13, 0),
-          employee: "Patricia Brown",
-          location: "321 Willow Way",
-        },
-        {
-          id: 8,
-          title: "Evening Shift - Michael Scott",
-          start: new Date(2025, 11, 1, 17, 0),
-          end: new Date(2025, 11, 1, 21, 0),
-          employee: "Michael Scott",
-          location: "200 Spruce Ave",
-        },
-        {
-          id: 9,
-          title: "Morning Shift - Angela White",
-          start: new Date(2025, 11, 10, 8, 0),
-          end: new Date(2025, 11, 10, 12, 0),
-          employee: "Angela White",
-          location: "600 Aspen Dr",
-        },
-        {
-          id: 10,
-          title: "Double Shift - Kevin Baker",
-          start: new Date(2025, 11, 20, 9, 0),
-          end: new Date(2025, 11, 20, 19, 0),
-          employee: "Kevin Baker",
-          location: "78 Poplar Ct",
-        },
-        {
-            id: 11,
-            title: "Double Shift - test",
-            start: new Date(2025, 11, 20, 9, 0),
-            end: new Date(2025, 11, 20, 19, 0),
-            employee: "test",
-            location: "78 Poplar Ct",
-          },
-        ]);
-
-    // Your existing useEffect hook for fetching data (no changes needed here)
-    useEffect(() => {
-        const fetchShifts = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.log("No token found. Please log in as admin.");
-                return;
-            }
-        
-            try {
-                const res = await fetch(
-                    "https://nvch-server.onrender.com/api/shifts",
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`,
-                        },
-                    }
-                );
-        
-                const data = await res.json();
-                console.log("data: ", data);
-        
-                if (res.ok) {
-                    // NOTE: Need to ensure dates are converted to Date objects if they are strings from API
-                    // Example:
-                    // const formattedShifts = data.data.shift.map(s => ({
-                    //     ...s,
-                    //     start: new Date(s.start),
-                    //     end: new Date(s.end),
-                    // }));
-                    // setEvents(formattedShifts);
-
-                    setEvents(data.data.shift);
-                    console.log("shifts: ", data.data.shift);
-                } else {
-                    console.log(data.message || "Failed to fetch Shifts")
-                }
-            } catch (err) {
-                console.error(err);
-                // Note: setError is not defined in this scope. You might want to define it 
-                // as a state hook if you want to display an error message.
-                // setError("Error connecting to server"); 
-            }
-        };
-    
-        fetchShifts();
-    }, []); 
 
     const handleSelectEvent = (event) => {
         alert(
-            `📋 ${event.title}\n👩‍⚕️ Employee: ${event.employee}\n📍 Location: ${event.location}\n🕒 ${format(
+            `📋 ${event.title}\n📍 Location: ${event.location}\n🕒 ${format(
                 event.start,
                 "p"
             )} - ${format(event.end, "p")}`
@@ -215,16 +93,23 @@ export default function SchedulingPage() {
                     {/* --- 2. BIND VIEW AND ONVIEW HANDLER TO CALENDAR --- */}
                     <Calendar
                         localizer={localizer}
-                        events={events}
+                        events={getEvents}
                         startAccessor="start"
                         endAccessor="end"
                         className="my_calendar"
                         onSelectEvent={handleSelectEvent}
-                        // Add the controlled props
+
+						date={date} 
+    					onNavigate={(newDate) => setDate(newDate)}
                         view={view} 
                         onView={setView} // This updates the view state when the user clicks the view buttons
-                        // Optionally, specify allowed views
                         views={['month', 'week', 'day', 'agenda']} 
+
+						allDayMaxRows={0}
+						showAllDayEvents={false}
+						tooltipAccessor={null}
+						step={60}           
+						timeslots={1}
                     />
                 </div>
                 
