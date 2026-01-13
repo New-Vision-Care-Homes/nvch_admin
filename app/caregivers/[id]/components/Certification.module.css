@@ -9,50 +9,114 @@
 	margin-bottom: 1rem;
 }
 
-	.title h1 {
-		font-family: var(--font-family-roboto); 
-		font-size: var(--font-size-md-24);
-		line-height: var(--line-height-md-32); 
-		font-weight: var(--font-weight-md-600); 
-		color: var(--color-primary); /* neutral-900 */
-	}
 
-.table {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-}
-	
-.header {
-	display: flex;
-	font-weight: bold;
-	padding: 1rem 8px;
-	border-bottom: 1px solid #ddd;
+.uploadField {
+	margin-top: 1rem;
+    margin-bottom: 2rem;
 }
 
-.row {
-	display: flex;
-	padding: 3rem 8px;
-	border-bottom: 1px solid #ddd;
+.label {
+	font-family: var(--font-family-inter);
+	font-size: var(--font-size-md); 
+	font-weight: var(--font-weight-md); 
+	color: var(--color-primary);
 }
 
-.row:last-child {
-	border-bottom: none;
+.dropzone {
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    transition: all 0.2s;
 }
 
-.cell {
-	flex: 1;
+.dropzone:hover {
+    border-color: #3b82f6;
+    background: #f0f7ff;
 }
 
-.deleteBtn {
-	background: none;
-	border: none;
-	cursor: pointer;
-	color: red;
+.errorBorder {
+    border-color: #ef4444;
 }
 
-.deleteBtn:hover {
-	color: #dc2626;
+.hiddenInput {
+    display: none;
+}
+
+.uploadTrigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.clearFile {
+    margin-left: auto;
+    color: #9ca3af;
+}
+
+.clearFile:hover {
+    color: #ef4444;
+}
+
+.errorMessage {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.fileBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.viewFileBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #f0f7ff;
+    color: #0066cc;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid #cce4ff;
+}
+
+
+.viewFileBtn:hover {
+    background-color: #0066cc;
+    color: #ffffff;
+    border-color: #0066cc;
+    box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+}
+
+.externalIcon {
+    opacity: 0.6;
+}
+
+.noFile {
+    color: #94a3b8;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.statusActive {
+    color: #10b981;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
 }
   
   
