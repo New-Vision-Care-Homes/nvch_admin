@@ -5,7 +5,8 @@ import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Tabl
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
-import Certification from "./Certification";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@/hooks/useUsers";
 
 // Helper function to map day names and group slots for display.
 // This transforms the flat backend array (e.g., slot 1, slot 2, slot 3...) 
@@ -39,102 +40,69 @@ const groupAvailabilityByDay = (availabilityArray) => {
 export default function Timesheet() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+	// --- State Initialization matching backend structure ---
+	const defaultAvailability = [
+		// Example structure matching backend flat format
+		{ day: 'monday', startTime: '09:00', endTime: '13:00', isAvailable: true, notes: '' },
+		{ day: 'tuesday', startTime: '10:00', endTime: '16:00', isAvailable: true, notes: '' },
+	];
+
+	// availability stores the current editable data (raw flat array from backend)
+	const [availability, setAvailability] = useState(defaultAvailability); 
+	// originalAvailability stores the data loaded from the backend for cancellation/reset
+	const [originalAvailability, setOriginalAvailability] = useState(defaultAvailability);
+	
+	// --- Other States ---
+	const [stats, setStats] = useState([
+		{ label: "Total Hours Worked (Bi-Weekly)", value: 40.5 },
+		{ label: "Total Overtime Hours", value: 2.5 },
+		{ label: "Pending Approvals", value: 3 },
+	]);
+
+	const [shifts, setShifts] = useState([
+		{
+			id: '1',
+			status: "Confirmed",
+			date: "Oct 29, 2024",
+			shiftTimes: "11:00 AM - 4:00 PM",
+			client: "Dr. Maria Lopez",
+			services: "Companionship, Specialized Care",
+			hoursWorked: 5.0,
+			overtime: 0.0,
+			approvalStatus: "Approved",
+			supervisorComments: "Client very pleased with service.",
+		},
+		// Remove example data if you want to test the "No Shifts" message initially
+	]);
+
+	const [maxHours, setMaxHours] = useState(80);
+	const [lastPeriodHours, setLastPeriodHours] = useState(72);
     const { id } = useParams();
+	const { data: caregiver_Info, isLoading, isError, error } = useUser(id);
+	console.log("caregiverssss: ", caregiver_Info);
 
-    // --- State Initialization matching backend structure ---
-    const defaultAvailability = [
-        // Example structure matching backend flat format
-        { day: 'monday', startTime: '09:00', endTime: '13:00', isAvailable: true, notes: '' },
-        { day: 'tuesday', startTime: '10:00', endTime: '16:00', isAvailable: true, notes: '' },
-    ];
+	useEffect(() => {
+		if (caregiver_Info && caregiver_Info.data && caregiver_Info.data.user) {
+			const userData = caregiver_Info.data.user;
+			const rootData = caregiver_Info.data;
 
-    // availability stores the current editable data (raw flat array from backend)
-    const [availability, setAvailability] = useState(defaultAvailability); 
-    // originalAvailability stores the data loaded from the backend for cancellation/reset
-    const [originalAvailability, setOriginalAvailability] = useState(defaultAvailability);
-    
-    // --- Other States ---
-    const [stats, setStats] = useState([
-        { label: "Total Hours Worked (Bi-Weekly)", value: 40.5 },
-        { label: "Total Overtime Hours", value: 2.5 },
-        { label: "Pending Approvals", value: 3 },
-    ]);
+			const backendAvailability = userData.availability || [];
+			setAvailability(backendAvailability);
+			setOriginalAvailability(backendAvailability);
 
-    const [shifts, setShifts] = useState([
-        {
-            id: '1',
-            status: "Confirmed",
-            date: "Oct 29, 2024",
-            shiftTimes: "11:00 AM - 4:00 PM",
-            client: "Dr. Maria Lopez",
-            services: "Companionship, Specialized Care",
-            hoursWorked: 5.0,
-            overtime: 0.0,
-            approvalStatus: "Approved",
-            supervisorComments: "Client very pleased with service.",
-        },
-        // Remove example data if you want to test the "No Shifts" message initially
-    ]);
+			setShifts(rootData.shifts || []);
+			setStats(rootData.stats || [
+				{ label: "Total Hours Worked (Bi-Weekly)", value: 0 },
+				{ label: "Total Overtime Hours", value: 0 },
+				{ label: "Pending Approvals", value: 0 },
+			]);
 
-    const [maxHours, setMaxHours] = useState(80);
-    const [lastPeriodHours, setLastPeriodHours] = useState(72);
+			setMaxHours(rootData.maxHours || 80);
+			setLastPeriodHours(rootData.lastPeriodHours || 72);
+		}
+	}, [caregiver_Info]);
 
-
-    // --- useEffect: Data Fetching ---
-    useEffect(() => {
-        if (!id) {
-            console.error("User ID not found in parameters.");
-            alert("id not found");
-            return;
-        }
-    
-        const fetchUserData = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.log("No token found. Please log in.");
-                return;
-            }
-        
-            try {
-                const res = await fetch(
-                    `https://nvch-server.onrender.com/api/auth/admin/users/${id}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-                );
-        
-                const data = await res.json();
-                console.log("Fetched user data:", data);
-        
-                if (res.ok && data.data) {
-                    // Set availability directly from backend (flat array)
-                    const backendAvailability = data.data.user.availability || [];
-                    setAvailability(backendAvailability);
-                    setOriginalAvailability(backendAvailability); // Store the original for reset
-            
-                    // Set other user data, defaulting if necessary
-                    setShifts(data.data.shifts || []); // If backend returns null, use []
-                    setStats(data.data.stats || [
-                        { label: "Total Hours Worked (Bi-Weekly)", value: 0 },
-                        { label: "Total Overtime Hours", value: 0 },
-                        { label: "Pending Approvals", value: 0 },
-                    ]);
-                    setMaxHours(data.data.maxHours || 80);
-                    setLastPeriodHours(data.data.lastPeriodHours || 72);
-                } else {
-                    console.error(data.message || "Failed to fetch user data");
-                }
-            } catch (err) {
-                console.error("Error fetching user data:", err);
-            }
-        };
-    
-        fetchUserData();
-    }, [id]);
 
     // --- Modal Handlers ---
 
@@ -152,18 +120,8 @@ export default function Timesheet() {
         setIsModalOpen(false);
         // TODO: Implement actual API call to save 'availability' state back to backend
 		const submissionBody = {
-            employeeId: data.employeeId,
-			Certification: [],
-			availability: [],
-        
-
-            // Emergency Contact structure re-nesting
-            emergencyContact: {
-                name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
-                phone: data.emergencyPhone,
-                relationship: data.relationship
-            },
-            
+            employeeId: id,
+			availability: availability,
         };
 
 		const token = localStorage.getItem("token");
@@ -181,30 +139,17 @@ export default function Timesheet() {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${token}`,
 					},
+					body: JSON.stringify(submissionBody),
 				}
 			);
 	
 			const data = await res.json();
+			if (res.ok) {
+				alert("upload successfully");
+            } else {
+                setMessage(data.message || "Failed to update user shedule.");
+            }
 			console.log("Fetched user data:", data);
-	
-			if (res.ok && data.data) {
-				// Set availability directly from backend (flat array)
-				const backendAvailability = data.data.user.availability || [];
-				setAvailability(backendAvailability);
-				setOriginalAvailability(backendAvailability); // Store the original for reset
-		
-				// Set other user data, defaulting if necessary
-				setShifts(data.data.shifts || []); // If backend returns null, use []
-				setStats(data.data.stats || [
-					{ label: "Total Hours Worked (Bi-Weekly)", value: 0 },
-					{ label: "Total Overtime Hours", value: 0 },
-					{ label: "Pending Approvals", value: 0 },
-				]);
-				setMaxHours(data.data.maxHours || 80);
-				setLastPeriodHours(data.data.lastPeriodHours || 72);
-			} else {
-				console.error(data.message || "Failed to fetch user data");
-			}
 		} catch (err) {
 			console.error("Error fetching user data:", err);
 		}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enCA from "date-fns/locale/en-CA";
@@ -33,7 +34,96 @@ export default function SchedulingPage() {
 
 	const queryClient = useQueryClient();
 	const { data: shifts = [], isLoading, isError, error } = useShifts();
+	const router = useRouter();
 	console.log("shifts: ", shifts);
+
+	/**
+	 * Aggregates shifts by date and caregiver to avoid calendar clutter.
+	 * If a caregiver has multiple shifts on the same day, they are grouped into one event.
+	*/
+	const aggregatedEvents = useMemo(() => {
+		if (!shifts || !Array.isArray(shifts)) return [];
+
+		const groups = {};
+
+		shifts.forEach((shift) => {
+			// Generate a unique key based on Date and Caregiver ID
+			const dateStr = format(new Date(shift.startTime), "yyyy-MM-dd");
+			const caregiverId = shift.caregiver._id || shift.caregiver.id;
+			const groupKey = `${dateStr}_${caregiverId}`;
+
+			if (!groups[groupKey]) {
+				// Initialize the group with the first shift found
+				groups[groupKey] = {
+					...shift,
+					start: new Date(shift.startTime),
+					end: new Date(shift.endTime),
+					title: `${shift.caregiver.firstName} ${shift.caregiver.lastName}`,
+					count: 1, // Counter for additional shifts
+				};
+			} else {
+				// Increment the counter for existing groups
+				groups[groupKey].count += 1;
+				
+				// Optional: Update the end time to the latest shift of the day
+				if (new Date(shift.endTime) > groups[groupKey].end) {
+					groups[groupKey].end = new Date(shift.endTime);
+				}
+			}
+		});
+
+		return Object.values(groups);
+	}, [shifts]);
+
+	/**
+	 * Custom event component to display the caregiver's name 
+	 * and a badge indicating extra shifts (e.g., +2).
+	 */
+	const CustomEvent = ({ event }) => (
+		<div style={{ 
+			display: 'flex', 
+			justifyContent: 'space-between', 
+			alignItems: 'center', 
+			width: '100%',
+			color: 'white', // Ensure text is visible
+			fontSize: '11px'
+		}}>
+			<span style={{ 
+				overflow: 'hidden', 
+				textOverflow: 'ellipsis', 
+				whiteSpace: 'nowrap' 
+			}}>
+				{event.title}
+			</span>
+			
+			{event.count > 1 && (
+				<span style={{
+					backgroundColor: '#ff4d4f', // Bright Red
+					color: 'white',
+					borderRadius: '8px',
+					padding: '0 5px',
+					fontSize: '10px',
+					fontWeight: 'bold',
+					marginLeft: '4px',
+					boxShadow: '0 0 2px rgba(0,0,0,0.5)',
+					flexShrink: 0
+				}}>
+					+{event.count - 1}
+				</span>
+			)}
+		</div>
+	);
+
+	/**
+	 * Handles the click event on a calendar shift.
+	 * Redirects the admin to the specific caregiver's timesheet/detail page.
+	 */
+	const handleSelectEvent = (event) => {
+		const caregiverId = event.caregiver._id || event.caregiver.id;
+		if (caregiverId) {
+			router.push(`/caregivers/${caregiverId}`);
+		}
+	};
 
 	const getEvents = useMemo(() => {
 		if (!shifts || !Array.isArray(shifts)) return [];
@@ -51,15 +141,6 @@ export default function SchedulingPage() {
     const [view, setView] = useState('week'); // Default to 'week' or 'month'
 	const [date, setDate] = useState(new Date());
 
-
-    const handleSelectEvent = (event) => {
-        alert(
-            `📋 ${event.title}\n📍 Location: ${event.location}\n🕒 ${format(
-                event.start,
-                "p"
-            )} - ${format(event.end, "p")}`
-        );
-    };
 
     // ... (Your existing state for openShifts, approvals, and alerts remain the same)
     const [openShifts, setOpenShifts] = useState([
@@ -91,26 +172,25 @@ export default function SchedulingPage() {
                         </Link>
                     </div>
                     {/* --- 2. BIND VIEW AND ONVIEW HANDLER TO CALENDAR --- */}
-                    <Calendar
-                        localizer={localizer}
-                        events={getEvents}
-                        startAccessor="start"
-                        endAccessor="end"
-                        className="my_calendar"
-                        onSelectEvent={handleSelectEvent}
-
-						date={date} 
-    					onNavigate={(newDate) => setDate(newDate)}
-                        view={view} 
-                        onView={setView} // This updates the view state when the user clicks the view buttons
-                        views={['month', 'week', 'day', 'agenda']} 
-
-						allDayMaxRows={0}
-						showAllDayEvents={false}
-						tooltipAccessor={null}
-						step={60}           
-						timeslots={1}
-                    />
+					<Calendar
+						localizer={localizer}
+						events={aggregatedEvents}
+						startAccessor="start"
+						endAccessor="end"
+						onSelectEvent={handleSelectEvent} // Trigger navigation on click
+						components={{
+							event: CustomEvent, // Use our custom-styled event entry
+						}}
+						// Calendar View Settings
+						date={date}
+						onNavigate={(newDate) => setDate(newDate)}
+						view={view}
+						onView={setView}
+						views={['month', 'week', 'day', 'agenda']}
+						step={60}           // 1-hour intervals
+						timeslots={1}       // Number of divisions per step
+						className="my_calendar"
+					/>
                 </div>
                 
                 {/* ... (Your existing sidebar content remains the same) }

@@ -214,8 +214,8 @@ export default function Page() {
             const res = await fetch(`${API_BASE_URL}/${id}`, {
                 method: "PUT",
                 headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ isActive: newActiveStatus }),
             });

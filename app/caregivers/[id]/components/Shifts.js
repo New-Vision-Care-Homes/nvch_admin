@@ -5,76 +5,16 @@ import styles from "./Shifts.module.css";
 import { Trash2, CirclePlus, Funnel } from "lucide-react";
 import { Table, TableHeader, TableCell, TableContent} from "@components/UI/Table";
 import Button from "@components/UI/Button";
+import { useShift } from "@/hooks/useShifts";
+import { useParams } from "next/navigation";
 
 export default function Shifts() {
-
 	const [activeTab, setActiveTab] = useState("upcoming");
-	const [shifts, setShifts] = useState(
-	[
-		{
-			id: '1',
-			status: 'confirmed',
-			date: 'Oct 29, 2025',
-			time: '11:00 AM - 4:00 PM',
-			client: 'Dr. Maria Lopez',
-			location: '202 Elm St, Anytown',
-			services: 'Companionship, Specialized Care',
-		},
-		{
-			id: '2',
-			status: 'canceled',
-			date: 'Oct 28, 2024',
-			time: '1:00 PM - 3:00 PM',
-			client: 'Mr. Robert Green',
-			location: '101 Cedar Dr, Anytown',
-			services: 'Errands, Transportation',
-		},
-		{
-			id: '3',
-			status: 'pending',
-			date: 'Oct 27, 2024',
-			time: '2:00 PM - 5:00 PM',
-			client: 'Mr. David Lee',
-			location: '45 Pine St, Anytown',
-			services: 'Medication Reminders, Light Housekeeping',
-		},
-		{
-			id: '4',
-			status: 'confirmed',
-			date: 'Oct 26, 2024',
-			time: '9:00 AM - 1:00 PM',
-			client: 'Mrs. Eleanor Vance',
-			location: '123 Oak Ave, Anytown',
-			services: 'Companionship, Meal Prep',
-		},
-		{
-			id: '5',
-			status: 'completed',
-			date: 'Oct 25, 2024',
-			time: '10:00 AM - 12:00 PM',
-			client: 'Ms. Susan Chen',
-			location: '789 Birch Ln, Anytown',
-			services: 'Personal Care',
-		},
-		{
-			id: '6',
-			status: 'completed',
-			date: 'Oct 24, 2024',
-			time: '8:00 AM - 12:00 PM',
-			client: 'Mr. James Wilson',
-			location: '456 Maple Rd, Anytown',
-			services: 'Transportation, Errands',
-		},
-		{
-			id: '7',
-			status: 'completed',
-			date: 'Oct 23, 2024',
-			time: '3:00 PM - 7:00 PM',
-			client: 'Mrs. Patricia Brown',
-			location: '321 Willow Way, Anytown',
-			services: 'Companionship, Light Housekeeping',
-		},
-	]);
+
+	const { id } = useParams();
+	const { data: shifts, isLoading, isError, error } = useShift(id);
+	console.log("shifts: ", shifts);
+	
 
 	const { pastShifts, upcomingShifts } = useMemo(() => {
 		const today = new Date();
@@ -82,16 +22,17 @@ export default function Shifts() {
 		const past = [];
 		const upcoming = [];
 	
-		shifts.forEach((shift) => {
-			const shiftDate = new Date(shift.date);
-		
-			if (shiftDate < today) {
-				past.push(shift);
-			} else {
-				upcoming.push(shift);
-			}
-		});
-	
+		if(shifts){
+			shifts.forEach((shift) => {
+				const shiftDate = new Date(shift.date);
+			
+				if (shiftDate < today) {
+					past.push(shift);
+				} else {
+					upcoming.push(shift);
+				}
+			});
+		}
 		return { pastShifts: past, upcomingShifts: upcoming };
 	}, [shifts]);
 	
@@ -132,7 +73,6 @@ export default function Shifts() {
 					<TableCell>STATUS</TableCell>
 					<TableCell>CLIENT</TableCell>
 					<TableCell>DATE</TableCell>
-					<TableCell>TIME</TableCell>
 					<TableCell>LOCATION</TableCell>
 					<TableCell>SERVICES</TableCell>
 				</TableHeader>
@@ -140,11 +80,10 @@ export default function Shifts() {
 				{currentShifts.map(c => (
 					<TableContent key={c.id}>
 						<TableCell>{c.status}</TableCell>
-						<TableCell>{c.client}</TableCell>
-						<TableCell>{c.date}</TableCell>
-						<TableCell>{c.time}</TableCell>
-						<TableCell>{c.location}</TableCell>
-						<TableCell>{c.services}</TableCell>
+						<TableCell>{c.client.fullName}</TableCell>
+						<TableCell>{c.startTime}</TableCell>
+						<TableCell>{c.clientAddress}</TableCell>
+						<TableCell>{c.servicesRequired}</TableCell>
 					</TableContent>
 				))}
 			</Table>
