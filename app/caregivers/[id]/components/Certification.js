@@ -13,13 +13,14 @@ import * as yup from "yup";
 import { dateRule, longTextRule, shortTextRule } from "@app/validation";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/useUsers";
-
-const API_BASE_URL = "https://nvch-server.onrender.com";
+import { useUploadCertificate, useDeleteCertificate } from "@/hooks/useCertificates";
 
 const schema = yup.object({
     name: longTextRule.required("Certificate name is required"),
     issueDate: dateRule.required("Issue date is required"),
-    expiryDate: dateRule.required("Expiry date is required"),
+    expiryDate: dateRule
+		.required("Expiry date is required")
+		.min(yup.ref('issueDate'), "Expiry date must be after issue date"),
     file: yup.mixed().test("required", "Please upload a document", (value) => {
         return value && value.length > 0;
     })
@@ -27,134 +28,59 @@ const schema = yup.object({
 
 export default function Certification() {
 
-	const { id } = useParams();
-	const { data, isLoading, error, isError } = useUser(id);
-	
-	console.log("data; ", data?.data?.user?.certifications);
-	//console.log("data; ", data.data.user.certifications);
-	const certifications = data?.data?.user?.certifications || [];
-	const [isUploading, setIsUploading] = useState(false);
+	// --- 1. Hooks---
+	const { id: userId } = useParams();
+	const { data } = useUser(userId);
+	const { mutate: upload, isLoading: isUploading } = useUploadCertificate(userId);
+	const { mutate: deleteCert, isLoading: isDeleting } = useDeleteCertificate(userId);
 
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	// --- 2. State management ---
+	const [isModalOpen, setIsModalOpen] = useState(false); // For Add New
+	const [showDeleteModal, setShowDeleteModal] = useState(false); // For Delete Confirmation
+	const [targetCertId, setTargetCertId] = useState(null);
+
+	const certifications = data?.data?.user?.certifications || [];
+
+	// --- 3. Handlers ---
+	const handleDeleteClick = (certId) => {
+		setTargetCertId(certId);
+		setShowDeleteModal(true);
+	};
+
+	const confirmDelete = () => {
+		if (!targetCertId) return;
+
+		// Call the mutation defined at the top
+		deleteCert(targetCertId, {
+			onSuccess: () => {
+				setShowDeleteModal(false);
+				setTargetCertId(null);
+			},
+			onError: (err) => alert(`Delete failed: ${err.message}`)
+		});
+	};
 
 
 	const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema),
     });
 
-    const selectedIssueDate = watch("issueDate");
-    const selectedExpiryDate = watch("expiryDate");
-    const selectedFile = watch("file");
 
-    useEffect(() => {
-        if (selectedIssueDate && selectedExpiryDate) {
-            if (new Date(selectedExpiryDate) <= new Date(selectedIssueDate)) {
-                alert("Expiry date must be after issue date");
-                setValue("expiryDate", ""); 
-            }
-        }
-    }, [selectedIssueDate, selectedExpiryDate, setValue]);
+    const selectedFile = watch("file");
 
 	function handleNewCertification() {
 		setIsModalOpen(true);
 	}
 
-	function handleCancel() {
-		setIsModalOpen(false);
-	}
-
-	function handleUpload() {
-		alert("upload");
-		setIsModalOpen(false);
-	}
-
 	const handleSave = async (formData) => {
-        setIsUploading(true);
-        try {
-            const file = formData.file[0];
-            if (!file) {
-                alert("Please select a file first");
-                return;
-            }
-
-            /**
-             * STEP 1: Request Signed Upload URL from Backend
-             * Purpose: Get a secure, temporary link to upload directly to S3.
-             */
-            const queryParams = new URLSearchParams({
-                uploadType: 'certificate',
-				userId: id,
-                mimeType: file.type,
-                fileSize: file.size.toString(),
-                certificateType: file.name
-            });
-
-			const token = localStorage.getItem("token");
-
-            const signedUrlResponse = await fetch(`${API_BASE_URL}/api/upload/signed-url?${queryParams.toString()}`, {
-                method: 'GET',
-                headers: { 
-                    Authorization: `Bearer ${token}`,
-                }
-            });
-
-            if (!signedUrlResponse.ok) throw new Error("Failed to fetch signed URL");
-            
-            const { data: { uploadUrl, fileKey } } = await signedUrlResponse.json();
-
-            /**
-             * STEP 2: Upload Binary File to AWS S3
-             * Purpose: Send the file data directly to S3 using the PUT URL.
-             */
-            const s3UploadResponse = await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            if (!s3UploadResponse.ok) throw new Error("Failed to upload file to S3");
-
-            /**
-             * STEP 3: Save Metadata to MongoDB
-             * Purpose: Notify the backend that the file is uploaded and link it to the user.
-             */
-            const req = {
-                fileKey: fileKey,
-                name: formData.name,
-                startDate: new Date(formData.issueDate).toISOString(),
-                expiryDate: new Date(formData.expiryDate).toISOString(),
-                // Example: set renewalDate 1 month before expiry
-                renewalDate: new Date(new Date(formData.expiryDate).setMonth(new Date(formData.expiryDate).getMonth() - 1)).toISOString()
-            };
-
-            const dbResponse = await fetch(`${API_BASE_URL}/api/upload/certificate`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(req)
-            });
-
-            const result = await dbResponse.json();
-			console.log("result: ", result);
-
-            if (result.success) {
+		upload(formData, {
+            onSuccess: () => {
                 setIsModalOpen(false);
-                reset(); // Reset form fields
-                alert("Certificate uploaded successfully!");
-            } else {
-                throw new Error(result.message || "Database save failed");
-            }
-
-        } catch (error) {
-            console.error("Workflow Error:", error);
-            alert(`Process failed: ${error.message}`);
-        } finally {
-            setIsUploading(false);
-        }
+                reset();
+                alert("Upload Successful!");
+            },
+            onError: (error) => alert(`Upload Failed: ${error.message}`)
+        });
     };
 
 	return (
@@ -174,31 +100,47 @@ export default function Certification() {
 					<TableCell>Expiry Date</TableCell>
 					<TableCell>Status</TableCell>
 					<TableCell>Document</TableCell>
+					<TableCell>Action</TableCell>
 				</TableHeader>
-				{certifications.map(c => (
-					<TableContent key={c._id}>
+				{certifications.length === 0 ? (
+					<TableContent>
+						<TableCell colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+							No certifications found.
+						</TableCell>
+					</TableContent>
+				) : (
+					certifications.map(c => (
+						<TableContent key={c._id}>
 						<TableCell>{c.name}</TableCell>
 						<TableCell>{c.startDate ? new Date(c.startDate).toLocaleDateString() : "-"}</TableCell>
 						<TableCell>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : "-"}</TableCell>
 						<TableCell>
-						{c.certificateUrl ? (
-							<a 
-								href={c.certificateUrl} 
-								target="_blank" 
-								rel="noopener noreferrer" 
-								className={styles.viewFileBtn}
-							>
-								<Eye size={14} />
-								<span>View Document</span>
-								<ExternalLink size={12} className={styles.externalIcon} />
-							</a>
-						) : (
-							<span className={styles.noFile}>No File</span>
-						)}
-                        </TableCell>
-						<TableCell>{c.isActive ? "Active" : "Inactive"}</TableCell>
-					</TableContent>
-				))}
+							{c.certificateUrl ? (
+								<a 
+									href={c.certificateUrl} 
+									target="_blank" 
+									rel="noopener noreferrer" 
+									className={styles.viewFileBtn}
+								>
+									<Eye size={14} />
+									<span>View Document</span>
+									<ExternalLink size={12} className={styles.externalIcon} />
+								</a>
+							) : (
+								<span className={styles.noFile}>No File</span>
+							)}
+							</TableCell>
+							<TableCell>{c.isActive ? "Active" : "Inactive"}</TableCell>
+							<TableCell>
+								<Trash2
+									color="#ef4444"
+									style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+									onClick={() => handleDeleteClick(c._id)}
+								/>
+							</TableCell>
+						</TableContent>
+					))
+				)}
 			</Table>
 
 
@@ -239,10 +181,23 @@ export default function Certification() {
 
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24, gap: 12 }}>
                         <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button type="submit">Save Certificate</Button>
+                        <Button type="submit">{isUploading ? "Uploading..." : "Save Certificate"}</Button>
                     </div>
                 </form>
             </Modal>
+
+			{/* Delete Confirmation Modal */}
+			<Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+				<div className={styles.modal_content}>
+					<h2>Are you sure you want to delete this certificate?</h2>
+					<div className={styles.modal_buttons}>
+						<Button variant="primary" onClick={confirmDelete} disabled={isDeleting}>
+							{isDeleting ? "Deleting..." : "Yes"}
+						</Button>
+						<Button variant="secondary" onClick={() => setShowDeleteModal(false)}>No</Button>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }

@@ -6,7 +6,7 @@ import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enCA from "date-fns/locale/en-CA";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { Plus, Star, AlertTriangle, CalendarPlus } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
@@ -14,186 +14,154 @@ import styles from "./scheduling.module.css";
 import "./calendar.css";
 import Button from "@components/UI/Button";
 import Link from "next/link";
-
-import { useQueryClient } from "@tanstack/react-query";
 import { useShifts } from "@/hooks/useShifts";
 
-const locales = {
-    "en-CA": enCA,
-};
-
+const locales = { "en-CA": enCA };
 const localizer = dateFnsLocalizer({
-    format,
-    parse,
-    startOfWeek,
-    getDay,
-    locales,
+	format,
+	parse,
+	startOfWeek,
+	getDay,
+	locales,
 });
 
 export default function SchedulingPage() {
-
-	const queryClient = useQueryClient();
-	const { data: shifts = [], isLoading, isError, error } = useShifts();
 	const router = useRouter();
-	console.log("shifts: ", shifts);
+	const { data: shifts = [] } = useShifts();
+	const [view, setView] = useState("week");
+	const [date, setDate] = useState(new Date());
 
-	/**
-	 * Aggregates shifts by date and caregiver to avoid calendar clutter.
-	 * If a caregiver has multiple shifts on the same day, they are grouped into one event.
-	*/
+	// --- DATA AGGREGATION (MONTH) ---
 	const aggregatedEvents = useMemo(() => {
 		if (!shifts || !Array.isArray(shifts)) return [];
-
 		const groups = {};
-
 		shifts.forEach((shift) => {
-			// Generate a unique key based on Date and Caregiver ID
 			const dateStr = format(new Date(shift.startTime), "yyyy-MM-dd");
-			const caregiverId = shift.caregiver._id || shift.caregiver.id;
+			const caregiverId = shift.caregiver?.id || shift.caregiver?._id;
 			const groupKey = `${dateStr}_${caregiverId}`;
-
 			if (!groups[groupKey]) {
-				// Initialize the group with the first shift found
 				groups[groupKey] = {
 					...shift,
 					start: new Date(shift.startTime),
 					end: new Date(shift.endTime),
-					title: `${shift.caregiver.firstName} ${shift.caregiver.lastName}`,
-					count: 1, // Counter for additional shifts
+					title: `${shift.caregiver?.firstName} ${shift.caregiver?.lastName}`,
+					count: 1,
 				};
 			} else {
-				// Increment the counter for existing groups
 				groups[groupKey].count += 1;
-				
-				// Optional: Update the end time to the latest shift of the day
-				if (new Date(shift.endTime) > groups[groupKey].end) {
-					groups[groupKey].end = new Date(shift.endTime);
-				}
+				if (new Date(shift.endTime) > groups[groupKey].end)
+				groups[groupKey].end = new Date(shift.endTime);
 			}
 		});
-
 		return Object.values(groups);
 	}, [shifts]);
 
-	/**
-	 * Custom event component to display the caregiver's name 
-	 * and a badge indicating extra shifts (e.g., +2).
-	 */
-	const CustomEvent = ({ event }) => (
-		<div style={{ 
-			display: 'flex', 
-			justifyContent: 'space-between', 
-			alignItems: 'center', 
-			width: '100%',
-			color: 'white', // Ensure text is visible
-			fontSize: '11px'
-		}}>
-			<span style={{ 
-				overflow: 'hidden', 
-				textOverflow: 'ellipsis', 
-				whiteSpace: 'nowrap' 
-			}}>
-				{event.title}
-			</span>
-			
-			{event.count > 1 && (
-				<span style={{
-					backgroundColor: '#ff4d4f', // Bright Red
-					color: 'white',
-					borderRadius: '8px',
-					padding: '0 5px',
-					fontSize: '10px',
-					fontWeight: 'bold',
-					marginLeft: '4px',
-					boxShadow: '0 0 2px rgba(0,0,0,0.5)',
-					flexShrink: 0
-				}}>
-					+{event.count - 1}
-				</span>
-			)}
-		</div>
-	);
-
-	/**
-	 * Handles the click event on a calendar shift.
-	 * Redirects the admin to the specific caregiver's timesheet/detail page.
-	 */
-	const handleSelectEvent = (event) => {
-		const caregiverId = event.caregiver._id || event.caregiver.id;
-		if (caregiverId) {
-			router.push(`/caregivers/${caregiverId}`);
-		}
-	};
-
-	const getEvents = useMemo(() => {
+	// --- DATA AGGREGATION (WEEK/DAY) ---
+	const weekDayEvents = useMemo(() => {
 		if (!shifts || !Array.isArray(shifts)) return [];
-	
-		return shifts.map((shift) => ({
-			...shift,
-			start: new Date(shift.startTime), 
-			end: new Date(shift.endTime),
-			title: `${shift.caregiver.firstName} ${shift.caregiver.lastName}`, 
-			location: shift.clientAddress
+		const groups = {};
+
+		shifts.forEach((shift) => {
+			const start = new Date(shift.startTime);
+			const end = new Date(shift.endTime);
+			const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
+			if (!groups[key]) {
+				groups[key] = {
+					id: shift.id || shift._id,
+					start,
+					end,
+					shifts: [shift],
+				};
+			} else {
+				groups[key].shifts.push(shift);
+			}
+		});
+
+		return Object.values(groups).map((group) => ({
+		...group,
+		title:
+			group.shifts.length === 1
+			? `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`
+			: `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`,
+		count: group.shifts.length,
 		}));
 	}, [shifts]);
 
-    // --- 1. ADD STATE FOR CALENDAR VIEW ---
-    const [view, setView] = useState('week'); // Default to 'week' or 'month'
-	const [date, setDate] = useState(new Date());
+	const eventsToShow = view === "month" ? aggregatedEvents : weekDayEvents;
 
+	const handleSelectEvent = (event) => {
+		if (view === "month") {
+			router.push(`/caregivers/${event.caregiver?.id || event.caregiver?._id}`);
+		} else {
+			router.push(`/scheduling/shift/${event.id}`);
+		}
+	};
 
-    // ... (Your existing state for openShifts, approvals, and alerts remain the same)
-    const [openShifts, setOpenShifts] = useState([
-        { id: "1", name: "Mr. David Lee", date: "Sep 9", time: "3:00 PM - 7:00 PM" },
-        { id: "2", name: "Ms. Grace Kim", date: "Sep 12", time: "2:00 PM - 6:00 PM" },
-    ]);
-    
-    const [approvals, setApprovals] = useState([
-        { id: "1", name: "Bob Johnson", request: "Requests to swap Oct 24 morning shift." },
-        { id: "2", name: "Charlie Brown", request: "Requests time off for Oct 27." },
-    ]);
-    
-    const [alerts, setAlerts] = useState([
-        { id: "1", message: "Caregiver Alice Smith is scheduled for 10+ hours this week.", type: "critical" },
-        { id: "2", message: "Conflict: Caregiver Bob Johnson is double-booked on Oct 26, 1 PM.", type: "critical" },
-        { id: "3", message: "Unassigned shift for Mr. David Lee on Oct 24 afternoon.", type: "critical" },
-    ]);
+	const CustomEvent = ({ event }) => {
+		const isMonth = view === "month";
 
-    return (
-        <div className={styles.page}>
-            <Navbar />
-            <div className={styles.container}>
-                <Sidebar />
-                <div className={styles.body}>
-                    <div className={styles.title}>
-                        <h1>Scheduling Overview</h1>
-                        <Link href="/scheduling/add_new_shift">
-                            <Button icon={<CalendarPlus />}>Cteate New Shift</Button>
-                        </Link>
-                    </div>
-                    {/* --- 2. BIND VIEW AND ONVIEW HANDLER TO CALENDAR --- */}
+		return (
+		<div className={styles.eventWrapper}>
+			<div className={styles.weekEventContent}>
+				<strong className={styles.eventTitle}>{event.title}</strong>
+				{!isMonth && (
+					<>
+						<div className={styles.eventTime}>
+							{format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
+						</div>
+						{event.count > 1 && (
+							<div className={styles.hoverDetail}>
+								{event.shifts.map((s, idx) => (
+									<div key={idx} className={styles.shiftItem}>
+										<strong>
+											{s.caregiver?.firstName} {s.caregiver?.lastName}
+										</strong>
+										<div className={styles.shiftLocation}>{s.clientAddress}</div>
+									</div>
+								))}
+							</div>
+						)}
+					</>
+				)}
+			</div>
+			{event.count > 1 && <div className={styles.countInline}>+ {event.count - 1} more shifts</div>}
+		</div>
+		);
+	};
+
+	return (
+		<div className={styles.page}>
+			<Navbar />
+			<div className={styles.container}>
+				<Sidebar />
+				<div className={styles.body}>
+					<div className={styles.title}>
+						<h1>Scheduling Overview</h1>
+						<Link href="/scheduling/add_new_shift">
+							<Button icon={<CalendarPlus />}>Create New Shift</Button>
+						</Link>
+					</div>
 					<Calendar
 						localizer={localizer}
-						events={aggregatedEvents}
+						events={eventsToShow}
 						startAccessor="start"
 						endAccessor="end"
-						onSelectEvent={handleSelectEvent} // Trigger navigation on click
-						components={{
-							event: CustomEvent, // Use our custom-styled event entry
-						}}
-						// Calendar View Settings
+						onSelectEvent={handleSelectEvent}
+						components={{ event: CustomEvent }}
 						date={date}
-						onNavigate={(newDate) => setDate(newDate)}
+						onNavigate={setDate}
 						view={view}
 						onView={setView}
-						views={['month', 'week', 'day', 'agenda']}
-						step={60}           // 1-hour intervals
-						timeslots={1}       // Number of divisions per step
 						className="my_calendar"
 					/>
-                </div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
                 
-                {/* ... (Your existing sidebar content remains the same) }
+                /* ... (Your existing sidebar content remains the same) }
                 <div className={styles.sidebar}>
                     {/* Open Shifts }
                     <div className={styles.section}>
@@ -259,9 +227,5 @@ export default function SchedulingPage() {
                         </div>
                     </div>
                 </div>
-				{*/}
-            </div>
-        </div>
-    );
-}
+				{*/
 

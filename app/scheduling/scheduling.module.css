@@ -1,256 +1,227 @@
+
 .page {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
 	height: 100vh;
 	overflow: hidden;
-	overflow-y: hidden;
 }
-  
-	.container {
-		display: flex;
-		flex: 1;
 
-	}
+.container {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+}
 
-	.body {
-		display: flex;
-		flex-direction: column;
-		flex: 1; 
-		height: 100%;
-		padding: 20px;
-	}
-
-		.title {
-			display: flex;
-			justify-content: space-between;
-		}
-
-  
-  .sidebar {
+.body {
 	display: flex;
 	flex-direction: column;
-	gap: 1.5rem;
-	padding: 1rem;
-  }
-  
-  /* Section container */
-  .section {
-	background-color: white;
-	border: 1px solid #DEE1E6FF;;
-	border-radius: 0.5rem;
-	padding: 1rem;
-  }
-  
-  .sectionHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 1rem;
-  }
+	flex: 3;
+	padding: 20px;
+	background-color: #f9fafb;
+	overflow: hidden;
+}
 
-  
-  .addButton {
-	padding: 0.25rem;
-	background-color: transparent;
-	border: none;
-	color: black;
-	cursor: pointer;
-	transition: color 0.2s;
-  }
-  
-  .addButton:hover {
-	color: blue;
-  }
-  
-  /* Simple badge style */
-  .badge {
-	background-color: hsl(var(--destructive));
-	color: white;
-	font-size: 0.75rem;
-	border-radius: 8px;
-	padding: 0.25rem 0.5rem;
-	font-weight: 600;
-  }
-  
-  .sectionContent {
+.title {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+
+.eventWrapper {
+	position: relative;
+	height: 100%;
 	display: flex;
 	flex-direction: column;
-	gap: 0.75rem;
-  }
-  
-  /* --- Open Shifts --- */
-  .shiftCard {
-	padding: 0.75rem;
-	border: 1px solid hsl(var(--border));
-	border-radius: 0.375rem;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.75rem;
-	transition: all 0.2s;
-  }
-  
-  .shiftCard:hover {
-	border-color: hsl(var(--primary));
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-  
-  .shiftInfo {
-	flex: 1;
-	min-width: 0;
-  }
-  
-  .shiftName {
-	font-size: 0.875rem;
-	font-weight: 500;
-	color: hsl(var(--foreground));
-	margin-bottom: 0.25rem;
-  }
-  
-  .shiftDetails {
-	display: flex;
-	align-items: center;
-	gap: 0.25rem;
-	font-size: 0.75rem;
-	color: hsl(var(--muted-foreground));
-  }
-  
-  .shiftDate,
-  .shiftTime {
-	white-space: nowrap;
-  }
-  
-  .dot {
-	color: hsl(var(--muted-foreground));
-  }
-  
-  .assignButton {
-	display: flex;
-	align-items: center;
-	padding: 0.375rem 0.75rem;
-	background-color: transparent;
-	border: 1px solid hsl(var(--border));
-	border-radius: 0.375rem;
-	font-size: 0.75rem;
-	color: blue;
+	padding: 0.6rem;
+	background-color: #A2D2FF;
+	border-radius: 6px;
+	color: #023047;
 	cursor: pointer;
-	transition: all 0.2s;
-	white-space: nowrap;
-  }
-  
-  .assignButton:hover {
-	background-color: hsl(var(--accent));
-  }
-  
-  /* --- Shift Approvals --- */
-  .approvalCard {
-	padding: 0.75rem;
-	border: 1px solid hsl(var(--border));
-	border-radius: 0.375rem;
-	transition: all 0.2s;
-  }
-  
-  .approvalCard:hover {
-	border-color: hsl(var(--primary));
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  }
-  
-  .approvalName {
-	font-size: 0.875rem;
-	font-weight: 600;
-	color: hsl(var(--foreground));
-	margin-bottom: 0.375rem;
-  }
-  
-  .approvalRequest {
-	font-size: 0.75rem;
-	color: hsl(var(--muted-foreground));
-	margin-bottom: 0.75rem;
-	line-height: 1.4;
-  }
-  
-  .approvalActions {
-	display: flex;
-	gap: 0.5rem;
-  }
-  
-  .approveButton {
-	flex: 1;
-	background-color: hsl(var(--primary));
-	color: hsl(var(--primary-foreground));
-	font-size: 0.75rem;
-	height: 32px;
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-  }
-  
-  .rejectButton {
-	flex: 1;
-	font-size: 0.75rem;
-	height: 32px;
-	border: 1px solid hsl(var(--border));
-	background-color: transparent;
-	border-radius: 4px;
-	cursor: pointer;
-  }
-  
-  .rejectButton:hover {
-	background-color: hsl(var(--accent));
-  }
-  
-  /* --- Alerts --- */
-  .alertCard {
-	padding: 0.75rem;
-	background-color: hsl(var(--alert-critical, 0, 100%, 95%));
-	border: 1px solid hsl(var(--destructive));
-	border-radius: 0.375rem;
-	display: flex;
-	gap: 0.75rem;
-	align-items: flex-start;
-  }
-  
-  .alertIcon {
-	width: 18px;
-	height: 18px;
-	color: hsl(var(--destructive));
-	flex-shrink: 0;
-	margin-top: 2px;
-  }
-  
-  .alertMessage {
-	font-size: 0.75rem;
-	color: hsl(var(--foreground));
-	line-height: 1.4;
-	flex: 1;
-  }
-  
-  
-
-
-  .customEvent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 2px;
-    width: 100%;
+	overflow: hidden;
 }
 
 .eventTitle {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+	display: block;
+	font-size: 1rem;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-.eventBadge {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    padding: 0 6px;
-    font-size: 10px;
-    font-weight: bold;
-    margin-left: 4px;
-    flex-shrink: 0;
+.weekEventContent {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 0.9rem;
+	line-height: 1.1;
+	overflow: hidden;
+	position: relative;
+	padding-bottom: 3rem;
+}
+
+.eventTime {
+	font-size: 0.9rem;
+}
+
+.eventLocation {
+	font-style: italic;
+	opacity: 0.9;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.countInline {
+	position: absolute;
+	bottom: 1rem;
+	left: 0;
+	padding: 0.5rem 1rem;
+	width: 100%;
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #991b1b;
+	background: rgba(239, 68, 68, 0.12);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	border-radius: 999px;
+	backdrop-filter: blur(2px);
+	-webkit-backdrop-filter: blur(2px);
+	animation: breathe 2.2s ease-in-out infinite;
+}
+
+.my_calendar .rbc-month-view .countInline {
+	position: relative;
+	bottom: auto;
+	left: auto;
+	margin-top: 2px;
+	width: fit-content;
+	padding: 0.2rem 0.4rem;
+	font-size: 0.7rem;
+}
+
+/* Hover detail */
+.hoverDetail {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 220px;
+	background: white;
+	color: #111827;
+	padding: 8px;
+	border-radius: 8px;
+	margin-top: 6px;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+	z-index: 999;
+	display: none;
+}
+
+.eventWrapper:hover .hoverDetail {
+	display: block;
+}
+
+.shiftItem {
+	padding: 6px 0;
+	border-bottom: 1px solid #e5e7eb;
+	font-size: 0.75rem;
+}
+
+.shiftItem:last-child {
+	border-bottom: none;
+}
+
+.shiftLocation {
+	font-style: italic;
+	color: #6b7280;
+	font-size: 0.7rem;
 }
   
+
+/*
+.sidebar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.25rem;
+    background-color: white;
+    border-left: 1px solid #e5e7eb;
+    overflow-y: auto; /* Allow sidebar to scroll if content is long 
+}
+
+/* --- 2. SIDEBAR SECTIONS & CARDS --- 
+.section {
+    background-color: white;
+    border: 1px solid #dee1e6;
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.badge {
+    background-color: #ef4444; 
+    color: white;
+    font-size: 0.7rem;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-weight: 600;
+}
+
+/* Common Card Style 
+.shiftCard, .approvalCard {
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+}
+
+.shiftCard:hover, .approvalCard:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.shiftName, .approvalName {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.shiftDetails {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* --- 3. ALERTS --- 
+.alertCard {
+    padding: 0.75rem;
+    background-color: #fff1f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.alertIcon {
+    width: 16px;
+    color: #ef4444;
+    flex-shrink: 0;
+}
+
+.alertMessage {
+    font-size: 0.75rem;
+    color: #1f2937;
+    line-height: 1.4;
+}
+*/
+

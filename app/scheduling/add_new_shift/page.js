@@ -158,6 +158,7 @@ export default function Page() {
 			const data = await res.json();
 			
 			setCgResults(data.data.caregivers || []);
+			console.log("caregivers: ", data);
 			setShowCgResults(true);
 		} catch (err) { 
 			console.error("Caregiver fetch error", err); 
@@ -208,8 +209,8 @@ export default function Page() {
                 clientAddress: data.clientAddress,
                 clientPhone: data.clientPhone,
                 contactPerson: { name: `${data.contactFName} ${data.contactLName}`, phone: data.contactPhone },
-                startTime: data.startTime,
-                endTime: data.endTime,
+				startTime: data.startTime,
+				endTime: data.endTime,
                 servicesRequired: data.serviceInput.split(',').map(s => s.trim()),
 				notes: data.shiftNotes,
 

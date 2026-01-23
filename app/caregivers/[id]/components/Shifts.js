@@ -76,16 +76,23 @@ export default function Shifts() {
 					<TableCell>LOCATION</TableCell>
 					<TableCell>SERVICES</TableCell>
 				</TableHeader>
-
-				{currentShifts.map(c => (
-					<TableContent key={c.id}>
-						<TableCell>{c.status}</TableCell>
-						<TableCell>{c.client.fullName}</TableCell>
-						<TableCell>{c.startTime}</TableCell>
-						<TableCell>{c.clientAddress}</TableCell>
-						<TableCell>{c.servicesRequired}</TableCell>
+				{currentShifts.length === 0 ? (
+					<TableContent>
+						<TableCell colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+							No shifts found.
+						</TableCell>
 					</TableContent>
-				))}
+				):(
+					currentShifts.map(c => (
+						<TableContent key={c._id}>
+							<TableCell>{c.status}</TableCell>
+							<TableCell>{c.client.fullName}</TableCell>
+							<TableCell>{c.startTime}</TableCell>
+							<TableCell>{c.clientAddress}</TableCell>
+							<TableCell>{c.servicesRequired}</TableCell>
+						</TableContent>
+					))
+				)}
 			</Table>
 		</div>
 	);
