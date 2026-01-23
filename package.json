@@ -11,9 +11,11 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.16",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
+    "re-resizable": "^6.11.2",
     "react": "19.1.0",
     "react-big-calendar": "^1.19.4",
     "react-datepicker": "^8.7.0",
