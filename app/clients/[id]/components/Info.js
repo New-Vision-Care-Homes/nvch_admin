@@ -11,6 +11,8 @@ import styles from "./info.module.css";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@app/validation";
 import { useParams } from "next/navigation";
 
+import { useClients } from "@/hooks/useClients";
+
 // API Endpoint for user management
 const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
 
@@ -33,6 +35,7 @@ const cleanFetchedData = (apiData) => {
         gender: apiData.gender || "",
         // Format date string for HTML input type="date" (YYYY-MM-DD)
         birth: apiData.dateOfBirth?.split('T')[0] || "", 
+		region: apiData.region || "",
         phone: apiData.phone || "",
         email: apiData.email || "",
 		street: apiData.address.street || "",
@@ -72,7 +75,9 @@ const schema = yup.object({
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule,
 	phone: phoneRule,
-	gender: shortTextRule.required("Gender is required"),
+	region: yup.string()
+		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.required("Region is required"),
 	birth: birthRule,
 	notes: longTextRule,
 	// Address
@@ -97,10 +102,21 @@ const schema = yup.object({
 
 
 export default function Info() {
-    const [isLoading, setIsLoading] = useState(true);
+
+	const { id } = useParams();
+	const [isInitialized, setIsInitialized] = useState(false);
+	const { 
+		clientDetail,
+		updateClient, 
+		isLoading, 
+		isError, 
+		errorMessage, 
+		isActionPending 
+	} = useClients(id);
+
+    //const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState(null);
-    const { id } = useParams();
 
     const { 
         register, 
@@ -114,15 +130,26 @@ export default function Info() {
         defaultValues: cleanFetchedData(null), 
     });
 
+
+	useEffect(() => {
+		if (clientDetail && !isInitialized) {
+			const cleaned = cleanFetchedData(clientDetail);
+			reset(cleaned);
+			
+			setIsInitialized(true); 
+		}
+	}, [clientDetail, reset, isInitialized]);
+
     // --- 3. Data Loading (Fetch User Data) ---
+	/*
     const fetchUser = useCallback(async () => {
-        setIsLoading(true);
+        //setIsLoading(true);
         setMessage(null);
         const token = localStorage.getItem("token");
         
         if (!token) {
             setMessage("Authentication failed. Please log in again.");
-            setIsLoading(false);
+            //setIsLoading(false);
             return;
         }
 
@@ -152,7 +179,7 @@ export default function Info() {
             console.error("Fetch User Error:", err);
             setMessage("Error connecting to server to fetch user data.");
         } finally {
-            setIsLoading(false);
+            //setIsLoading(false);
         }
     }, [id, reset]); // Dependencies: id for endpoint, reset for RHF
 
@@ -161,15 +188,13 @@ export default function Info() {
         if(id) {
              fetchUser();
         }
-    }, [id, fetchUser]);
+    }, [id, fetchUser]);*/
 
 
     // --- 4. Form Submission (Update User Data) ---
     const onSubmit = async (data) => {
-		console.log("check if onsubmit is working");
         setIsSubmitting(true);
         setMessage(null);
-        const token = localStorage.getItem("token");
 
         // --- Re-nest/Structure data for API Submission ---
 		const submissionBody = {
@@ -178,6 +203,7 @@ export default function Info() {
 			lastName: data.lastName,
 			phone: data.phone,
 			dateOfBirth: data.birth,
+			region: data.region,
 			notes: data.notes ? data.notes : null,
 		  
 			address: {
@@ -207,34 +233,20 @@ export default function Info() {
 
 		console.log("submitbody: ", submissionBody)
 
-        try {
-            const res = await fetch(`${API_BASE_URL}/${id}`, {
-                method: "PUT", // Use PUT or PATCH for updating resources
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(submissionBody),
-            });
-            
-            const resData = await res.json();
-
-            if (res.ok) {
-                // If update is successful, reset the form again with the *latest* data
-                // This ensures "Cancel" will revert to this newly saved state.
-                const updatedData = cleanFetchedData(resData.data.user); 
-                reset(updatedData); 
-                setMessage("✅ User data updated successfully!");
-            } else {
-                const errorMsg = resData.error || resData.message || `Failed to update user (Status ${res.status}).`;
-                setMessage(`Error saving: ${errorMsg}`);
-            }
-        } catch (err) {
-            console.error("Submission Error:", err);
-            setMessage("Network error or invalid response during submission.");
-        } finally {
-            setIsSubmitting(false);
-        }
+		updateClient(
+			{ id, data: submissionBody },
+			{
+				onSuccess: (res) => {
+					const updated = res;
+					const cleaned = cleanFetchedData(updated);
+					
+					reset(cleaned); 
+					
+					setIsSubmitting(false);
+					setMessage("✅ Update Success!");
+				}
+			}
+		);
     };
 
     // --- 5. Cancel Action ---
@@ -246,9 +258,13 @@ export default function Info() {
     };
 
 
-    if (isLoading) {
-        return <div className={styles.loading}>Loading user profile...</div>;
-    }
+	if (isLoading) {
+		return (
+			<PageLayout>
+				<div>Loading client info...</div>
+			</PageLayout>
+		);
+	}
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -265,21 +281,16 @@ export default function Info() {
                         </div>
                         <div className={styles.card_row_2}>
                             <InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
-							{/*
-                            <InputField label="Gender" name="gender" type="select" register={register} error={errors.gender}   
-                                options={[
-                                    { label: "Male", value: "male" },
-                                    { label: "Female", value: "female" },
-                                    { label: "Other", value: "other" },
-                                ]} />
-							*/}
 							<InputField label="Address" name="street" register={register} error={errors.street} />
                         </div>
                         <div className={styles.card_row_2}>
 							<InputField label="City" name="city" register={register} error={errors.city} />
-							<InputField label="State" name="state" register={register} error={errors.state} />
+							<InputField label="Province" name="state" register={register} error={errors.state} />
 							<InputField label="Country" name="country" register={register} error={errors.country} />
 							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
+							<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+								options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+							/>
                         </div>
                         <div className={styles.card_row_1}>
                             <InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />

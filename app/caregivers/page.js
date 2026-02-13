@@ -16,7 +16,16 @@ import { useCaregivers} from "@/hooks/useCaregivers";
 
 export default function Caregivers() {
 	const queryClient = useQueryClient();
-	const { data: caregivers = [], isLoading, isError, error } = useCaregivers();
+	const { 
+        caregivers, 
+        isLoading, 
+        isError, 
+        error, 
+        deleteCaregiver,
+        isDeleting
+    } = useCaregivers();
+
+	//const { data: caregivers = [], isLoading, isError, error } = useCaregivers();
 	console.log("caregivers: ", caregivers);
 
     // --- State ---
@@ -40,18 +49,8 @@ export default function Caregivers() {
 
     // --- Confirm delete ---
     const confirmDelete = async () => {
-        const token = localStorage.getItem("token");
-        if (!token || !deletedCaregiverId) return;
-
-        try {
-            const res = await fetch(
-                `https://nvch-server.onrender.com/api/auth/admin/users/${deletedCaregiverId}`,
-                { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (res.ok) queryClient.invalidateQueries({ queryKey: ["caregivers"] });
-        } catch (err) {
-            console.error("Delete error:", err);
-        }
+		if (!deletedCaregiverId) return;
+        deleteCaregiver(deletedCaregiverId);
 
         setShowModal(false);
         setDeletedCaregiverId(null);

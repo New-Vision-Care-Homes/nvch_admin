@@ -12,14 +12,12 @@ import { Edit, Activity, Undo2, Upload } from "lucide-react";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useUser } from "@/hooks/useUsers";
-import { useImageUrl } from "@/hooks/useImageUrl";
+import { useProfileUpload } from "@/hooks/usePictures";
+import { useClients } from "@/hooks/useClients";
 
 
 // --- API Endpoints Configuration ---
 const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
-const S3_API_BASE_URL = "https://nvch-server.onrender.com/api/upload";
 
 // --- Constants for File Validation ---
 const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
@@ -28,17 +26,17 @@ const DEFAULT_AVATAR = "/img/navbar/avatar.jpg";
 
 export default function Page() {
     const { id } = useParams();
-	const queryClient = useQueryClient();
 
-	// --- React Query Hooks ---
-	const {
-		data: user,
-		isLoading,
-		isError,
-		refetch,
-	  } = useUser(id);
+	const { 
+        clientDetail, 
+        isLoading, 
+        isError, 
+        errorMessage, 
+        isActionPending 
+    } = useClients(id);
+
+	console.log("client: ", clientDetail);
 	  
-	const { imageUrl: displayImageUrl } = useImageUrl(user?.data?.user?.profilePicture);
     // --- Image Upload States ---
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -49,6 +47,9 @@ export default function Page() {
     // --- General UI States ---
     const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
     const [message, setMessage] = useState("");
+
+
+	const { uploadProfilePicture, isUploading, uploadErrorMessage } = useProfileUpload();
 
 
     /**
@@ -62,52 +63,17 @@ export default function Page() {
         if (!selectedFile) return;
         setUploading(true);
         setUploadError("");
-        const token = localStorage.getItem("token");
 
-        try {
-            // Step 1: Request Pre-signed URL for S3 upload
-            const query = new URLSearchParams({
-                uploadType: "profile-picture",
-                userId: id,
-                mimeType: selectedFile.type,
-                fileSize: selectedFile.size.toString(),
-            }).toString();
-
-            const presignRes = await fetch(`${S3_API_BASE_URL}/signed-url?${query}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const presignData = await presignRes.json();
-            if (!presignData.success) throw new Error(presignData.message);
-
-            const { uploadUrl, fileKey } = presignData.data;
-
-            // Step 2: Binary PUT to S3
-            const s3Res = await fetch(uploadUrl, { method: "PUT", body: selectedFile });
-            if (!s3Res.ok) throw new Error("S3 Upload Failed");
-
-            // Step 3: Patch User Record in DB
-            const updateRes = await fetch(`${S3_API_BASE_URL}/profile-picture`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ fileKey }),
-            });
-
-            if (updateRes.ok) {
-                // Trigger imperative refresh to update UI immediately
-                await refetch(); 
-
-				queryClient.invalidateQueries({
-					queryKey: ["signedImage"],
-				});
-                setMessage("Profile picture updated successfully!");
-                setIsGeneralModalOpen(true);
-                handleCloseImageModal();
-            }
-        } catch (err) {
-            setUploadError(err.message);
-        } finally {
-            setUploading(false);
-        }
+		uploadProfilePicture(
+			{ file: selectedFile, userId: id },
+			{
+				onSuccess: () => {
+					setMessage("Profile picture updated successfully!");
+					setIsGeneralModalOpen(true);
+					handleCloseImageModal();
+				}
+			}
+		)
     };
 
     /**
@@ -160,22 +126,28 @@ export default function Page() {
         setPreviewUrl(null);
     };
 
-    if (isLoading) return <p>Loading user data...</p>;
-    if (!user) return <p>User data not found.</p>;
+    if (isLoading) {
+        return (
+            <PageLayout>
+                <div>Loading client info...</div>
+            </PageLayout>
+        );
+    }
+
 
     return (
         <>
             <PageLayout>
                 <div className={styles.header}>
-                    <h1>Client Profile: {user.firstName} {user.lastName}</h1>
+                    <h1>Client Profile: {clientDetail.firstName} {clientDetail.lastName}</h1>
                     <div className={styles.headerActions}>
                         <Button
                             variant="primary"
                             icon={<Activity size={16} />}
                             onClick={handleActive}
-                            className={`${user.data.user.isActive ? styles.inactive : styles.active}`}
+                            className={`${clientDetail.isActive ? styles.inactive : styles.active}`}
                         >
-                            {user.data.user.isActive ? "Inactive" : "Active"}
+                            {clientDetail.isActive ? "Inactive" : "Active"}
                         </Button>
                         <Link href="/clients">
                             <Button variant="secondary" icon={<Undo2 size={16}/>}>Back</Button>
@@ -188,8 +160,8 @@ export default function Page() {
                     <div className={styles.content}>
                         <div className={styles.text}>
                             <div className={styles.column}>
-                                <InfoField label="Client ID">{user.clientId}</InfoField>
-                                <InfoField label="Status">{user.isActive ? "Active" : "Inactive"}</InfoField>
+                                <InfoField label="Client ID">{clientDetail.clientId}</InfoField>
+                                <InfoField label="Status">{clientDetail.isActive ? "Active" : "Inactive"}</InfoField>
                             </div>
                             <div className={styles.column}>
                                 <InfoField label="Care Plan Status">On Track</InfoField>
@@ -198,7 +170,7 @@ export default function Page() {
                         </div>
                         <div className={styles.picture}>
                             <Image
-                                src={displayImageUrl}
+                                src={clientDetail.profilePictureUrl || DEFAULT_AVATAR}
                                 alt="Profile"
                                 width={100}
                                 height={100}
@@ -235,7 +207,7 @@ export default function Page() {
                         <div className={styles.imagePreview}>
                             <Image
                                 // Show preview of selected file if available, otherwise current image
-                                src={previewUrl || displayImageUrl || DEFAULT_AVATAR}
+                                src={previewUrl || clientDetail.profilePictureUrl || DEFAULT_AVATAR}
                                 alt="Preview"
                                 width={150}
                                 height={150}
