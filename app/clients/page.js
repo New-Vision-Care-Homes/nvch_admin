@@ -18,7 +18,17 @@ import { useClients } from "@/hooks/useClients";
 
 export default function Clients() {
 	const queryClient = useQueryClient();
-	const { data: clients = [], isLoading, isError, error } = useClients();
+	//const { data: clients = [], isLoading, isError, error } = useClients();
+	
+	const { 
+		clients, 
+		isLoading, 
+		isError, 
+		errorMessage, 
+		deleteClient, 
+		isActionPending 
+	} = useClients();
+
 	console.log("clients: ", clients);
 
     // --- State ---

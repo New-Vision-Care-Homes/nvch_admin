@@ -8,7 +8,6 @@ import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./add_new_client.module.css";
-// import Image from "next/image"; // <--- 已删除
 import { useRouter } from "next/navigation";
 
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, longTextRule, dateRule, pinRule, clientIdRule, birthRule } from "@app/validation";
@@ -20,8 +19,10 @@ const schema = yup.object({
     lastName: nameRule.required("Last name is required"),
     email: emailRule,
     phone: phoneRule,
-    gender: shortTextRule.required("Gender is required"),
     birth: birthRule,
+	region: yup.string()
+        .oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+        .required("Region is required"),
     notes: longTextRule,
     // Address
     street: shortTextRule.required(),
@@ -55,7 +56,6 @@ const schema = yup.object({
     emergencyProcedures: longTextRule,
     communicationPreferences: longTextRule,
     otherInstructions: longTextRule,
-    // picture: yup.mixed(), // <--- 假设以前有，已删除
 });
 
 export default function Page() {
@@ -69,7 +69,6 @@ export default function Page() {
 
     const onSubmit = async (data) => {
         setLoading(true);
-        // 注意：这里没有图片上传的逻辑了，data中也不包含图片文件
         const body = {
             email: data.email,
             password: "SecurePass123!",
@@ -79,6 +78,7 @@ export default function Page() {
             phone: data.phone,
             clientId: data.clientId,
             dateOfBirth: data.birth,
+			region: data.region,
           
             address: {
                 street: data.street,
@@ -129,13 +129,11 @@ export default function Page() {
             },
             
             notes: data.notes ? data.notes : null,
-            // picture: data.picture?.[0] ? data.picture[0].name : null, // <--- 假设以前有，已删除
         };
           
 
         try {
             const token = localStorage.getItem("token");
-            console.log("token: ", token);
             console.log("body: ", body);
             const res = await fetch("https://nvch-server.onrender.com/api/auth/register", {
                 method: "POST",
@@ -220,20 +218,6 @@ export default function Page() {
             </div>
 
             <div className={styles.content}>
-                {/* <div className={styles.leftPanel}>
-                    <div className={styles.imageWrapper}>
-                        {watch("picture")?.[0] ? (
-                            <Image src={URL.createObjectURL(watch("picture")[0])} alt="Client Picture" width={150} height={150} className={styles.image} />
-                        ) : (
-                            <div className={styles.imagePlaceholder}><span>Image Placeholder</span></div>
-                        )}
-                    </div>
-                    <label className={styles.editButton}>
-                        Upload
-                        <input type="file" accept="image/*" {...register("picture")} className={styles.hiddenInput} />
-                    </label>
-                </div> */} 
-
                 <div className={styles.rightPanel} style={{ width: '100%' }}> 
                     {/* Personal Info */}
                     <Card>
@@ -247,8 +231,8 @@ export default function Page() {
                             </div>
                             <div className={styles.row2}>
                                 <InputField label="Date of Birth" name="birth" register={register} error={errors.birth} />
-                                <InputField label="Gender" name="gender" type="select" register={register} error={errors.gender}
-                                    options={[{ label: "Male", value: "male" }, { label: "Female", value: "female" }, { label: "Other", value: "other" }]}
+                                <InputField label="Region" name="region" type="select" register={register} error={errors.region}
+                                    options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
                                 />
                             </div>
 
@@ -258,7 +242,7 @@ export default function Page() {
                                 <InputField label="City" name="city" register={register} error={errors.city} />
                             </div>
                             <div className={styles.row2}>
-                                <InputField label="State" name="state" register={register} error={errors.state} />
+                                <InputField label="Province" name="state" register={register} error={errors.state} />
                                 <InputField label="Country" name="country" register={register} error={errors.country} />
                                 <InputField label="Postal Code" name="pinCode" register={register} error={errors.pinCode} />
                             </div>

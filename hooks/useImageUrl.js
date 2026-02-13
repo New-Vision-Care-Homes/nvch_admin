@@ -1,3 +1,5 @@
+// delete
+
 import { useQuery } from "@tanstack/react-query";
 
 const S3_API_BASE_URL = "https://nvch-server.onrender.com/api/upload";

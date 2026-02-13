@@ -41,6 +41,7 @@ const cleanFetchedData = (apiData) => {
 		state: apiData.address.state || "",
 		country: apiData.address.country || "",
 		pincode: apiData.address.pinCode || "",
+		region: apiData.region || "",
 		
         notes: apiData.notes || "",
     };
@@ -66,6 +67,9 @@ const schema = yup.object({
     lastName: nameRule.required("Last name is required"),
     email: emailRule.optional(),
     phone: phoneRule.optional(),
+	region: yup.string()
+		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.required("Region is required"),
     birth: birthRule.optional(),
     notes: longTextRule.optional(),
     
@@ -168,6 +172,7 @@ export default function Info() {
             lastName: data.lastName,
             phone: data.phone,
             dateOfBirth: data.birth,
+			region: data.region,
             notes: data.notes ? data.notes : null,
           
             // Address structure re-nesting
@@ -256,6 +261,9 @@ export default function Info() {
 							<InputField label="State" name="state" register={register} error={errors.state} />
                             <InputField label="Country" name="country" register={register} error={errors.country} />
 							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
+							<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+								options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+							/>
                         </div>
                         <div className={styles.card_row_1}>
                             <InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />

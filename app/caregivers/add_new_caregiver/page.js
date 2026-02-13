@@ -50,7 +50,10 @@ const schema = yup.object({
     lastName: nameRule.required("Last name is required"),
     email: emailRule.required("Email is required"),
     phone: phoneRule.required("Phone number is required"),
-    dateOfBirth: birthRule.required("Date of Birth is required"), 
+    dateOfBirth: birthRule.required("Date of Birth is required"),
+	region: yup.string()
+		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.required("Region is required"), 
 
     // Address Fields
     street: shortTextRule.required("Street is required"),
@@ -117,20 +120,6 @@ export default function Page() {
         }
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | useFieldArray for Dynamic Certifications List
-    |--------------------------------------------------------------------------
-    */
-    const { 
-        fields: certFields, 
-        append: appendCert, 
-        remove: removeCert 
-    } = useFieldArray({
-        control,
-        name: "certifications",
-    });
-
     // useFieldArray for Availability Schedule
     const { fields: availabilityFields, append: appendAvailability, remove: removeAvailability } = useFieldArray({
         control,
@@ -182,6 +171,7 @@ export default function Page() {
             phone: data.phone,
             employeeId: data.employeeId,
             dateOfBirth: data.dateOfBirth,
+			region: data.region,
 
             address: {
                 street: data.street,
@@ -289,23 +279,8 @@ export default function Page() {
                 </div>
 
                 <div className={styles.content}>
-                    {/* Image Upload Panel (Left) */}
-                    <div className={styles.leftPanel}>
-                        <div className={styles.imageWrapper}>
-                            {watch("picture")?.[0] ? (
-                                <Image src={URL.createObjectURL(watch("picture")[0])} alt="Caregiver Picture" width={150} height={150} className={styles.image} />
-                            ) : (
-                                <div className={styles.imagePlaceholder}><span>Image Placeholder</span></div>
-                            )}
-                        </div>
-                        <label className={styles.editButton}>
-                            Upload Picture
-                            <input type="file" accept="image/*" {...register("picture")} className={styles.hiddenInput} />
-                        </label>
-                    </div>
-
                     {/* Form Fields Panel (Right) */}
-                    <div className={styles.rightPanel}>
+                    <div className={styles.rightPanel} style={{ width: '100%' }} >
                         {/* General Info & Contact */}
                         <Card>
                             <CardHeader>General and Contact Information</CardHeader>
@@ -318,10 +293,15 @@ export default function Page() {
                                     <InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
                                 </div>
                                 <div className={styles.row2}>
-                                    <InputField label="Date of Birth" name="dateOfBirth" register={register} error={errors.dateOfBirth} type="date" />
+									<InputField label="Email" name="email" register={register} error={errors.email} />
                                     <InputField label="Phone" name="phone" register={register} error={errors.phone} />
                                 </div>
-                                <InputField label="Email" name="email" register={register} error={errors.email} />
+								<div className={styles.row2}>
+                                    <InputField label="Date of Birth" name="dateOfBirth" register={register} error={errors.dateOfBirth} type="date" />
+									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+									/>
+                                </div>
                                 {/* Address */}
                                 <div className={styles.row2}>
                                     <InputField label="Street" name="street" register={register} error={errors.street} />

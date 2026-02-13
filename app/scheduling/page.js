@@ -28,6 +28,7 @@ const localizer = dateFnsLocalizer({
 export default function SchedulingPage() {
 	const router = useRouter();
 	const { data: shifts = [] } = useShifts();
+	console.log("shifts: ", shifts);
 	const [view, setView] = useState("week");
 	const [date, setDate] = useState(new Date());
 
@@ -93,7 +94,9 @@ export default function SchedulingPage() {
 		if (view === "month") {
 			router.push(`/caregivers/${event.caregiver?.id || event.caregiver?._id}`);
 		} else {
-			router.push(`/scheduling/shift/${event.id}`);
+			const startStr = event.start.toISOString();
+			const endStr = event.end.toISOString();
+			router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`);;
 		}
 	};
 
