@@ -1,14 +1,14 @@
 import axiosClient from '../axiosClient';
 
 /**
- * Service to handle all Caregiver-related API requests.
+ * Service to handle all Admin-related API requests.
  * Inherits base URL and Auth headers from axiosClient.
  */
-export const caregiverService = {
+export const adminService = {
 	/**
-	 * Fetch all caregivers from the administrative endpoint.
+	 * Fetch all admins from the administrative endpoint.
 	 * @param {Object} params - Optional query parameters (search, page, limit)
-	 * @returns {Promise<Array>} List of caregiver objects.
+	 * @returns {Promise<Array>} List of admin objects.
 	 */
 	getAll: async (params = {}) => {
 		const queryParams = new URLSearchParams();
@@ -17,25 +17,28 @@ export const caregiverService = {
 		if (params.limit) queryParams.append('limit', params.limit);
 
 		const queryString = queryParams.toString();
-		const url = queryString ? `/api/auth/admin/caregivers?${queryString}` : '/api/auth/admin/caregivers';
+		const url = queryString
+			? `/api/auth/admin/admins?${queryString}`
+			: '/api/auth/admin/admins';
 
 		const { data } = await axiosClient.get(url);
-		return data.data.caregivers;
+		// Handle both response shapes: data.data.admins or data.admins
+		return data?.data?.admins ?? data?.admins ?? [];
 	},
 
 	/**
-	 * Fetch a single client by their ID.
-	 * @param {string|number} id - The unique identifier of the client.
-	 * @returns {Promise<Object>} The client detail object.
+	 * Fetch a single admin by their ID.
+	 * @param {string|number} id - The unique identifier of the admin.
+	 * @returns {Promise<Object>} The admin detail object.
 	 */
-	getCaregiver: async (id) => {
+	getAdmin: async (id) => {
 		const { data } = await axiosClient.get(`/api/auth/admin/users/${id}`);
 		return data.data.user;
 	},
 
 	/**
-	 * Delete a specific caregiver by their ID.
-	 * @param {string|number} id - The unique identifier of the caregiver.
+	 * Delete a specific admin by their ID.
+	 * @param {string|number} id - The unique identifier of the admin.
 	 */
 	delete: async (id) => {
 		const { data } = await axiosClient.delete(`/api/auth/admin/users/${id}`);
@@ -43,16 +46,16 @@ export const caregiverService = {
 	},
 
 	/**
-	 * Create a new caregiver record.
-	 * @param {Object} caregiverData - The payload containing caregiver details.
+	 * Create a new admin record.
+	 * @param {Object} adminData - The payload containing admin details.
 	 */
-	create: async (caregiverData) => {
-		const { data } = await axiosClient.post('/api/auth/admin/users', caregiverData);
+	create: async (adminData) => {
+		const { data } = await axiosClient.post('/api/auth/admin/users', adminData);
 		return data;
 	},
 
 	/**
-	 * Update an existing caregiver's information.
+	 * Update an existing admin's information.
 	 * @param {string|number} id - The unique identifier.
 	 * @param {Object} updateData - The fields to be updated.
 	 */

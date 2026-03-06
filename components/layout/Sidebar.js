@@ -3,21 +3,22 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings } from "lucide-react";
+import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building } from "lucide-react";
 
-// Define all the tabs in the sidebar
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
 	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
 	{ id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
 	{ id: 4, label: "Scheduling", icon: Calendar, href: "/scheduling" },
+	{ id: 5, label: "Homes", icon: Building, href: "/homes" },
+	{ id: 6, label: "Admins", icon: Settings, href: "/admins" },
 	/*
-	{ id: 5, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
-	{ id: 6, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
-	{ id: 7, label: "Messaging", icon: MessageCircle, href: "/messaging" },
-	{ id: 8, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
+	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
+	{ id: 8, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
+	{ id: 9, label: "Messaging", icon: MessageCircle, href: "/messaging" },
+	{ id: 10, label: "Reports & Analytics", icon: BarChart2, href: "/reports" },
 	 
-	{ id: 9, label: "Settings", icon: Settings, href: "/setting" }*/
+	{ id: 11, label: "Settings", icon: Settings, href: "/setting" }*/
 ];
 
 // Map keywords to specific tab ids
@@ -25,7 +26,10 @@ const tabs = [
 const keywordToTabMap = {
 	"/client": 2,       // any path containing "/client" -> Clients tab
 	"/caregiver": 3,    // any path containing "/caregiver" -> Caregivers tab
-	"/billing": 5,      // any path containing "/billing" -> Billing tab
+	"/scheduling": 4,   // any path containing "/scheduling" -> Scheduling tab
+	"/homes": 5,        // any path containing "/homes" -> Homes tab
+	"/admin": 6,        // any path containing "/admin" -> Admins tab
+	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
 };
 
 export default function Sidebar() {

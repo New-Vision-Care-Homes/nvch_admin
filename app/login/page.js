@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 import React, { useState } from "react";
 import Image from "next/image";
 import styles from "./login_page.module.css";
@@ -11,7 +11,7 @@ export default function LoginPage() {
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [showPassword, setShowPassword] = useState(false);
-	const [errorMsg ,setErrorMsg] = useState("");
+	const [errorMsg, setErrorMsg] = useState("");
 	const [checkbox, setCheckBox] = useState(false);
 
 	const router = useRouter();
@@ -19,7 +19,7 @@ export default function LoginPage() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setErrorMsg("");
-	  
+
 		try {
 			const res = await fetch("https://nvch-server.onrender.com/api/auth/login", {
 				method: "POST",
@@ -27,10 +27,10 @@ export default function LoginPage() {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({ email, password }),
-		  	});
-	  
+			});
+
 			const data = await res.json();
-		
+
 			if (res.ok) {
 				const token = data?.data?.token;
 				if (!token) {
@@ -38,8 +38,8 @@ export default function LoginPage() {
 					console.log("Login failed: no token received");
 					return;
 				}
-				localStorage.setItem("token", token);	  
-				localStorage.setItem("user", JSON.stringify(data.data.user));  
+				localStorage.setItem("token", token);
+				localStorage.setItem("user", JSON.stringify(data.data.user));
 				router.push("/dashboard");
 				console.log("login successfull")
 			} else {
@@ -50,8 +50,8 @@ export default function LoginPage() {
 			setErrorMsg("Error connecting to server");
 		}
 	};
-	  
-	  
+
+
 
 	return (
 		<div className={styles.page}>
@@ -127,7 +127,7 @@ export default function LoginPage() {
 
 
 					 */}
-					
+
 					<div className={styles.button}>
 
 						<button type="submit" className={styles.loginButton} onClick={handleSubmit}>

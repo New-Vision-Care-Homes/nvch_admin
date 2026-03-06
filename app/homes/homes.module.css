@@ -1,0 +1,304 @@
+/* 
+==========================================
+ PAGE CONTAINER (NEW)
+==========================================
+- Ensures the whole page fills the viewport
+- Subtract navbar height (4rem)
+- Allows content to stretch from top → bottom
+*/
+.pageContainer {
+	display: flex;
+	flex-direction: column;
+	min-height: calc(100vh - 4rem);
+	/* <-- navbar height */
+	overflow: hidden;
+	padding-bottom: 1rem;
+}
+
+/*
+==========================================
+ HEADER
+==========================================
+*/
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: var(--border-primary);
+	padding-bottom: 1rem;
+	margin-bottom: 1rem;
+}
+
+.filter_row {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 1rem;
+	flex-wrap: wrap;
+}
+
+.search {
+	align-items: center;
+	justify-content: center;
+	width: 40%;
+	height: 3rem;
+	padding: 0.7rem 1rem;
+	border: var(--border-secondary);
+	border-radius: var(--border-size-sm);
+	margin-bottom: 1rem;
+	font-size: 1rem;
+}
+
+.filter {
+	display: flex;
+	align-items: center;
+	gap: 2rem;
+}
+
+.button {
+	height: 3rem;
+	padding: 0.7rem 1rem;
+}
+
+/* 
+==========================================
+ TABLE WRAPPER
+==========================================
+*/
+.tableWrapper {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	/* pushes pagination to bottom */
+	min-height: 0;
+	/* prevents overflow issues */
+	width: 100%;
+	padding: 1rem;
+	border-radius: var(--border-size-md);
+	box-shadow: var(--shadow-md);
+}
+
+.TableCell,
+.TableHeader {
+	padding: 0.75rem 1rem;
+}
+
+.TableCell span {
+	display: block;
+}
+
+/* Pill style for status */
+.statusPill {
+	display: inline-block;
+	padding: 0.25rem 0.75rem;
+	/* height & horizontal padding */
+	border-radius: 9999px;
+	/* full round */
+	font-size: 0.85rem;
+	font-weight: 500;
+	text-align: center;
+	min-width: 60px;
+}
+
+/* Specific colors */
+.statusActive {
+	background-color: #D1FAE5;
+	/* light green background */
+	color: #065F46;
+	/* dark green text */
+}
+
+.statusInactive {
+	background-color: #FEE2E2;
+	/* light red background */
+	color: #B91C1C;
+	/* dark red text */
+}
+
+
+/* Table Row Actions */
+.TableCell>div {
+	display: inline-block;
+	margin-left: 0.5rem;
+}
+
+/* 
+==========================================
+ PAGINATION
+==========================================
+*/
+.pagination {
+	margin-top: auto;
+	/* pushes it to the bottom */
+	display: flex;
+	justify-content: center;
+	list-style: none;
+	gap: 0.5rem;
+	padding: 1rem 0;
+}
+
+.pageItem {
+	margin: 0;
+}
+
+.pageLink {
+	padding: 0.4rem 0.8rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.active .pageLink {
+	background-color: #1C4A6EFF;
+	color: #fff;
+	border-color: #1C4A6EFF;
+}
+
+/*
+==========================================
+ DATE PICKER
+==========================================
+*/
+.dateWrapper {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.dateButton {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	width: auto;
+	padding: 0.75rem 2.5rem 0.75rem 1rem;
+	font-family: var(--font-family-secondary);
+	font-size: var(--font-size-text-md);
+	line-height: var(--line-height-text-md);
+	font-weight: var(--font-weight-xs);
+	background: #ffffff;
+	border-radius: 6px;
+	border: 1px solid #DEE1E6FF;
+	outline: none;
+}
+
+.dateIcon {
+	height: 1rem;
+	width: 1rem;
+	position: absolute;
+	right: 0.75rem;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+	color: #565D6DFF;
+}
+
+/*
+==========================================
+ MODERN STATUS DROPDOWN
+==========================================
+*/
+.dropdownContainer {
+	position: relative;
+	min-width: 150px;
+}
+
+.dropdownButton {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border: 1px solid #DEE1E6FF;
+	border-radius: 8px;
+	background-color: #fff;
+	cursor: pointer;
+	font-size: 0.95rem;
+	transition: all 0.2s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dropdownButton:hover {
+	background-color: #f9f9f9;
+}
+
+.dropdownIcon {
+	width: 1rem;
+	height: 1rem;
+	transition: transform 0.3s;
+}
+
+.dropdownContainer.open .dropdownIcon {
+	transform: rotate(180deg);
+	/* arrow flips when open */
+}
+
+.dropdownMenu {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	width: 100%;
+	background: #fff;
+	border: 1px solid #DEE1E6FF;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 20;
+	overflow: hidden;
+	animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.dropdownMenu div {
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	transition: background-color 0.2s;
+	font-size: 0.95rem;
+}
+
+.dropdownMenu div:hover {
+	background-color: #f2f2f2;
+}
+
+
+/*
+==========================================
+ MODAL
+==========================================
+*/
+.modal_content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 1rem 0;
+}
+
+.modal_buttons {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+
+.modal_buttons button {
+	min-width: 80px;
+}
+
+/* Client Image 
+img {
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 0.5rem;
+}*/

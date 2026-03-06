@@ -12,25 +12,33 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { dateRule, longTextRule, shortTextRule } from "@app/validation";
 import { useParams } from "next/navigation";
-import { useUser } from "@/hooks/useUsers";
+import { useCaregivers } from "@/hooks/useCaregivers";
 import { useUploadCertificate, useDeleteCertificate } from "@/hooks/useCertificates";
 
 const schema = yup.object({
-    name: longTextRule.required("Certificate name is required"),
-    issueDate: dateRule.required("Issue date is required"),
-    expiryDate: dateRule
+	name: longTextRule.required("Certificate name is required"),
+	issueDate: dateRule.required("Issue date is required"),
+	expiryDate: dateRule
 		.required("Expiry date is required")
-		.min(yup.ref('issueDate'), "Expiry date must be after issue date"),
-    file: yup.mixed().test("required", "Please upload a document", (value) => {
-        return value && value.length > 0;
-    })
+		.test(
+			"is-after-issue",
+			"Expiry date must be after issue date",
+			function (value) {
+				const { issueDate } = this.parent;
+				if (!issueDate || !value) return true;
+				return new Date(value) > new Date(issueDate);
+			}
+		),
+	file: yup.mixed().test("required", "Please upload a document", (value) => {
+		return value && value.length > 0;
+	})
 });
 
 export default function Certification() {
 
 	// --- 1. Hooks---
 	const { id: userId } = useParams();
-	const { data } = useUser(userId);
+	const { caregiverDetail } = useCaregivers(userId);
 	const { mutate: upload, isLoading: isUploading } = useUploadCertificate(userId);
 	const { mutate: deleteCert, isLoading: isDeleting } = useDeleteCertificate(userId);
 
@@ -39,7 +47,7 @@ export default function Certification() {
 	const [showDeleteModal, setShowDeleteModal] = useState(false); // For Delete Confirmation
 	const [targetCertId, setTargetCertId] = useState(null);
 
-	const certifications = data?.data?.user?.certifications || [];
+	const certifications = caregiverDetail?.certifications || [];
 
 	// --- 3. Handlers ---
 	const handleDeleteClick = (certId) => {
@@ -62,26 +70,27 @@ export default function Certification() {
 
 
 	const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
-        resolver: yupResolver(schema),
-    });
+		resolver: yupResolver(schema),
+	});
 
 
-    const selectedFile = watch("file");
+	const selectedFile = watch("file");
 
 	function handleNewCertification() {
+		reset();
 		setIsModalOpen(true);
 	}
 
 	const handleSave = async (formData) => {
 		upload(formData, {
-            onSuccess: () => {
-                setIsModalOpen(false);
-                reset();
-                alert("Upload Successful!");
-            },
-            onError: (error) => alert(`Upload Failed: ${error.message}`)
-        });
-    };
+			onSuccess: () => {
+				setIsModalOpen(false);
+				reset();
+				alert("Upload Successful!");
+			},
+			onError: (error) => alert(`Upload Failed: ${error.message}`)
+		});
+	};
 
 	return (
 		<div className={styles.container}>
@@ -111,24 +120,24 @@ export default function Certification() {
 				) : (
 					certifications.map(c => (
 						<TableContent key={c._id}>
-						<TableCell>{c.name}</TableCell>
-						<TableCell>{c.startDate ? new Date(c.startDate).toLocaleDateString() : "-"}</TableCell>
-						<TableCell>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : "-"}</TableCell>
-						<TableCell>
-							{c.certificateUrl ? (
-								<a 
-									href={c.certificateUrl} 
-									target="_blank" 
-									rel="noopener noreferrer" 
-									className={styles.viewFileBtn}
-								>
-									<Eye size={14} />
-									<span>View Document</span>
-									<ExternalLink size={12} className={styles.externalIcon} />
-								</a>
-							) : (
-								<span className={styles.noFile}>No File</span>
-							)}
+							<TableCell>{c.name}</TableCell>
+							<TableCell>{c.startDate ? new Date(c.startDate).toLocaleDateString() : "-"}</TableCell>
+							<TableCell>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : "-"}</TableCell>
+							<TableCell>
+								{c.certificateUrl ? (
+									<a
+										href={c.certificateUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className={styles.viewFileBtn}
+									>
+										<Eye size={14} />
+										<span>View Document</span>
+										<ExternalLink size={12} className={styles.externalIcon} />
+									</a>
+								) : (
+									<span className={styles.noFile}>No File</span>
+								)}
 							</TableCell>
 							<TableCell>{c.isActive ? "Active" : "Inactive"}</TableCell>
 							<TableCell>
@@ -145,46 +154,46 @@ export default function Certification() {
 
 
 			{/* Modal */}
-			<Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                <h2 style={{ marginBottom: '20px' }}>Add New Certificate</h2>
-                
-                <form onSubmit={handleSubmit(handleSave)}>
-                    <InputField label="Certificate Name" name="name" register={register} error={errors.name} />
+			<Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); reset(); }}>
+				<h2 style={{ marginBottom: '20px' }}>Add New Certificate</h2>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <InputField label="Issue Date" type="date" name="issueDate" register={register} error={errors.issueDate} />
-                        <InputField label="Expiry Date" type="date" name="expiryDate" register={register} error={errors.expiryDate} />
-                    </div>
+				<form onSubmit={handleSubmit(handleSave)}>
+					<InputField label="Certificate Name" name="name" register={register} error={errors.name} />
+
+					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+						<InputField label="Issue Date" type="date" name="issueDate" register={register} error={errors.issueDate} />
+						<InputField label="Expiry Date" type="date" name="expiryDate" register={register} error={errors.expiryDate} />
+					</div>
 
 					<div className={styles.uploadField}>
-                        <label className={styles.label}>Certificate Document</label>
-                        <div className={`${styles.dropzone} ${errors.file ? styles.errorBorder : ""}`}>
-                            <input 
-                                type="file" 
-                                id="certFile"
-                                {...register("file")} 
-                                className={styles.hiddenInput} 
-                            />
-                            <label htmlFor="certFile" className={styles.uploadTrigger}>
-                                <Paperclip size={18} />
-                                <span>{selectedFile?.[0] ? selectedFile[0].name : "Click to select a file (PDF, JPG...)"}</span>
-                                {selectedFile?.[0] && (
-                                    <X size={16} className={styles.clearFile} onClick={(e) => {
-                                        e.preventDefault();
-                                        setValue("file", null);
-                                    }}/>
-                                )}
-                            </label>
-                        </div>
-                        {errors.file && <p className={styles.errorMessage}>{errors.file.message}</p>}
-                    </div>
+						<label className={styles.label}>Certificate Document</label>
+						<div className={`${styles.dropzone} ${errors.file ? styles.errorBorder : ""}`}>
+							<input
+								type="file"
+								id="certFile"
+								{...register("file")}
+								className={styles.hiddenInput}
+							/>
+							<label htmlFor="certFile" className={styles.uploadTrigger}>
+								<Paperclip size={18} />
+								<span>{selectedFile?.[0] ? selectedFile[0].name : "Click to select a file (PDF, JPG...)"}</span>
+								{selectedFile?.[0] && (
+									<X size={16} className={styles.clearFile} onClick={(e) => {
+										e.preventDefault();
+										setValue("file", null);
+									}} />
+								)}
+							</label>
+						</div>
+						{errors.file && <p className={styles.errorMessage}>{errors.file.message}</p>}
+					</div>
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24, gap: 12 }}>
-                        <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                        <Button type="submit">{isUploading ? "Uploading..." : "Save Certificate"}</Button>
-                    </div>
-                </form>
-            </Modal>
+					<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24, gap: 12 }}>
+						<Button variant="secondary" type="button" onClick={() => { setIsModalOpen(false); reset(); }}>Cancel</Button>
+						<Button type="submit">{isUploading ? "Uploading..." : "Save Certificate"}</Button>
+					</div>
+				</form>
+			</Modal>
 
 			{/* Delete Confirmation Modal */}
 			<Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
