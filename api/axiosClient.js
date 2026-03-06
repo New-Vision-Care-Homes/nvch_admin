@@ -9,17 +9,17 @@ import axios from 'axios';
  * Configured with base URL and automatic Authorization header injection.
  */
 const axiosClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "https://nvch-server.onrender.com", //might replace in the future
-    timeout: 15000, // Timeout after 15 seconds
+	baseURL: process.env.NEXT_PUBLIC_API_URL || "https://nvch-server.onrender.com", //might replace in the future
+	timeout: 15000, // Timeout after 15 seconds
 });
 
 // Request Interceptor: Attach JWT token to every request automatically
 axiosClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+	const token = localStorage.getItem("token");
+	if (token) {
+		config.headers.Authorization = `Bearer ${token}`;
+	}
+	return config;
 }, (error) => Promise.reject(error));
 
 export default axiosClient;

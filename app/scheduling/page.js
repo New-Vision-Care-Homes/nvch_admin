@@ -27,8 +27,16 @@ const localizer = dateFnsLocalizer({
 
 export default function SchedulingPage() {
 	const router = useRouter();
-	const { data: shifts = [] } = useShifts();
+	const {
+		shifts,
+		isActionPending,
+		isError,
+		errorMessage,
+	} = useShifts();
 	console.log("shifts: ", shifts);
+	if (isError) {
+		alert(errorMessage);
+	}
 	const [view, setView] = useState("week");
 	const [date, setDate] = useState(new Date());
 
@@ -51,7 +59,7 @@ export default function SchedulingPage() {
 			} else {
 				groups[groupKey].count += 1;
 				if (new Date(shift.endTime) > groups[groupKey].end)
-				groups[groupKey].end = new Date(shift.endTime);
+					groups[groupKey].end = new Date(shift.endTime);
 			}
 		});
 		return Object.values(groups);
@@ -79,12 +87,12 @@ export default function SchedulingPage() {
 		});
 
 		return Object.values(groups).map((group) => ({
-		...group,
-		title:
-			group.shifts.length === 1
-			? `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`
-			: `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`,
-		count: group.shifts.length,
+			...group,
+			title:
+				group.shifts.length === 1
+					? `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`
+					: `${group.shifts[0].caregiver?.firstName} ${group.shifts[0].caregiver?.lastName}`,
+			count: group.shifts.length,
 		}));
 	}, [shifts]);
 
@@ -104,31 +112,31 @@ export default function SchedulingPage() {
 		const isMonth = view === "month";
 
 		return (
-		<div className={styles.eventWrapper}>
-			<div className={styles.weekEventContent}>
-				<strong className={styles.eventTitle}>{event.title}</strong>
-				{!isMonth && (
-					<>
-						<div className={styles.eventTime}>
-							{format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
-						</div>
-						{event.count > 1 && (
-							<div className={styles.hoverDetail}>
-								{event.shifts.map((s, idx) => (
-									<div key={idx} className={styles.shiftItem}>
-										<strong>
-											{s.caregiver?.firstName} {s.caregiver?.lastName}
-										</strong>
-										<div className={styles.shiftLocation}>{s.clientAddress}</div>
-									</div>
-								))}
+			<div className={styles.eventWrapper}>
+				<div className={styles.weekEventContent}>
+					<strong className={styles.eventTitle}>{event.title}</strong>
+					{!isMonth && (
+						<>
+							<div className={styles.eventTime}>
+								{format(event.start, "HH:mm")} - {format(event.end, "HH:mm")}
 							</div>
-						)}
-					</>
-				)}
+							{event.count > 1 && (
+								<div className={styles.hoverDetail}>
+									{event.shifts.map((s, idx) => (
+										<div key={idx} className={styles.shiftItem}>
+											<strong>
+												{s.caregiver?.firstName} {s.caregiver?.lastName}
+											</strong>
+											<div className={styles.shiftLocation}>{s.clientAddress}</div>
+										</div>
+									))}
+								</div>
+							)}
+						</>
+					)}
+				</div>
+				{event.count > 1 && <div className={styles.countInline}>+ {event.count - 1} more shifts</div>}
 			</div>
-			{event.count > 1 && <div className={styles.countInline}>+ {event.count - 1} more shifts</div>}
-		</div>
 		);
 	};
 
@@ -163,72 +171,72 @@ export default function SchedulingPage() {
 	);
 }
 
-                
-                /* ... (Your existing sidebar content remains the same) }
-                <div className={styles.sidebar}>
-                    {/* Open Shifts }
-                    <div className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                            <h2>Open Shifts</h2>
-                        </div>
 
-                        <div className={styles.sectionContent}>
-                            {openShifts.map((shift) => (
-                                <div key={shift.id} className={styles.shiftCard}>
-                                    <div className={styles.shiftInfo}>
-                                        <h3 className={styles.shiftName}>{shift.name}</h3>
-                                        <div className={styles.shiftDetails}>
-                                            <span className={styles.shiftDate}>{shift.date}</span>
-                                            <span className={styles.dot}>•</span>
-                                            <span className={styles.shiftTime}>{shift.time}</span>
-                                        </div>
-                                    </div>
-                                    <button className={styles.assignButton}>
-                                        <Star size={14} style={{ marginRight: "4px" }} />
-                                        Assign
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+/* ... (Your existing sidebar content remains the same) }
+<div className={styles.sidebar}>
+	{/* Open Shifts }
+	<div className={styles.section}>
+		<div className={styles.sectionHeader}>
+			<h2>Open Shifts</h2>
+		</div>
 
-                    {/* Shift Approvals }
-                    <div className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                            <h2 className={styles.sectionTitle}>Shift Approvals</h2>
-                            <div className={styles.badge}>2 Pending</div>
-                        </div>
+		<div className={styles.sectionContent}>
+			{openShifts.map((shift) => (
+				<div key={shift.id} className={styles.shiftCard}>
+					<div className={styles.shiftInfo}>
+						<h3 className={styles.shiftName}>{shift.name}</h3>
+						<div className={styles.shiftDetails}>
+							<span className={styles.shiftDate}>{shift.date}</span>
+							<span className={styles.dot}>•</span>
+							<span className={styles.shiftTime}>{shift.time}</span>
+						</div>
+					</div>
+					<button className={styles.assignButton}>
+						<Star size={14} style={{ marginRight: "4px" }} />
+						Assign
+					</button>
+				</div>
+			))}
+		</div>
+	</div>
 
-                        <div className={styles.sectionContent}>
-                            {approvals.map((approval) => (
-                                <div key={approval.id} className={styles.approvalCard}>
-                                    <h3 className={styles.approvalName}>{approval.name}</h3>
-                                    <p className={styles.approvalRequest}>{approval.request}</p>
-                                    <div className={styles.approvalActions}>
-                                        <button className={`${styles.approveButton}`}>Approve</button>
-                                        <button className={`${styles.rejectButton}`}>Reject</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+	{/* Shift Approvals }
+	<div className={styles.section}>
+		<div className={styles.sectionHeader}>
+			<h2 className={styles.sectionTitle}>Shift Approvals</h2>
+			<div className={styles.badge}>2 Pending</div>
+		</div>
 
-                    {/* Alerts }
-                    <div className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                            <h2 className={styles.sectionTitle}>Alerts</h2>
-                            <div className={styles.badge}>3 Critical</div>
-                        </div>
+		<div className={styles.sectionContent}>
+			{approvals.map((approval) => (
+				<div key={approval.id} className={styles.approvalCard}>
+					<h3 className={styles.approvalName}>{approval.name}</h3>
+					<p className={styles.approvalRequest}>{approval.request}</p>
+					<div className={styles.approvalActions}>
+						<button className={`${styles.approveButton}`}>Approve</button>
+						<button className={`${styles.rejectButton}`}>Reject</button>
+					</div>
+				</div>
+			))}
+		</div>
+	</div>
 
-                        <div className={styles.sectionContent}>
-                            {alerts.map((alert) => (
-                                <div key={alert.id} className={styles.alertCard}>
-                                    <AlertTriangle className={styles.alertIcon} />
-                                    <p className={styles.alertMessage}>{alert.message}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-				{*/
+	{/* Alerts }
+	<div className={styles.section}>
+		<div className={styles.sectionHeader}>
+			<h2 className={styles.sectionTitle}>Alerts</h2>
+			<div className={styles.badge}>3 Critical</div>
+		</div>
+
+		<div className={styles.sectionContent}>
+			{alerts.map((alert) => (
+				<div key={alert.id} className={styles.alertCard}>
+					<AlertTriangle className={styles.alertIcon} />
+					<p className={styles.alertMessage}>{alert.message}</p>
+				</div>
+			))}
+		</div>
+	</div>
+</div>
+{*/
 

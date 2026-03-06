@@ -1,0 +1,94 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { homeService } from "@/api/services/homeService";
+
+/**
+ * Custom hook to manage Home (Housing Unit) operations.
+ * @param {Object|string|number} arg - Query parameters for fetching homes OR homeId for fetching a single home
+ */
+export const useHomes = (arg = null) => {
+	const queryClient = useQueryClient();
+
+	const isId = typeof arg === "string" || typeof arg === "number";
+	const homeId = isId ? arg : null;
+	const params = !isId && typeof arg === "object" ? arg : {};
+
+	/**
+	 * Helper to extract error message
+	 */
+	const getErrorMessage = (err) => {
+		const data = err?.response?.data;
+		if (data) {
+			if (typeof data === 'string') return data;
+			if (data.message) return data.message;
+			if (data.error) return data.error;
+		}
+		return err?.message || "An unexpected error occurred";
+	};
+
+	// 1. Fetch homes (list)
+	const homesQuery = useQuery({
+		queryKey: ["homes", params],
+		queryFn: () => homeService.getAll(params),
+		enabled: !homeId, // Only run if not looking for a single home detail
+		keepPreviousData: true,
+	});
+
+	// 2. Fetch single home (detail)
+	const homeDetailQuery = useQuery({
+		queryKey: ["home", homeId],
+		queryFn: () => homeService.getHome(homeId),
+		enabled: !!homeId,
+	});
+
+	const homes = homesQuery.data?.homes ?? [];
+	const pagination = homesQuery.data?.pagination ?? {};
+	const homeDetail = homeDetailQuery.data?.home ?? homeDetailQuery.data;
+
+	// 3. Mutations
+	const createMutation = useMutation({
+		mutationFn: homeService.create,
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["homes"] }),
+	});
+
+	const updateMutation = useMutation({
+		mutationFn: ({ id, data }) => homeService.update(id, data),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["homes"] });
+			if (variables.id) {
+				queryClient.invalidateQueries({ queryKey: ["home", variables.id] });
+			}
+		},
+	});
+
+	const deleteMutation = useMutation({
+		mutationFn: homeService.delete,
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["homes"] }),
+	});
+
+	const activeError =
+		homesQuery.error ||
+		homeDetailQuery.error ||
+		createMutation.error ||
+		updateMutation.error ||
+		deleteMutation.error;
+
+	return {
+		// Data outputs
+		homes,
+		pagination,
+		homeDetail,
+
+		// Status indicators
+		isLoading: homesQuery.isLoading || homeDetailQuery.isLoading,
+		isError: !!activeError,
+		errorMessage: activeError ? getErrorMessage(activeError) : null,
+
+		// Actions
+		addHome: createMutation.mutateAsync,
+		updateHome: updateMutation.mutateAsync,
+		deleteHome: deleteMutation.mutateAsync,
+
+		isActionPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+		refetch: homeId ? homeDetailQuery.refetch : homesQuery.refetch,
+	};
+};

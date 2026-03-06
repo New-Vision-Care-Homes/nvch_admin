@@ -10,31 +10,41 @@ import styles from "./shift_list.module.css";
 import Link from "next/link";
 
 export default function ShiftListPage() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const { data: shifts = [] } = useShifts();
+	const searchParams = useSearchParams();
+	const router = useRouter();
 
-    const startParam = searchParams.get("startDate");
-    const endParam = searchParams.get("endDate");
+	const startParam = searchParams.get("startDate");
+	const endParam = searchParams.get("endDate");
 
-    const filteredShifts = shifts.filter((shift) => {
-        const sStart = new Date(shift.startTime).toISOString();
-        const sEnd = new Date(shift.endTime).toISOString();
-        return sStart === startParam && sEnd === endParam;
-    });
+	// Fetch all shifts (same data as the calendar)
+	const { shifts = [], isLoading } = useShifts({});
+
+	// Mirror the calendar's exact grouping key: "yyyy-MM-dd HH:mm"_"HH:mm"
+	// Only show shifts that belong to the exact time slot that was clicked.
+	const filteredShifts = shifts.filter(shift => {
+		if (!startParam || !endParam) return true;
+		const slotStart = new Date(startParam);
+		const slotEnd = new Date(endParam);
+		const shiftStart = new Date(shift.startTime);
+		const shiftEnd = new Date(shift.endTime);
+		return (
+			format(shiftStart, "yyyy-MM-dd HH:mm") === format(slotStart, "yyyy-MM-dd HH:mm") &&
+			format(shiftEnd, "HH:mm") === format(slotEnd, "HH:mm")
+		);
+	});
 
 	console.log("shifts: ", filteredShifts);
 
-    const displayTitle = startParam && endParam 
-        ? `Shifts on ${format(new Date(startParam), "MMMM do, yyyy")}`
-        : "Shift Details";
+	const displayTitle = startParam && endParam
+		? `Shifts on ${format(new Date(startParam), "MMMM do, yyyy")}`
+		: "Shift Details";
 
-    const displayTimeRange = startParam && endParam
-        ? `${format(new Date(startParam), "HH:mm")} - ${format(new Date(endParam), "HH:mm")}`
-        : "";
+	const displayTimeRange = startParam && endParam
+		? `${format(new Date(startParam), "HH:mm")} - ${format(new Date(endParam), "HH:mm")}`
+		: "";
 
-    return (
-        <PageLayout>
+	return (
+		<PageLayout>
 			<header className={styles.header}>
 				<div className={styles.title}>
 					<h2>{displayTitle}</h2>
@@ -59,7 +69,7 @@ export default function ShiftListPage() {
 										{shift.caregiver?.firstName} {shift.caregiver?.lastName}
 									</span>
 								</div>
-								
+
 								{/* Client & Address */}
 								<div className={styles.infoRow}>
 									<MapPin size={18} className={styles.icon} />
@@ -72,12 +82,12 @@ export default function ShiftListPage() {
 								<div className={styles.infoRow}>
 									<ClipboardList size={18} className={styles.icon} />
 									<span className={styles.secondaryText}>
-										{shift.client.firstName} {shift.client.lastName} 
+										{shift.client.firstName} {shift.client.lastName}
 									</span>
 								</div>
 							</div>
 
-							<button 
+							<button
 								className={styles.viewBtn}
 								onClick={() => router.push(`/scheduling/${shift._id}`)}
 							>
@@ -90,8 +100,8 @@ export default function ShiftListPage() {
 					<div className={styles.emptyState}>No shifts found for this time slot.</div>
 				)}
 			</div>
-        </PageLayout>
-    );
+		</PageLayout>
+	);
 }
 
 /*
@@ -106,67 +116,67 @@ import Button from "@components/UI/Button";
 import styles from "./shift_list.module.css";
 
 export default function ShiftListPage() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
+	const searchParams = useSearchParams();
+	const router = useRouter();
 
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+	const startDate = searchParams.get("startDate");
+	const endDate = searchParams.get("endDate");
 
-    const { data: shifts = [], isLoading, isError, error } = useShifts({
-        startDate,
-        endDate,
-    });
+	const { data: shifts = [], isLoading, isError, error } = useShifts({
+		startDate,
+		endDate,
+	});
 
-    const handleBack = () => router.back();
+	const handleBack = () => router.back();
 
-    if (isLoading) return <div className={styles.loading}>Loading shifts...</div>;
+	if (isLoading) return <div className={styles.loading}>Loading shifts...</div>;
 
-    if (isError) return <div className={styles.error}>Error: {error.message}</div>;
+	if (isError) return <div className={styles.error}>Error: {error.message}</div>;
 
-    return (
-        <div className={styles.container}>
-            <header className={styles.header}>
-                <button onClick={handleBack} className={styles.backBtn}>
-                    <ChevronLeft size={20} /> Back to Calendar
-                </button>
-                <h1>Shift Details</h1>
-                <div className={styles.timeRange}>
-                    <Clock size={16} />
-                    <span>
-                        {startDate && format(new Date(startDate), "PPP")} |{" "}
-                        {startDate && format(new Date(startDate), "p")} - {endDate && format(new Date(endDate), "p")}
-                    </span>
-                </div>
-            </header>
+	return (
+		<div className={styles.container}>
+			<header className={styles.header}>
+				<button onClick={handleBack} className={styles.backBtn}>
+					<ChevronLeft size={20} /> Back to Calendar
+				</button>
+				<h1>Shift Details</h1>
+				<div className={styles.timeRange}>
+					<Clock size={16} />
+					<span>
+						{startDate && format(new Date(startDate), "PPP")} |{" "}
+						{startDate && format(new Date(startDate), "p")} - {endDate && format(new Date(endDate), "p")}
+					</span>
+				</div>
+			</header>
 
-            <main className={styles.list}>
-                {shifts.length === 0 ? (
-                    <div className={styles.empty}>No shifts found for this time slot.</div>
-                ) : (
-                    shifts.map((shift) => (
-                        <div 
-                            key={shift._id || shift.id} 
-                            className={styles.card}
-                            onClick={() => router.push(`/scheduling/shift/${shift._id || shift.id}`)}
-                        >
-                            <div className={styles.cardInfo}>
-                                <div className={styles.row}>
-                                    <User size={18} className={styles.icon} />
-                                    <strong>{shift.caregiver?.firstName} {shift.caregiver?.lastName}</strong>
-                                </div>
-                                <div className={styles.row}>
-                                    <MapPin size={18} className={styles.icon} />
-                                    <span>{shift.clientAddress || "No address provided"}</span>
-                                </div>
-                            </div>
-                            <div className={`${styles.status} ${styles[shift.status]}`}>
-                                {shift.status}
-                            </div>
-                        </div>
-                    ))
-                )}
-            </main>
-        </div>
-    );
+			<main className={styles.list}>
+				{shifts.length === 0 ? (
+					<div className={styles.empty}>No shifts found for this time slot.</div>
+				) : (
+					shifts.map((shift) => (
+						<div 
+							key={shift._id || shift.id} 
+							className={styles.card}
+							onClick={() => router.push(`/scheduling/shift/${shift._id || shift.id}`)}
+						>
+							<div className={styles.cardInfo}>
+								<div className={styles.row}>
+									<User size={18} className={styles.icon} />
+									<strong>{shift.caregiver?.firstName} {shift.caregiver?.lastName}</strong>
+								</div>
+								<div className={styles.row}>
+									<MapPin size={18} className={styles.icon} />
+									<span>{shift.clientAddress || "No address provided"}</span>
+								</div>
+							</div>
+							<div className={`${styles.status} ${styles[shift.status]}`}>
+								{shift.status}
+							</div>
+						</div>
+					))
+				)}
+			</main>
+		</div>
+	);
 }
 */

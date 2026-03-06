@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Search, Trash2, Plus } from "lucide-react";
+import { Search, Trash2, Plus, X } from "lucide-react";
 
 import { useGoogleMap } from "@/hooks/useGoogleMap";
+import { useShifts } from "@/hooks/useShifts";
 
 // Component & Style Imports
 import PageLayout from "@components/layout/PageLayout";
@@ -49,7 +50,6 @@ const schema = yup.object({
 
 export default function Page() {
 
-	const [loading, setLoading] = useState(false);
 	const router = useRouter();
 
 	const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm({
@@ -221,11 +221,19 @@ export default function Page() {
 	const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id));
 
 
+
 	// ==========================================
 	// --- 6. FORM SUBMISSION ---
 	// ==========================================
+
+	const {
+		addShift,
+		isActionPending,
+		isError,
+		errorMessage
+	} = useShifts();
+
 	const onSubmit = async (data) => {
-		setLoading(true);
 		try {
 			const shiftData = {
 				caregiverId: data.caregiverId,
@@ -255,22 +263,11 @@ export default function Page() {
 
 			console.log("shiftdata: ", shiftData);
 
-			const token = localStorage.getItem("token");
-			const response = await fetch("https://nvch-server.onrender.com/api/shifts", {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-				body: JSON.stringify(shiftData),
-			});
-
-			const resultData = await response.json();
-			if (!response.ok) {
-				throw new Error(resultData.error || resultData.message || "Unknown error occurred");
-			}
+			await addShift(shiftData);
 			router.push("/scheduling");
 		} catch (error) {
-			alert(`Error: ${error.message}`);
-		} finally {
-			setLoading(false);
+			const msg = error.response?.data?.message || error.message || "Failed to create shift";
+			alert(`Error: ${msg}`);
 		}
 	};
 
@@ -317,10 +314,11 @@ export default function Page() {
 			{/* 1. HEADER SECTION */}
 			<div className={styles.header}>
 				<h1>Create New Shift</h1>
+				{isError && <div style={{ color: "red", marginRight: "1rem", fontWeight: "bold" }}>{errorMessage}</div>}
 				<div className={styles.buttons}>
 					<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
-					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={loading}>
-						{loading ? "Saving..." : "Save"}
+					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
+						{isActionPending ? "Saving..." : "Save"}
 					</Button>
 				</div>
 			</div>
@@ -343,7 +341,23 @@ export default function Page() {
 										value={clientSearchTerm}
 										onChange={(e) => setClientSearchTerm(e.target.value)}
 										onFocus={() => setShowClientResults(true)}
+										readOnly={!!selectedClientName}
+										style={selectedClientName ? { backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" } : {}}
 									/>
+									{selectedClientName && (
+										<X
+											size={16}
+											style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
+											onClick={() => {
+												setClientSearchTerm('');
+												setSelectedClientName('');
+												setValue('clientId', '');
+												setValue('clientPhone', '');
+												setValue('clientAddress', '');
+												setShowClientResults(false);
+											}}
+										/>
+									)}
 								</div>
 								{showClientResults && clientResults.length > 0 && (
 									<div className={styles.searchResultsDropdown}>
@@ -357,11 +371,11 @@ export default function Page() {
 							</div>
 
 							<div className={styles.card_row_2}>
-								<InputField label="Client ID" name="clientId" register={register} error={errors.clientId?.message} readOnly />
-								<InputField label="Client Phone" name="clientPhone" register={register} error={errors.clientPhone?.message} />
+								<InputField label="Client ID" name="clientId" register={register} error={errors.clientId?.message} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" }} />
+								<InputField label="Client Phone" name="clientPhone" register={register} error={errors.clientPhone?.message} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" }} />
 							</div>
 							<div className={styles.card_row_1}>
-								<InputField label="Address" name="clientAddress" register={register} error={errors.clientAddress} />
+								<InputField label="Address" name="clientAddress" register={register} error={errors.clientAddress} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" }} />
 							</div>
 							<div className={styles.card_row_2}>
 								<InputField label="Contact First Name" name="contactFName" register={register} error={errors.contactFName} />

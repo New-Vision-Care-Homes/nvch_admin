@@ -1,0 +1,93 @@
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: var(--border-primary);
+	padding-bottom: 1rem;
+	margin-bottom: 2rem;
+}
+
+.buttons {
+	display: flex;
+	gap: 1rem;
+}
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	width: 80%;
+	margin: 0 auto;
+}
+
+/* Info grid: label + value pairs */
+.infoGrid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1.25rem 2rem;
+}
+
+.infoItem {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.infoLabel {
+	font-size: 0.78rem;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: #6b7280;
+}
+
+.infoValue {
+	font-size: 0.97rem;
+	color: #111827;
+	font-weight: 500;
+}
+
+/* Status pills */
+.statusPill {
+	display: inline-block;
+	padding: 0.2rem 0.75rem;
+	border-radius: 9999px;
+	font-size: 0.83rem;
+	font-weight: 500;
+}
+
+.statusActive {
+	background-color: #D1FAE5;
+	color: #065F46;
+}
+
+.statusInactive {
+	background-color: #FEE2E2;
+	color: #B91C1C;
+}
+
+.statusEnabled {
+	background-color: #DBEAFE;
+	color: #1E40AF;
+}
+
+.statusDisabled {
+	background-color: #F3F4F6;
+	color: #6B7280;
+}
+
+/* Program type chips */
+.chipRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.chip {
+	background: #EEF2FF;
+	color: #3730A3;
+	font-size: 0.82rem;
+	font-weight: 600;
+	padding: 0.2rem 0.7rem;
+	border-radius: 9999px;
+}
