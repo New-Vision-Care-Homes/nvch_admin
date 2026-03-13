@@ -14,7 +14,14 @@ export const useClients = (options = {}) => {
 
 	// Support both old API (single clientId) and new API (options object)
 	const clientId = typeof options === 'string' || typeof options === 'number' ? options : options.clientId;
-	const params = typeof options === 'object' && !options.clientId ? options : options.params || {};
+	let params = {};
+	if (typeof options === 'object') {
+		if (options.params) {
+			params = options.params;
+		} else if (!options.clientId) {
+			params = options;
+		}
+	}
 
 	/**
 	 * Helper to extract the most relevant error message from an Axios error object.

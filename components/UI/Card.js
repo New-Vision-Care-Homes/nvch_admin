@@ -1,6 +1,8 @@
+"use client";
 // components/ui/Card.js
-import React from "react";
-import styles from "./Card.module.css"
+import React, { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import styles from "./Card.module.css";
 
 export function Card({ children, className }) {
 	return <div className={`${styles.card} ${className || ""}`}>{children}</div>;
@@ -18,8 +20,11 @@ export function CardContent({ children, className }) {
 	return <div className={`${styles.content} ${className || ""}`}>{children}</div>;
 }
 
-//up label, down input
 export function InputField({ label, name, register, type = "text", rows = 1, error, options = [], placeholder, ...rest }) {
+	const [showPassword, setShowPassword] = useState(false);
+	const isPasswordType = type === "password";
+	const currentType = isPasswordType && showPassword ? "text" : type;
+
 	return (
 		<div className={styles.field}>
 			<label className={styles.label}>{label}</label>
@@ -35,6 +40,25 @@ export function InputField({ label, name, register, type = "text", rows = 1, err
 						</option>
 					))}
 				</select>
+			) : isPasswordType ? (
+				<div className={styles.passwordWrapper}>
+					<input
+						type={currentType}
+						{...register(name)}
+						{...rest}
+						className={`${styles.input} ${error ? styles.input_error : ""}`}
+						placeholder={placeholder}
+						style={{ paddingRight: "35px" }}
+					/>
+					<button
+						type="button"
+						className={styles.passwordToggle}
+						onClick={() => setShowPassword(!showPassword)}
+						tabIndex={-1}
+					>
+						{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+					</button>
+				</div>
 			) : (
 				<input
 					type={type}

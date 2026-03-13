@@ -371,9 +371,9 @@ export default function EditHomePage() {
 
 								<div style={{ marginBottom: '1.5rem' }}>
 									<label className={cardStyles.label}>Program Types *</label>
-									<div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+									<div className="checkboxGroup horizontal" style={{ marginTop: '0.5rem' }}>
 										{['DSP', 'Seniors', 'ILS', 'IF'].map(type => (
-											<label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+											<label key={type} className="checkboxLabel">
 												<input
 													type="checkbox"
 													checked={selectedProgramTypes.includes(type)}
@@ -384,9 +384,9 @@ export default function EditHomePage() {
 															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
 														}
 													}}
-													style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+													
 												/>
-												<span style={{ fontSize: '0.95rem' }}>{type}</span>
+												<span>{type}</span>
 											</label>
 										))}
 									</div>

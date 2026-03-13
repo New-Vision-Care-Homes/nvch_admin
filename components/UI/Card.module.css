@@ -4,10 +4,11 @@
 	flex-direction: column;
 	align-items: flex-start;
 	justify-content: start;
-	width: 100%; 
-	height: auto; 
-	background: #FFFFFFFF; /* white */
-	border-radius: var(--border-size-md); 
+	width: 100%;
+	height: auto;
+	background: #FFFFFFFF;
+	/* white */
+	border-radius: var(--border-size-md);
 	box-shadow: var(--shadow-lg);
 	padding: 2rem;
 }
@@ -28,34 +29,35 @@
 
 .label {
 	font-family: var(--font-family-inter);
-	font-size: var(--font-size-md); 
-	font-weight: var(--font-weight-md); 
+	font-size: var(--font-size-md);
+	font-weight: var(--font-weight-md);
 	color: var(--color-primary);
 }
 
 .input {
 	width: 100%;
 	font-family: var(--font-family-inter);
-	font-size: var(--font-size-sm); 
-	font-weight: var(--font-weight-sm); 
-	background: #FFFFFFFF; /* white */
-	border-radius: var(--border-size-sm); 
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-sm);
+	background: #FFFFFFFF;
+	/* white */
+	border-radius: var(--border-size-sm);
 	border: var(--border-secondary);
-	outline: none; 
+	outline: none;
 	padding: 0.5rem;
 }
 
-	/* hover */
-	.input:hover {
+/* hover */
+.input:hover {}
 
-	}
-	/* focused */
-	.input:focus {
-		border-color: var(--color-primary); /* neutral-300 */
-	}
-	/* disabled */
-	.input:disabled {
-	}
+/* focused */
+.input:focus {
+	border-color: var(--color-primary);
+	/* neutral-300 */
+}
+
+/* disabled */
+.input:disabled {}
 
 .input_error {
 	border-color: #E53E3E;
@@ -68,13 +70,37 @@
 	margin-top: 2px;
 }
 
+.passwordWrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.passwordToggle {
+	position: absolute;
+	right: 10px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--color-secondary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+.passwordToggle:hover {
+	color: var(--color-primary);
+}
+
 
 .info_field {
 	display: flex;
 	flex-direction: column;
 	margin-bottom: 16px;
-	}
-	
+}
+
 .info_label {
 	font-size: 14px;
 	font-weight: 500;
@@ -87,4 +113,3 @@
 	font-weight: 400;
 	color: #171A1FFF;
 }
-	  
