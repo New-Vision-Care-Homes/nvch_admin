@@ -46,34 +46,64 @@
 		color: #6B7280;
 		border-color: #D1D5DB;
 	}
- 
 
 .content {
 	display: flex;
 	width: 100%;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
+	gap: 2rem;
+}
+
+.leftPanel {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	gap: 1.5rem;
+}
+
+.rightPanel {
+	display: flex;
+	flex-direction: column;
+	width: 300px; /* Fixed width for the profile picture side */
+	gap: 1.5rem;
+}
+
+.row2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.5rem;
+	margin-bottom: 1rem;
+	align-items: stretch; /* Make inputs same height */
+}
+
+/* Ensure info-fields look good in row2 as well */
+.row2 > div {
+	flex: 1;
 }
 
 .text {
 	display: flex;
-	width: 80%;
+	width: 100%;
 	justify-content: space-between;
 }
 
 .picture {
 	display: flex;
 	flex-direction: column;
-	gap: 0.5rem;
+	align-items: center; /* Center avatar and upload button */
+	gap: 1rem;
+	padding-top: 1rem;
 }
 
 .image {
 	display: flex;
 	align-items: center;
-	justify-content: end;
+	justify-content: center;
 	opacity: 1; 
 	overflow: hidden; 
 	border-radius: 50%; 
+	object-fit: cover;
 }
 
 .fileInputLabel {
@@ -104,7 +134,7 @@
 .centeredModalContainer {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers items horizontally */
+    align-items: center;
     text-align: center; 
     padding: 10px;
 }
@@ -112,14 +142,39 @@
 .uploadModalContent {
     display: flex;
     flex-direction: column; 
-    align-items: center; /* Centers content within the upload block */
+    align-items: center;
     padding: 10px 0;
     width: 100%;
-    /* Add any other necessary styling */
 }
 
 .modalActions {
     display: flex;
     gap: 10px;
     margin-top: 15px;
+}
+
+/* Custom Checkbox Group for Edit Mode */
+.checkboxGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-top: 0.5rem;
+}
+
+.checkboxLabel {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 1rem;
+	color: #374151; /* gray-700 */
+	cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+	width: 1.25rem;
+	height: 1.25rem;
+	color: #2563eb;
+	border: 1px solid #D1D5DB; /* gray-300 */
+	border-radius: 4px;
+	cursor: pointer;
 }

@@ -179,6 +179,9 @@ export default function Clients() {
 							pageCount={totalPages} // use backend pageCount
 							forcePage={currentPage - 1} // Sync component with state (0-indexed)
 							onPageChange={handlePageClick}
+
+							pageRangeDisplayed={Math.max(totalPages, 1)}
+							marginPagesDisplayed={1}
 							previousLabel={"Prev"}
 							nextLabel={"Next"}
 							containerClassName={styles.pagination}
