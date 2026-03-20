@@ -1,0 +1,76 @@
+/* ErrorState.module.css */
+
+.wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin-top: 20vh;
+	gap: 1rem;
+}
+
+.iconCircle {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: #FEE2E2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.title {
+	font-size: 1.6rem;
+	font-weight: 500;
+	margin: 0;
+}
+
+.message {
+	font-size: 1rem;
+	color: #DC2626;
+	background: #FEF2F2;
+	border: 0.5px solid #FECACA;
+	border-radius: 8px;
+	padding: 10px 16px;
+	text-align: center;
+	max-width: 360px;
+	margin: 0;
+}
+
+.retryBtn {
+	font-size: 0.9rem;
+	background: #1C4A6E;
+	color: #ffffff;
+	border: none;
+	border-radius: 8px;
+	padding: 10px 16px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.retryBtn:hover {
+	background: #163d5c;
+}
+
+.spinner {
+	width: 28px;
+	height: 28px;
+	border: 2px solid #e5e7eb;
+	border-top-color: #1C4A6E;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+.loadingText {
+	font-size: 14px;
+	color: #6b7280;
+	margin: 0;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

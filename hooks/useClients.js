@@ -3,16 +3,14 @@ import { clientService } from "@/api/services/clientService";
 
 /**
  * Custom hook to manage all Client operations (CRUD).
- * 
+ *
  * @param {Object} options
  * @param {string|number} options.clientId - Optional ID to fetch specific client details
  * @param {Object} options.params - Optional query parameters for the list (search, limit, page)
  */
-
 export const useClients = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	// Support both old API (single clientId) and new API (options object)
 	const clientId = typeof options === 'string' || typeof options === 'number' ? options : options.clientId;
 	let params = {};
 	if (typeof options === 'object') {
@@ -24,33 +22,32 @@ export const useClients = (options = {}) => {
 	}
 
 	/**
-	 * Helper to extract the most relevant error message from an Axios error object.
-	 * It prioritizes the specific message sent by your backend API.
+	 * Extracts the most relevant error message from an Axios error object.
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
+			err?.response?.data?.error ||
+			"An unexpected error occurred"
 		);
 	};
 
-	// --- Queries: Data Fetching ---
+	// --- Queries ---
 
-	// 1. Fetch all clients for the list view (with optional search params)
+	// 1. Fetch all clients for the list view
 	const clientsQuery = useQuery({
 		queryKey: ["clients", params],
 		queryFn: () => clientService.getAll(params),
-		enabled: !clientId, // Only fetch list if not fetching a specific client
+		enabled: !clientId,
 	});
 
-	// 2. Fetch a single client's details (only runs if clientId is provided)
+	// 2. Fetch a single client's details
 	const clientDetailQuery = useQuery({
 		queryKey: ["client", clientId],
 		queryFn: () => clientService.getClient(clientId),
 		enabled: !!clientId,
 	});
 
-	// --- Mutations: Data Actions ---
+	// --- Mutations ---
 
 	// 3. Delete a client record
 	const deleteMutation = useMutation({
@@ -64,51 +61,53 @@ export const useClients = (options = {}) => {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["clients"] }),
 	});
 
-	// 5. Update an existing client's record
+	// 5. Update an existing client record
 	const updateMutation = useMutation({
 		mutationFn: ({ id, data }) => clientService.update(id, data),
 		onSuccess: (data, variables) => {
-			// Refresh both the general list and the specific detail view
 			queryClient.invalidateQueries({ queryKey: ["clients"] });
 			queryClient.invalidateQueries({ queryKey: ["client", variables.id] });
 		},
 	});
 
-	// --- State Consolidation ---
+	// --- Error Separation ---
 
-	/**
-	 * activeError: Captures the first available error from any of the operations above.
-	 * This allows the UI to display a single, relevant error message.
-	 */
-	const activeError =
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError =
 		clientsQuery.error ||
-		clientDetailQuery.error ||
+		clientDetailQuery.error;
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
 		updateMutation.error;
 
 	return {
-		// Data Outputs
+		// Data
 		clients: clientsQuery.data?.clients ?? [],
 		totalPages: clientsQuery.data?.pagination?.totalPages ?? clientsQuery.data?.totalPages ?? 0,
 		currentPage: clientsQuery.data?.pagination?.currentPage ?? clientsQuery.data?.currentPage ?? 1,
 		totalCount: clientsQuery.data?.pagination?.totalCount ?? clientsQuery.data?.totalCount ?? 0,
 		clientDetail: clientDetailQuery.data,
 
-		// Status Indicators
+		// Status
 		isLoading: clientsQuery.isLoading || clientDetailQuery.isLoading,
 		isActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
 			deleteMutation.isPending,
 
-		// Error Handling
-		isError: !!activeError,
-		errorMessage: activeError ? getErrorMessage(activeError) : null,
+		// Fetch error → use with <ErrorState> component
+		fetchError: fetchError ? getErrorMessage(fetchError) : null,
 
-		// Exposed Methods
+		// Action error → use with toast or inline message
+		actionError: actionError ? getErrorMessage(actionError) : null,
+
+		// Methods
 		addClient: createMutation.mutate,
 		updateClient: updateMutation.mutate,
 		deleteClient: deleteMutation.mutate,
+		refetch: clientsQuery.refetch,
 	};
 };
