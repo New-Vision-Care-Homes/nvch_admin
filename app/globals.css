@@ -178,3 +178,64 @@ h6 {
 	border-color: var(--color-primary);
 	background: #f0f5fa;
 }
+
+
+/* =============================================
+   Global Status Message
+   <StatusMessage variant="success|error|info|warning" message="..." />
+   ============================================= */
+
+.statusMessage {
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
+	padding: 0.65rem 1rem;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	font-family: var(--font-family-primary);
+	line-height: 1.4;
+	margin-bottom: 1.25rem;
+	border-left: 3px solid transparent;
+	animation: statusFadeIn 0.2s ease;
+}
+
+@keyframes statusFadeIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+.statusMessage__icon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.statusMessage__text {
+	flex: 1;
+}
+
+/* Variants */
+.statusMessage--success {
+	background: #f0fdf4;
+	color: #15803d;
+	border-left-color: #16a34a;
+}
+
+.statusMessage--error {
+	background: #fef2f2;
+	color: #b91c1c;
+	border-left-color: #dc2626;
+}
+
+.statusMessage--info {
+	background: #eff6ff;
+	color: #1d4ed8;
+	border-left-color: #3b82f6;
+}
+
+.statusMessage--warning {
+	background: #fffbeb;
+	color: #92400e;
+	border-left-color: #f59e0b;
+}

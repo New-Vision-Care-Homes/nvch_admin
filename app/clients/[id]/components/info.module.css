@@ -23,3 +23,41 @@
 	gap: 1rem;
 	margin-top: 2rem;
 }
+
+/* ── Sub-section titles ── */
+.subSectionTitle {
+	display: inline-flex;
+	align-items: center;
+	margin: 1.25rem 0 0.75rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	background: #EFF6FF;
+	border-left: 3px solid var(--color-primary);
+	border-radius: 0 6px 6px 0;
+	padding: 0.3rem 0.75rem;
+	width: 100%;
+}
+
+/* Global message (success / error) */
+.global_message {
+	padding: 0.65rem 1rem;
+	border-radius: 6px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	margin-bottom: 1.5rem;
+}
+
+.success {
+	background: #f0fdf4;
+	color: #15803d;
+	border-left: 3px solid #16a34a;
+}
+
+.error {
+	background: #fef2f2;
+	color: #b91c1c;
+	border-left: 3px solid #dc2626;
+}

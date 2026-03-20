@@ -4,10 +4,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-// Assume these components and validation rules are defined in your project
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
+import StatusMessage from "@components/UI/StatusMessage";
 // Importing validation rules used in the Client page for consistency
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@app/validation"; 
 import { useParams } from "next/navigation";
@@ -93,7 +93,7 @@ const schema = yup.object({
 export default function Info() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [message, setMessage] = useState(null);
+    const [status, setStatus] = useState(null); // { variant, text }
     const { id } = useParams();
 
     const { 
@@ -111,11 +111,11 @@ export default function Info() {
     // --- 3. Data Loading (Fetch Caregiver Data) ---
     const fetchUser = useCallback(async () => {
         setIsLoading(true);
-        setMessage(null);
+        setStatus(null);
         const token = localStorage.getItem("token");
         
         if (!token) {
-            setMessage("Authentication failed. Please log in again.");
+            setStatus({ variant: "error", text: "Authentication failed. Please log in again." });
             setIsLoading(false);
             return;
         }
@@ -132,20 +132,18 @@ export default function Info() {
             const data = await res.json();
 			console.log("user: ", data.data.user);
 
-            // Assuming API response structure is similar to Client
             if (res.ok && data.data.user) { 
                 const cleanedData = cleanFetchedData(data.data.user); 
 				console.log("Cleaned Data for Form:", cleanedData);
-                // Use reset() to populate the form fields with fetched data
-                reset(cleanedData); 
-                setMessage("Caregiver profile loaded successfully.");
+                reset(cleanedData);
+                // No message on load — data populates silently
             } else {
                 const errorMsg = data.error || data.message || "Failed to fetch caregiver data.";
-                setMessage(`Error fetching caregiver: ${errorMsg}`);
+                setStatus({ variant: "error", text: `Error fetching caregiver: ${errorMsg}` });
             }
         } catch (err) {
             console.error("Fetch Caregiver Error:", err);
-            setMessage("Error connecting to server to fetch caregiver data.");
+            setStatus({ variant: "error", text: "Error connecting to server to fetch caregiver data." });
         } finally {
             setIsLoading(false);
         }
@@ -162,10 +160,9 @@ export default function Info() {
     // --- 4. Form Submission (Update Caregiver Data) ---
     const onSubmit = async (data) => {
         setIsSubmitting(true);
-        setMessage(null);
+        setStatus(null);
         const token = localStorage.getItem("token");
 
-        // --- Re-nest/Structure data for API Submission ---
         const submissionBody = {
             email: data.email,
             firstName: data.firstName,
@@ -175,28 +172,20 @@ export default function Info() {
 			region: data.region,
             notes: data.notes ? data.notes : null,
           
-            // Address structure re-nesting
             address: {
                 street: data.street,
                 city: data.city,
                 state: data.state,
                 pinCode: data.pincode,
                 country: data.country,
-                // Including GPS coordinates placeholder as in the Client submission
-                gpsCoordinates: {
-                    "latitude": 44.6488,
-                    "longitude": -63.5752
-                },
+                gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
             },
 
-            // Emergency Contact structure re-nesting
             emergencyContact: {
                 name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
                 phone: data.emergencyPhone,
                 relationship: data.relationship
             },
-            
-            // StatutoryDecisionMaker (SDM) object is omitted for Caregiver
         };
 
         try {
@@ -212,25 +201,23 @@ export default function Info() {
             const resData = await res.json();
 
             if (res.ok) {
-                // Reset the form with the latest data from the API response
-				reset(data); 
-   				setMessage("✅ Caregiver data updated successfully!");
+                reset(data);
+                setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
+            } else {
                 const errorMsg = resData.error || resData.message || `Failed to update caregiver (Status ${res.status}).`;
-                setMessage(`Error saving: ${errorMsg}`);
+                setStatus({ variant: "error", text: `Error saving: ${errorMsg}` });
             }
         } catch (err) {
             console.error("Submission Error:", err);
-            setMessage("Network error or invalid response during submission.");
+            setStatus({ variant: "error", text: "Network error or invalid response during submission." });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // --- 5. Cancel Action ---
     const handleCancel = () => {
-        // Reverts the form to the last state that was passed to reset() (loaded data).
-        reset(); 
-        setMessage("Changes cancelled. Form restored to last saved state.");
+        reset();
+        setStatus(null);
     };
 
 
@@ -240,8 +227,7 @@ export default function Info() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Global Message Display */}
-            {message && <div className={`${styles.global_message} ${message.startsWith('✅') ? styles.success : styles.error}`}>{message}</div>}
+            <StatusMessage variant={status?.variant} message={status?.text} />
 
             <div className={styles.body}>
                 <Card>

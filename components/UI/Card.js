@@ -10,9 +10,16 @@ export function Card({ children, className }) {
 
 export function CardHeader({ children, className }) {
 	return (
-		<h2 style={{ marginTop: "0rem", marginBottom: "2.5rem", width: "100%" }} className={className}>
-			{children}
-		</h2>
+		<div style={{
+			width: "100%",
+			marginBottom: "1.75rem",
+			paddingBottom: "0.75rem",
+			borderBottom: "2px solid rgba(28, 74, 110, 0.15)",
+		}}>
+			<h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 700, color: "var(--color-primary)" }} className={className}>
+				{children}
+			</h2>
+		</div>
 	);
 }
 

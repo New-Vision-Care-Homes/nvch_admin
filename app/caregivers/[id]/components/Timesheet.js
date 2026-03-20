@@ -66,8 +66,10 @@ export default function Timesheet() {
 	const [lastPeriodHours, setLastPeriodHours] = useState(72);
 	const { id } = useParams();
 	const { caregiverDetail, isError, errorMessage, updateCaregiver } = useCaregivers(id);
-	const { shifts, isError: shiftsError, errorMessage: shiftsErrorMessage } = useShifts(id);
-	console.log("caregiverssss: ", caregiverDetail);
+	const { shifts, isError: shiftsError, errorMessage: shiftsErrorMessage } = useShifts({
+		params: { caregiverId: id }
+	});
+	console.log("shifts: ", shifts);
 
 	useEffect(() => {
 		if (caregiverDetail) {
@@ -340,15 +342,15 @@ export default function Timesheet() {
 				{shifts && shifts.length > 0 ? (
 					// Render shift rows
 					shifts.map(c => (
-						<TableContent key={c.id}>
+						<TableContent key={c._id}>
 							<TableCell>{c.status}</TableCell>
-							<TableCell>{c.date}</TableCell>
-							<TableCell>{c.shiftTimes}</TableCell>
-							<TableCell>{c.client}</TableCell>
-							<TableCell>{c.hoursWorked}</TableCell>
-							<TableCell>{c.overtime}</TableCell>
-							<TableCell>{c.approvalStatus}</TableCell>
-							<TableCell>{c.supervisorComments}</TableCell>
+							<TableCell>{c.startTime.split("T")[0]}</TableCell>
+							<TableCell>{c.startTime.split("T")[1] + " - " + c.endTime.split("T")[1]}</TableCell>
+							<TableCell>{c.client.firstName + " " + c.client.lastName}</TableCell>
+							<TableCell>n/a</TableCell>
+							<TableCell>n/a</TableCell>
+							<TableCell>n/a</TableCell>
+							<TableCell>n/a</TableCell>
 						</TableContent>
 					))
 				) : (

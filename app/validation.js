@@ -27,13 +27,14 @@ export const IdRule = yup
 export const nameRule = yup
 	.string()
 	.trim()
+	.transform((value) => value === "" ? undefined : value)
 	.min(1, "Name is required")
 	.max(50, "Name must be between 1 and 50 characters")
 	.matches(
 		/^[a-zA-Z\s'-]+$/,
 		"Name can only contain letters, spaces, hyphens, and apostrophes"
 	)
-	.required();
+	.optional()
 
 
 export const pinRule = yup
@@ -99,15 +100,17 @@ export const birthRule = yup
 export const emailRule = yup
 	.string()
 	.trim()
+	.transform((value) => value === "" ? undefined : value)
 	.email("Invalid email")
 	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email')
-	.required("Email is required");
+	.optional();
 
 export const phoneRule = yup
 	.string()
 	.trim()
+	.transform((value) => value === "" ? undefined : value)
 	.matches(/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number')
-	.required("Phone is required");
+	.optional();
 
 export const addressRule = yup
 	.string()

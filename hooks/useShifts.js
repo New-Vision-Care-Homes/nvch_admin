@@ -3,16 +3,24 @@ import { shiftService } from "@/api/services/shiftService";
 
 /**
  * Custom hook to manage all Shift operations (CRUD).
- * Includes automatic error parsing and synchronized loading states.
- * @param {string|number|Object} arg - shiftId (string/number) OR query params (object)
+ * 
+ * @param {Object} options
+ * @param {string|number} options.shiftId - Optional ID to fetch specific shift details
+ * @param {Object} options.params - Optional query parameters for the list (search, limit, page)
  */
-export const useShifts = (arg = null) => {
+export const useShifts = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	// Determine if the argument is an ID or params object
-	const isId = typeof arg === "string" || typeof arg === "number";
-	const shiftId = isId ? arg : null;
-	const params = !isId && typeof arg === "object" ? arg : {};
+	// Support both old API (single shiftId) and new API (options object)
+	const shiftId = typeof options === 'string' || typeof options === 'number' ? options : options.shiftId;
+	let params = {};
+	if (typeof options === 'object') {
+		if (options.params) {
+			params = options.params;
+		} else if (!options.shiftId) {
+			params = options;
+		}
+	}
 
 	/**
 	 * Helper to extract the most relevant error message.

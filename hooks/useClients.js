@@ -91,9 +91,9 @@ export const useClients = (options = {}) => {
 	return {
 		// Data Outputs
 		clients: clientsQuery.data?.clients ?? [],
-		totalPages: clientsQuery.data?.totalPages ?? 0,
-		currentPage: clientsQuery.data?.currentPage ?? 1,
-		totalCount: clientsQuery.data?.totalCount ?? 0,
+		totalPages: clientsQuery.data?.pagination?.totalPages ?? clientsQuery.data?.totalPages ?? 0,
+		currentPage: clientsQuery.data?.pagination?.currentPage ?? clientsQuery.data?.currentPage ?? 1,
+		totalCount: clientsQuery.data?.pagination?.totalCount ?? clientsQuery.data?.totalCount ?? 0,
 		clientDetail: clientDetailQuery.data,
 
 		// Status Indicators

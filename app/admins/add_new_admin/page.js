@@ -31,9 +31,9 @@ const DEPARTMENT_OPTIONS = [
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
-	email: emailRule.required("Email is required"),
-	password: passwordRule.required("Password is required"),
-	phone: phoneRule.required("Phone number is required"),
+	email: emailRule,
+	password: passwordRule,
+	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
 	region: yup.string()
@@ -46,7 +46,6 @@ export default function Page() {
 	const { addAdmin, isActionPending, isError, errorMessage } = useAdmins();
 
 	// Checkboxes controlled manually
-	const [permissions, setPermissions] = useState([]);
 	const [canManageUsers, setCanManageUsers] = useState(false);
 	const [canManageShifts, setCanManageShifts] = useState(false);
 	const [canViewReports, setCanViewReports] = useState(false);

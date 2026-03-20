@@ -13,11 +13,9 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useClients } from "@/hooks/useClients";
 
 export default function Clients() {
-	const queryClient = useQueryClient();
 
 	// --- State ---
 	const [search, setSearch] = useState(""); // Search text
@@ -176,7 +174,7 @@ export default function Clients() {
 
 						{/* Pagination */}
 						<ReactPaginate
-							pageCount={totalPages} // use backend pageCount
+							pageCount={Math.max(totalPages, 1)} // use backend pageCount, ensure at least 1
 							forcePage={currentPage - 1} // Sync component with state (0-indexed)
 							onPageChange={handlePageClick}
 
