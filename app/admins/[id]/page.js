@@ -47,6 +47,9 @@ const schema = yup.object({
 	phone: phoneRule.required("Phone number is required"),
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
+	region: yup.string()
+		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.required("Region is required"),
 });
 
 export default function Page() {
@@ -191,6 +194,7 @@ export default function Page() {
 					phone: fetchedUser.phone,
 					adminLevel: fetchedUser.adminLevel || "",
 					department: fetchedUser.department || "",
+					region: fetchedUser.region || "",
 				});
 				setCanManageUsers(fetchedUser.canManageUsers || false);
 				setCanManageShifts(fetchedUser.canManageShifts || false);
@@ -312,6 +316,7 @@ export default function Page() {
 				phone: user.phone,
 				adminLevel: user.adminLevel || "",
 				department: user.department || "",
+				region: user.region || "",
 			});
 			setCanManageUsers(user.canManageUsers || false);
 			setCanManageShifts(user.canManageShifts || false);
@@ -469,6 +474,7 @@ export default function Page() {
 											</div>
 											<div className={styles.row2}>
 												<InfoField label="Department">{user.department || "—"}</InfoField>
+												<InfoField label="Region">{user.region || "—"}</InfoField>
 											</div>
 										</>
 									) : (
@@ -492,6 +498,21 @@ export default function Page() {
 													register={register}
 													error={errors.department}
 													options={DEPARTMENT_OPTIONS}
+												/>
+												<InputField
+													label="Region"
+													name="region"
+													type="select"
+													register={register}
+													error={errors.region}
+													options={[
+														{ label: "Central", value: "Central" },
+														{ label: "Windsor", value: "Windsor" },
+														{ label: "HRM", value: "HRM" },
+														{ label: "Yarmouth", value: "Yarmouth" },
+														{ label: "Shelburne", value: "Shelburne" },
+														{ label: "South Shore", value: "South Shore" }
+													]}
 												/>
 											</div>
 										</>

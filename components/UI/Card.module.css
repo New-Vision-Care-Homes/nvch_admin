@@ -3,14 +3,20 @@
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	justify-content: start;
+	justify-content: flex-start;
 	width: 100%;
 	height: auto;
 	background: #FFFFFFFF;
-	/* white */
 	border-radius: var(--border-size-md);
 	box-shadow: var(--shadow-lg);
 	padding: 2rem;
+	border-left: 3px solid var(--color-primary);
+	transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 16px rgba(28, 74, 110, 0.10);
 }
 
 .content {
@@ -29,9 +35,11 @@
 
 .label {
 	font-family: var(--font-family-inter);
-	font-size: var(--font-size-md);
-	font-weight: var(--font-weight-md);
-	color: var(--color-primary);
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
 }
 
 .input {
@@ -39,29 +47,41 @@
 	font-family: var(--font-family-inter);
 	font-size: var(--font-size-sm);
 	font-weight: var(--font-weight-sm);
-	background: #FFFFFFFF;
-	/* white */
+	background: #FAFBFC;
 	border-radius: var(--border-size-sm);
-	border: var(--border-secondary);
+	border: 1.5px solid #DEE1E6;
 	outline: none;
-	padding: 0.5rem;
+	padding: 0.55rem 0.75rem;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 /* hover */
-.input:hover {}
+.input:hover {
+	background: #F0F5FA;
+	border-color: #b0bec5;
+}
 
 /* focused */
 .input:focus {
 	border-color: var(--color-primary);
-	/* neutral-300 */
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.12);
 }
 
 /* disabled */
-.input:disabled {}
+.input:disabled {
+	background: #f5f5f5;
+	color: #aaa;
+	cursor: not-allowed;
+}
 
 .input_error {
 	border-color: #E53E3E;
 	background: #FFF5F5;
+}
+
+.input_error:focus {
+	box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.12);
 }
 
 .error_text {
@@ -102,14 +122,16 @@
 }
 
 .info_label {
-	font-size: 14px;
-	font-weight: 500;
-	color: #565D6DFF;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
 	margin-bottom: 4px;
 }
 
 .info_value {
-	font-size: 16px;
+	font-size: 15px;
 	font-weight: 400;
 	color: #171A1FFF;
 }

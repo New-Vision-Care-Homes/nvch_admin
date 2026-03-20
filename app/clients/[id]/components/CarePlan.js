@@ -7,6 +7,7 @@ import * as yup from "yup";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
+import StatusMessage from "@components/UI/StatusMessage";
 import { longTextRule } from "@app/validation";
 import { useParams } from "next/navigation";
 
@@ -82,7 +83,7 @@ const defaultCarePlanValues = cleanFetchedData(null);
 export default function CarePlan() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [message, setMessage] = useState(null);
+    const [status, setStatus] = useState(null); // { variant: 'success'|'error', text: string }
     const { id } = useParams(); 
 
     const {
@@ -99,11 +100,11 @@ export default function CarePlan() {
     // --- 5. Data Loading (Fetch Care Plan Data) ---
     const fetchCarePlan = useCallback(async () => {
         setIsLoading(true);
-        setMessage(null);
+        setStatus(null);
         const token = localStorage.getItem("token");
         
         if (!token) {
-            setMessage("Authentication failed. Please log in again.");
+            setStatus({ variant: "error", text: "Authentication failed. Please log in again." });
             setIsLoading(false);
             return;
         }
@@ -121,19 +122,18 @@ export default function CarePlan() {
             console.log("data: ", data);
 
             if (res.ok && data.data.user) { 
-                // Flatten the user data for the form
                 const cleanedData = cleanFetchedData(data.data.user);
                 console.log("Loaded Care Plan Data:", cleanedData);
-                reset(cleanedData); 
-                setMessage("✅ Care plan data loaded successfully.");
+                reset(cleanedData);
+                // No message on load — data just populates silently
             } else {
                 const errorMsg = data.error || data.message || "Failed to fetch care plan data.";
-                setMessage(`Error fetching care plan: ${errorMsg}`);
+                setStatus({ variant: "error", text: `Error fetching care plan: ${errorMsg}` });
                 reset(defaultCarePlanValues); 
             }
         } catch (err) {
             console.error("Fetch Care Plan Error:", err);
-            setMessage("Error connecting to server to fetch user data.");
+            setStatus({ variant: "error", text: "Error connecting to server to fetch user data." });
         } finally {
             setIsLoading(false);
         }
@@ -153,7 +153,7 @@ export default function CarePlan() {
      */
     const onSubmit = async (data) => {
         setIsSubmitting(true);
-        setMessage(null);
+        setStatus(null);
         const token = localStorage.getItem("token");
 
         // --- Re-nest/Structure data for API Submission ---
@@ -202,17 +202,16 @@ export default function CarePlan() {
             const resData = await res.json();
 
             if (res.ok) {
-                // If update is successful, reset the form using the updated user object returned by the API
                 const updatedData = cleanFetchedData(resData.data.user); 
                 reset(updatedData); 
-                setMessage("✅ Care plan updated successfully!");
+                setStatus({ variant: "success", text: "Care plan updated successfully!" });
             } else {
                 const errorMsg = resData.error || resData.message || `Failed to update care plan (Status ${res.status}).`;
-                setMessage(`Error saving: ${errorMsg}`);
+                setStatus({ variant: "error", text: `Error saving: ${errorMsg}` });
             }
         } catch (err) {
             console.error("Submission Error:", err);
-            setMessage("Network error or invalid response during submission.");
+            setStatus({ variant: "error", text: "Network error or invalid response during submission." });
         } finally {
             setIsSubmitting(false);
         }
@@ -221,7 +220,7 @@ export default function CarePlan() {
     // --- 7. Cancel Action ---
     const handleCancel = () => {
         reset(); 
-        setMessage("Changes cancelled. Form restored to last saved state.");
+        setStatus(null);
     };
 
 
@@ -231,8 +230,7 @@ export default function CarePlan() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Global Message Display */}
-            {message && <div className={`${styles.global_message} ${message.startsWith('✅') ? styles.success : styles.error}`}>{message}</div>}
+            <StatusMessage variant={status?.variant} message={status?.text} />
 
             <div className={styles.body}>
                 {/* MEDICAL CONDITIONS */}

@@ -50,7 +50,7 @@ export const clientService = {
 	 * @param {Object} clientData - The payload containing client details.
 	 */
 	create: async (clientData) => {
-		const { data } = await axiosClient.post('/api/auth/admin/users', clientData);
+		const { data } = await axiosClient.post('/api/auth/register', clientData);
 		return data.data.user;
 	},
 
