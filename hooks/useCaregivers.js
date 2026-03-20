@@ -17,9 +17,8 @@ export const useCaregivers = (options = {}) => {
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.message ||
-			err?.message ||
-			"An unexpected error occurred"
+			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
+			"An unexpected error occurred"  // Fallback string
 		);
 	};
 

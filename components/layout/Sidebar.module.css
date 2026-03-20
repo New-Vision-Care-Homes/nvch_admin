@@ -1,36 +1,42 @@
 .sidebar {
-	display: flex; 
-	width: 250px;
+	display: flex;
+	width: 22rem;
 	height: 100%;
 	position: sticky;
 	top: 0;
 	overflow-y: auto;
 	flex-shrink: 0;
-	flex-direction: column; 
-	font-family: Inter; /* Body */
-	font-size: 14px; 
-	line-height: 22px; 
-	font-weight: 400; 
-	background: #FFFFFFFF; /* white */
-	border-radius: 0px; 
-	border-width: 1px; 
-	border-color: #DEE1E6FF; /* neutral-300 */
-	border-style: solid; 
+	flex-direction: column;
+	font-family: Inter;
+	/* Body */
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 400;
+	background: #FFFFFFFF;
+	/* white */
+	border-radius: 0px;
+	border-width: 1px;
+	border-color: #DEE1E6FF;
+	/* neutral-300 */
+	border-style: solid;
 }
 
 .tab {
-	padding: 16px; 
-	display: flex; 
-	align-items: center; 
-	justify-content: flex-start; 
-	color: #565E6CFF; /* neutral-600 */
+	padding: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	color: #565E6CFF;
+	/* neutral-600 */
 	background: transparent;
-	border-radius: 0px; 
-	gap: 8px; 
-	cursor: pointer; 
-	white-space: nowrap; 
+	border-radius: 0px;
+	gap: 1rem;
+	cursor: pointer;
+	white-space: nowrap;
 	text-decoration: none;
 	transition: background 0.2s, color 0.2s;
+	padding-left: 2rem;
+	padding-right: 2rem;
 }
 
 .tab:hover {
@@ -40,12 +46,14 @@
 
 .tab:hover:active {
 	color: var(--color-primary);
-	background: #E9ECEF; /* primary-200 */
+	background: #E9ECEF;
+	/* primary-200 */
 }
 
 
 .activeTab {
-	background: #E9ECEF; /* primary-200 */
+	background: #E9ECEF;
+	/* primary-200 */
 	color: var(--color-primary);
 }
 
