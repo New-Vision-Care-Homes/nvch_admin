@@ -27,9 +27,8 @@ export const useShifts = (options = {}) => {
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.message || // Message from backend
-			err?.message ||                 // Generic Axios/Network error
-			"An unexpected error occurred"
+			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
+			"An unexpected error occurred"  // Fallback string
 		);
 	};
 

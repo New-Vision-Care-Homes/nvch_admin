@@ -10,7 +10,6 @@
 	border-radius: var(--border-size-md);
 	box-shadow: var(--shadow-lg);
 	padding: 2rem;
-	border-left: 3px solid var(--color-primary);
 	transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 

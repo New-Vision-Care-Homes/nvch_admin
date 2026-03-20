@@ -13,7 +13,7 @@ export default function Tabs() {
 	const tabs = [
 		{ id: "personal", label: "Personal Info", component: <Info /> },
 		{ id: "care", label: "Care Plan", component: <CarePlan /> },
-		{ id: "caregivers", label: "Assigned Caregivers", component: <Assigned /> },
+		/*{ id: "caregivers", label: "Assigned Caregivers", component: <Assigned /> },*/
 		{ id: "history", label: "Visit History", component: <History /> },
 		/*
 		{ id: "billing", label: "Billing/Invoices", component: <Billing /> },
@@ -24,13 +24,13 @@ export default function Tabs() {
 		<div>
 			<div className={styles.tabsList}>
 				{tabs.map((tab) => (
-				<button
-					key={tab.id}
-					className={`${styles.tabTrigger} ${activeTab === tab.id ? styles.active : ""}`}
-					onClick={() => setActiveTab(tab.id)}
-				>
-					{tab.label}
-				</button>
+					<button
+						key={tab.id}
+						className={`${styles.tabTrigger} ${activeTab === tab.id ? styles.active : ""}`}
+						onClick={() => setActiveTab(tab.id)}
+					>
+						{tab.label}
+					</button>
 				))}
 			</div>
 

@@ -16,13 +16,10 @@ export const useHomes = (arg = null) => {
 	 * Helper to extract error message
 	 */
 	const getErrorMessage = (err) => {
-		const data = err?.response?.data;
-		if (data) {
-			if (typeof data === 'string') return data;
-			if (data.message) return data.message;
-			if (data.error) return data.error;
-		}
-		return err?.message || "An unexpected error occurred";
+		return (
+			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
+			"An unexpected error occurred"  // Fallback string
+		);
 	};
 
 	// 1. Fetch homes (list)
