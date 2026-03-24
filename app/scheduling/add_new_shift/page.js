@@ -1,6 +1,6 @@
 "use client";
 
-import react, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -10,31 +10,61 @@ import { Search, Trash2, Plus, X } from "lucide-react";
 import { useGoogleMap } from "@/hooks/useGoogleMap";
 import { useShifts } from "@/hooks/useShifts";
 
-// Component & Style Imports
 import PageLayout from "@components/layout/PageLayout";
+import { useClients } from "@/hooks/useClients";
 import styles from "./add_new_shift.module.css";
-import cardStyles from "@components/UI/Card.module.css"; // Import card styles for consistent input styling
+import cardStyles from "@components/UI/Card.module.css";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@app/validation";
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://nvch-server.onrender.com";
+const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const QUICK_TAGS = ["Urgent", "New Client"];
+
+// ─── Helpers (outside component to avoid re-creation on each render) ─────────
+
+function debounce(fn, delay) {
+	let timer;
+	return function (...args) {
+		clearTimeout(timer);
+		timer = setTimeout(() => fn.apply(this, args), delay);
+	};
+}
+
+function getAuthHeader() {
+	const token = typeof window !== "undefined" ? localStorage.getItem("token") : "";
+	return { Authorization: `Bearer ${token}` };
+}
+
+function formatTime(date) {
+	return date.toTimeString().slice(0, 5);
+}
+
+function joinAddress({ street, city, state, pinCode } = {}) {
+	return [street, city, state, pinCode].filter(Boolean).join(", ");
+}
+
+// ─── Validation Schema ────────────────────────────────────────────────────────
+
 const now = new Date().toISOString().slice(0, 16);
-// --- 1. VALIDATION SCHEMA ---
+
 const schema = yup.object({
 	caregiverId: IdRule.required("Caregiver is required"),
 	clientId: IdRule.required("Client is required"),
 	clientPhone: phoneRule.required("Client Phone is required"),
 	clientAddress: longTextRule.optional(),
-	startTime: yup.string()
+	startTime: yup
+		.string()
 		.required("Start Time is required")
-		.test("is-future", "Start time must be in the future", (value) => {
-			return new Date(value) > new Date();
-		}),
-	endTime: yup.string()
+		.test("is-future", "Start time must be in the future", (v) => new Date(v) > new Date()),
+	endTime: yup
+		.string()
 		.required("End Time is required")
-		.test("is-after-start", "End time must be after start time", function (value) {
-			const { startTime } = this.parent;
-			return new Date(value) > new Date(startTime);
+		.test("is-after-start", "End time must be after start time", function (v) {
+			return new Date(v) > new Date(this.parent.startTime);
 		}),
 	serviceInput: shortTextRule.required("Services Required is required"),
 	contactFName: nameRule.optional(),
@@ -42,196 +72,213 @@ const schema = yup.object({
 	contactPhone: phoneRule.optional(),
 	shiftNotes: shortTextRule.optional(),
 	assignedCaregiver: nameRule.optional(),
-	openShift: yup.boolean().notRequired(),
 	geofenceRadius: yup.number().optional(),
 	alertOnEntry: yup.boolean().notRequired(),
 	alertOnExit: yup.boolean().notRequired(),
 });
 
-export default function Page() {
+// ─── useSearch hook ───────────────────────────────────────────────────────────
+/**
+ * Generic search hook to eliminate duplicated client/caregiver search logic.
+ * @param {(term: string) => Promise<any[]>} fetchFn  async fn that returns result array
+ */
+function useSearch(fetchFn) {
+	const [term, setTerm] = useState("");
+	const [results, setResults] = useState([]);
+	const [showResults, setShowResults] = useState(false);
+	const [selectedName, setSelectedName] = useState("");
+	const [searchError, setSearchError] = useState(null);
 
+	// Stable debounced fetcher — fetchFn identity may change, so we hold it in a ref
+	const fetchRef = useRef(fetchFn);
+	useEffect(() => { fetchRef.current = fetchFn; }, [fetchFn]);
+
+	const debouncedSearch = useCallback(
+		debounce(async (searchTerm) => {
+			if (searchTerm.length < 2) return;
+			try {
+				setSearchError(null);
+				const data = await fetchRef.current(searchTerm);
+				setResults(data);
+				setShowResults(true);
+			} catch (err) {
+				console.error("Search error:", err);
+				setSearchError("Search failed. Please try again.");
+				setResults([]);
+			}
+		}, 500),
+		[] // stable — only created once
+	);
+
+	useEffect(() => {
+		// Only trigger search if user is actively typing (not after a selection)
+		if (term && term !== selectedName) {
+			debouncedSearch(term);
+		}
+	}, [term, selectedName, debouncedSearch]);
+
+	const select = useCallback((name) => {
+		setSelectedName(name);
+		setTerm(name);
+		setShowResults(false);
+		setResults([]);
+	}, []);
+
+	const clear = useCallback(() => {
+		setTerm("");
+		setSelectedName("");
+		setShowResults(false);
+		setResults([]);
+		setSearchError(null);
+	}, []);
+
+	return { term, setTerm, results, showResults, setShowResults, selectedName, searchError, select, clear };
+}
+
+// ─── Page Component ───────────────────────────────────────────────────────────
+
+export default function Page() {
 	const router = useRouter();
 
-	const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm({
-		resolver: yupResolver(schema),
+	const {
+		register,
+		handleSubmit,
+		watch,
+		formState: { errors },
+		setValue,
+	} = useForm({ resolver: yupResolver(schema) });
 
-	});
-
+	const selectedStartTime = watch("startTime");
+	const selectedEndTime = watch("endTime");
 	const geofenceRadius = watch("geofenceRadius");
 
-	// --- 1. USE GOOGLE MAP HOOK ---
-	const {
-		mapRef,
-		inputRef,
-		isLoaded,
-		loadError,
-		address: mapAddress,
-		center: mapCenter,
-		updateRadius
-	} = useGoogleMap();
+	// ── Google Map ──────────────────────────────────────────────────────────
+	const { mapRef, inputRef, isLoaded, loadError, center: mapCenter, updateRadius } = useGoogleMap();
 
-
-	// Update map radius when form input changes
 	useEffect(() => {
 		updateRadius(geofenceRadius);
 	}, [geofenceRadius, updateRadius]);
 
-	const selectedStartTime = watch("startTime");
-	const selectedEndTime = watch("endTime");
+	// Auto-clear endTime if it's now before startTime
 	useEffect(() => {
 		if (selectedStartTime && selectedEndTime) {
-			const start = new Date(selectedStartTime).getTime();
-			const end = new Date(selectedEndTime).getTime();
-
-			if (end <= start) {
+			if (new Date(selectedEndTime) <= new Date(selectedStartTime)) {
 				setValue("endTime", "");
 			}
 		}
 	}, [selectedStartTime, selectedEndTime, setValue]);
 
-	const isOpenShift = watch("openShift");
+	// ── Client Search ───────────────────────────────────────────────────────
+	const fetchClients = useCallback(async (search) => {
+		const {
+			clients,
+			isLoading,
+			fetchError,
+			refetch,
+		} = useClients({
+			params: {
+				page: 1,
+				limit: 5,
+				search: search,
+			}
+		});
+		return clients || [];
+	}, []);
 
-	// --- 2. UTILITY FUNCTIONS ---
-	const debounce = (func, delay) => {
-		let timeoutId;
-		return function (...args) {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => func.apply(this, args), delay);
-		};
-	};
+	const clientSearch = useSearch(fetchClients);
 
-
-	// ==========================================
-	// --- 3. CLIENT SEARCH LOGIC ---
-	// ==========================================
-	const [clientSearchTerm, setClientSearchTerm] = useState('');
-	const [clientResults, setClientResults] = useState([]);
-	const [showClientResults, setShowClientResults] = useState(false);
-	const [selectedClientName, setSelectedClientName] = useState('');
-
-	const fetchClients = async (search) => {
-		if (search.length < 2) return;
-		const token = localStorage.getItem("token");
-		try {
-			const url = `https://nvch-server.onrender.com/api/auth/admin/clients?page=1&limit=5&search=${encodeURIComponent(search)}`;
-			const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-			const data = await res.json();
-			//test
-			console.log("searched result: ", data.data.clients);
-			setClientResults(data.data.clients || []);
-			setShowClientResults(true);
-		} catch (err) { console.error("Client fetch error", err); }
-	};
-
-	const debouncedFetchClients = useCallback(debounce(fetchClients, 500), []);
-
-	useEffect(() => {
-		if (clientSearchTerm && clientSearchTerm !== selectedClientName) debouncedFetchClients(clientSearchTerm);
-	}, [clientSearchTerm]);
-
-	const handleClientSelect = (client) => {
+	const handleClientSelect = useCallback((client) => {
 		const fullName = `${client.firstName} ${client.lastName}`;
-		setValue('clientId', client.id);
-		setValue('clientPhone', client.phone || '');
-		setValue('clientAddress', client.address.street + " " + client.address.city + " " + client.address.state + " " + client.address.pinCode || '');
-		setSelectedClientName(fullName);
-		setClientSearchTerm(fullName);
-		setShowClientResults(false);
-	};
+		setValue("clientId", client.id);
+		setValue("clientPhone", client.phone || "");
+		setValue("clientAddress", joinAddress(client.address));
+		clientSearch.select(fullName);
+	}, [clientSearch, setValue]);
 
+	const handleClientClear = useCallback(() => {
+		clientSearch.clear();
+		setValue("clientId", "");
+		setValue("clientPhone", "");
+		setValue("clientAddress", "");
+	}, [clientSearch, setValue]);
 
-	// ==========================================
-	// --- 4. CAREGIVER SEARCH LOGIC ---
-	// ==========================================
-	const [cgSearchTerm, setCgSearchTerm] = useState('');
-	const [cgResults, setCgResults] = useState([]);
-	const [showCgResults, setShowCgResults] = useState(false);
-	const [selectedCgName, setSelectedCgName] = useState('');
-
-	const fetchCaregivers = async (search) => {
-		if (search.length < 2) return;
-
+	// ── Caregiver Search ────────────────────────────────────────────────────
+	// fetchCaregivers needs current startTime/endTime — pass them as params
+	// instead of reading watch() inside the function to avoid stale closures.
+	const fetchCaregivers = useCallback(async (search) => {
 		const startVal = watch("startTime");
 		const endVal = watch("endTime");
 
-		const token = localStorage.getItem("token");
+		let url = `${API_BASE}/api/auth/admin/caregivers?page=1&limit=10&search=${encodeURIComponent(search)}&isActive=true`;
 
-		try {
-			let url = `https://nvch-server.onrender.com/api/auth/admin/caregivers?page=1&limit=10&search=${encodeURIComponent(search)}&isActive=true`;
+		if (startVal) {
+			const startDate = new Date(startVal);
+			url += `&availabilityDay=${DAY_NAMES[startDate.getDay()]}`;
+			url += `&availabilityStartTime=${formatTime(startDate)}`;
 
-			if (startVal) {
-				const startDate = new Date(startVal);
-
-				const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-				const day = dayNames[startDate.getDay()];
-
-				const formatTime = (date) => {
-					return date.toTimeString().slice(0, 5);
-				};
-
-				url += `&availabilityDay=${day}`;
-				url += `&availabilityStartTime=${formatTime(startDate)}`;
-
-				if (endVal) {
-					const endDate = new Date(endVal);
-					url += `&availabilityEndTime=${formatTime(endDate)}`;
-				}
+			if (endVal) {
+				url += `&availabilityEndTime=${formatTime(new Date(endVal))}`;
 			}
-
-			const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-			const data = await res.json();
-
-			setCgResults(data.data.caregivers || []);
-			console.log("caregivers: ", data);
-			setShowCgResults(true);
-		} catch (err) {
-			console.error("Caregiver fetch error", err);
 		}
-	};
 
-	const debouncedFetchCgs = useCallback(debounce(fetchCaregivers, 500), []);
+		const res = await fetch(url, { headers: getAuthHeader() });
+		const data = await res.json();
+		return data.data.caregivers || [];
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []); // watch() is stable from react-hook-form, no deps needed
+
+	const cgSearch = useSearch(fetchCaregivers);
+
+	const handleCgSelect = useCallback((cg) => {
+		const fullName = `${cg.firstName} ${cg.lastName}`;
+		setValue("caregiverId", cg.id);
+		setValue("assignedCaregiver", fullName);
+		cgSearch.select(fullName);
+	}, [cgSearch, setValue]);
+
+	// ── Tasks ───────────────────────────────────────────────────────────────
+	const [tasks, setTasks] = useState([]);
+	const [newTask, setNewTask] = useState("");
+
+	const addTask = useCallback(() => {
+		const trimmed = newTask.trim();
+		if (!trimmed) return;
+		setTasks((prev) => [...prev, { id: Date.now(), text: trimmed, completed: false }]);
+		setNewTask("");
+	}, [newTask]);
+
+	const deleteTask = useCallback((id) => {
+		setTasks((prev) => prev.filter((t) => t.id !== id));
+	}, []);
+
+	// ── Tags ────────────────────────────────────────────────────────────────
+	const [selectedTags, setSelectedTags] = useState([]);
+	const [tagInput, setTagInput] = useState("");
+
+	const toggleTag = useCallback((tag) => {
+		setSelectedTags((prev) =>
+			prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+		);
+	}, []);
+
+	const addCustomTag = useCallback(() => {
+		const trimmed = tagInput.trim();
+		if (trimmed && !selectedTags.includes(trimmed)) {
+			setSelectedTags((prev) => [...prev, trimmed]);
+		}
+		setTagInput("");
+	}, [tagInput, selectedTags]);
+
+	const removeTag = useCallback((tag) => {
+		setSelectedTags((prev) => prev.filter((t) => t !== tag));
+	}, []);
 
 	useEffect(() => {
-		if (cgSearchTerm && cgSearchTerm !== selectedCgName) debouncedFetchCgs(cgSearchTerm);
-	}, [cgSearchTerm]);
+		setValue("tags", selectedTags);
+	}, [selectedTags, setValue]);
 
-	const handleCgSelect = (cg) => {
-		const fullName = `${cg.firstName} ${cg.lastName}`;
-		setValue('caregiverId', cg.id || cg.id);
-		setValue('assignedCaregiver', fullName);
-		setSelectedCgName(fullName);
-		setCgSearchTerm(fullName);
-		setShowCgResults(false);
-	};
-
-
-	// ==========================================
-	// --- 5. TASK LIST MANAGEMENT ---
-	// ==========================================
-	const [tasks, setTasks] = useState([]);
-	const [newTask, setNewTask] = useState('');
-
-	const addTask = () => {
-		if (newTask.trim()) {
-			setTasks([...tasks, { id: Date.now(), text: newTask, completed: false }]);
-			setNewTask('');
-		}
-	};
-
-	const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id));
-
-
-
-	// ==========================================
-	// --- 6. FORM SUBMISSION ---
-	// ==========================================
-
-	const {
-		addShift,
-		isActionPending,
-		isError,
-		errorMessage
-	} = useShifts();
+	// ── Form Submission ─────────────────────────────────────────────────────
+	const { addShift, isActionPending, isError, errorMessage } = useShifts();
 
 	const onSubmit = async (data) => {
 		try {
@@ -243,25 +290,20 @@ export default function Page() {
 				contactPerson: { name: `${data.contactFName} ${data.contactLName}`, phone: data.contactPhone },
 				startTime: data.startTime,
 				endTime: data.endTime,
-				servicesRequired: data.serviceInput.split(',').map(s => s.trim()),
+				servicesRequired: data.serviceInput.split(",").map((s) => s.trim()),
 				notes: data.shiftNotes,
-
-				tasks: tasks.map(t => ({ description: t.text, completed: false })),
-				isOpenShift: data.openShift || false,
-				recurringShift: {
-					isRecurring: false
-				},
+				tasks: tasks.map((t) => ({ description: t.text, completed: false })),
+				isOpenShift: false,
+				recurringShift: { isRecurring: false },
 				tags: selectedTags,
 				geofence: {
 					center: { latitude: mapCenter.lat, longitude: mapCenter.lng },
-					radius: data.geofenceRadius || 500,
+					radius: data.geofenceRadius || 100,
 					shape: "circle",
 					alertOnEntry: data.alertOnEntry || false,
-					alertOnExit: data.alertOnExit || false
-				}
+					alertOnExit: data.alertOnExit || false,
+				},
 			};
-
-			console.log("shiftdata: ", shiftData);
 
 			await addShift(shiftData);
 			router.push("/scheduling");
@@ -271,50 +313,20 @@ export default function Page() {
 		}
 	};
 
-	// ==========================================
-	// --- 7. TAGS MANAGEMENT ---
-	// ==========================================
-	const quickTags = ["Urgent", "New Client"];
-	const [selectedTags, setSelectedTags] = useState([]); //Initial default tags
-	const [tagInput, setTagInput] = useState('');
-
-	// Toggle a tag (Add if not there, remove if it is)
-	const toggleTag = (tag) => {
-		if (selectedTags.includes(tag)) {
-			setSelectedTags(selectedTags.filter(t => t !== tag));
-		} else {
-			setSelectedTags([...selectedTags, tag]);
-		}
-	};
-
-	// Add a custom tag from the input
-	const addCustomTag = (e) => {
-		const trimmedValue = tagInput.trim();
-		if (trimmedValue && !selectedTags.includes(trimmedValue)) {
-			setSelectedTags([...selectedTags, trimmedValue]);
-		}
-		setTagInput('');
-	};
-
-	// Explicitly remove a tag (called by the 'X' button)
-	const removeTag = (tagToRemove) => {
-		setSelectedTags(selectedTags.filter(tag => tag !== tagToRemove));
-	};
-
-	// Sync with React Hook Form (so it gets sent to API)
-	useEffect(() => {
-		setValue('tags', selectedTags);
-	}, [selectedTags, setValue]);
-
-
+	// ── Early returns ───────────────────────────────────────────────────────
 	if (loadError) return <div>Error loading maps</div>;
 
+	// ── Render ──────────────────────────────────────────────────────────────
 	return (
 		<PageLayout>
-			{/* 1. HEADER SECTION */}
+			{/* Header */}
 			<div className={styles.header}>
 				<h1>Create New Shift</h1>
-				{isError && <div style={{ color: "red", marginRight: "1rem", fontWeight: "bold" }}>{errorMessage}</div>}
+				{isError && (
+					<div style={{ color: "red", marginRight: "1rem", fontWeight: "bold" }}>
+						{errorMessage}
+					</div>
+				)}
 				<div className={styles.buttons}>
 					<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
 					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
@@ -326,10 +338,11 @@ export default function Page() {
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div className={styles.cards}>
 
-					{/* 2. CLIENT INFORMATION CARD */}
+					{/* ── Client Information ── */}
 					<Card>
 						<CardHeader>Client Information</CardHeader>
 						<CardContent>
+							{/* Client Search */}
 							<div className={styles.searchContainer}>
 								<label className={styles.label}>Client Name</label>
 								<div className={styles.searchWrapper}>
@@ -338,31 +351,34 @@ export default function Page() {
 										type="text"
 										placeholder="Search clients..."
 										className={styles.input}
-										value={clientSearchTerm}
-										onChange={(e) => setClientSearchTerm(e.target.value)}
-										onFocus={() => setShowClientResults(true)}
-										readOnly={!!selectedClientName}
-										style={selectedClientName ? { backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" } : {}}
+										value={clientSearch.term}
+										onChange={(e) => clientSearch.setTerm(e.target.value)}
+										onFocus={() => clientSearch.setShowResults(true)}
+										readOnly={!!clientSearch.selectedName}
+										style={clientSearch.selectedName
+											? { backgroundColor: "#f3f4f6", cursor: "not-allowed", color: "#6b7280" }
+											: {}
+										}
 									/>
-									{selectedClientName && (
+									{clientSearch.selectedName && (
 										<X
 											size={16}
-											style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
-											onClick={() => {
-												setClientSearchTerm('');
-												setSelectedClientName('');
-												setValue('clientId', '');
-												setValue('clientPhone', '');
-												setValue('clientAddress', '');
-												setShowClientResults(false);
-											}}
+											style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#6b7280" }}
+											onClick={handleClientClear}
 										/>
 									)}
 								</div>
-								{showClientResults && clientResults.length > 0 && (
+								{clientSearch.searchError && (
+									<p style={{ color: "red", fontSize: "0.8rem", marginTop: "4px" }}>{clientSearch.searchError}</p>
+								)}
+								{clientSearch.showResults && clientSearch.results.length > 0 && (
 									<div className={styles.searchResultsDropdown}>
-										{clientResults.map(c => (
-											<div key={c.id} className={styles.searchResultItem} onMouseDown={() => handleClientSelect(c)}>
+										{clientSearch.results.map((c) => (
+											<div
+												key={c.id}
+												className={styles.searchResultItem}
+												onMouseDown={() => handleClientSelect(c)}
+											>
 												{c.firstName} {c.lastName} ({c.email})
 											</div>
 										))}
@@ -388,34 +404,20 @@ export default function Page() {
 					</Card>
 
 					<div className={styles.column}>
-						{/* 3. SHIFT DETAILS CARD */}
+						{/* ── Shift Details ── */}
 						<Card>
 							<CardHeader>Shift Information</CardHeader>
 							<CardContent>
 								<div className={styles.card_row_2}>
-									<InputField
-										label="Start"
-										type="datetime-local"
-										name="startTime"
-										register={register}
-										error={errors.startTime}
-										min={now}
-									/>
-									<InputField
-										label="End"
-										type="datetime-local"
-										name="endTime"
-										register={register}
-										error={errors.endTime}
-										min={selectedStartTime || now}
-									/>
+									<InputField label="Start" type="datetime-local" name="startTime" register={register} error={errors.startTime} min={now} />
+									<InputField label="End" type="datetime-local" name="endTime" register={register} error={errors.endTime} min={selectedStartTime || now} />
 								</div>
-								<InputField label="Services Required" name="serviceInput" register={register} placeholder="e.g. Cooking, Bathing" />
+								<InputField label="Services Required" name="serviceInput" register={register} error={errors.serviceInput} placeholder="e.g. Cooking, Bathing" />
 								<InputField label="Shift Notes" name="shiftNotes" register={register} />
 							</CardContent>
 						</Card>
 
-						{/* 4. CAREGIVER ASSIGNMENT CARD (WITH SEARCH) */}
+						{/* ── Caregiver Assignment ── */}
 						<Card>
 							<CardHeader>Caregiver Assignment</CardHeader>
 							<CardContent>
@@ -426,34 +428,43 @@ export default function Page() {
 										<input
 											type="text"
 											placeholder="Search caregivers..."
-											disabled={isOpenShift}
 											className={styles.input}
-											value={cgSearchTerm}
-											onChange={(e) => setCgSearchTerm(e.target.value)}
-											onFocus={() => setShowCgResults(true)}
+											value={cgSearch.term}
+											onChange={(e) => cgSearch.setTerm(e.target.value)}
+											onFocus={() => cgSearch.setShowResults(true)}
 										/>
+										{cgSearch.selectedName && (
+											<X
+												size={16}
+												style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#6b7280" }}
+												onClick={cgSearch.clear}
+											/>
+										)}
 									</div>
-									{showCgResults && cgResults.length > 0 && (
+									{cgSearch.searchError && (
+										<p style={{ color: "red", fontSize: "0.8rem", marginTop: "4px" }}>{cgSearch.searchError}</p>
+									)}
+									{cgSearch.showResults && cgSearch.results.length > 0 && (
 										<div className={styles.searchResultsDropdown}>
-											{cgResults.map(cg => (
-												<div key={cg.id} className={styles.searchResultItem} onMouseDown={() => handleCgSelect(cg)}>
+											{cgSearch.results.map((cg) => (
+												<div
+													key={cg.id}
+													className={styles.searchResultItem}
+													onMouseDown={() => handleCgSelect(cg)}
+												>
 													{cg.firstName} {cg.lastName}
 												</div>
 											))}
 										</div>
 									)}
 								</div>
-								<label className={styles.checkboxLabel} style={{ marginTop: '15px' }}>
-									<input type="checkbox" {...register("openShift")} />
-									<span>Set as Open Shift (No fixed caregiver)</span>
-								</label>
 							</CardContent>
 						</Card>
 					</div>
 				</div>
 
 				<div className={styles.cards}>
-					{/* 5. TASK LIST CARD */}
+					{/* ── Task List ── */}
 					<Card>
 						<CardHeader>Task List</CardHeader>
 						<div className={styles.taskInputGroup}>
@@ -462,26 +473,27 @@ export default function Page() {
 								value={newTask}
 								onChange={(e) => setNewTask(e.target.value)}
 								placeholder="Add a specific task..."
-								onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTask())}
+								onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTask(); } }}
 							/>
 							<Button type="button" onClick={addTask}>Add</Button>
 						</div>
 						<div className={styles.taskList}>
-							{tasks.map(t => (
+							{tasks.map((t) => (
 								<div key={t.id} className={styles.taskItem}>
 									<span>{t.text}</span>
-									<button type="button" className={styles.iconButton} onClick={() => deleteTask(t.id)}><Trash2 size={16} /></button>
+									<button type="button" className={styles.iconButton} onClick={() => deleteTask(t.id)}>
+										<Trash2 size={16} />
+									</button>
 								</div>
 							))}
 						</div>
 					</Card>
 
-					{/* 6. ADDITIONAL OPTIONS CARD */}
+					{/* ── Additional Options ── */}
 					<Card>
 						<CardHeader>Additional Options</CardHeader>
 						<CardContent>
-
-							{/* --- Recurring Shift Toggle --- */}
+							{/* Recurring Shift Toggle */}
 							<div className={styles.toggleRow}>
 								<label className={styles.label}>Recurring Shift</label>
 								<label className={styles.switch}>
@@ -492,23 +504,17 @@ export default function Page() {
 
 							<hr className={styles.divider} />
 
-							{/* --- Selected Tags (The Pills with Delete button) --- */}
+							{/* Selected Tags */}
 							<div className={styles.selectedTagsContainer}>
-								{selectedTags.map(tag => (
+								{selectedTags.map((tag) => (
 									<span key={tag} className={styles.pill}>
 										{tag}
-										<button
-											type="button"
-											className={styles.removeTagBtn}
-											onClick={() => removeTag(tag)}
-										>
-											✕
-										</button>
+										<button type="button" className={styles.removeTagBtn} onClick={() => removeTag(tag)}>✕</button>
 									</span>
 								))}
 							</div>
 
-							{/* --- Tag Input Area --- */}
+							{/* Tag Input */}
 							<div className={styles.tagsGroup}>
 								<div className={styles.searchWrapper}>
 									<Plus size={16} className={styles.searchIcon} />
@@ -518,50 +524,48 @@ export default function Page() {
 										placeholder="Add custom tag..."
 										value={tagInput}
 										onChange={(e) => setTagInput(e.target.value)}
-										onKeyDown={(e) => {
-											if (e.key === 'Enter') {
-												e.preventDefault();
-												addCustomTag();
-											}
-										}}
+										onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
 									/>
 								</div>
 								<Button type="button" onClick={addCustomTag}>Add</Button>
 							</div>
 
-							{/* --- Quick Selection Tags (Candidates) --- */}
-							<div className={styles.formGroup} style={{ marginTop: '15px' }}>
+							{/* Quick Tags */}
+							<div className={styles.formGroup} style={{ marginTop: "15px" }}>
 								<label className={styles.subLabel}>Quick Tags:</label>
 								<div className={styles.tagCandidateList}>
-									{quickTags.map(tag => (
+									{QUICK_TAGS.map((tag) => (
 										<button
 											key={tag}
 											type="button"
-											className={`${styles.candidateTag} ${selectedTags.includes(tag) ? styles.activeCandidate : ''}`}
+											className={`${styles.candidateTag} ${selectedTags.includes(tag) ? styles.activeCandidate : ""}`}
 											onClick={() => toggleTag(tag)}
 										>
-											{selectedTags.includes(tag) ? '✓ ' : '+ '}
+											{selectedTags.includes(tag) ? "✓ " : "+ "}
 											{tag}
 										</button>
 									))}
 								</div>
 							</div>
-
 						</CardContent>
 					</Card>
 				</div>
 
+				{/* ── Geofence ── */}
 				<Card>
 					<CardHeader>Geofence Customization</CardHeader>
 					<div className={styles.gps}>
 						<div className={styles.left}>
-							{/* --- 5. THE ACTUAL MAP ELEMENT --- */}
 							<div
 								className={styles.mapContainer}
-								style={{ position: 'relative', width: '100%', height: '350px' }}
+								style={{ position: "relative", width: "100%", height: "350px" }}
 							>
-								{!isLoaded && <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Map...</div>}
-								<div ref={mapRef} style={{ width: '100%', height: '100%', borderRadius: '8px', minHeight: '350px' }} />
+								{!isLoaded && (
+									<div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+										Loading Map...
+									</div>
+								)}
+								<div ref={mapRef} style={{ width: "100%", height: "100%", borderRadius: "8px", minHeight: "350px" }} />
 							</div>
 						</div>
 						<div className={styles.right}>
@@ -573,15 +577,18 @@ export default function Page() {
 								className={cardStyles.input}
 								style={{ marginBottom: "10px" }}
 							/>
-
 							<InputField
 								label="Geofence Radius (meters)"
-								type="number"
+								type="select"
 								name="geofenceRadius"
 								register={register}
 								error={errors.geofenceRadius?.message}
+								options={[
+									{ label: "100", value: 100 },
+									{ label: "200", value: 200 },
+									{ label: "300", value: 300 }
+								]}
 							/>
-
 							<div className={styles.checkboxGroup}>
 								<label className={styles.checkboxLabel}>
 									<input type="checkbox" {...register("alertOnEntry")} />
