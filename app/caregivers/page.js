@@ -13,16 +13,19 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import ErrorState from "@components/UI/ErrorState";
 
 export default function Caregivers() {
 	const queryClient = useQueryClient();
 	const {
 		caregivers,
+		totalPages,
 		isLoading,
-		isError,
-		errorMessage,
+		isActionPending,
+		fetchError,
+		actionError,
 		deleteCaregiver,
-		isDeleting
+		refetch,
 	} = useCaregivers();
 
 	//const { data: caregivers = [], isLoading, isError, error } = useCaregivers();
@@ -78,9 +81,6 @@ export default function Caregivers() {
 	const pageCount = Math.ceil(filteredCaregivers.length / itemsPerPage);
 	const handlePageClick = (event) => setCurrentPage(event.selected);
 
-	if (isLoading) return <div>Loading clients...</div>;
-	if (isError) return <div>Error: {errorMessage}</div>;
-
 	return (
 		<>
 			<PageLayout>
@@ -93,108 +93,125 @@ export default function Caregivers() {
 						</Link>
 					</div>
 
-					{/* Filters */}
-					<div className={styles.filter_row}>
-						{/* Search input */}
-						<input
-							type="text"
-							placeholder="Search caregivers..."
-							className={styles.search}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
+					{/* Action error — shown when delete/create/update fails */}
+					{actionError && (
+						<p className={styles.actionError}>{actionError}</p>
+					)}
 
-						{/* Status filter dropdown */}
-						<div className={styles.filter}>
-							<div className={styles.dropdownContainer}>
-								<Button
-									variant="secondary"
-									icon={<ChevronDown />}
-									onClick={() => setShowDropdown(prev => !prev)}
-								>
-									{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
-								</Button>
-								{showDropdown && (
-									<div className={styles.dropdownMenu}>
-										<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
-										<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
-										<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+					{/* Fetch error or loading state */}
+					<ErrorState
+						isLoading={isLoading}
+						errorMessage={fetchError}
+						onRetry={refetch}
+					/>
+
+					{/* Only show filters and table when there is no fetch error and not loading */}
+					{!fetchError && !isLoading && (
+						<>
+							{/* Filters */}
+							<div className={styles.filter_row}>
+								{/* Search input */}
+								<input
+									type="text"
+									placeholder="Search caregivers..."
+									className={styles.search}
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+
+								{/* Status filter dropdown */}
+								<div className={styles.filter}>
+									<div className={styles.dropdownContainer}>
+										<Button
+											variant="secondary"
+											icon={<ChevronDown />}
+											onClick={() => setShowDropdown(prev => !prev)}
+										>
+											{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
+										</Button>
+										{showDropdown && (
+											<div className={styles.dropdownMenu}>
+												<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
+												<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
+												<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+											</div>
+										)}
 									</div>
-								)}
+								</div>
 							</div>
-						</div>
-					</div>
 
-					{/* Caregivers Table */}
-					<div className={styles.tableWrapper}>
-						<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
-						<Table>
-							<TableHeader>
-								<TableCell>Caregiver Name</TableCell>
-								<TableCell>Employee ID</TableCell>
-								<TableCell>Contact</TableCell>
-								<TableCell>Status</TableCell>
-								<TableCell>Actions</TableCell>
-							</TableHeader>
-							{currentItems.map(caregiver => (
-								<TableContent key={caregiver.id}>
-									{/* Name & Avatar */}
-									<TableCell>
-										<Image
-											src={caregiver.profilePictureUrl || "/img/navbar/avatar.jpg"}
-											width={50}
-											height={50}
-											alt="avatar"
-											style={{ borderRadius: "50%", objectFit: "cover" }}
-											unoptimized
-										/>
-										<span>{caregiver.firstName} {caregiver.lastName}</span>
-									</TableCell>
+							{/* Caregivers Table */}
+							<div className={styles.tableWrapper}>
+								<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
+								<Table>
+									<TableHeader>
+										<TableCell>Caregiver Name</TableCell>
+										<TableCell>Employee ID</TableCell>
+										<TableCell>Contact</TableCell>
+										<TableCell>Status</TableCell>
+										<TableCell>Actions</TableCell>
+									</TableHeader>
+									{currentItems.map(caregiver => (
+										<TableContent key={caregiver.id}>
+											{/* Name & Avatar */}
+											<TableCell>
+												<Image
+													src={caregiver.profilePictureUrl || "/img/navbar/avatar.jpg"}
+													width={50}
+													height={50}
+													alt="avatar"
+													style={{ borderRadius: "50%", objectFit: "cover" }}
+													unoptimized
+												/>
+												<span>{caregiver.firstName} {caregiver.lastName}</span>
+											</TableCell>
 
-									{/* Employee ID */}
-									<TableCell>{caregiver.employeeId}</TableCell>
+											{/* Employee ID */}
+											<TableCell>{caregiver.employeeId}</TableCell>
 
-									{/* Contact */}
-									<TableCell>{caregiver.email || "-"}</TableCell>
+											{/* Contact */}
+											<TableCell>{caregiver.email || "-"}</TableCell>
 
-									{/* Status with pill */}
-									<TableCell>
-										<span className={`${styles.statusPill} ${caregiver.isActive ? styles.statusActive : styles.statusInactive}`}>
-											{caregiver.isActive ? "Active" : "Inactive"}
-										</span>
-									</TableCell>
+											{/* Status with pill */}
+											<TableCell>
+												<span className={`${styles.statusPill} ${caregiver.isActive ? styles.statusActive : styles.statusInactive}`}>
+													{caregiver.isActive ? "Active" : "Inactive"}
+												</span>
+											</TableCell>
 
-									{/* Actions */}
-									<TableCell>
-										<Link href={`/caregivers/${caregiver.id}`}>
-											<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-										</Link>
-										<Trash2
-											color="#ef4444"
-											style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-											onClick={() => deleteHandler(caregiver.id)}
-										/>
-									</TableCell>
-								</TableContent>
-							))}
-						</Table>
+											{/* Actions */}
+											<TableCell>
+												<Link href={`/caregivers/${caregiver.id}`}>
+													<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+												</Link>
+												<Trash2
+													color="#ef4444"
+													style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+													onClick={() => deleteHandler(caregiver.id)}
+												/>
+											</TableCell>
+										</TableContent>
+									))}
+								</Table>
 
-						{/* Pagination */}
-						<ReactPaginate
-							pageCount={pageCount}
-							onPageChange={handlePageClick}
-							previousLabel={"Prev"}
-							nextLabel={"Next"}
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.active}
-						/>
-					</div>
+								{/* Pagination */}
+								<ReactPaginate
+									pageCount={pageCount}
+									onPageChange={handlePageClick}
+									previousLabel={"Prev"}
+									nextLabel={"Next"}
+									containerClassName={styles.pagination}
+									pageClassName={styles.pageItem}
+									pageLinkClassName={styles.pageLink}
+									previousClassName={styles.pageItem}
+									previousLinkClassName={styles.pageLink}
+									nextClassName={styles.pageItem}
+									nextLinkClassName={styles.pageLink}
+									activeClassName={styles.active}
+								/>
+							</div>
+						</>
+					)}
 				</div>
 			</PageLayout>
 

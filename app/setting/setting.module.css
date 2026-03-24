@@ -15,10 +15,9 @@
 .body {
 	display: flex;
 	flex-direction: column;
-	flex: 1; 
+	flex: 1;
 	height: 100%;
-	padding: 20px;
+	padding: 2rem;
 	overflow-y: auto;
+	background: #F9FAFB;
 }
-
-  

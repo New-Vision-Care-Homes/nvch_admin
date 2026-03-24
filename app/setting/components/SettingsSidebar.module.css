@@ -1,0 +1,54 @@
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	width: 20%;
+	flex-shrink: 0;
+	height: 100%;
+	background: #FAFBFC;
+	border-right: 1px solid #DEE1E6;
+	padding: 1.25rem 0;
+	overflow-y: auto;
+}
+
+.sectionLabel {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #9CA3AF;
+	padding: 0 1.25rem 0.75rem 1.25rem;
+}
+
+.item {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	padding: 0.65rem 1.25rem;
+	font-family: Inter, sans-serif;
+	font-size: 14px;
+	font-weight: 400;
+	color: #565E6C;
+	text-decoration: none;
+	border-left: 3px solid transparent;
+	border-radius: 0 6px 6px 0;
+	margin: 0 0.5rem 0.15rem 0;
+	transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+	cursor: pointer;
+}
+
+.item:hover {
+	background: #E9ECEF;
+	color: var(--color-primary);
+}
+
+.activeItem {
+	background: #E9ECEF;
+	color: var(--color-primary);
+	font-weight: 500;
+	border-left: 3px solid var(--color-primary);
+}
+
+.icon {
+	flex-shrink: 0;
+	opacity: 0.85;
+}

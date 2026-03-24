@@ -1,0 +1,44 @@
+.container {
+	max-width: 700px;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 0.5rem;
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #DEE1E6;
+}
+
+.icon {
+	color: var(--color-primary);
+	flex-shrink: 0;
+}
+
+.title {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #111827;
+}
+
+.description {
+	margin-top: 0.75rem;
+	margin-bottom: 2rem;
+	color: #6B7280;
+	font-size: 0.9375rem;
+	line-height: 1.6;
+}
+
+.placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #fff;
+	border: 1.5px dashed #DEE1E6;
+	border-radius: 10px;
+	padding: 3rem 2rem;
+	color: #9CA3AF;
+	font-size: 0.9375rem;
+	font-style: italic;
+}

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import ErrorState from "@components/UI/ErrorState";
 import styles from "./admins.module.css";
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
@@ -17,9 +18,11 @@ export default function Admins() {
 	const {
 		admins,
 		isLoading,
-		isError,
-		errorMessage,
+		isActionPending,
+		fetchError,
+		actionError,
 		deleteAdmin,
+		refetch,
 	} = useAdmins();
 
 	// --- State ---
@@ -73,9 +76,6 @@ export default function Admins() {
 	const pageCount = Math.ceil(filteredAdmins.length / itemsPerPage);
 	const handlePageClick = (event) => setCurrentPage(event.selected);
 
-	if (isLoading) return <div>Loading admins...</div>;
-	if (isError) return <div>Error: {errorMessage}</div>;
-
 	return (
 		<>
 			<PageLayout>
@@ -88,108 +88,125 @@ export default function Admins() {
 						</Link>
 					</div>
 
-					{/* Filters */}
-					<div className={styles.filter_row}>
-						{/* Search input */}
-						<input
-							type="text"
-							placeholder="Search admins..."
-							className={styles.search}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
+					{/* Action error — shown when delete/create/update fails */}
+					{actionError && (
+						<p className={styles.actionError}>{actionError}</p>
+					)}
 
-						{/* Status filter dropdown */}
-						<div className={styles.filter}>
-							<div className={styles.dropdownContainer}>
-								<Button
-									variant="secondary"
-									icon={<ChevronDown />}
-									onClick={() => setShowDropdown(prev => !prev)}
-								>
-									{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
-								</Button>
-								{showDropdown && (
-									<div className={styles.dropdownMenu}>
-										<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
-										<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
-										<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+					{/* Fetch error or loading state */}
+					<ErrorState
+						isLoading={isLoading}
+						errorMessage={fetchError}
+						onRetry={refetch}
+					/>
+
+					{!fetchError && !isLoading && (
+
+						<>
+							{/* Filters */}
+							<div className={styles.filter_row}>
+								{/* Search input */}
+								<input
+									type="text"
+									placeholder="Search admins..."
+									className={styles.search}
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+
+								{/* Status filter dropdown */}
+								<div className={styles.filter}>
+									<div className={styles.dropdownContainer}>
+										<Button
+											variant="secondary"
+											icon={<ChevronDown />}
+											onClick={() => setShowDropdown(prev => !prev)}
+										>
+											{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
+										</Button>
+										{showDropdown && (
+											<div className={styles.dropdownMenu}>
+												<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
+												<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
+												<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
+											</div>
+										)}
 									</div>
-								)}
+								</div>
 							</div>
-						</div>
-					</div>
 
-					{/* Admins Table */}
-					<div className={styles.tableWrapper}>
-						<h2 style={{ marginBottom: "1.5rem" }}>All Admins</h2>
-						<Table>
-							<TableHeader>
-								<TableCell>Admin Name</TableCell>
-								<TableCell>Employee ID</TableCell>
-								<TableCell>Contact</TableCell>
-								<TableCell>Status</TableCell>
-								<TableCell>Actions</TableCell>
-							</TableHeader>
-							{currentItems.map(admin => (
-								<TableContent key={admin.id}>
-									{/* Name & Avatar */}
-									<TableCell>
-										<Image
-											src={admin.profilePictureUrl || admin.profilePicture || "/img/navbar/avatar.jpg"}
-											width={50}
-											height={50}
-											alt="avatar"
-											style={{ borderRadius: "50%", objectFit: "cover" }}
-											unoptimized
-										/>
-										<span>{admin.firstName} {admin.lastName}</span>
-									</TableCell>
+							{/* Admins Table */}
+							<div className={styles.tableWrapper}>
+								<h2 style={{ marginBottom: "1.5rem" }}>All Admins</h2>
+								<Table>
+									<TableHeader>
+										<TableCell>Admin Name</TableCell>
+										<TableCell>Employee ID</TableCell>
+										<TableCell>Contact</TableCell>
+										<TableCell>Status</TableCell>
+										<TableCell>Actions</TableCell>
+									</TableHeader>
+									{currentItems.map(admin => (
+										<TableContent key={admin.id}>
+											{/* Name & Avatar */}
+											<TableCell>
+												<Image
+													src={admin.profilePictureUrl || admin.profilePicture || "/img/navbar/avatar.jpg"}
+													width={50}
+													height={50}
+													alt="avatar"
+													style={{ borderRadius: "50%", objectFit: "cover" }}
+													unoptimized
+												/>
+												<span>{admin.firstName} {admin.lastName}</span>
+											</TableCell>
 
-									{/* Employee ID */}
-									<TableCell>{admin.employeeId}</TableCell>
+											{/* Employee ID */}
+											<TableCell>{admin.employeeId}</TableCell>
 
-									{/* Contact */}
-									<TableCell>{admin.email || "-"}</TableCell>
+											{/* Contact */}
+											<TableCell>{admin.email || "-"}</TableCell>
 
-									{/* Status with pill */}
-									<TableCell>
-										<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
-											{admin.isActive ? "Active" : "Inactive"}
-										</span>
-									</TableCell>
+											{/* Status with pill */}
+											<TableCell>
+												<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
+													{admin.isActive ? "Active" : "Inactive"}
+												</span>
+											</TableCell>
 
-									{/* Actions */}
-									<TableCell>
-										<Link href={`/admins/${admin.id}`}>
-											<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-										</Link>
-										<Trash2
-											color="#ef4444"
-											style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-											onClick={() => deleteHandler(admin.id)}
-										/>
-									</TableCell>
-								</TableContent>
-							))}
-						</Table>
+											{/* Actions */}
+											<TableCell>
+												<Link href={`/admins/${admin.id}`}>
+													<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+												</Link>
+												<Trash2
+													color="#ef4444"
+													style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+													onClick={() => deleteHandler(admin.id)}
+												/>
+											</TableCell>
+										</TableContent>
+									))}
+								</Table>
 
-						{/* Pagination */}
-						<ReactPaginate
-							pageCount={pageCount}
-							onPageChange={handlePageClick}
-							previousLabel={"Prev"}
-							nextLabel={"Next"}
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.active}
-						/>
-					</div>
+								{/* Pagination */}
+								<ReactPaginate
+									pageCount={pageCount}
+									onPageChange={handlePageClick}
+									previousLabel={"Prev"}
+									nextLabel={"Next"}
+									containerClassName={styles.pagination}
+									pageClassName={styles.pageItem}
+									pageLinkClassName={styles.pageLink}
+									previousClassName={styles.pageItem}
+									previousLinkClassName={styles.pageLink}
+									nextClassName={styles.pageItem}
+									nextLinkClassName={styles.pageLink}
+									activeClassName={styles.active}
+								/>
+							</div>
+						</>
+					)}
 				</div>
 			</PageLayout>
 

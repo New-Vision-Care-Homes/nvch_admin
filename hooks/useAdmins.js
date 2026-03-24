@@ -61,17 +61,27 @@ export const useAdmins = (options = {}) => {
 		},
 	});
 
-	const activeError =
+	// --- Error Separation ---
+
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError =
 		adminsQuery.error ||
+		adminDetailQuery.error;
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error ||
-		adminDetailQuery.error;
+		updateMutation.error;
 
 	return {
 		// Data
 		admins: adminsQuery.data ?? [],
 		adminDetail: adminDetailQuery.data,
+
+		totalPages: adminsQuery.data?.pagination?.totalPages ?? adminsQuery.data?.totalPages ?? 0,
+		currentPage: adminsQuery.data?.pagination?.currentPage ?? adminsQuery.data?.currentPage ?? 1,
+		totalCount: adminsQuery.data?.pagination?.totalCount ?? adminsQuery.data?.totalCount ?? 0,
 
 		// Status Indicators
 		isLoading: adminsQuery.isLoading || adminDetailQuery.isLoading,
@@ -80,13 +90,16 @@ export const useAdmins = (options = {}) => {
 			updateMutation.isPending ||
 			deleteMutation.isPending,
 
-		// Error Handling
-		isError: !!activeError,
-		errorMessage: activeError ? getErrorMessage(activeError) : null,
+		// Fetch error → use with <ErrorState> component
+		fetchError: fetchError ? getErrorMessage(fetchError) : null,
+
+		// Action error → use with toast or inline message
+		actionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
 		addAdmin: createMutation.mutate,
 		updateAdmin: updateMutation.mutate,
 		deleteAdmin: deleteMutation.mutate,
+		refetch: adminsQuery.refetch,
 	};
 };
