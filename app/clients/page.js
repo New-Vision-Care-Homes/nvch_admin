@@ -34,8 +34,8 @@ export default function Clients() {
 		isLoading,
 		fetchError,
 		actionError,
-		deleteClient,
 		isActionPending,
+		deleteClient,
 		refetch,
 	} = useClients({
 		params: {

@@ -3,15 +3,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building } from "lucide-react";
+import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock } from "lucide-react";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
 	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
 	{ id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
-	{ id: 4, label: "Scheduling", icon: Calendar, href: "/scheduling" },
+	{ id: 4, label: "Admins", icon: UserLock, href: "/admins" },
 	{ id: 5, label: "Homes", icon: Building, href: "/homes" },
-	{ id: 6, label: "Admins", icon: Settings, href: "/admins" },
+	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling" },
+	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
 	{ id: 8, label: "Incidents & Compliance", icon: AlertCircle, href: "/incidents" },
@@ -30,6 +31,7 @@ const keywordToTabMap = {
 	"/homes": 5,        // any path containing "/homes" -> Homes tab
 	"/admin": 6,        // any path containing "/admin" -> Admins tab
 	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
+	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
 
 export default function Sidebar() {

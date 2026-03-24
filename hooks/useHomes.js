@@ -62,12 +62,18 @@ export const useHomes = (arg = null) => {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["homes"] }),
 	});
 
-	const activeError =
+	// --- Error Separation ---
+
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError =
 		homesQuery.error ||
-		homeDetailQuery.error ||
+		homeDetailQuery.error;
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError =
+		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error ||
-		deleteMutation.error;
+		updateMutation.error;
 
 	return {
 		// Data outputs
@@ -77,8 +83,12 @@ export const useHomes = (arg = null) => {
 
 		// Status indicators
 		isLoading: homesQuery.isLoading || homeDetailQuery.isLoading,
-		isError: !!activeError,
-		errorMessage: activeError ? getErrorMessage(activeError) : null,
+
+		// Fetch error → use with <ErrorState> component
+		fetchError: fetchError ? getErrorMessage(fetchError) : null,
+
+		// Action error → use with toast or inline message
+		actionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Actions
 		addHome: createMutation.mutateAsync,
@@ -86,6 +96,6 @@ export const useHomes = (arg = null) => {
 		deleteHome: deleteMutation.mutateAsync,
 
 		isActionPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
-		refetch: homeId ? homeDetailQuery.refetch : homesQuery.refetch,
+		refetch: homesQuery.refetch
 	};
 };

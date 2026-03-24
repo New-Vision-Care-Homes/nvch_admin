@@ -62,8 +62,15 @@ export const useCaregivers = (options = {}) => {
 		},
 	});
 
-	const activeError =
+	// --- Error Separation ---
+
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError =
 		caregiversQuery.error ||
+		caregiverDetailQuery.error;
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
 		updateMutation.error;
@@ -73,6 +80,10 @@ export const useCaregivers = (options = {}) => {
 		caregivers: caregiversQuery.data ?? [],
 		caregiverDetail: caregiverDetailQuery.data,
 
+		totalPages: caregiversQuery.data?.pagination?.totalPages ?? caregiversQuery.data?.totalPages ?? 0,
+		currentPage: caregiversQuery.data?.pagination?.currentPage ?? caregiversQuery.data?.currentPage ?? 1,
+		totalCount: caregiversQuery.data?.pagination?.totalCount ?? caregiversQuery.data?.totalCount ?? 0,
+
 		// Status Indicators
 		isLoading: caregiversQuery.isLoading || caregiverDetailQuery.isLoading,
 		isActionPending:
@@ -80,13 +91,16 @@ export const useCaregivers = (options = {}) => {
 			updateMutation.isPending ||
 			deleteMutation.isPending,
 
-		// Error Handling
-		isError: !!activeError,
-		errorMessage: activeError ? getErrorMessage(activeError) : null,
+		// Fetch error → use with <ErrorState> component
+		fetchError: fetchError ? getErrorMessage(fetchError) : null,
+
+		// Action error → use with toast or inline message
+		actionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
 		addCaregiver: createMutation.mutate,
 		updateCaregiver: updateMutation.mutate,
 		deleteCaregiver: deleteMutation.mutate,
+		refetch: caregiversQuery.refetch,
 	};
 };

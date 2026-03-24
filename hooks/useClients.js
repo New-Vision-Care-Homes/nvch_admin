@@ -86,10 +86,10 @@ export const useClients = (options = {}) => {
 	return {
 		// Data
 		clients: clientsQuery.data?.clients ?? [],
+		clientDetail: clientDetailQuery.data,
 		totalPages: clientsQuery.data?.pagination?.totalPages ?? clientsQuery.data?.totalPages ?? 0,
 		currentPage: clientsQuery.data?.pagination?.currentPage ?? clientsQuery.data?.currentPage ?? 1,
 		totalCount: clientsQuery.data?.pagination?.totalCount ?? clientsQuery.data?.totalCount ?? 0,
-		clientDetail: clientDetailQuery.data,
 
 		// Status
 		isLoading: clientsQuery.isLoading || clientDetailQuery.isLoading,

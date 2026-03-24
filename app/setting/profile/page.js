@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import PageLayout from "@components/layout/PageLayout";
+
 import { Card, CardHeader, InfoField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import Image from "next/image";
@@ -50,27 +50,15 @@ export default function ProfilePage() {
 	}, [profile]);
 
 	if (isLoading) {
-		return (
-			<PageLayout>
-				<div>Loading profile info...</div>
-			</PageLayout>
-		);
+		return <div style={{ padding: '2rem' }}>Loading profile info...</div>;
 	}
 
 	if (errorMessage) {
-		return (
-			<PageLayout>
-				<div style={{ color: 'red' }}>Error: {errorMessage}</div>
-			</PageLayout>
-		);
+		return <div style={{ color: 'red', padding: '2rem' }}>Error: {errorMessage}</div>;
 	}
 
 	if (!profile) {
-		return (
-			<PageLayout>
-				<div>User not found.</div>
-			</PageLayout>
-		);
+		return <div style={{ padding: '2rem' }}>User not found.</div>;
 	}
 
 	const user = profile?.data?.user || profile || {};
@@ -162,7 +150,6 @@ export default function ProfilePage() {
 
 	return (
 		<>
-			<PageLayout>
 				<div className={styles.header}>
 					<h1 className={styles.title}>My Profile</h1>
 					<div className={styles.headerActions}>
@@ -289,7 +276,6 @@ export default function ProfilePage() {
 						</div>
 					</Card>
 				</div>
-			</PageLayout>
 
 			{/* General Feedback Modal */}
 			<Modal isOpen={isGeneralModalOpen} onClose={() => setIsGeneralModalOpen(false)}>
