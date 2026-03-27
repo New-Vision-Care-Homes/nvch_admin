@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, UserCheck, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock } from "lucide-react";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
 	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
-	{ id: 3, label: "Caregivers", icon: UserCheck, href: "/caregivers" },
+	{ id: 3, label: "Caregivers", icon: IdCardLanyard, href: "/caregivers" },
 	{ id: 4, label: "Admins", icon: UserLock, href: "/admins" },
 	{ id: 5, label: "Homes", icon: Building, href: "/homes" },
 	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling" },
