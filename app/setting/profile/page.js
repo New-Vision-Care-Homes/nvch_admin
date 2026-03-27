@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+// Importing custom validation rules
+import { phoneRule, shortTextRule } from "@app/validation";
 
-import { Card, CardHeader, InfoField } from "@components/UI/Card";
+import { Card, CardHeader, InfoField, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
-import { authService } from "@/api/services/authService";
+import ErrorState from "@components/UI/ErrorState";
 import { Edit, Upload, Save, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
 import { useProfileUpload } from "@/hooks/usePictures";
@@ -16,13 +21,27 @@ const DEFAULT_AVATAR = "/img/navbar/avatar.jpg";
 const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 500 * 1024; // 500KB
 
+const schema = yup.object({
+	phone: phoneRule,
+	emergencyContactName: shortTextRule,
+	emergencyContactPhone: phoneRule,
+	emergencyContactRelationship: shortTextRule,
+});
+
 export default function ProfilePage() {
-	const { profile, isLoading, errorMessage } = useProfile();
-	
+	const { profile, updateProfile, isLoading, isActionPending, fetchError, actionError, refetch } = useProfile();
+
 	const [isEditing, setIsEditing] = useState(false);
-	const [formData, setFormData] = useState({});
-	const [isSaving, setIsSaving] = useState(false);
-	const [saveError, setSaveError] = useState("");
+
+	const { register, handleSubmit, formState: { errors }, reset } = useForm({
+		resolver: yupResolver(schema),
+		defaultValues: {
+			phone: profile?.phone || "",
+			emergencyContactName: profile?.emergencyContact?.name || profile?.emergencyContactName || "",
+			emergencyContactPhone: profile?.emergencyContact?.phone || profile?.emergencyContactPhone || "",
+			emergencyContactRelationship: profile?.emergencyContact?.relationship || profile?.emergencyContactRelationship || "",
+		}
+	});
 
 	// Image Upload States
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -30,74 +49,35 @@ export default function ProfilePage() {
 	const [previewUrl, setPreviewUrl] = useState(null);
 	const [uploading, setUploading] = useState(false);
 	const [uploadError, setUploadError] = useState("");
-	const [generalMessage, setGeneralMessage] = useState("");
-	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 
 	const { uploadProfilePicture } = useProfileUpload();
 
-	useEffect(() => {
-		if (profile) {
-			const user = profile?.data?.user || profile || {};
-			setFormData({
-				firstName: user.firstName || "",
-				lastName: user.lastName || "",
-				phone: user.phone || "",
-				emergencyContactName: user.emergencyContactName || "",
-				emergencyContactPhone: user.emergencyContactPhone || "",
-				emergencyContactRelationship: user.emergencyContactRelationship || "",
-			});
-		}
-	}, [profile]);
 
-	if (isLoading) {
-		return <div style={{ padding: '2rem' }}>Loading profile info...</div>;
-	}
-
-	if (errorMessage) {
-		return <div style={{ color: 'red', padding: '2rem' }}>Error: {errorMessage}</div>;
-	}
-
-	if (!profile) {
-		return <div style={{ padding: '2rem' }}>User not found.</div>;
-	}
-
-	const user = profile?.data?.user || profile || {};
-	const formattedLastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "N/A";
-	const formattedCreatedAt = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A";
-
-	const handleInputChange = (e) => {
-		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-	};
-
-	const handleSave = async () => {
-		setIsSaving(true);
-		setSaveError("");
-		try {
-			await authService.updateProfile(user.id || user._id, formData);
-			setGeneralMessage("Profile updated successfully!");
-			setIsGeneralModalOpen(true);
-			setIsEditing(false);
-			// Ideally we'd trigger a react-query refetch here, but reloading data via window or queryClient
-			window.location.reload(); 
-		} catch (error) {
-			console.error("Failed to update profile", error);
-			setSaveError(error?.response?.data?.message || "Failed to update profile. Please try again.");
-		} finally {
-			setIsSaving(false);
-		}
+	const onSubmit = (data) => {
+		console.log("onSubmit", data);
+		const payload = {
+			phone: data.phone,
+			emergencyContact: {
+				name: data.emergencyContactName,
+				phone: data.emergencyContactPhone,
+				relationship: data.emergencyContactRelationship,
+			},
+		};
+		updateProfile(payload, {
+			onSuccess: () => {
+				console.log("Profile updated successfully!");
+				setIsEditing(false);
+			},
+		});
 	};
 
 	const handleCancel = () => {
 		setIsEditing(false);
-		setSaveError("");
-		setFormData({
-			firstName: user.firstName || "",
-			lastName: user.lastName || "",
-			phone: user.phone || "",
-			emergencyContactName: user.emergencyContactName || "",
-			emergencyContactPhone: user.emergencyContactPhone || "",
-			emergencyContactRelationship: user.emergencyContactRelationship || "",
+		reset({
+			phone: profile?.phone || "",
+			emergencyContactName: profile?.emergencyContact?.name || profile?.emergencyContactName || "",
+			emergencyContactPhone: profile?.emergencyContact?.phone || profile?.emergencyContactPhone || "",
+			emergencyContactRelationship: profile?.emergencyContact?.relationship || profile?.emergencyContactRelationship || "",
 		});
 	};
 
@@ -132,13 +112,10 @@ export default function ProfilePage() {
 		setUploadError("");
 
 		uploadProfilePicture(
-			{ file: selectedFile, userId: user.id || user._id },
+			{ file: selectedFile, profileId: profile?.id || profile?._id },
 			{
 				onSuccess: () => {
-					setGeneralMessage("Profile picture updated successfully!");
-					setIsGeneralModalOpen(true);
 					handleCloseImageModal();
-					window.location.reload(); 
 				},
 				onError: (err) => {
 					setUploadError(err?.message || "Failed to upload image.");
@@ -148,139 +125,181 @@ export default function ProfilePage() {
 		);
 	};
 
+	const formattedLastLogin = profile?.lastLogin ? new Date(profile.lastLogin).toLocaleString() : "N/A";
+	const formattedCreatedAt = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A";
+
 	return (
 		<>
-				<div className={styles.header}>
-					<h1 className={styles.title}>My Profile</h1>
-					<div className={styles.headerActions}>
-						{!isEditing ? (
-							<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)}>
-								Edit Profile
+			<div className={styles.header}>
+				<h1 className={styles.title}>My Profile</h1>
+				<div className={styles.headerActions}>
+					{!isEditing ? (
+						<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)}>
+							Edit Profile
+						</Button>
+					) : (
+						<>
+							<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} disabled={isActionPending}>
+								Cancel
 							</Button>
-						) : (
-							<>
-								<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} disabled={isSaving}>
-									Cancel
-								</Button>
-								<Button variant="primary" icon={<Save size={16} />} onClick={handleSave} disabled={isSaving}>
-									{isSaving ? "Saving..." : "Save Changes"}
-								</Button>
-							</>
-						)}
-					</div>
+							<Button variant="primary" icon={<Save size={16} />} onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
+								{isActionPending ? "Saving..." : "Save Changes"}
+							</Button>
+						</>
+					)}
 				</div>
+			</div>
 
-				{saveError && <div style={{ color: 'red', marginBottom: '1rem' }}>{saveError}</div>}
+			{/* Action error — shown when delete/create/update fails */}
+			{actionError && (
+				<p className={styles.actionError}>{actionError}</p>
+			)}
 
-				<div className={styles.section}>
-					<Card>
-						<CardHeader>Personal Information</CardHeader>
-						<div className={styles.content}>
-							<div className={styles.picture}>
-								<Image
-									src={user.profilePicture || user.profilePictureUrl || DEFAULT_AVATAR}
-									alt="Profile"
-									width={120}
-									height={120}
-									className={styles.image}
-									unoptimized
-								/>
-								<Button
-									variant="secondary"
-									size="sm"
-									icon={<Upload size={16} />}
-									onClick={() => setIsImageModalOpen(true)}
-								>
-									Update Picture
-								</Button>
-							</div>
+			{/* Fetch error or loading state */}
+			<ErrorState
+				isLoading={isLoading}
+				errorMessage={fetchError}
+				onRetry={refetch}
+			/>
 
-							<div className={styles.text}>
-								<div className={styles.column}>
-									<InfoField label="ID">
-										<input type="text" className={styles.inputField} value={user.id || user._id || "N/A"} disabled />
-									</InfoField>
-									<InfoField label="First Name">
-										{isEditing ? (
-											<input type="text" name="firstName" className={styles.inputField} value={formData.firstName} onChange={handleInputChange} />
-										) : (user.firstName || "N/A")}
-									</InfoField>
-									<InfoField label="Last Name">
-										{isEditing ? (
-											<input type="text" name="lastName" className={styles.inputField} value={formData.lastName} onChange={handleInputChange} />
-										) : (user.lastName || "N/A")}
-									</InfoField>
-									<InfoField label="Email">
-										<input type="text" className={styles.inputField} value={user.email || "N/A"} disabled />
-									</InfoField>
+
+			{!fetchError && !isLoading && profile && (
+				<>
+					<div className={styles.section}>
+						<Card>
+							<CardHeader>Personal Information</CardHeader>
+							<div className={styles.content}>
+								<div className={styles.picture}>
+									<Image
+										src={profile.profilePictureUrl || DEFAULT_AVATAR}
+										alt="Profile"
+										width={120}
+										height={120}
+										className={styles.image}
+										unoptimized
+									/>
+									<Button
+										variant="secondary"
+										size="sm"
+										icon={<Upload size={16} />}
+										onClick={() => setIsImageModalOpen(true)}
+									>
+										Update Picture
+									</Button>
 								</div>
-								
-								<div className={styles.column}>
-									<InfoField label="Role">
-										<span style={{ textTransform: "capitalize", padding: "0.5rem 0.75rem", display: "inline-block" }}>{user.role || "N/A"}</span>
-									</InfoField>
-									<InfoField label="Phone">
-										{isEditing ? (
-											<input type="text" name="phone" className={styles.inputField} value={formData.phone} onChange={handleInputChange} />
-										) : (user.phone || "N/A")}
-									</InfoField>
+
+								<div className={styles.infoGrid}>
 									<InfoField label="Status">
-										<div style={{ padding: "0.5rem 0.75rem" }}>
-											<span className={`${styles.statusBadge} ${user.isActive ? styles.active : styles.inactive}`}>
-												{user.isActive ? "Active" : "Inactive"}
+										<div className={styles.paddingVal}>
+											<span className={`${styles.statusBadge} ${profile.isActive ? styles.active : styles.inactive}`}>
+												{profile.isActive ? "Active" : "Inactive"}
 											</span>
 										</div>
 									</InfoField>
-								</div>
-								
-								<div className={styles.column}>
-									<InfoField label="Last Login">
-										<div style={{ padding: "0.5rem 0.75rem" }}>{formattedLastLogin}</div>
+
+									<InfoField label="First Name" value={profile.firstName || "N/A"} />
+
+									<InfoField label="Last Name" value={profile.lastName || "N/A"} />
+
+									<InfoField label="ID" value={profile.id || "N/A"} />
+
+									<InfoField label="Email" value={profile.email || "N/A"} />
+
+									<InfoField label="Role">
+										<span className={styles.paddingVal} style={{ textTransform: "capitalize", display: "inline-block" }}>{profile.role || "N/A"}</span>
 									</InfoField>
-									<InfoField label="Created At">
-										<div style={{ padding: "0.5rem 0.75rem" }}>{formattedCreatedAt}</div>
-									</InfoField>
+
+									{isEditing ? (
+										<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+									) : (
+										<InfoField label="Phone" value={profile.phone || "N/A"} />
+									)}
+
+									<InfoField label="Region" value={profile.region || "N/A"} />
+
+									<InfoField label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : "N/A"} />
 								</div>
 							</div>
-						</div>
-					</Card>
-				</div>
+						</Card>
+					</div>
 
-				<div className={styles.section}>
-					<Card>
-						<CardHeader>Emergency Contact</CardHeader>
-						<div className={styles.content}>
-							<div className={styles.text} style={{ flexDirection: 'row' }}>
-								<div className={styles.column}>
-									<InfoField label="Name">
-										{isEditing ? (
-											<input type="text" name="emergencyContactName" className={styles.inputField} value={formData.emergencyContactName} onChange={handleInputChange} />
-										) : (user.emergencyContactName || "N/A")}
-									</InfoField>
-								</div>
-								<div className={styles.column}>
-									<InfoField label="Phone">
-										{isEditing ? (
-											<input type="text" name="emergencyContactPhone" className={styles.inputField} value={formData.emergencyContactPhone} onChange={handleInputChange} />
-										) : (user.emergencyContactPhone || "N/A")}
-									</InfoField>
-								</div>
-								<div className={styles.column}>
-									<InfoField label="Relationship">
-										{isEditing ? (
-											<input type="text" name="emergencyContactRelationship" className={styles.inputField} value={formData.emergencyContactRelationship} onChange={handleInputChange} />
-										) : (user.emergencyContactRelationship || "N/A")}
-									</InfoField>
+					<div className={styles.section}>
+						<Card>
+							<CardHeader>Emergency Contact</CardHeader>
+							<div className={styles.content}>
+								<div className={styles.infoGrid}>
+									{isEditing ? (
+										<InputField label="Name" name="emergencyContactName" register={register} error={errors.emergencyContactName} />
+									) : (
+										<InfoField label="Name" value={profile.emergencyContact?.name || profile.emergencyContactName || "N/A"} />
+									)}
+									{isEditing ? (
+										<InputField label="Phone" name="emergencyContactPhone" register={register} error={errors.emergencyContactPhone} />
+									) : (
+										<InfoField label="Phone" value={profile.emergencyContact?.phone || profile.emergencyContactPhone || "N/A"} />
+									)}
+									{isEditing ? (
+										<InputField label="Relationship" name="emergencyContactRelationship" register={register} error={errors.emergencyContactRelationship} />
+									) : (
+										<InfoField label="Relationship" value={profile.emergencyContact?.relationship || profile.emergencyContactRelationship || "N/A"} />
+									)}
 								</div>
 							</div>
-						</div>
-					</Card>
-				</div>
+						</Card>
+					</div>
 
-			{/* General Feedback Modal */}
-			<Modal isOpen={isGeneralModalOpen} onClose={() => setIsGeneralModalOpen(false)}>
-				<h2>{generalMessage}</h2>
-			</Modal>
+					<div className={styles.section}>
+						<div className={styles.gridContainer}>
+							<Card className={styles.fullHeight}>
+								<CardHeader>Administrative Details</CardHeader>
+								<div className={styles.text}>
+									<div className={styles.column}>
+										<InfoField label="Department" value={profile.department || "N/A"} />
+										<InfoField label="Admin Level" value={profile.adminLevel || "N/A"} />
+										<InfoField label="Permissions">
+											<div className={styles.tagGroup}>
+												{(profile.permissions && profile.permissions.length > 0) ? (
+													profile.permissions.map((perm, index) => (
+														<span key={index} className={styles.tag}>{perm.replace(/_/g, ' ')}</span>
+													))
+												) : "No specific permissions"}
+											</div>
+										</InfoField>
+									</div>
+								</div>
+							</Card>
+
+							<Card className={styles.fullHeight}>
+								<CardHeader>Access & Activity</CardHeader>
+								<div className={styles.text}>
+									<div className={styles.column}>
+										<InfoField label="Access Controls">
+											<div className={styles.accessGroup}>
+												<div className={styles.accessItem}>
+													<span className={profile.canManageprofiles ? styles.check : styles.uncheck}>{profile.canManageprofiles ? "✓" : "✗"}</span>
+													<span>Manage profiles</span>
+												</div>
+												<div className={styles.accessItem}>
+													<span className={profile.canManageShifts ? styles.check : styles.uncheck}>{profile.canManageShifts ? "✓" : "✗"}</span>
+													<span>Manage Shifts</span>
+												</div>
+												<div className={styles.accessItem}>
+													<span className={profile.canViewReports ? styles.check : styles.uncheck}>{profile.canViewReports ? "✓" : "✗"}</span>
+													<span>View Reports</span>
+												</div>
+											</div>
+										</InfoField>
+										<div className={styles.timeline}>
+											<InfoField label="Created At" value={formattedCreatedAt} />
+											<InfoField label="Last Login" value={formattedLastLogin} />
+										</div>
+									</div>
+								</div>
+							</Card>
+						</div>
+					</div>
+				</>
+			)}
 
 			{/* Image Upload Popup */}
 			<Modal isOpen={isImageModalOpen} onClose={handleCloseImageModal}>
@@ -289,7 +308,7 @@ export default function ProfilePage() {
 					<div className={styles.uploadModalContent}>
 						<div className={styles.imagePreview}>
 							<Image
-								src={previewUrl || user.profilePicture || user.profilePictureUrl || DEFAULT_AVATAR}
+								src={previewUrl || profile?.profilePicture || profile?.profilePictureUrl || DEFAULT_AVATAR}
 								alt="Preview"
 								width={150}
 								height={150}

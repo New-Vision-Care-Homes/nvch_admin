@@ -18,8 +18,8 @@ export const authService = {
 	 * Update user profile
 	 * PUT /api/auth/admin/users/:id
 	 */
-	updateProfile: async (id, updateData) => {
-		const response = await axiosClient.put(`/api/auth/admin/users/${id}`, updateData);
-		return response.data;
+	updateProfile: async (updateData) => {
+		const response = await axiosClient.put('/api/auth/profile', updateData);
+		return response.data.data.user;
 	},
 };

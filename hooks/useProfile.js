@@ -1,17 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "@/api/services/authService";
 
 /**
  * Custom hook to fetch the current logged-in user's profile.
  */
 export const useProfile = () => {
+	const queryClient = useQueryClient();
 
 	/**
 	 * Helper to extract the most relevant error message.
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
+			err?.response?.data?.details || // Message from backend (e.g., "Email already exists")
 			"An unexpected error occurred"  // Fallback string
 		);
 	};
@@ -22,14 +23,26 @@ export const useProfile = () => {
 		queryFn: () => authService.getProfile(),
 	});
 
+	const updateMutation = useMutation({
+		mutationFn: (data) => authService.updateProfile(data),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
+	});
+
 	return {
 		// Data
 		profile: profileQuery.data ?? null,
+		updateProfile: updateMutation.mutate,
 
 		// Status Indicators
 		isLoading: profileQuery.isLoading,
+		isActionPending: updateMutation.isPending,
 
-		// Error Handling
-		errorMessage: profileQuery.error ? getErrorMessage(profileQuery.error) : null,
+		// Fetch error → use with <ErrorState> component
+		fetchError: profileQuery.error ? getErrorMessage(profileQuery.error) : null,
+
+		// Action error → use with toast or inline message
+		actionError: updateMutation.error ? getErrorMessage(updateMutation.error) : null,
+
+		refetch: profileQuery.refetch,
 	};
 };

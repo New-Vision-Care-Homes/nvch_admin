@@ -4,11 +4,11 @@ import styles from "./Timesheet.module.css";
 import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Table";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
+import { Card, CardHeader, CardContent, InputFieldLR, InfoField } from "@components/UI/Card";
 import { useParams } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { useUser } from "@/hooks/useUsers";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useShifts } from "@/hooks/useShifts";
+import { useHours } from "@/hooks/useHours";
 
 // Helper function to map day names and group slots for display.
 // This transforms the flat backend array (e.g., slot 1, slot 2, slot 3...) 
@@ -69,6 +69,7 @@ export default function Timesheet() {
 	const { shifts, isError: shiftsError, errorMessage: shiftsErrorMessage } = useShifts({
 		params: { caregiverId: id }
 	});
+	const { hours, hourHistory, isLoading, error } = useHours(id);
 	console.log("shifts: ", shifts);
 
 	useEffect(() => {
@@ -78,12 +79,7 @@ export default function Timesheet() {
 			setAvailability(backendAvailability);
 			setOriginalAvailability(backendAvailability);
 
-			//setShifts(rootData.shifts || []);
-			setStats(caregiverDetail.stats || [
-				{ label: "Total Hours Worked (Bi-Weekly)", value: 0 },
-				{ label: "Total Overtime Hours", value: 0 },
-				{ label: "Pending Approvals", value: 0 },
-			]);
+
 
 			setMaxHours(caregiverDetail.maxHours || 80);
 			setLastPeriodHours(caregiverDetail.lastPeriodHours || 72);
@@ -159,170 +155,183 @@ export default function Timesheet() {
 
 	return (
 		<div className={styles.container}>
-			<div className={styles.time}>
-				{/* LEFT SIDE: Availability Display */}
-				<div className={styles.left}>
-					<div className={styles.header}>
-						<Calendar className={styles.icon} />
-						<h2 className={styles.title}>Availability</h2>
-					</div>
-
-					<div className={styles.scheduleList}>
-						{groupedAvailability.map((item, index) => (
-							<div key={index} className={styles.scheduleItem}>
-								<div className={styles.day}>{item.day}:</div>
-								<div className={styles.slotsContainer}>
-									{item.slots.length > 0 ? (
-										item.slots.map((slot, idx) => (
-											<span key={idx} className={styles.slot}>
-												{slot.startTime} - {slot.endTime}
-											</span>
-										))
-									) : (
-										<span className={styles.notAvailable}>Not Available</span>
-									)}
-								</div>
-							</div>
-						))}
-					</div>
-				</div>
-
-				{/* RIGHT SIDE: Work Capacity and Edit Button */}
-				<div className={styles.right}>
-					<div className={styles.block}>
-						<div className={styles.header}>
-							<Clock className={styles.icon} />
-							<h2 className={styles.title}>Bi-weekly Work Capacity</h2>
-						</div>
-						<div className={styles.content}>
-							<div className={styles.label}>Max Hours:</div>
-							<div className={styles.value}>{maxHours} hours</div>
-						</div>
-					</div>
-
-					<div className={styles.block}>
-						<div className={styles.header}>
-							<Users className={styles.icon} />
-							<h2 className={styles.title}>Previous Bi-weekly Work</h2>
-						</div>
-						<div className={styles.content}>
-							<div className={styles.label}>Hours Worked (Last Period):</div>
-							<div className={styles.value}>{lastPeriodHours} hours</div>
-						</div>
-					</div>
-
-					<div className={styles.button}>
-						<Button icon={<SquarePen />} onClick={() => setIsModalOpen(true)}>
-							Edit
-						</Button>
-					</div>
-				</div>
+			<div className={styles.topHeader}>
+				<h2 className={styles.pageTitle}>Timesheet Overview</h2>
+				<Button
+					variant="primary"
+					icon={<SquarePen size={18} />}
+					onClick={() => setIsModalOpen(true)}
+					className={styles.mainEditBtn}
+				>
+					Edit Hours
+				</Button>
 			</div>
+			<div className={styles.topSection}>
+				{/* Availability Card */}
+				<Card className={styles.availabilityCard}>
+					<CardHeader className={styles.cardHeader}>
+						<div className={styles.headerTitle}>
+							<Calendar className={styles.icon} />
+							<span>Availability</span>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className={styles.scheduleList}>
+							{groupedAvailability.map((item, index) => (
+								<div key={index} className={styles.scheduleItem}>
+									<div className={styles.dayLabel}>{item.day}</div>
+									<div className={styles.slotsWrapper}>
+										{item.slots.length > 0 ? (
+											item.slots.map((slot, idx) => (
+												<span key={idx} className={styles.slotBadge}>
+													{slot.startTime} - {slot.endTime}
+												</span>
+											))
+										) : (
+											<span className={styles.notAvailableBadge}>Not Available</span>
+										)}
+									</div>
+								</div>
+							))}
+						</div>
+					</CardContent>
+				</Card>
 
-			{/* Stats Summary */}
-			<div className={styles.hours}>
-				{stats.map((stat, index) => (
-					<div key={index} className={styles.hour}>
-						<div className={styles.label}>{stat.label}</div>
-						<div className={styles.value}>{stat.value}</div>
+				{/* Work Capacity & Quick Stats */}
+				<div className={styles.rightColumn}>
+					<Card className={styles.capacityCard}>
+						<CardHeader className={styles.cardHeader}>
+							<div className={styles.headerTitle}>
+								<Clock className={styles.icon} />
+								<span>Work Capacity</span>
+							</div>
+						</CardHeader>
+						<CardContent className={styles.capacityContent}>
+							<InfoField label="Bi-weekly Max Hours" value={`${hours?.maxHours ? hours.maxHours : 'N/A'} hours`} />
+							<InfoField label="Last Period Total" value={`${hours?.previousPeriod?.totalHours ? hours.previousPeriod.totalHours : 'N/A'} hours`} />
+						</CardContent>
+					</Card>
+
+					{/* Highlight Stats */}
+					<div className={styles.statsGrid}>
+						<Card className={styles.statCard}>
+							<div className={styles.statLabel}>Current Hours</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.totalHours ? hours.currentPeriod.totalHours : 'N/A'}</div>
+							<div className={styles.statUnit}>Hours</div>
+						</Card>
+						<Card className={`${styles.statCard} ${styles.overtime}`}>
+							<div className={styles.statLabel}>Overtime</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.totalOvertime ? hours.currentPeriod.totalOvertime : 'N/A'}</div>
+							<div className={styles.statUnit}>Hours</div>
+						</Card>
+						<Card className={`${styles.statCard} ${styles.pending}`}>
+							<div className={styles.statLabel}>Pending</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.pendingApprovals ? hours.currentPeriod.pendingApprovals : 'N/A'}</div>
+							<div className={styles.statUnit}>Approvals</div>
+						</Card>
 					</div>
-				))}
+				</div>
 			</div>
 
 			{/* Modal for Editing */}
 			<Modal isOpen={isModalOpen} onClose={handleCancel}>
-				<h2>Edit Timesheet</h2>
-				<div className={styles.modalContent}>
-					{/* Availability Editor (Left Column) */}
-					<div>
-						<h3 className={styles.sectionTitle}>Availability</h3>
-						{groupedAvailability.map((dayItem, dayIndex) => (
-							<div key={dayIndex} className={styles.dayBlock}>
-								<div className={styles.dayHeader}>
-									<strong>{dayItem.day}</strong>
-									<Button variant="outline" size="sm" onClick={() => handleAddSlot(dayItem.day)}>
-										<Plus size={14} /> Add Slot
-									</Button>
-								</div>
-
-								{dayItem.slots.length > 0 ? (
-									dayItem.slots.map((slot, slotInnerIndex) => {
-										// Find the actual index of this slot in the flat 'availability' array for mutation
-										const flatIndex = availability.findIndex(
-											s => s.day.toLowerCase() === dayItem.day.toLowerCase() &&
-												s.startTime === slot.startTime &&
-												s.endTime === slot.endTime
-										);
-
-										if (flatIndex === -1) return null;
-
-										return (
-											<div key={slotInnerIndex} className={styles.slotRow}>
-												<input
-													type="time"
-													value={slot.startTime}
-													onChange={(e) =>
-														handleTimeChange(flatIndex, "start", e.target.value)
-													}
-													className={styles.timeInput}
-												/>
-												<span>to</span>
-												<input
-													type="time"
-													value={slot.endTime}
-													onChange={(e) =>
-														handleTimeChange(flatIndex, "end", e.target.value)
-													}
-													className={styles.timeInput}
-												/>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => handleRemoveSlot(flatIndex)}
-												>
-													<Trash2 size={14} />
+				<Card className={styles.modalCard}>
+					<CardHeader>Edit Timesheet</CardHeader>
+					<CardContent>
+						<div className={styles.modalContent}>
+							{/* Availability Editor (Left Column) */}
+							<div className={styles.availabilityEditor}>
+								<h3 className={styles.sectionTitle}>Availability</h3>
+								<div className={styles.dayGrid}>
+									{groupedAvailability.map((dayItem, dayIndex) => (
+										<div key={dayIndex} className={styles.dayBlock}>
+											<div className={styles.dayHeader}>
+												<strong>{dayItem.day}</strong>
+												<Button variant="outline" size="sm" onClick={() => handleAddSlot(dayItem.day)}>
+													<Plus size={14} /> Add Slot
 												</Button>
 											</div>
-										);
-									})
-								) : (
-									<p className={styles.notAvailableText}>Not Available</p>
-								)}
+
+											{dayItem.slots.length > 0 ? (
+												dayItem.slots.map((slot, slotInnerIndex) => {
+													// Find the actual index of this slot in the flat 'availability' array for mutation
+													const flatIndex = availability.findIndex(
+														s => s.day.toLowerCase() === dayItem.day.toLowerCase() &&
+															s.startTime === slot.startTime &&
+															s.endTime === slot.endTime
+													);
+
+													if (flatIndex === -1) return null;
+
+													return (
+														<div key={slotInnerIndex} className={styles.slotRow}>
+															<div className={styles.timeInputs}>
+																<input
+																	type="time"
+																	value={slot.startTime}
+																	onChange={(e) =>
+																		handleTimeChange(flatIndex, "start", e.target.value)
+																	}
+																	className={styles.timeInput}
+																/>
+																<span className={styles.toSeparator}>to</span>
+																<input
+																	type="time"
+																	value={slot.endTime}
+																	onChange={(e) =>
+																		handleTimeChange(flatIndex, "end", e.target.value)
+																	}
+																	className={styles.timeInput}
+																/>
+															</div>
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() => handleRemoveSlot(flatIndex)}
+																className={styles.removeBtn}
+															>
+																<Trash2 size={14} />
+															</Button>
+														</div>
+													);
+												})
+											) : (
+												<p className={styles.notAvailableText}>Not Available</p>
+											)}
+										</div>
+									))}
+								</div>
 							</div>
-						))}
-					</div>
 
-					{/* Work Hours Editor (Right Column) */}
-					<div>
-						<h3 className={styles.sectionTitle}>Work Hours</h3>
-						<div className={styles.inputGroup}>
-							<label>Max Hours (Bi-weekly)</label>
-							<input
-								type="number"
-								value={maxHours}
-								onChange={(e) => setMaxHours(e.target.value)}
-								className={styles.numberInput}
-							/>
-						</div>
+							{/* Work Hours Editor (Right Column) */}
+							<div className={styles.workHoursEditor}>
+								<h3 className={styles.sectionTitle}>Work Hours</h3>
+								<div className={styles.inputCard}>
+									<InputFieldLR
+										label="Max Hours (Bi-weekly)"
+										type="number"
+										value={maxHours}
+										onChange={(e) => setMaxHours(e.target.value)}
+									/>
 
-						<div className={styles.inputGroup}>
-							<label>Last Period Hours</label>
-							<input
-								type="number"
-								value={lastPeriodHours}
-								onChange={(e) => setLastPeriodHours(e.target.value)}
-								className={styles.numberInput}
-							/>
-						</div>
+									<InputFieldLR
+										label="Last Period Hours"
+										type="number"
+										value={lastPeriodHours}
+										onChange={(e) => setLastPeriodHours(e.target.value)}
+									/>
+								</div>
 
-						<div className={styles.modalActions}>
-							<Button variant="secondary" onClick={handleCancel}>
-								Cancel
-							</Button>
-							<Button onClick={handleSave}>Save</Button>
+								<div className={styles.modalActions}>
+									<Button variant="secondary" onClick={handleCancel}>
+										Cancel
+									</Button>
+									<Button onClick={handleSave}>Save</Button>
+								</div>
+							</div>
 						</div>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 			</Modal>
 
 			{/* Shifts Table Section */}

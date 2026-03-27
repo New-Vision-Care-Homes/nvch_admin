@@ -83,15 +83,17 @@ export function InputField({ label, name, register, type = "text", rows = 1, err
 
 
 // left label, right input
-export function InputFieldLR({ label, value, onChange, type = "input", rows = 1 }) {
+export function InputFieldLR({ label, name, register, type = "text", rows = 1, error, options = [], value, onChange, placeholder, ...rest }) {
+	const inputProps = register ? register(name) : { value, onChange };
+
 	return (
-		<div className={styles.field} style={{ flexDirection: "row" }}>
-			<label className={styles.label}>{label}</label>
+		<div className={styles.field} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+			<label className={styles.label} style={{ marginBottom: 0, minWidth: "120px" }}>{label}</label>
 
 			{type === "textarea" ? (
-				<textarea {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
+				<textarea {...inputProps} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} placeholder={placeholder} />
 			) : type === "select" ? (
-				<select {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`}>
+				<select {...inputProps} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`}>
 					<option value="">Select...</option>
 					{options.map(opt => (
 						<option key={opt.value} value={opt.value}>
@@ -100,10 +102,10 @@ export function InputFieldLR({ label, value, onChange, type = "input", rows = 1 
 					))}
 				</select>
 			) : (
-				<input {...register(name)} className={`${styles.input} ${error ? styles.input_error : ""}`} />
+				<input type={type} {...inputProps} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`} placeholder={placeholder} />
 			)}
 
-			{error && <p className={styles.error_text}>{error.message}</p>}
+			{error && <p className={styles.error_text}>{error.message || error}</p>}
 		</div>
 	);
 }
