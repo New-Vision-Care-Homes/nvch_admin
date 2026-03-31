@@ -9,14 +9,16 @@
 */
 
 {
-	"compilerOptions": {
-	  "baseUrl": ".",
-	  "paths": {
-		"@components/*": ["components/*"],
-		"@app/*": ["app/*"],
-		"@public/*": ["public/*"],
-		"@/*": ["*"],
-	  }
-	}
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@components/*": ["src/components/*"],
+      "@app/*": ["src/app/*"],
+      "@public/*": ["src/assets/*"],
+      "@utils/*": ["src/utils/*"],
+      "@services/*": ["src/services/*"],
+      "@/*": ["src/*"]
+    }
   }
+}
 
