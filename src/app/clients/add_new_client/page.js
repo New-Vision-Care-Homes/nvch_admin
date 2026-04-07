@@ -26,12 +26,12 @@ import {
 
 const schema = yup.object({
 	// Personal
-	clientId: IdRule,
+	clientId: IdRule.required("Client ID is required"),
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
-	email: emailRule,
-	phone: phoneRule,
-	birth: birthRule,
+	email: emailRule.required("Email is required"),
+	phone: phoneRule.required("Phone is required"),
+	birth: birthRule.required("Birth date is required"),
 	password: passwordRule.required("Password is required"),
 	region: yup
 		.string()
@@ -40,36 +40,48 @@ const schema = yup.object({
 			"Please select a valid region"
 		)
 		.required("Region is required"),
-	// optional, max 50
-	maritalStatus: yup.string().max(50, "Marital status must be at most 50 characters").nullable().optional(),
-	// optional, integer 1-5
-	levelOfSupport: yup
-		.number()
-		.integer("Level of support must be a whole number")
-		.min(1, "Level of support must be between 1 and 5")
-		.max(5, "Level of support must be between 1 and 5")
-		.nullable()
-		.transform((v, o) => (o === "" ? null : v)),
+
+	maritalStatus: yup
+		.string()
+		.oneOf(
+			["Single", "Married", "Divorced", "Widowed", "Separated"],
+			"Please select a valid marital status"
+		)
+		.nullable(),
+
 	notes: longTextRule,
 
 	// Address
 	street: shortTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
 	state: shortTextRule.required("Province is required"),
-	pinCode: pinRule,
+	pinCode: pinRule.required("Postal code is required"),
 	country: shortTextRule.required("Country is required"),
-	latitude: yup.number().nullable().transform((v, o) => (o === "" ? null : v)),
-	longitude: yup.number().nullable().transform((v, o) => (o === "" ? null : v)),
+	latitude: yup
+		.number()
+		.required("Latitude is required")
+		.nullable()
+		.transform((v, o) => (o === "" ? null : v)),
+	longitude: yup
+		.number()
+		.required("Longitude is required")
+		.nullable()
+		.transform((v, o) => (o === "" ? null : v)),
 
-	// Health Card -- both optional per backend, number max 50
-	healthCardNumber: yup.string().max(50, "Health card number must be at most 50 characters").nullable().optional(),
+	// Health Card
+	healthCardNumber: yup
+		.string()
+		.max(50, "Health card number must be at most 50 characters")
+		.nullable()
+		.optional(),
+
 	healthCardExpiryDate: dateRule.nullable().optional(),
 
 	// Emergency Contact
-	emergencyFName: nameRule,
-	emergencyLName: nameRule,
-	emergencyPhone: phoneRule,
-	relationship: shortTextRule,
+	emergencyFName: nameRule.required("Emergency contact first name is required"),
+	emergencyLName: nameRule.required("Emergency contact last name is required"),
+	emergencyPhone: phoneRule.required("Emergency contact phone is required"),
+	relationship: shortTextRule.required("Emergency contact relationship is required"),
 
 	// Next of Kin -- all optional, name max 100 (50 per part)
 	nokFName: nameRule,
@@ -114,7 +126,7 @@ const schema = yup.object({
 	aptEmail: emailRule,
 
 	// Community Treatment Order -- notes optional, max 2000
-	ctoNotes: yup.string().max(2000, "Notes must be at most 2000 characters").nullable().optional(),
+	ctoNotes: longTextRule,
 
 	// Care Plan
 	chronicConditions: longTextRule,

@@ -16,6 +16,7 @@ export const adminService = {
 		if (params.search) queryParams.append('search', params.search);
 		if (params.page) queryParams.append('page', params.page);
 		if (params.limit) queryParams.append('limit', params.limit);
+		if (params.isActive !== undefined && params.isActive !== '') queryParams.append('isActive', params.isActive);
 
 		const queryString = queryParams.toString();
 		const url = queryString
@@ -23,8 +24,8 @@ export const adminService = {
 			: API_ENDPOINTS.ADMINS.BASE;
 
 		const { data } = await axiosClient.get(url);
-		// Handle both response shapes: data.data.admins or data.admins
-		return data?.data?.admins ?? data?.admins ?? [];
+		// Return full response so hooks can access both the list and pagination metadata
+		return data?.data;
 	},
 
 	/**

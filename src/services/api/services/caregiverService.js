@@ -16,12 +16,14 @@ export const caregiverService = {
 		if (params.search) queryParams.append('search', params.search);
 		if (params.page) queryParams.append('page', params.page);
 		if (params.limit) queryParams.append('limit', params.limit);
+		if (params.isActive !== undefined && params.isActive !== '') queryParams.append('isActive', params.isActive);
 
 		const queryString = queryParams.toString();
 		const url = queryString ? `${API_ENDPOINTS.CAREGIVERS.BASE}?${queryString}` : API_ENDPOINTS.CAREGIVERS.BASE;
 
 		const { data } = await axiosClient.get(url);
-		return data.data.caregivers;
+		// Return full response so hooks can access both the list and pagination metadata
+		return data.data;
 	},
 
 	/**

@@ -5,6 +5,16 @@ import axiosClient from '../axiosClient';
 import { API_ENDPOINTS } from '../endpoints';
 
 export const authService = {
+
+	/**
+	 * Login
+	 * POST /api/auth/login
+	 */
+	userLogin: async (email, password) => {
+		const response = await axiosClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
+		return response.data.data;
+	},
+
 	/**
 	 * Fetch the current logged-in user's profile
 	 * GET /api/auth/profile

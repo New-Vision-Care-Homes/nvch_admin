@@ -8,9 +8,16 @@ import { caregiverService } from "@/services/api/services/caregiverService";
 export const useCaregivers = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	// Support both old API (single clientId) and new API (options object)
+	// Support both old API (single caregiverId) and new API (options object)
 	const caregiverId = typeof options === 'string' || typeof options === 'number' ? options : options.caregiverId;
-	const params = typeof options === 'object' && !options.caregiverId ? options : options.params || {};
+	let params = {};
+	if (typeof options === 'object') {
+		if (options.params) {
+			params = options.params;
+		} else if (!options.caregiverId) {
+			params = options;
+		}
+	}
 
 	/**
 	 * Helper to extract the most relevant error message.
@@ -77,7 +84,7 @@ export const useCaregivers = (options = {}) => {
 
 	return {
 		// Data
-		caregivers: caregiversQuery.data ?? [],
+		caregivers: caregiversQuery.data?.caregivers ?? caregiversQuery.data ?? [],
 		caregiverDetail: caregiverDetailQuery.data,
 
 		totalPages: caregiversQuery.data?.pagination?.totalPages ?? caregiversQuery.data?.totalPages ?? 0,
