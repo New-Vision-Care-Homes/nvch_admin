@@ -1,256 +1,288 @@
+/* ============================================================
+   Login Page — built on the app's Card / input design system
+   ============================================================ */
+
+/* Full-screen centred background */
 .page {
 	display: flex;
-	justify-content: center;
 	align-items: center;
-	height: 100vh;
-	background: white;
-	padding: 36px;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 1.5rem;
+
+	/* Subtle two-tone gradient matching brand primary */
+	background: linear-gradient(145deg, #EBF2F8 0%, #F4F7FB 50%, #E8EFF7 100%);
 }
 
-.container {
+/* ── Card ─────────────────────────────────────────────────── */
+.card {
+	width: 100%;
+	max-width: 420px;
+	min-height: 580px;
+	background: #fff;
+	border-radius: var(--border-size-md, 0.8rem);
+	box-shadow: 0 4px 24px rgba(28, 74, 110, 0.12), 0 1px 4px rgba(28, 74, 110, 0.08);
+	padding: 2.75rem 2.5rem;
 	display: flex;
 	flex-direction: column;
-	justify-content: flex-start;
 	align-items: center;
-	padding: 32px;
-	max-width: 550px;
+	justify-content: center;
+	gap: 0;
+
+	/* Fade-in on mount */
+	animation: cardIn 0.35s ease both;
+}
+
+@keyframes cardIn {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Logo area ──────────────────────────────────────────────── */
+.logoArea {
+	display: flex;
+	justify-content: center;
 	width: 100%;
-	height: 100%;
-	background: white;
-	border-radius: 10px; 
-	box-shadow: 0px 0px 1px #171a1f12, 0px 0px 2px #171a1f1F; /* shadow-xs */
+	margin-bottom: 1.75rem;
 }
 
-.logo{
-	justify-content: center;
+/* ── Title area ─────────────────────────────────────────────── */
+.titleArea {
+	margin-bottom: 1.5rem;
+	text-align: center;
+	width: 100%;
+}
+
+.titleArea h1 {
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 1.6rem;
+	font-weight: 700;
+	color: var(--color-text-primary, #171A1F);
+	margin: 0 0 0.35rem;
+}
+
+.titleArea p {
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 0.9rem;
+	color: var(--color-text-secondary, #565D6D);
+	margin: 0;
+}
+
+/* ── Error banner ───────────────────────────────────────────── */
+.errorBanner {
+	display: flex;
 	align-items: center;
-	margin-top: 24px;
-	margin-bottom: 24px;
+	gap: 0.5rem;
+	padding: 0.65rem 0.9rem;
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	border-left: 3px solid #dc2626;
+	border-radius: 6px;
+	color: #b91c1c;
+	font-size: 0.875rem;
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-weight: 500;
+	margin-bottom: 1.25rem;
+	animation: statusFadeIn 0.2s ease;
+	width: 100%;
 }
 
-.title{
-	align-items: center;
-	justify-content: center;
+@keyframes statusFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
-	.title h1{
-		font-family: Inter;
-		font-size: 30px; 
-		line-height: 36px; 
-		font-weight: 700; 
-		color: #171A1FFF;
-		text-align: center;
-	}
-	.title h2{
-		font-family: Inter;
-		font-size: 14px; 
-		line-height: 20px; 
-		font-weight: 400; 
-		color: #565D6DFF; 
-		text-align: center;
-		margin-top: 10px;
-	}
 
-
+/* ── Form ───────────────────────────────────────────────────── */
 .form {
 	display: flex;
 	flex-direction: column;
-	padding: 40px;
-	align-items: flex-start;
-	justify-self: center;
-	text-align: left;
+	gap: 1.1rem;
+	width: 100%;
 }
-	.form input {
-		width: 384px; 
-		height: 49px; 
-		padding-left: 12px; 
-		padding-right: 12px; 
-		font-family: Inter; 
-		font-size: 14px; 
-		line-height: 22px; 
-		font-weight: 400; 
-		background: #FFFFFFFF; /* white */
-		border-radius: 6px; 
-		border-width: 1px; 
-		border-color: #DEE1E6FF; /* neutral-300 */
-		border-style: solid; 
-		outline: none; 
-		margin-top: 10px;
-		margin-bottom: 20px;
-	}
-	.form label {
-		text-align: left; 
-		font-family: Inter; 
-		font-size: 14px; 
-		line-height: 22px; 
-		font-weight: 500; 
-	}
-	/* hover */
-	.form input:hover {
-		color: #565D6DFF; 
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
-	}
-	/* focused */
-	.form input:focused {
-		color: #565D6DFF; 
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
-	}
-	/* disabled */
-	.form input:disabled {
-		color: #565D6DFF; 
-		background: #FFFFFFFF; /* white */
-		border-color: #DEE1E6FF; /* neutral-300 */
-	}
-	.form :disabled + .icon, .textbox :disabled + .icon + .icon {
-		fill: #565D6DFF; 
-	}
 
-/* for password field: input + eye icon */ 
-.inputWrapper {
+/* ── Field (label + input + error) ─────────────────────────── */
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.label {
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: var(--color-secondary, #565D6D);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+/* Shared input style — mirrors Card.module.css .input */
+.input {
+	width: 100%;
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 0.9rem;
+	font-weight: 400;
+	background: #FAFBFC;
+	border-radius: var(--border-size-sm, 0.4rem);
+	border: 1.5px solid #DEE1E6;
+	outline: none;
+	padding: 0.65rem 0.85rem;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+	color: #171A1F;
+}
+
+.input:hover {
+	background: #F0F5FA;
+	border-color: #b0bec5;
+}
+
+.input:focus {
+	border-color: var(--color-primary, #1C4A6E);
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.12);
+}
+
+.inputError {
+	border-color: #E53E3E;
+	background: #FFF5F5;
+}
+
+.inputError:focus {
+	box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.12);
+}
+
+.fieldError {
+	font-size: 0.8rem;
+	color: #E53E3E;
+	font-family: var(--font-family-primary, Inter), sans-serif;
+}
+
+/* ── Password wrapper ───────────────────────────────────────── */
+.passwordWrapper {
 	position: relative;
-	width: 384px;
-}
-	
-	.inputWrapper input {
-		width: 100%;
-		height: 49px;
-		padding-left: 12px;
-		padding-right: 40px;
-		font-family: Inter;
-		font-size: 14px;
-		line-height: 22px;
-		font-weight: 400;
-		background: #FFFFFF;
-		border-radius: 6px;
-		border: 1px solid #DEE1E6;
-		outline: none;
-		margin-top: 10px;
-	}
-	
-	.eyeIcon {
-		position: absolute;
-		top: 60%;
-		right: 12px;
-		transform: translateY(-50%);
-		cursor: pointer;
-	}
-
-/* check box field */
-/* label style */
-.checkbox {
 	display: flex;
 	align-items: center;
-	cursor: pointer;
-	gap: 8px;
-	font-size: 14px;
 }
-	.checkbox input {
-		display: none;
-	}
 
-	.checkbox input:checked + .checkmark {
-		background-color: #0065b3;
-		border-color: #0065b3;
-	}
-	
-	.checkbox input:checked + .checkmark::after {
-		display: block;
-	}
-	
-.checkmark {
-	width: 16px;
-	height: 16px;
-	border: 1px solid #565E6C;
-	border-radius: 2px;
+.passwordWrapper .input {
+	padding-right: 2.5rem;
+}
+
+.eyeToggle {
+	position: absolute;
+	right: 0.65rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.2s ease;
-	position: relative;
+	color: var(--color-secondary, #565D6D);
+	transition: color 0.15s ease;
 }
-	/* checkmark */
-	.checkmark::after {
-		content: "";
-		position: absolute;
-		left: 4px;
-		top: 2px;
-		width: 4px;
-		height: 8px;
-		border: solid white;
-		border-width: 0 2px 2px 0;
-		transform: rotate(45deg);
-		display: none;
-	}
 
-/* button div */
-.button{
+.eyeToggle:hover {
+	color: var(--color-primary, #1C4A6E);
+}
+
+/* ── Forgot row ─────────────────────────────────────────────── */
+.forgotRow {
 	display: flex;
-	flex-direction: column;
+	justify-content: flex-end;
+	margin-top: -0.35rem;
+}
+
+.forgotLink {
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 0.85rem;
+	color: var(--color-primary, #1C4A6E);
+	text-decoration: none;
+	font-weight: 500;
+	transition: opacity 0.15s;
+}
+
+.forgotLink:hover {
+	opacity: 0.75;
+	text-decoration: underline;
+}
+
+/* ── Submit button ──────────────────────────────────────────── */
+.submitBtn {
+	display: flex;
 	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	margin-top: 0.4rem;
+	font-family: var(--font-family-primary, Inter), sans-serif;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--color-primary, #1C4A6E);
+	border: none;
+	border-radius: var(--border-size-sm, 0.4rem);
+	cursor: pointer;
+	transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+	box-shadow: 0 2px 8px rgba(28, 74, 110, 0.25);
+	letter-spacing: 0.01em;
 }
-	
-/* login button */
-.loginButton {
-	width: 384px; 
-	height: 40px; 
-	padding: 0 12px; 
-	display: flex; 
-	align-items: center; 
-	justify-content: center; 
-	font-family: Inter; 
-	font-size: 14px; 
-	line-height: 22px; 
-	font-weight: 500; 
-	color: #FFFFFFFF; /* white */
-	background: #1C4A6EFF; 
-	opacity: 1; 
-	border: none; 
-	border-radius: 6px; 
-	margin-top: 23px;
+
+.submitBtn:hover:not(:disabled) {
+	background: #153956;
+	box-shadow: 0 4px 14px rgba(28, 74, 110, 0.32);
+	transform: translateY(-1px);
 }
-	/* Hover */
-	.loginButton:hover {
-		color: #FFFFFFFF;
-		background: #102C42FF; 
+
+.submitBtn:active:not(:disabled) {
+	background: #0e2537;
+	transform: translateY(0);
+}
+
+.submitBtn:disabled {
+	opacity: 0.65;
+	cursor: not-allowed;
+}
+
+/* ── Spinner ────────────────────────────────────────────────── */
+.spinner {
+	width: 15px;
+	height: 15px;
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+	flex-shrink: 0;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
 	}
-	/* Pressed */
-	.loginButton:hover:active {
-		color: #FFFFFFFF;
-		background: #0C1E2CFF; 
-	}
-	/* Disabled */
-	.loginButton:disabled {
-		opacity: 0.4; 
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+	.card {
+		padding: 2rem 1.25rem 1.75rem;
 	}
 
-/* forget password button */
-.forgetButton {
-	width: 151px; 
-	height: 40px; 
-	padding: 0 12px; 
-	font-family: Inter; 
-	font-size: 14px; 
-	line-height: 22px; 
-	font-weight: 500; 
-	color: #1C4A6EFF; 
-	background: #00000000; /* transparent */
-	opacity: 1; 
-	border: none; 
-	border-radius: 6px; 
-	margin-top: 24px;
+	.titleArea h1 {
+		font-size: 1.35rem;
+	}
 }
-	/* Hover */
-	.forgetButton:hover {
-		color: #1C4A6EFF; 
-		background: #EEF5FBFF; 
-	}
-	/* Pressed */
-	.forgetButton:hover:active {
-		color: #1C4A6EFF; 
-		background: #E1EEF8FF; 
-	}
-	/* Disabled */
-	.forgetButton:disabled {
-		opacity: 0.4; 
-	}

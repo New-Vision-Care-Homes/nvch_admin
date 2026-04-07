@@ -9,7 +9,14 @@ export const useAdmins = (options = {}) => {
 	const queryClient = useQueryClient();
 
 	const adminId = typeof options === 'string' || typeof options === 'number' ? options : options.adminId;
-	const params = typeof options === 'object' && !options.adminId ? options : options.params || {};
+	let params = {};
+	if (typeof options === 'object') {
+		if (options.params) {
+			params = options.params;
+		} else if (!options.adminId) {
+			params = options;
+		}
+	}
 
 	/**
 	 * Helper to extract the most relevant error message.
@@ -76,7 +83,7 @@ export const useAdmins = (options = {}) => {
 
 	return {
 		// Data
-		admins: adminsQuery.data ?? [],
+		admins: adminsQuery.data?.admins ?? adminsQuery.data ?? [],
 		adminDetail: adminDetailQuery.data,
 
 		totalPages: adminsQuery.data?.pagination?.totalPages ?? adminsQuery.data?.totalPages ?? 0,

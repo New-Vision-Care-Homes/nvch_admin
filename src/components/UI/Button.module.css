@@ -71,6 +71,16 @@
 	background-color: #f9fafb;
 }
 
+.ghost {
+	background-color: transparent;
+	color: var(--color-primary, #1C4A6E);
+	border: 1.5px solid rgba(28, 74, 110, 0.2);
+}
+.ghost:hover:not(:disabled) {
+	background-color: rgba(28, 74, 110, 0.06);
+	border-color: rgba(28, 74, 110, 0.45);
+}
+
 .btn:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;

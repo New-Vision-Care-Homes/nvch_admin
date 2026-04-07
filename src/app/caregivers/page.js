@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, forwardRef } from "react";
+import React, { useState, useEffect } from "react";
+
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css"; // Use client CSS for consistency
 import Button from "@components/UI/Button";
@@ -17,7 +18,19 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 
 export default function Caregivers() {
-	const queryClient = useQueryClient();
+	// --- State ---
+	const [search, setSearch] = useState("");
+	const [statusFilter, setStatusFilter] = useState("");
+	const [showDropdown, setShowDropdown] = useState(false);
+	const [showModal, setShowModal] = useState(false);
+	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const itemsPerPage = 5;
+
+	let isActiveParam = "";
+	if (statusFilter === "Active") isActiveParam = true;
+	if (statusFilter === "Inactive") isActiveParam = false;
+
 	const {
 		caregivers,
 		totalPages,
@@ -27,18 +40,19 @@ export default function Caregivers() {
 		actionError,
 		deleteCaregiver,
 		refetch,
-	} = useCaregivers();
+	} = useCaregivers({
+		params: {
+			page: currentPage,
+			limit: itemsPerPage,
+			search: search,
+			isActive: isActiveParam,
+		}
+	});
 
-	//const { data: caregivers = [], isLoading, isError, error } = useCaregivers();
-	console.log("caregivers: ", caregivers);
-
-	// --- State ---
-	const [search, setSearch] = useState(""); // Search input
-	const [statusFilter, setStatusFilter] = useState(""); // Status filter (Active/Inactive)
-	const [showDropdown, setShowDropdown] = useState(false); // Dropdown visibility
-
-	const [showModal, setShowModal] = useState(false); // Delete confirmation modal
-	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null); // ID to delete
+	// Reset to page 1 when filters change
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [search, statusFilter]);
 
 	// --- Handle delete button click ---
 	const deleteHandler = (id) => {
@@ -50,37 +64,17 @@ export default function Caregivers() {
 		setShowModal(false);
 	};
 
-
 	// --- Confirm delete ---
 	const confirmDelete = async () => {
 		if (!deletedCaregiverId) return;
 		deleteCaregiver(deletedCaregiverId);
-
 		setShowModal(false);
 		setDeletedCaregiverId(null);
 	};
 
-	// --- Filter caregivers ---
-	const filteredCaregivers = caregivers.filter(caregiver => {
-		const searchLower = search.toLowerCase();
-		const matchesSearch =
-			caregiver.firstName.toLowerCase().includes(searchLower) ||
-			caregiver.lastName.toLowerCase().includes(searchLower);
-
-		const matchesStatus = statusFilter
-			? (statusFilter === "Active" ? caregiver.isActive : !caregiver.isActive)
-			: true;
-
-		return matchesSearch && matchesStatus;
-	});
-
-	// --- Pagination ---
-	const itemsPerPage = 5;
-	const [currentPage, setCurrentPage] = useState(0);
-	const offset = currentPage * itemsPerPage;
-	const currentItems = filteredCaregivers.slice(offset, offset + itemsPerPage);
-	const pageCount = Math.ceil(filteredCaregivers.length / itemsPerPage);
-	const handlePageClick = (event) => setCurrentPage(event.selected);
+	const handlePageClick = (event) => {
+		setCurrentPage(event.selected + 1);
+	};
 
 	return (
 		<>
@@ -152,7 +146,7 @@ export default function Caregivers() {
 										<TableCell>Status</TableCell>
 										<TableCell>Actions</TableCell>
 									</TableHeader>
-									{currentItems.map(caregiver => (
+									{caregivers.map(caregiver => (
 										<TableContent key={caregiver.id}>
 											{/* Name & Avatar */}
 											<TableCell>
@@ -197,8 +191,11 @@ export default function Caregivers() {
 
 								{/* Pagination */}
 								<ReactPaginate
-									pageCount={pageCount}
+									pageCount={Math.max(totalPages, 1)}
+									forcePage={currentPage - 1}
 									onPageChange={handlePageClick}
+									pageRangeDisplayed={Math.max(totalPages, 1)}
+									marginPagesDisplayed={1}
 									previousLabel={"Prev"}
 									nextLabel={"Next"}
 									containerClassName={styles.pagination}

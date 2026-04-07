@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState from "@components/UI/ErrorState";
 import styles from "./admins.module.css";
@@ -16,23 +17,41 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 import { useAdmins } from "@/hooks/useAdmins";
 
 export default function Admins() {
+	// --- State ---
+	const [search, setSearch] = useState("");
+	const [statusFilter, setStatusFilter] = useState("");
+	const [showDropdown, setShowDropdown] = useState(false);
+	const [showModal, setShowModal] = useState(false);
+	const [deletedAdminId, setDeletedAdminId] = useState(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const itemsPerPage = 5;
+
+	let isActiveParam = "";
+	if (statusFilter === "Active") isActiveParam = true;
+	if (statusFilter === "Inactive") isActiveParam = false;
+
 	const {
 		admins,
 		isLoading,
+		totalPages,
 		isActionPending,
 		fetchError,
 		actionError,
 		deleteAdmin,
 		refetch,
-	} = useAdmins();
+	} = useAdmins({
+		params: {
+			page: currentPage,
+			limit: itemsPerPage,
+			search: search,
+			isActive: isActiveParam,
+		}
+	});
 
-	// --- State ---
-	const [search, setSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [showDropdown, setShowDropdown] = useState(false);
-
-	const [showModal, setShowModal] = useState(false);
-	const [deletedAdminId, setDeletedAdminId] = useState(null);
+	// Reset to page 1 when filters change
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [search, statusFilter]);
 
 	// --- Handle delete button click ---
 	const deleteHandler = (id) => {
@@ -48,34 +67,13 @@ export default function Admins() {
 	const confirmDelete = async () => {
 		if (!deletedAdminId) return;
 		deleteAdmin(deletedAdminId);
-
 		setShowModal(false);
 		setDeletedAdminId(null);
 	};
 
-	// --- Filter admins ---
-	const filteredAdmins = admins.filter(admin => {
-		const searchLower = search.toLowerCase();
-		const matchesSearch =
-			admin.firstName.toLowerCase().includes(searchLower) ||
-			admin.lastName.toLowerCase().includes(searchLower);
-
-		const matchesStatus = statusFilter
-			? (statusFilter === "Active" ? admin.isActive : !admin.isActive)
-			: true;
-
-		return matchesSearch && matchesStatus;
-	});
-
-	console.log(filteredAdmins);
-
-	// --- Pagination ---
-	const itemsPerPage = 5;
-	const [currentPage, setCurrentPage] = useState(0);
-	const offset = currentPage * itemsPerPage;
-	const currentItems = filteredAdmins.slice(offset, offset + itemsPerPage);
-	const pageCount = Math.ceil(filteredAdmins.length / itemsPerPage);
-	const handlePageClick = (event) => setCurrentPage(event.selected);
+	const handlePageClick = (event) => {
+		setCurrentPage(event.selected + 1);
+	};
 
 	return (
 		<>
@@ -147,7 +145,7 @@ export default function Admins() {
 										<TableCell>Status</TableCell>
 										<TableCell>Actions</TableCell>
 									</TableHeader>
-									{currentItems.map(admin => (
+									{admins.map(admin => (
 										<TableContent key={admin.id}>
 											{/* Name & Avatar */}
 											<TableCell>
@@ -192,8 +190,11 @@ export default function Admins() {
 
 								{/* Pagination */}
 								<ReactPaginate
-									pageCount={pageCount}
+									pageCount={Math.max(totalPages, 1)}
+									forcePage={currentPage - 1}
 									onPageChange={handlePageClick}
+									pageRangeDisplayed={Math.max(totalPages, 1)}
+									marginPagesDisplayed={1}
 									previousLabel={"Prev"}
 									nextLabel={"Next"}
 									containerClassName={styles.pagination}
