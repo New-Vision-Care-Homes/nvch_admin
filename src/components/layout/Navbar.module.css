@@ -1,23 +1,24 @@
-
 .navbar {
 	display: flex;
 	position: sticky;
 	top: 0;
 	z-index: 10;
 	flex-shrink: 0;
-	width: 100%; 
-	height: 4rem; 
+	width: 100%;
+	height: 4rem;
 	align-items: center;
 	justify-content: center;
-	background: #FFFFFFFF; /* white */
-	border-radius: 0px 0px 0px 0px; 
-	box-shadow: 0px 0px 1px #171a1f12, 0px 0px 2px #171a1f1F; /* shadow-xs */
+	background: #FFFFFFFF;
+	/* white */
+	border-radius: 0px 0px 0px 0px;
+	box-shadow: 0px 0px 1px #171a1f12, 0px 0px 2px #171a1f1F;
+	/* shadow-xs */
 	padding: 15px 30px;
 }
 
 .container {
 	display: flex;
-	width: 95%; 
+	width: 95%;
 	align-items: center;
 	justify-content: space-between;
 }
@@ -27,109 +28,122 @@
 	align-items: center;
 	gap: 10px;
 }
-  
+
 .search {
-	position: relative; 
+	position: relative;
 	align-items: center;
 	gap: 5px;
 }
 
-	.search input {
-		padding: 5px 10px 5px 30px;
-		width: 256px; 
-		height: auto; 
-		background: transparent; /* white */
-		border-radius: 6px; 
-		border-width: 1px; 
-		border-color: #DEE1E6FF; /* neutral-300 */
-		border-style: solid;
-	}
+.search input {
+	padding: 5px 10px 5px 30px;
+	width: 256px;
+	height: auto;
+	background: transparent;
+	/* white */
+	border-radius: 6px;
+	border-width: 1px;
+	border-color: #DEE1E6FF;
+	/* neutral-300 */
+	border-style: solid;
+}
 
-	.searchIcon {
-		position: absolute;
-		left: 8px;
-		top: 50%;
-		transform: translateY(-50%);
-		pointer-events: none;
-	}
+.searchIcon {
+	position: absolute;
+	left: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+}
 
 /* notification */
 .notification {
-	width: auto; 
-	height: 40px; 
+	width: auto;
+	height: 40px;
 	padding: 0 12px;
-	display: flex; 
-	align-items: center; 
-	justify-content: center; 
-	font-family: Inter; 
-	font-size: 14px; 
-	line-height: 22px; 
-	font-weight: 500; 
-	color: #171A1FFF; /* neutral-900 */
-	background: #00000000; /* transparent */
-	opacity: 1; 
-	border: none; 
-	border-radius: 6px; 
-	gap: 8px; 
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: Inter;
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 500;
+	color: #171A1FFF;
+	/* neutral-900 */
+	background: #00000000;
+	/* transparent */
+	opacity: 1;
+	border: none;
+	border-radius: 6px;
+	gap: 8px;
 }
-	/* Hover */
-	.notification:hover {
-		color: #1C4A6EFF; 
-		background: #EEF5FBFF; 
-	}
-	/* Pressed */
-	.notification:hover:active {
-		color: #1C4A6EFF; 
-		background: #EEF5FBFF; 
-	}
-	/* Disabled */
-	.notification:disabled {
-		opacity: 0.4; 
-	}
+
+/* Hover */
+.notification:hover {
+	color: #1C4A6EFF;
+	background: #EEF5FBFF;
+}
+
+/* Pressed */
+.notification:hover:active {
+	color: #1C4A6EFF;
+	background: #EEF5FBFF;
+}
+
+/* Disabled */
+.notification:disabled {
+	opacity: 0.4;
+}
 
 /* Button */
 .logout {
-	width: auto; 
-	height: 40px; 
-	padding: 0 12px; 
-	display: flex; 
-	align-items: center; 
-	justify-content: center; 
-	font-family: Inter; 
-	font-size: 14px; 
-	line-height: 22px; 
-	font-weight: 500; 
-	color: #171A1FFF; /* neutral-900 */
-	background: #FFFFFFFF; /* white */
-	opacity: 1; 
-	border-radius: 6px; 
-	border-width: 1px; 
-	border-color: #DEE1E6FF; /* neutral-300 */
-	border-style: solid; 
-	gap: 8px; 
+	width: auto;
+	height: 40px;
+	padding: 0 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: Inter;
+	font-size: 14px;
+	line-height: 22px;
+	font-weight: 500;
+	color: #171A1FFF;
+	/* neutral-900 */
+	opacity: 1;
+	border-radius: 6px;
+	border-width: 1px;
+	border-color: #DEE1E6FF;
+	/* neutral-300 */
+	border-style: solid;
+	gap: 8px;
+	background: none;
+
+	cursor: pointer;
 }
 
-	/* Hover */
-	.logout:hover {
-		color: #1C4A6EFF; 
-		background: #EEF5FBFF; 
-	}
-	/* Pressed */
-	.logout:hover:active {
-		color: #1C4A6EFF; 
-		background: #EEF5FBFF; 
-	}
-	/* Disabled */
-	.logout:disabled {
-		opacity: 0.4; 
-	}
+/* Hover */
+.logout:hover {
+	color: #1C4A6EFF;
+	background: #EEF5FBFF;
+}
+
+/* Pressed */
+.logout:hover:active {
+	color: #1C4A6EFF;
+	background: #EEF5FBFF;
+}
+
+/* Disabled */
+.logout:disabled {
+	opacity: 0.4;
+}
 
 
 .avatar {
-	width: 36px; 
-	height: 36px; 
-	background: #E6F7F2FF; 
-	opacity: 1; 
-	overflow: hidden; 
-	border-radius: 18px; 
+	width: 36px;
+	height: 36px;
+	background: #E6F7F2FF;
+	opacity: 1;
+	overflow: hidden;
+	border-radius: 18px;
 }

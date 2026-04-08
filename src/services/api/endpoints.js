@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
 	ADMINS: {
 		BASE: '/api/auth/admin/admins',
 		BY_ID: (id) => `/api/auth/admin/admins/${id}`,
+		CREATE: '/api/auth/register',
 	},
 
 	/* All related endpoints for caregivers */

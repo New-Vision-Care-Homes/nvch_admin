@@ -7,7 +7,7 @@ import * as yup from "yup";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
-import StatusMessage from "@components/UI/StatusMessage";
+import ActionMessage from "@components/UI/ActionMessage";
 import { longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
 
@@ -230,7 +230,7 @@ export default function CarePlan() {
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
-			<StatusMessage variant={status?.variant} message={status?.text} />
+			<ActionMessage variant={status?.variant} message={status?.text} />
 
 			<div className={styles.body}>
 				{/* MEDICAL CONDITIONS */}

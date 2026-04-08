@@ -1,23 +1,34 @@
 "use client";
 
-import Link from "next/link";
 import React, { useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Search, Bell, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
 import avatarImg from "@/assets/img/navbar/avatar.jpg";
 
 export default function Navbar() {
 	const [search, setSearch] = useState("");
+	const router = useRouter();
 
 	const handleSearch = () => {
 		alert(`Searching: ${search}`);
 	};
 
+	const handleLogout = () => {
+		// 1. Remove JWT from localStorage
+		localStorage.removeItem("token");
+
+		// 2. Redirect to login page
+		router.push("/login");
+	};
+
 	return (
 		<nav className={styles.navbar}>
 			<div className={styles.container}>
+				{/* Logo */}
 				<Image src={logoImg} alt="App Icon" width={80} height={39} />
 
 				<div className={styles.element}>
@@ -31,11 +42,7 @@ export default function Navbar() {
 							placeholder="Search..."
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									handleSearch();
-								}
-							}}
+							onKeyDown={(e) => e.key === "Enter" && handleSearch()}
 						/>
 					</div>
 
@@ -46,10 +53,13 @@ export default function Navbar() {
 					</Link>
 
 					{/* Logout */}
-					<Link href="/login" className={styles.logout}>
+					<button
+						onClick={handleLogout}
+						className={styles.logout}
+					>
 						<LogOut size={16} />
 						<span>Logout</span>
-					</Link>
+					</button>
 
 					{/* Profile Image */}
 					<Image

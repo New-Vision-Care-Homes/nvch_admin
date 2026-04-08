@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { adminService } from "@/services/api/services/adminService";
 
 /**
@@ -32,7 +32,8 @@ export const useAdmins = (options = {}) => {
 	const adminsQuery = useQuery({
 		queryKey: ["admins", params],
 		queryFn: () => adminService.getAll(params),
-		enabled: !adminId, // Fetch list if not fetching a specific admin
+		enabled: !adminId,
+		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
 	// 2. Fetch a single admin's details (only runs if adminId is provided)

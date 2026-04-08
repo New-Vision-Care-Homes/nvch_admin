@@ -10,14 +10,13 @@ import Button from "@components/UI/Button";
 import styles from "./add_new_admin.module.css";
 import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
+import ActionMessage from "@/components/UI/ActionMessage";
 
 import { nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
-	{ label: "Manager", value: "manager" },
 	{ label: "Supervisor", value: "supervisor" },
-	{ label: "Staff", value: "staff" },
 ];
 
 const DEPARTMENT_OPTIONS = [
@@ -31,26 +30,35 @@ const DEPARTMENT_OPTIONS = [
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
-	email: emailRule,
-	password: passwordRule,
+	email: emailRule.required("Email is required"),
+	password: passwordRule.required("Password is required"),
+	confirmPassword: yup
+		.string()
+		.required("Please confirm your password")
+		.oneOf([yup.ref("password")], "Passwords do not match"),
 	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
-	region: yup.string()
+	region: yup
+		.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
 });
 
 export default function Page() {
 	const router = useRouter();
-	const { addAdmin, isActionPending, isError, errorMessage } = useAdmins();
+	const { addAdmin, isActionPending, actionError } = useAdmins();
 
 	// Checkboxes controlled manually
 	const [canManageUsers, setCanManageUsers] = useState(false);
 	const [canManageShifts, setCanManageShifts] = useState(false);
 	const [canViewReports, setCanViewReports] = useState(false);
 
-	const { register, handleSubmit, formState: { errors } } = useForm({
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
 		resolver: yupResolver(schema),
 	});
 
@@ -76,12 +84,10 @@ export default function Page() {
 			canViewReports,
 		};
 
-		console.log("body: ", body);
-
 		addAdmin(body, {
 			onSuccess: () => {
 				router.push("/admins");
-			}
+			},
 		});
 	};
 
@@ -99,7 +105,10 @@ export default function Page() {
 					</div>
 				</div>
 
-				{isError && <div className={styles.formError}>Error: {errorMessage}</div>}
+				{/* Action Error Banner */}
+				{actionError && (
+					<ActionMessage variant="error" message={actionError} />
+				)}
 
 				<div className={styles.content}>
 					<div className={styles.rightPanel} style={{ width: "100%" }}>
@@ -121,6 +130,10 @@ export default function Page() {
 										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 									/>
 									<InputField label="Password" name="password" register={register} error={errors.password} type="password" />
+								</div>
+								<div className={styles.row2}>
+									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" />
+									<div style={{ flex: 1 }} /> {/* spacer to keep grid alignment */}
 								</div>
 							</CardContent>
 						</Card>
