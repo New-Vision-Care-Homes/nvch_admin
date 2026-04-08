@@ -18,12 +18,19 @@ export default function Clients() {
 
 	// --- State ---
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const [deletedClientId, setDeletedClientId] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 5;
+
+	// Debounce search — only fire API after user stops typing for 400ms
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedSearch(search), 400);
+		return () => clearTimeout(timer);
+	}, [search]);
 
 	let isActiveParam = "";
 	if (statusFilter === "Active") isActiveParam = true;
@@ -42,15 +49,22 @@ export default function Clients() {
 		params: {
 			page: currentPage,
 			limit: itemsPerPage,
-			search: search,
+			search: debouncedSearch,
 			isActive: isActiveParam,
 		}
+	});
+
+	console.log("test", {
+		currentPage,
+		totalPages,
+		clientsLength: clients.length,
+		debouncedSearch
 	});
 
 	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [search, statusFilter]);
+	}, [debouncedSearch, statusFilter]);
 
 	// --- Handlers ---
 	const deleteHandler = (id) => {

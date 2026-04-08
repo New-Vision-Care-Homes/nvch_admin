@@ -19,12 +19,19 @@ import { useAdmins } from "@/hooks/useAdmins";
 export default function Admins() {
 	// --- State ---
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [showModal, setShowModal] = useState(false);
 	const [deletedAdminId, setDeletedAdminId] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 5;
+
+	// Debounce search — only fire API after user stops typing for 400ms
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedSearch(search), 400);
+		return () => clearTimeout(timer);
+	}, [search]);
 
 	let isActiveParam = "";
 	if (statusFilter === "Active") isActiveParam = true;
@@ -43,7 +50,7 @@ export default function Admins() {
 		params: {
 			page: currentPage,
 			limit: itemsPerPage,
-			search: search,
+			search: debouncedSearch,
 			isActive: isActiveParam,
 		}
 	});
@@ -51,7 +58,7 @@ export default function Admins() {
 	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [search, statusFilter]);
+	}, [debouncedSearch, statusFilter]);
 
 	// --- Handle delete button click ---
 	const deleteHandler = (id) => {

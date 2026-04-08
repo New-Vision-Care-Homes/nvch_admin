@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { caregiverService } from "@/services/api/services/caregiverService";
 
 /**
@@ -33,7 +33,8 @@ export const useCaregivers = (options = {}) => {
 	const caregiversQuery = useQuery({
 		queryKey: ["caregivers", params],
 		queryFn: () => caregiverService.getAll(params),
-		enabled: !caregiverId, // Only fetch list if not fetching a specific client
+		enabled: !caregiverId,
+		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
 	// 2. Fetch a single client's details (only runs if clientId is provided)

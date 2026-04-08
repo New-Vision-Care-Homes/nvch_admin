@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { clientService } from "@/services/api/services/clientService";
 
 /**
@@ -38,6 +38,7 @@ export const useClients = (options = {}) => {
 		queryKey: ["clients", params],
 		queryFn: () => clientService.getAll(params),
 		enabled: !clientId,
+		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
 	// 2. Fetch a single client's details

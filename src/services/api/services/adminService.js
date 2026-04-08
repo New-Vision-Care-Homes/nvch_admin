@@ -52,7 +52,7 @@ export const adminService = {
 	 * @param {Object} adminData - The payload containing admin details.
 	 */
 	create: async (adminData) => {
-		const { data } = await axiosClient.post(API_ENDPOINTS.ADMINS.BASE, adminData);
+		const { data } = await axiosClient.post(API_ENDPOINTS.ADMINS.CREATE, adminData);
 		return data;
 	},
 

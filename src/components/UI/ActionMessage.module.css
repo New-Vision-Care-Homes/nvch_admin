@@ -1,0 +1,76 @@
+/* ActionMessage.module.css */
+
+.banner {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.75rem 1rem;
+	border-radius: 6px;
+	border-left: 3px solid transparent;
+	font-family: var(--font-family-primary);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	margin-bottom: 1.25rem;
+	animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Variants ─────────────────────────────────────────── */
+
+.success {
+	background: #f0fdf4;
+	color: #15803d;
+	border-left-color: #16a34a;
+}
+
+.error {
+	background: #fef2f2;
+	color: #b91c1c;
+	border-left-color: #dc2626;
+}
+
+/* ── Icon ─────────────────────────────────────────────── */
+
+.icon {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+/* ── Message text ─────────────────────────────────────── */
+
+.message {
+	flex: 1;
+	line-height: 1.4;
+}
+
+/* ── Dismiss button ───────────────────────────────────── */
+
+.closeBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	margin-left: auto;
+	opacity: 0.6;
+	color: inherit;
+	transition: opacity 0.15s;
+	flex-shrink: 0;
+}
+
+.closeBtn:hover {
+	opacity: 1;
+}
