@@ -13,7 +13,7 @@ export const shiftService = {
 	 */
 	getAll: async (params = {}) => {
 		const { data } = await axiosClient.get(API_ENDPOINTS.SHIFTS.BASE, { params });
-		return data.data.shifts;
+		return data?.data; // Enable access to pagination metadata
 	},
 
 	/**

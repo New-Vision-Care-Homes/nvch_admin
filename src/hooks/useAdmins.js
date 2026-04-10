@@ -69,6 +69,16 @@ export const useAdmins = (options = {}) => {
 		},
 	});
 
+	// 6. TOGGLE STATUS: Toggle an admin's active status
+	const toggleStatusMutation = useMutation({
+		mutationFn: (id) => adminService.toggleStatus(id),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["admins"] });
+			// Option to invalidate specific admin query:
+			queryClient.invalidateQueries({ queryKey: ["admin", variables] });
+		},
+	});
+
 	// --- Error Separation ---
 
 	// Fetch errors: from initial data loading (shown via ErrorState component)
@@ -80,7 +90,8 @@ export const useAdmins = (options = {}) => {
 	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error;
+		updateMutation.error ||
+		toggleStatusMutation.error;
 
 	return {
 		// Data
@@ -96,7 +107,8 @@ export const useAdmins = (options = {}) => {
 		isActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
-			deleteMutation.isPending,
+			deleteMutation.isPending ||
+			toggleStatusMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
 		fetchError: fetchError ? getErrorMessage(fetchError) : null,
@@ -108,6 +120,7 @@ export const useAdmins = (options = {}) => {
 		addAdmin: createMutation.mutate,
 		updateAdmin: updateMutation.mutate,
 		deleteAdmin: deleteMutation.mutate,
+		toggleAdminStatus: toggleStatusMutation.mutate,
 		refetch: adminsQuery.refetch,
 	};
 };

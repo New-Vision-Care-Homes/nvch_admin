@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -11,17 +11,9 @@ import ActionMessage from "@components/UI/ActionMessage";
 // Importing validation rules used in the Client page for consistency
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
-
-// API Endpoint for Caregiver management (assuming a slightly different URL)
-const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
+import { useCaregivers } from "@/hooks/useCaregivers";
 
 // --- 1. Data Cleaning/Flattening Function ---
-/**
- * Transforms nested API data into a flat structure suitable for the form's fields.
- * Also ensures all fields have safe default values (e.g., "" instead of null/undefined).
- * @param {object} apiData - Raw caregiver data from the API.
- * @returns {object} Flattened object with safe default values for use with RHF's reset().
- */
 const cleanFetchedData = (apiData) => {
 	if (!apiData) return {};
 	console.log("apidata: ", apiData);
@@ -35,15 +27,13 @@ const cleanFetchedData = (apiData) => {
 		phone: apiData.phone || "",
 		email: apiData.email || "",
 
-		// Address field
-		street: apiData.address.street || "",
-		city: apiData.address.city || "",
-		state: apiData.address.state || "",
-		country: apiData.address.country || "",
-		pincode: apiData.address.pinCode || "",
+		// Address field (safely chained)
+		street: apiData.address?.street || "",
+		city: apiData.address?.city || "",
+		state: apiData.address?.state || "",
+		country: apiData.address?.country || "",
+		pincode: apiData.address?.pinCode || "",
 		region: apiData.region || "",
-
-		notes: apiData.notes || "",
 	};
 
 	// Emergency Contact
@@ -60,7 +50,6 @@ const cleanFetchedData = (apiData) => {
 	return cleanData;
 };
 
-
 // --- 2. Yup Validation Schema ---
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
@@ -73,7 +62,7 @@ const schema = yup.object({
 	birth: birthRule.optional(),
 	notes: longTextRule.optional(),
 
-	// Address fields (Matching validation rules from Client page)
+	// Address fields
 	street: shortTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
 	state: shortTextRule.required("State/Province is required"),
@@ -85,90 +74,49 @@ const schema = yup.object({
 	emergencyLName: nameRule.optional(),
 	emergencyPhone: phoneRule.optional(),
 	relationship: shortTextRule.optional(),
-
-	// Statutory Decision Maker (SDM) fields removed for Caregiver
 });
 
 
 export default function Info() {
-	const [isLoading, setIsLoading] = useState(true);
-	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [status, setStatus] = useState(null); // { variant, text }
+	const [isInitialized, setIsInitialized] = useState(false);
 	const { id } = useParams();
+
+	const {
+		caregiverDetail,
+		updateCaregiver,
+		isLoading,
+		isActionPending,
+	} = useCaregivers(id);
 
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
-		reset, // Key function for data loading and implementing "Cancel"
-		watch // Used for displaying the name in the header
+		reset,
 	} = useForm({
 		resolver: yupResolver(schema),
-		// Initialize form with safe, empty defaults
 		defaultValues: cleanFetchedData(null),
 	});
 
-	// --- 3. Data Loading (Fetch Caregiver Data) ---
-	const fetchUser = useCallback(async () => {
-		setIsLoading(true);
-		setStatus(null);
-		const token = localStorage.getItem("token");
-
-		if (!token) {
-			setStatus({ variant: "error", text: "Authentication failed. Please log in again." });
-			setIsLoading(false);
-			return;
-		}
-
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-			});
-
-			const data = await res.json();
-			console.log("user: ", data.data.user);
-
-			if (res.ok && data.data.user) {
-				const cleanedData = cleanFetchedData(data.data.user);
-				console.log("Cleaned Data for Form:", cleanedData);
-				reset(cleanedData);
-				// No message on load — data populates silently
-			} else {
-				const errorMsg = data.error || data.message || "Failed to fetch caregiver data.";
-				setStatus({ variant: "error", text: `Error fetching caregiver: ${errorMsg}` });
-			}
-		} catch (err) {
-			console.error("Fetch Caregiver Error:", err);
-			setStatus({ variant: "error", text: "Error connecting to server to fetch caregiver data." });
-		} finally {
-			setIsLoading(false);
-		}
-	}, [id, reset]);
-
+	// --- 3. Data Loading ---
 	useEffect(() => {
-		// Fetch data only once the component mounts and the ID is available
-		if (id) {
-			fetchUser();
+		if (caregiverDetail && !isInitialized) {
+			reset(cleanFetchedData(caregiverDetail));
+			setIsInitialized(true);
 		}
-	}, [id, fetchUser]);
+	}, [caregiverDetail, reset, isInitialized]);
 
-
-	// --- 4. Form Submission (Update Caregiver Data) ---
+	// --- 4. Form Submission ---
 	const onSubmit = async (data) => {
-		setIsSubmitting(true);
 		setStatus(null);
-		const token = localStorage.getItem("token");
 
 		const submissionBody = {
-			email: data.email,
+			email: data.email || null,
 			firstName: data.firstName,
 			lastName: data.lastName,
-			phone: data.phone,
-			dateOfBirth: data.birth,
+			phone: data.phone || null,
+			dateOfBirth: data.birth || null,
 			region: data.region,
 			notes: data.notes ? data.notes : null,
 
@@ -183,43 +131,34 @@ export default function Info() {
 
 			emergencyContact: {
 				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
-				phone: data.emergencyPhone,
-				relationship: data.relationship
+				phone: data.emergencyPhone || null,
+				relationship: data.relationship || null
 			},
 		};
 
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+		updateCaregiver(
+			{ id, data: submissionBody },
+			{
+				onSuccess: (res) => {
+					setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
 				},
-				body: JSON.stringify(submissionBody),
-			});
-
-			const resData = await res.json();
-
-			if (res.ok) {
-				reset(data);
-				setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
-			} else {
-				const errorMsg = resData.error || resData.message || `Failed to update caregiver (Status ${res.status}).`;
-				setStatus({ variant: "error", text: `Error saving: ${errorMsg}` });
+				onError: (err) => {
+					const resData = err.response?.data;
+					const statusCode = err.response?.status;
+					if (statusCode === 400 && resData?.details?.length > 0) {
+						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
+					} else {
+						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update caregiver." });
+					}
+				},
 			}
-		} catch (err) {
-			console.error("Submission Error:", err);
-			setStatus({ variant: "error", text: "Network error or invalid response during submission." });
-		} finally {
-			setIsSubmitting(false);
-		}
+		);
 	};
 
 	const handleCancel = () => {
-		reset();
+		reset(cleanFetchedData(caregiverDetail));
 		setStatus(null);
 	};
-
 
 	if (isLoading) {
 		return <div className={styles.loading}>Loading caregiver profile...</div>;
@@ -241,7 +180,6 @@ export default function Info() {
 							<InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
 							<InputField label="Address" name="street" register={register} error={errors.street} />
 						</div>
-						{/* Address fields matching Client page structure */}
 						<div className={styles.card_row_2}>
 							<InputField label="City" name="city" register={register} error={errors.city} />
 							<InputField label="State" name="state" register={register} error={errors.state} />
@@ -267,7 +205,6 @@ export default function Info() {
 					</CardContent>
 				</Card>
 
-				{/* Emergency Contact */}
 				<Card>
 					<CardHeader>Emergency Contact</CardHeader>
 					<CardContent>
@@ -281,15 +218,12 @@ export default function Info() {
 						</div>
 					</CardContent>
 				</Card>
-
-				{/* Statutory Decision Maker (SDM) Section Removed */}
-
 			</div>
 
 			<div className={styles.buttons}>
 				<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
-				<Button type="submit" variant="primary" disabled={isSubmitting}>
-					{isSubmitting ? "Saving..." : "Save Changes"}
+				<Button type="submit" variant="primary" disabled={isActionPending}>
+					{isActionPending ? "Saving..." : "Save Changes"}
 				</Button>
 			</div>
 		</form>

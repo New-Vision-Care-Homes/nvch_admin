@@ -65,8 +65,7 @@ export const useCaregivers = (options = {}) => {
 		mutationFn: ({ id, data }) => caregiverService.update(id, data),
 		onSuccess: (data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["caregivers"] });
-			// If we had a detail query, we'd invalidate it too
-			// queryClient.invalidateQueries({ queryKey: ["caregiver", variables.id] });
+			queryClient.invalidateQueries({ queryKey: ["caregiver", variables.id] });
 		},
 	});
 

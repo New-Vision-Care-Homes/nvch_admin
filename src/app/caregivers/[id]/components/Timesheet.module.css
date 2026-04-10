@@ -445,3 +445,74 @@
 		gap: 0.5rem;
 	}
 }
+
+/* ─── Shifts Pagination ─────────────────────────────────────── */
+.pagination {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 0.5rem;
+    padding: 1rem 0;
+}
+
+.pageItem {
+    margin: 0;
+}
+
+.pageLink {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.active .pageLink {
+    background-color: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+}
+
+/* ─── Status Dropdown Pill ──────────────────────────────────── */
+.statusSelect {
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid transparent;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.statusSelect:hover {
+    filter: brightness(0.95);
+}
+
+.statusScheduled {
+    background-color: #E0E7FF;
+    color: #4338CA;
+    border-color: #A5B4FC;
+    border-width: 1.5px;
+}
+
+.statusInProgress {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-color: #FDE68A;
+}
+
+.statusCompleted {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border-color: #A7F3D0;
+}
+
+.statusCancelled {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border-color: #FECACA;
+}

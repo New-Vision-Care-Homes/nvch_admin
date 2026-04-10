@@ -64,5 +64,14 @@ export const adminService = {
 	update: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.ADMINS.BY_ID(id), updateData);
 		return data;
+	},
+
+	/**
+	 * Toggle active/inactive status of an admin.
+	 * @param {string|number} id - The unique identifier of the admin.
+	 */
+	toggleStatus: async (id) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.ADMINS.TOGGLE_STATUS(id));
+		return data;
 	}
 };

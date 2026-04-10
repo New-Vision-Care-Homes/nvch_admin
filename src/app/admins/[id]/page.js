@@ -61,7 +61,7 @@ export default function Page() {
 
 	// --- Editing State & Form Setup ---
 	const [isEditing, setIsEditing] = useState(false);
-	const { updateAdmin, isActionPending } = useAdmins();
+	const { updateAdmin, isActionPending, toggleAdminStatus } = useAdmins();
 
 	const [canManageUsers, setCanManageUsers] = useState(false);
 	const [canManageShifts, setCanManageShifts] = useState(false);
@@ -79,6 +79,8 @@ export default function Page() {
 
 	// Modal state for general success/error messages
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
+	const [inlineMessage, setInlineMessage] = useState("");
 	const [message, setMessage] = useState("");
 	const [error, setError] = useState("");
 
@@ -242,43 +244,34 @@ export default function Page() {
 		refreshImageUrl();
 	}, [user?.profilePicture]);
 
-	const handleActive = async () => {
-		const token = localStorage.getItem("token");
-		if (!user || !token) return;
+	const handleActive = () => {
+		setIsStatusConfirmModalOpen(true);
+	};
 
-		const newActiveStatus = !user.isActive;
-
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ isActive: newActiveStatus }),
-			});
-
-			const data = await res.json();
-
-			if (res.ok) {
-				const statusText = newActiveStatus ? "active" : "inactive";
+	const confirmToggleStatus = () => {
+		if (!user) return;
+		toggleAdminStatus(id, {
+			onSuccess: (data) => {
+				const newActiveStatus = data?.data?.isActive ?? !user.isActive;
 				setUser(prevUser => ({
 					...prevUser,
 					isActive: newActiveStatus,
 				}));
-
-				setMessage(`The admin has been ${statusText}d`);
-				setIsGeneralModalOpen(true);
-			} else {
-				setMessage(data.message || "Failed to update admin status.");
+				setIsStatusConfirmModalOpen(false);
+				setInlineMessage(data?.message || `The admin has been ${newActiveStatus ? "activated" : "deactivated"} successfully.`);
+				setTimeout(() => setInlineMessage(""), 5000); // automatically clear after 5s
+			},
+			onError: (err) => {
+				setMessage(`Failed to update admin status: ${err.message || "Unexpected error"}`);
+				setIsStatusConfirmModalOpen(false);
 				setIsGeneralModalOpen(true);
 			}
-		} catch (error) {
-			console.error("Status Update Error:", error);
-			setMessage("A critical error occurred during status update.");
-			setIsGeneralModalOpen(true);
-		}
-	}
+		});
+	};
+
+	const handleStatusConfirmCancel = () => {
+		setIsStatusConfirmModalOpen(false);
+	};
 
 	const onSubmit = (data) => {
 		const permissions = [];
@@ -375,6 +368,20 @@ export default function Page() {
 	return (
 		<>
 			<PageLayout>
+				{inlineMessage && (
+					<div style={{
+						backgroundColor: '#dcfce7',
+						color: '#166534',
+						padding: '1rem',
+						borderRadius: '6px',
+						marginBottom: '1rem',
+						fontWeight: '500',
+						textAlign: 'center',
+						border: '1px solid #bbf7d0'
+					}}>
+						{inlineMessage}
+					</div>
+				)}
 				<form onSubmit={handleSubmit(onSubmit)}>
 					{/* Header */}
 					<div className={styles.header}>
@@ -599,6 +606,23 @@ export default function Page() {
 					</div>
 				</form>
 			</PageLayout>
+
+			{/* Status Confirmation Modal */}
+			<Modal isOpen={isStatusConfirmModalOpen} onClose={handleStatusConfirmCancel}>
+				<div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+					<h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1f2937' }}>
+						Are you sure you want to {activeStatus ? "deactivate" : "activate"} this admin?
+					</h2>
+					<div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+						<Button variant="secondary" onClick={handleStatusConfirmCancel} disabled={isActionPending}>
+							No, Cancel
+						</Button>
+						<Button variant="primary" onClick={confirmToggleStatus} disabled={isActionPending}>
+							Yes, {activeStatus ? "Deactivate" : "Activate"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
 
 			{/* General Success/Error Modal */}
 			<Modal isOpen={isGeneralModalOpen} onClose={handleGeneralModalCancel}>
