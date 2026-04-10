@@ -47,6 +47,7 @@ export const useProfileUpload = () => {
 			queryClient.invalidateQueries({ queryKey: ["clients"] });
 			queryClient.invalidateQueries({ queryKey: ["caregivers"] });
 			queryClient.invalidateQueries({ queryKey: ["client", variables.userId] });
+			queryClient.invalidateQueries({ queryKey: ["caregiver", variables.userId] });
 			// Invalidate the image cache tag we used in useImageUrl
 			queryClient.invalidateQueries({ queryKey: ["signedImage"] });
 		}

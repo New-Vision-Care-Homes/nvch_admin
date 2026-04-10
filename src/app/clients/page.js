@@ -80,6 +80,10 @@ export default function Clients() {
 		deleteClient(deletedClientId);
 		setShowModal(false);
 		setDeletedClientId(null);
+
+		if (clients.length === 1 && currentPage > 1) {
+			setCurrentPage(prev => prev - 1);
+		}
 	};
 
 	const handlePageClick = (event) => {
@@ -194,7 +198,7 @@ export default function Clients() {
 									pageCount={Math.max(totalPages, 1)}
 									forcePage={currentPage - 1}
 									onPageChange={handlePageClick}
-									pageRangeDisplayed={Math.max(totalPages, 1)}
+									pageRangeDisplayed={5}
 									marginPagesDisplayed={1}
 									previousLabel={"Prev"}
 									nextLabel={"Next"}

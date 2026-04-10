@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { shiftService } from "@/services/api/services/shiftService";
 
 /**
@@ -40,6 +40,7 @@ export const useShifts = (options = {}) => {
 		queryFn: () => shiftService.getAll(params),
 		// Only run if we are NOT looking for a specific single shift detail
 		enabled: !shiftId,
+		placeholderData: keepPreviousData,
 	});
 
 	// 2. Fetch a single shift's details (only runs if shiftId is provided)
@@ -69,34 +70,44 @@ export const useShifts = (options = {}) => {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
 	});
 
-	// --- State Consolidation ---
-
-	const activeError =
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError =
 		shiftsQuery.error ||
-		shiftDetailQuery.error ||
+		shiftDetailQuery.error;
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
 		updateMutation.error;
 
+
 	return {
 		// Data Outputs
-		shifts: shiftsQuery.data ?? [],
+		shifts: shiftsQuery.data?.shifts ?? [],
 		shiftDetail: shiftDetailQuery.data,
 
+		totalPages: shiftsQuery.data?.pagination?.totalPages ?? shiftsQuery.data?.totalPages ?? 0,
+		currentPage: shiftsQuery.data?.pagination?.currentPage ?? shiftsQuery.data?.currentPage ?? 1,
+		totalCount: shiftsQuery.data?.pagination?.totalCount ?? shiftsQuery.data?.totalCount ?? 0,
+
 		// Status Indicators
-		isLoading: shiftsQuery.isLoading || shiftDetailQuery.isLoading,
-		isActionPending:
+		isShiftLoading: shiftsQuery.isLoading || shiftDetailQuery.isLoading,
+		isShiftActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
 			deleteMutation.isPending,
 
-		// Error Handling
-		isError: !!activeError,
-		errorMessage: activeError ? getErrorMessage(activeError) : null,
+		// Fetch error → use with <ErrorState> component
+		fetchShiftError: fetchError ? getErrorMessage(fetchError) : null,
+
+		// Action error → use with toast or inline message
+		actionShiftError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
 		addShift: createMutation.mutateAsync,
 		updateShift: updateMutation.mutateAsync,
 		deleteShift: deleteMutation.mutateAsync,
+		refetch: shiftsQuery.refetch,
 	};
 };

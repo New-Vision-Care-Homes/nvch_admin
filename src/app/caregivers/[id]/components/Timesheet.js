@@ -1,166 +1,374 @@
 import React, { useState, useEffect } from "react";
-import { SquarePen, Calendar, Clock, Users, Plus, Trash2 } from "lucide-react";
+import { SquarePen, Calendar, Clock, Plus, Trash2, ExternalLink } from "lucide-react";
 import styles from "./Timesheet.module.css";
 import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Table";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
+import ActionMessage from "@components/UI/ActionMessage";
 import { Card, CardHeader, CardContent, InputFieldLR, InfoField } from "@components/UI/Card";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useShifts } from "@/hooks/useShifts";
 import { useHours } from "@/hooks/useHours";
+import ReactPaginate from "react-paginate";
 
-// Helper function to map day names and group slots for display.
-// This transforms the flat backend array (e.g., slot 1, slot 2, slot 3...) 
-// into a structured array grouped by day (e.g., Monday: [slot 1, slot 2], Tuesday: [slot 3]),
-// which is required for UI rendering.
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const ITEMS_PER_PAGE = 5;
+
+// Shift status options used in the <select> dropdown in the shifts table.
+const SHIFT_STATUS_OPTIONS = [
+	{ value: "scheduled", label: "Scheduled" },
+	{ value: "in_progress", label: "In Progress" },
+	{ value: "completed", label: "Completed" },
+	{ value: "cancelled", label: "Cancelled" },
+];
+
+// Default availability slots shown before caregiver data is loaded.
+const DEFAULT_AVAILABILITY = [
+	{ day: "monday", startTime: "09:00", endTime: "13:00", isAvailable: true, notes: "" },
+	{ day: "tuesday", startTime: "10:00", endTime: "16:00", isAvailable: true, notes: "" },
+];
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Groups a flat array of availability slots (from the backend) into a
+ * day-keyed structure ordered by DAYS_ORDER. Days with no slots get an
+ * empty array so all seven days always appear in the UI.
+ *
+ * Input  (backend flat array):
+ *   [{ day: "monday", startTime: "09:00", endTime: "13:00", ... }, ...]
+ *
+ * Output (grouped array):
+ *   [{ day: "Monday", slots: [{ ... }] }, { day: "Tuesday", slots: [] }, ...]
+ */
 const groupAvailabilityByDay = (availabilityArray) => {
-	const daysOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-	const grouped = {};
+	// Seed every day with an empty slots array so all days are always rendered.
+	const grouped = Object.fromEntries(DAYS_ORDER.map(day => [day, []]));
 
-	// 1. Initialize all days with empty slots
-	daysOrder.forEach(day => {
-		grouped[day] = [];
-	});
-
-	// 2. Group the backend slots by day
 	availabilityArray.forEach(slot => {
-		// Normalize day name: 'monday' -> 'Monday'
+		// Normalize casing: "monday" → "Monday"
 		const dayName = slot.day.charAt(0).toUpperCase() + slot.day.slice(1).toLowerCase();
 		if (grouped[dayName]) {
 			grouped[dayName].push(slot);
 		}
 	});
 
-	// 3. Convert the grouped object back to an ordered array for rendering
-	return daysOrder.map(day => ({
-		day: day,
-		slots: grouped[day] || []
-	}));
+	return DAYS_ORDER.map(day => ({ day, slots: grouped[day] }));
 };
+
+/**
+ * Formats an ISO date string to a short date like "Apr 5, 2025".
+ * Returns "N/A" when the input is falsy.
+ */
+const formatDateOnly = (isoString) => {
+	if (!isoString) return "N/A";
+	return new Date(isoString).toLocaleDateString("en-US", {
+		month: "short", day: "numeric", year: "numeric",
+	});
+};
+
+/**
+ * Formats an ISO date string to a 12-hour time like "9:00 AM".
+ * Returns "N/A" when the input is falsy.
+ */
+const formatTimeOnly = (isoString) => {
+	if (!isoString) return "N/A";
+	return new Date(isoString).toLocaleTimeString("en-US", {
+		hour: "numeric", minute: "2-digit", hour12: true,
+	});
+};
+
+/**
+ * Converts a snake_case or lowercase status string to Title Case for display.
+ * Example: "in_progress" → "In Progress"
+ */
+const formatStatusLabel = (status = "") =>
+	status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Timesheet() {
 
-	// --- Two separate modal states ---
-	const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
-	const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
+	// ── Route Params & Navigation ───────────────────────────────────────────
+	const { id } = useParams(); // Caregiver ID from the URL.
+	const router = useRouter(); // Used for navigating to other pages (e.g. shift detail page).
 
-	// --- State Initialization matching backend structure ---
-	const defaultAvailability = [
-		{ day: 'monday', startTime: '09:00', endTime: '13:00', isAvailable: true, notes: '' },
-		{ day: 'tuesday', startTime: '10:00', endTime: '16:00', isAvailable: true, notes: '' },
-	];
+	// =========================================================================
+	// CAREGIVER RELATED DATA & FUNCTIONS
+	// =========================================================================
+	// The following hooks and states manage caregiver-specific information,
+	// such as their availability schedule and their work capacity (max hours).
 
-	const [availability, setAvailability] = useState(defaultAvailability);
-	const [originalAvailability, setOriginalAvailability] = useState(defaultAvailability);
+	// 1. Caregiver Details Hook
+	// Fetches the caregiver's profile data and provides the update function.
+	const {
+		caregiverDetail,
+		isError: isCaregiverError,
+		errorMessage: caregiverErrorMessage,
+		updateCaregiver,
+	} = useCaregivers(id);
 
+	// 2. Caregiver Hours Hook
+	// Fetches the caregiver's recorded hours and overtime data.
+	const {
+		hours,       // Contains { maxHours, currentPeriod, previousPeriod }
+		hourHistory,
+		isLoading: isHoursLoading,
+		error: hoursError,
+	} = useHours(id);
+
+	// 3. Caregiver Local States
+	// `availability` holds the live (possibly edited) schedule slots in the UI.
+	// `originalAvailability` is kept to revert edits if the user clicks "Cancel".
+	const [availability, setAvailability] = useState([]);
+	const [originalAvailability, setOriginalAvailability] = useState([]);
+
+	// `maxHours` and `lastPeriodHours` are used in the Work Capacity modal.
+	// Similarly, original* values allow us to revert unsaved changes.
 	const [maxHours, setMaxHours] = useState(80);
 	const [originalMaxHours, setOriginalMaxHours] = useState(80);
 	const [lastPeriodHours, setLastPeriodHours] = useState(72);
 	const [originalLastPeriodHours, setOriginalLastPeriodHours] = useState(72);
 
-	const { id } = useParams();
-	const { caregiverDetail, isError, errorMessage, updateCaregiver } = useCaregivers(id);
-	const { shifts, isError: shiftsError, errorMessage: shiftsErrorMessage } = useShifts({
-		params: { caregiverId: id }
-	});
-	const { hours, hourHistory, isLoading, error } = useHours(id);
 
+	// =========================================================================
+	// SHIFT RELATED DATA & FUNCTIONS
+	// =========================================================================
+	// The following hooks and states are strictly related to the shifts table,
+	// managing the display, status updates, and pagination of shifts.
+
+	const [currentPage, setCurrentPage] = useState(1);
+
+	// 1. Shifts Fetching Hook
+	// Retrieves the shifts specifically assigned to this caregiver, paginated.
+	const {
+		shifts,
+		totalPages,
+		fetchShiftError,
+		actionShiftError,
+		isShiftLoading,
+		isShiftActionPending,
+		updateShift,
+		refetch,
+	} = useShifts({ params: { caregiverId: id, page: currentPage, limit: ITEMS_PER_PAGE } });
+
+
+	// =========================================================================
+	// MODAL & UI STATES
+	// =========================================================================
+	// States to control whether specific popups/modals are currently visible.
+	const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false); // Caregiver related
+	const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);               // Caregiver related
+	const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);             // Shift related
+
+	// Stores { shiftId, newStatus } temporarily while the shift confirmation modal is open.
+	const [pendingStatusUpdate, setPendingStatusUpdate] = useState(null);
+	// Stores success/error messages after actions (like updating a shift).
+	const [actionMsg, setActionMsg] = useState(null);
+
+
+	// =========================================================================
+	// INITIAL DATA SYNC (CAREGIVER)
+	// =========================================================================
+	// Sync caregiver data from the backend into our local state variables once it has loaded.
 	useEffect(() => {
-		if (caregiverDetail) {
-			const backendAvailability = caregiverDetail.availability || [];
-			setAvailability(backendAvailability);
-			setOriginalAvailability(backendAvailability);
+		if (!caregiverDetail) return;
 
-			const mh = caregiverDetail.maxHours || 80;
-			const lph = caregiverDetail.lastPeriodHours || 72;
-			setMaxHours(mh);
-			setOriginalMaxHours(mh);
-			setLastPeriodHours(lph);
-			setOriginalLastPeriodHours(lph);
-		}
+		const backendAvailability = caregiverDetail.availability || [];
+		setAvailability(backendAvailability);
+		setOriginalAvailability(backendAvailability);
+
+		const mh = caregiverDetail.maxHours || 80;
+		const lph = caregiverDetail.lastPeriodHours || 72;
+		setMaxHours(mh); setOriginalMaxHours(mh);
+		setLastPeriodHours(lph); setOriginalLastPeriodHours(lph);
 	}, [caregiverDetail]);
 
-	// --- Availability Modal Handlers ---
+
+	// =========================================================================
+	// CAREGIVER EVENT HANDLERS (Availability & Work Capacity)
+	// =========================================================================
+
+	// --- Availability Handlers ---
+
+	// Reverts any unsaved edits to availability and closes the modal.
 	const handleAvailabilityCancel = () => {
-		setIsAvailabilityModalOpen(false);
 		setAvailability(originalAvailability);
+		setIsAvailabilityModalOpen(false);
 	};
 
+	// Persists the edited availability schedule to the backend via `updateCaregiver`.
 	const handleAvailabilitySave = () => {
 		setIsAvailabilityModalOpen(false);
-		const submissionBody = { employeeId: id, availability };
 		updateCaregiver(
-			{ id, data: submissionBody },
+			{ id, data: { employeeId: id, availability } },
 			{
 				onSuccess: () => {
-					alert("✅ Availability updated successfully!");
 					setOriginalAvailability(availability);
+					alert("✅ Availability updated successfully!");
 				},
 				onError: (err) => {
 					alert(err?.response?.data?.message || err.message || "Failed to update availability.");
-				}
-			}
-		);
-	};
-
-	// --- Hours Modal Handlers ---
-	const handleHoursCancel = () => {
-		setIsHoursModalOpen(false);
-		setMaxHours(originalMaxHours);
-		setLastPeriodHours(originalLastPeriodHours);
-	};
-
-	const handleHoursSave = () => {
-		setIsHoursModalOpen(false);
-		const submissionBody = { employeeId: id, maxHours: Number(maxHours), lastPeriodHours: Number(lastPeriodHours) };
-		updateCaregiver(
-			{ id, data: submissionBody },
-			{
-				onSuccess: () => {
-					alert("✅ Hours updated successfully!");
-					setOriginalMaxHours(maxHours);
-					setOriginalLastPeriodHours(lastPeriodHours);
 				},
-				onError: (err) => {
-					alert(err?.response?.data?.message || err.message || "Failed to update hours.");
-				}
 			}
 		);
 	};
 
-	// --- Availability slot helpers ---
+	/**
+	 * Updates the startTime or endTime of a single availability slot.
+	 * @param {number} slotIndex - Index in the flat `availability` array.
+	 * @param {"start"|"end"} field - Which time field to update (start or end).
+	 * @param {string} value - New time value in "HH:MM" format.
+	 */
 	const handleTimeChange = (slotIndex, field, value) => {
 		const updated = [...availability];
-		const key = field === "start" ? "startTime" : "endTime";
-		updated[slotIndex][key] = value;
+		updated[slotIndex][field === "start" ? "startTime" : "endTime"] = value;
 		setAvailability(updated);
 	};
 
+	// Appends a new default slot for the given day name.
 	const handleAddSlot = (dayName) => {
-		setAvailability([...availability, {
-			day: dayName.toLowerCase(),
-			startTime: "09:00",
-			endTime: "17:00",
-			isAvailable: true,
-			notes: ""
-		}]);
+		setAvailability([
+			...availability,
+			{ day: dayName.toLowerCase(), startTime: "09:00", endTime: "17:00", isAvailable: true, notes: "" },
+		]);
 	};
 
+	// Removes the slot at the given flat array index.
 	const handleRemoveSlot = (slotIndex) => {
 		setAvailability(availability.filter((_, i) => i !== slotIndex));
 	};
 
+
+	// --- Work Capacity (Hours) Handlers ---
+
+	// Reverts any unsaved edits to the working hours and closes the modal.
+	const handleHoursCancel = () => {
+		setMaxHours(originalMaxHours);
+		setLastPeriodHours(originalLastPeriodHours);
+		setIsHoursModalOpen(false);
+	};
+
+	// Persists the edited hours to the backend.
+	const handleHoursSave = () => {
+		setIsHoursModalOpen(false);
+		updateCaregiver(
+			{ id, data: { employeeId: id, maxHours: Number(maxHours), lastPeriodHours: Number(lastPeriodHours) } },
+			{
+				onSuccess: () => {
+					setOriginalMaxHours(maxHours);
+					setOriginalLastPeriodHours(lastPeriodHours);
+					alert("✅ Hours updated successfully!");
+				},
+				onError: (err) => {
+					alert(err?.response?.data?.message || err.message || "Failed to update hours.");
+				},
+			}
+		);
+	};
+
+
+	// =========================================================================
+	// SHIFT EVENT HANDLERS (Status updates & Pagination)
+	// =========================================================================
+
+	// Opens the confirmation modal before actually mutating a shift's status in the db.
+	const handleStatusChangeRequest = (shiftId, newStatus) => {
+		setPendingStatusUpdate({ shiftId, newStatus });
+		setIsStatusModalOpen(true);
+	};
+
+	// Discards the pending status change and closes the shift status confirmation modal.
+	const handleStatusCancel = () => {
+		setPendingStatusUpdate(null);
+		setIsStatusModalOpen(false);
+	};
+
+	// Commits the currently pending shift status change to the backend API.
+	const handleStatusConfirm = () => {
+		if (!pendingStatusUpdate) return;
+		const { shiftId, newStatus } = pendingStatusUpdate;
+
+		setActionMsg(null); // Clear any previous success/error messages
+		updateShift({ id: shiftId, data: { status: newStatus } })
+			.then(() => {
+				setPendingStatusUpdate(null);
+				setIsStatusModalOpen(false);
+				setActionMsg({ variant: "success", text: "Successfully updated shift status." });
+				refetch(); // Re-fetch shifts so the shifts table reflects the new database state.
+			})
+			.catch((err) => {
+				const errorTxt = err?.response?.data?.message || err.message || "Failed to update shift status.";
+				setActionMsg({ variant: "error", text: errorTxt });
+				setPendingStatusUpdate(null);
+				setIsStatusModalOpen(false);
+			});
+	};
+
+	// Handles pagination for the Shifts Table.
+	// Note: ReactPaginate uses a 0-based page index; our API uses a 1-based index limit.
+	const handlePageClick = (event) => {
+		setCurrentPage(event.selected + 1);
+	};
+
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// DERIVED STATE
+	// ─────────────────────────────────────────────────────────────────────────
+
+	// Re-group whenever the flat availability array changes so the UI always
+	// reflects the latest edits.
 	const groupedAvailability = groupAvailabilityByDay(availability);
+
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// EARLY RETURNS — loading & error states from hooks
+	// ─────────────────────────────────────────────────────────────────────────
+	// NOTE: We rely on the loading/error values exposed by each hook rather
+	// than defining separate local state variables. This avoids duplication
+	// and keeps the source of truth in one place.
+
+	if (isShiftLoading || isHoursLoading) {
+		return <div className={styles.container}><p>Loading…</p></div>;
+	}
+
+	if (fetchShiftError || hoursError || isCaregiverError) {
+		const message = caregiverErrorMessage
+			|| fetchShiftError?.message
+			|| hoursError?.message
+			|| "An error occurred.";
+		return <div className={styles.container}><p className={styles.errorText}>{message}</p></div>;
+	}
+
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// RENDER
+	// ─────────────────────────────────────────────────────────────────────────
 
 	return (
 		<div className={styles.container}>
+
 			<div className={styles.topHeader}>
 				<h2 className={styles.pageTitle}>Timesheet Overview</h2>
 			</div>
 
+			{/* ── Top section: Availability card + Work Capacity card + Stats ── */}
 			<div className={styles.topSection}>
-				{/* Availability Card */}
+
+				{/* Availability card — shows grouped weekly availability slots */}
 				<Card className={styles.availabilityCard}>
 					<CardHeader className={styles.cardHeader}>
 						<div className={styles.headerTitle}>
@@ -185,7 +393,7 @@ export default function Timesheet() {
 										{item.slots.length > 0 ? (
 											item.slots.map((slot, idx) => (
 												<span key={idx} className={styles.slotBadge}>
-													{slot.startTime} - {slot.endTime}
+													{slot.startTime} – {slot.endTime}
 												</span>
 											))
 										) : (
@@ -198,7 +406,7 @@ export default function Timesheet() {
 					</CardContent>
 				</Card>
 
-				{/* Work Capacity & Quick Stats */}
+				{/* Right column: Work Capacity card + quick-stat cards */}
 				<div className={styles.rightColumn}>
 					<Card className={styles.capacityCard}>
 						<CardHeader className={styles.cardHeader}>
@@ -216,32 +424,34 @@ export default function Timesheet() {
 							</Button>
 						</CardHeader>
 						<CardContent className={styles.capacityContent}>
-							<InfoField label="Bi-weekly Max Hours" value={`${hours?.maxHours ?? 'N/A'} hours`} />
-							<InfoField label="Last Period Total" value={`${hours?.previousPeriod?.totalHours ?? 'N/A'} hours`} />
+							<InfoField label="Bi-weekly Max Hours" value={`${hours?.maxHours ?? "N/A"} hours`} />
+							<InfoField label="Last Period Total" value={`${hours?.previousPeriod?.totalHours ?? "N/A"} hours`} />
 						</CardContent>
 					</Card>
 
+					{/* Quick-stat cards sourced from the useHours hook */}
 					<div className={styles.statsGrid}>
 						<Card className={styles.statCard}>
 							<div className={styles.statLabel}>Current Hours</div>
-							<div className={styles.statValue}>{hours?.currentPeriod?.totalHours ?? 'N/A'}</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.totalHours ?? "N/A"}</div>
 							<div className={styles.statUnit}>Hours</div>
 						</Card>
 						<Card className={`${styles.statCard} ${styles.overtime}`}>
 							<div className={styles.statLabel}>Overtime</div>
-							<div className={styles.statValue}>{hours?.currentPeriod?.totalOvertime ?? 'N/A'}</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.totalOvertime ?? "N/A"}</div>
 							<div className={styles.statUnit}>Hours</div>
 						</Card>
 						<Card className={`${styles.statCard} ${styles.pending}`}>
 							<div className={styles.statLabel}>Pending</div>
-							<div className={styles.statValue}>{hours?.currentPeriod?.pendingApprovals ?? 'N/A'}</div>
+							<div className={styles.statValue}>{hours?.currentPeriod?.pendingApprovals ?? "N/A"}</div>
 							<div className={styles.statUnit}>Approvals</div>
 						</Card>
 					</div>
 				</div>
 			</div>
 
-			{/* ── Modal 1: Edit Availability ─────────────────────── */}
+
+			{/* ── Modal 1: Edit Availability ─────────────────────────────────── */}
 			<Modal isOpen={isAvailabilityModalOpen} onClose={handleAvailabilityCancel}>
 				<Card className={styles.modalCard}>
 					<CardHeader>
@@ -264,12 +474,16 @@ export default function Timesheet() {
 
 										{dayItem.slots.length > 0 ? (
 											dayItem.slots.map((slot, slotInnerIndex) => {
+												// Find the flat index so handleTimeChange and handleRemoveSlot
+												// can update the correct entry in the `availability` array.
 												const flatIndex = availability.findIndex(
-													s => s.day.toLowerCase() === dayItem.day.toLowerCase() &&
+													(s) =>
+														s.day.toLowerCase() === dayItem.day.toLowerCase() &&
 														s.startTime === slot.startTime &&
 														s.endTime === slot.endTime
 												);
 												if (flatIndex === -1) return null;
+
 												return (
 													<div key={slotInnerIndex} className={styles.slotRow}>
 														<div className={styles.timeInputs}>
@@ -287,7 +501,12 @@ export default function Timesheet() {
 																className={styles.timeInput}
 															/>
 														</div>
-														<Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(flatIndex)} className={styles.removeBtn}>
+														<Button
+															variant="ghost"
+															size="icon"
+															className={styles.removeBtn}
+															onClick={() => handleRemoveSlot(flatIndex)}
+														>
 															<Trash2 size={14} />
 														</Button>
 													</div>
@@ -299,6 +518,7 @@ export default function Timesheet() {
 									</div>
 								))}
 							</div>
+
 							<div className={styles.modalActions}>
 								<Button variant="secondary" onClick={handleAvailabilityCancel}>Cancel</Button>
 								<Button onClick={handleAvailabilitySave}>Save Changes</Button>
@@ -308,7 +528,8 @@ export default function Timesheet() {
 				</Card>
 			</Modal>
 
-			{/* ── Modal 2: Edit Hours ─────────────────────────────── */}
+
+			{/* ── Modal 2: Edit Work Hours ───────────────────────────────────── */}
 			<Modal isOpen={isHoursModalOpen} onClose={handleHoursCancel}>
 				<Card className={styles.modalCard}>
 					<CardHeader>
@@ -336,6 +557,7 @@ export default function Timesheet() {
 									onChange={(e) => setLastPeriodHours(e.target.value)}
 								/>
 							</div>
+
 							<div className={styles.modalActions}>
 								<Button variant="secondary" onClick={handleHoursCancel}>Cancel</Button>
 								<Button onClick={handleHoursSave}>Save Changes</Button>
@@ -345,43 +567,132 @@ export default function Timesheet() {
 				</Card>
 			</Modal>
 
-			{/* Shifts Table Section */}
+
+			{/* ── Shifts table ───────────────────────────────────────────────── */}
+			{actionMsg && (
+				<div style={{ marginBottom: "1rem" }}>
+					<ActionMessage variant={actionMsg.variant} message={actionMsg.text} onClose={() => setActionMsg(null)} />
+				</div>
+			)}
 			<Table>
 				<TableHeader>
 					<TableCell>Status</TableCell>
 					<TableCell>Date</TableCell>
 					<TableCell>Shift Times</TableCell>
 					<TableCell>Client</TableCell>
-					<TableCell>Hour Worked</TableCell>
+					<TableCell>Hours Worked</TableCell>
 					<TableCell>Overtime</TableCell>
 					<TableCell>Approval Status</TableCell>
 					<TableCell>Supervisor Comments</TableCell>
+					<TableCell>Action</TableCell>
 				</TableHeader>
 
 				{shifts && shifts.length > 0 ? (
-					shifts.map(c => (
-						<TableContent key={c._id}>
-							<TableCell>{c.status}</TableCell>
-							<TableCell>{c.startTime.split("T")[0]}</TableCell>
-							<TableCell>{c.startTime.split("T")[1] + " - " + c.endTime.split("T")[1]}</TableCell>
-							<TableCell>{c.client.firstName + " " + c.client.lastName}</TableCell>
-							<TableCell>n/a</TableCell>
-							<TableCell>n/a</TableCell>
-							<TableCell>n/a</TableCell>
-							<TableCell>n/a</TableCell>
-						</TableContent>
-					))
+					shifts.map((shift) => {
+						const shiftId = shift._id;
+
+						// If a status update is pending for this row, show the optimistic value
+						// so the dropdown reflects the user's selection before the API responds.
+						const displayStatus = pendingStatusUpdate?.shiftId === shiftId
+							? pendingStatusUpdate.newStatus
+							: shift.status;
+
+						const normalizedStatus = displayStatus
+							? displayStatus.toLowerCase().replace(/\s+/g, "_")
+							: "scheduled";
+
+						return (
+							<TableContent key={shiftId}>
+								<TableCell>
+									<select
+										className={`${styles.statusSelect} ${styles["status_" + normalizedStatus] || ""}`}
+										value={normalizedStatus}
+										onChange={(e) => handleStatusChangeRequest(shiftId, e.target.value)}
+									>
+										{SHIFT_STATUS_OPTIONS.map(({ value, label }) => (
+											<option key={value} value={value}>{label}</option>
+										))}
+									</select>
+								</TableCell>
+								<TableCell>{formatDateOnly(shift.startTime)}</TableCell>
+								<TableCell>{formatTimeOnly(shift.startTime)} – {formatTimeOnly(shift.endTime)}</TableCell>
+								<TableCell>{shift.client?.firstName || ""} {shift.client?.lastName || ""}</TableCell>
+								{/* TODO: hours worked, overtime, approval status, and comments are not yet
+								    returned by the API — replace "n/a" once the endpoint is updated. */}
+								<TableCell>n/a</TableCell>
+								<TableCell>n/a</TableCell>
+								<TableCell>n/a</TableCell>
+								<TableCell>n/a</TableCell>
+								<TableCell>
+									{/* Navigation button pointing to the shift detail page */}
+									<Button 
+										variant="ghost" 
+										size="sm" 
+										style={{ padding: "0.25rem 0.5rem" }}
+										onClick={() => router.push(`/scheduling/${shiftId}`)}
+										title="View Shift Details"
+									>
+										<ExternalLink size={16} color="var(--color-secondary)" />
+									</Button>
+								</TableCell>
+							</TableContent>
+						);
+					})
 				) : (
 					<TableContent>
-						<TableCell colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
-							No shifts found for this user.
+						<TableCell colSpan={9} style={{ textAlign: "center", padding: "20px", color: "#6b7280" }}>
+							No shifts found for this caregiver.
 						</TableCell>
 					</TableContent>
 				)}
 			</Table>
+
+			{/* Pagination — only rendered when there is more than one page */}
+			{totalPages > 1 && (
+				<ReactPaginate
+					pageCount={Math.max(totalPages, 1)}
+					forcePage={currentPage - 1}
+					onPageChange={handlePageClick}
+					pageRangeDisplayed={3}
+					marginPagesDisplayed={1}
+					previousLabel="Prev"
+					nextLabel="Next"
+					containerClassName={styles.pagination}
+					pageClassName={styles.pageItem}
+					pageLinkClassName={styles.pageLink}
+					previousClassName={styles.pageItem}
+					previousLinkClassName={styles.pageLink}
+					nextClassName={styles.pageItem}
+					nextLinkClassName={styles.pageLink}
+					activeClassName={styles.active}
+				/>
+			)}
+
+
+			{/* ── Modal 3: Confirm shift status change ───────────────────────── */}
+			<Modal isOpen={isStatusModalOpen} onClose={handleStatusCancel}>
+				<Card className={styles.modalCard}>
+					<CardHeader>Confirm Status Update</CardHeader>
+					<CardContent>
+						<p style={{ margin: 0, fontSize: "0.95rem", color: "#374151", marginBottom: "1.5rem" }}>
+							Are you sure you want to change the status of this shift to{" "}
+							<strong>{formatStatusLabel(pendingStatusUpdate?.newStatus)}</strong>?
+						</p>
+						<div className={styles.modalActions}>
+							<Button variant="secondary" onClick={handleStatusCancel} disabled={isShiftActionPending}>
+								Cancel
+							</Button>
+							<Button variant="primary" onClick={handleStatusConfirm} disabled={isShiftActionPending}>
+								{isShiftActionPending ? "Updating…" : "Confirm Update"}
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			</Modal>
+
 		</div>
 	);
-};
+}
 
 
 

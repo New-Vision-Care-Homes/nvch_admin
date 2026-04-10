@@ -31,7 +31,7 @@ const stats = [
 		icon: Calendar,
 		iconColor: "#1C4A6E",
 		bgColor: "#eff6ff",
-		value: 48,
+		value: "N/A",
 	},
 	{
 		id: "pending-approvals",
@@ -39,7 +39,7 @@ const stats = [
 		icon: Clock,
 		iconColor: "#b45309",
 		bgColor: "#fffbeb",
-		value: 12,
+		value: "N/A",
 	},
 	{
 		id: "urgent-alerts",
@@ -47,7 +47,7 @@ const stats = [
 		icon: TriangleAlert,
 		iconColor: "#dc2626",
 		bgColor: "#fef2f2",
-		value: 3,
+		value: "N/A",
 	},
 ];
 

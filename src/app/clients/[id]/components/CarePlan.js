@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -10,12 +10,9 @@ import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
 import { longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
+import { useClients } from "@/hooks/useClients";
 
-// --- 1. CONFIGURATION ---
-const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
-
-// --- 2. Yup Validation Schema (Flat for Form Fields) ---
-// Keep the schema flat to match your InputField names
+// --- 1. Yup Validation Schema (Flat for Form Fields) ---
 const carePlanSchema = yup.object({
 	chronic_conditions: longTextRule,
 	allergies: longTextRule,
@@ -32,43 +29,37 @@ const carePlanSchema = yup.object({
 	other_instructions: longTextRule,
 });
 
-// --- 3. Data Cleaning/Flattening Function (MODIFIED) ---
-/**
- * Transforms nested API data (under apiData.carePlan) into a flat structure
- * that matches the local form field names.
- * @param {object} apiData - Raw user/client data from the API.
- * @returns {object} Flattened object with safe default values ("").
- */
+// --- 2. Data Cleaning/Flattening Function ---
 const cleanFetchedData = (apiData) => {
-	// Check if the carePlan object exists and is valid
-	if (!apiData || !apiData.carePlan) return {};
+	if (!apiData || !apiData.carePlan) {
+		return {
+			chronic_conditions: "", allergies: "", past_surgeries: "",
+			prescription_medications: "", OTC_medications: "", dosage_schedule: "",
+			dietary_restrictions: "", mobility_assistance_needs: "", cognitive_status: "",
+			Daily_care_tasks: "", emergency_procedures: "", communication_preferences: "",
+			other_instructions: ""
+		};
+	}
 
 	const carePlan = apiData.carePlan;
-
-	// Safely extract the nested objects
 	const careInstructions = carePlan.careInstructions || {};
 	const currentMedications = carePlan.currentMedications || {};
 	const medicalCondition = carePlan.medicalCondition || {};
 	const specialNotes = carePlan.specialNotes || {};
 
-	// Map the nested API keys to the flat form field names (e.g., chronicConditions -> chronic_conditions)
 	return {
-		// --- Medical Conditions ---
 		chronic_conditions: medicalCondition.chronicConditions || "",
 		allergies: medicalCondition.allergies || "",
 		past_surgeries: medicalCondition.pastSurgeries || "",
 
-		// --- Current Medications ---
 		prescription_medications: currentMedications.prescriptionMedications || "",
 		OTC_medications: currentMedications.otcMedications || "",
 		dosage_schedule: currentMedications.dosageSchedule || "",
 
-		// --- Special Notes ---
 		dietary_restrictions: specialNotes.dietaryRestrictions || "",
 		mobility_assistance_needs: specialNotes.mobilityAssistanceNeeds || "",
 		cognitive_status: specialNotes.cognitiveStatus || "",
 
-		// --- Care Instructions ---
 		Daily_care_tasks: careInstructions.dailyCareTasks || "",
 		emergency_procedures: careInstructions.emergencyProcedures || "",
 		communication_preferences: careInstructions.communicationPreferences || "",
@@ -76,153 +67,90 @@ const cleanFetchedData = (apiData) => {
 	};
 };
 
-// --- 4. Default Values ---
-const defaultCarePlanValues = cleanFetchedData(null);
-
-
 export default function CarePlan() {
-	const [isLoading, setIsLoading] = useState(true);
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [status, setStatus] = useState(null); // { variant: 'success'|'error', text: string }
 	const { id } = useParams();
+	const [isInitialized, setIsInitialized] = useState(false);
+	const [status, setStatus] = useState(null); // { variant: 'success'|'error', text: string }
+
+	const {
+		clientDetail,
+		updateClient,
+		isLoading,
+		isActionPending,
+	} = useClients(id);
 
 	const {
 		register,
 		handleSubmit,
 		formState: { errors },
-		reset, // Used for data loading and the Cancel action
+		reset,
 	} = useForm({
 		resolver: yupResolver(carePlanSchema),
-		defaultValues: defaultCarePlanValues,
+		defaultValues: cleanFetchedData(null),
 	});
 
-
-	// --- 5. Data Loading (Fetch Care Plan Data) ---
-	const fetchCarePlan = useCallback(async () => {
-		setIsLoading(true);
-		setStatus(null);
-		const token = localStorage.getItem("token");
-
-		if (!token) {
-			setStatus({ variant: "error", text: "Authentication failed. Please log in again." });
-			setIsLoading(false);
-			return;
-		}
-
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-			});
-
-			const data = await res.json();
-			console.log("data: ", data);
-
-			if (res.ok && data.data.user) {
-				const cleanedData = cleanFetchedData(data.data.user);
-				console.log("Loaded Care Plan Data:", cleanedData);
-				reset(cleanedData);
-				// No message on load — data just populates silently
-			} else {
-				const errorMsg = data.error || data.message || "Failed to fetch care plan data.";
-				setStatus({ variant: "error", text: `Error fetching care plan: ${errorMsg}` });
-				reset(defaultCarePlanValues);
-			}
-		} catch (err) {
-			console.error("Fetch Care Plan Error:", err);
-			setStatus({ variant: "error", text: "Error connecting to server to fetch user data." });
-		} finally {
-			setIsLoading(false);
-		}
-	}, [id, reset]);
-
+	// --- 3. Data Loading ---
 	useEffect(() => {
-		if (id) {
-			fetchCarePlan();
+		if (clientDetail && !isInitialized) {
+			reset(cleanFetchedData(clientDetail));
+			setIsInitialized(true);
 		}
-	}, [id, fetchCarePlan]);
+	}, [clientDetail, reset, isInitialized]);
 
-
-	// --- 6. Form Submission (MODIFIED: Re-nest Data for API) ---
-	/**
-	 * Re-nests the flat form data back into the complex structure required by the API.
-	 * @param {object} data - Flat data from react-hook-form.
-	 */
-	const onSubmit = async (data) => {
-		setIsSubmitting(true);
+	// --- 4. Form Submission ---
+	const onSubmit = (data) => {
 		setStatus(null);
-		const token = localStorage.getItem("token");
 
-		// --- Re-nest/Structure data for API Submission ---
-		// This MUST match the nested structure shown in your backend response.
 		const submissionBody = {
+			...clientDetail,
 			carePlan: {
 				careInstructions: {
-					communicationPreferences: data.communication_preferences,
-					dailyCareTasks: data.Daily_care_tasks,
-					emergencyProcedures: data.emergency_procedures,
-					otherInstructions: data.other_instructions,
+					communicationPreferences: data.communication_preferences || null,
+					dailyCareTasks: data.Daily_care_tasks || null,
+					emergencyProcedures: data.emergency_procedures || null,
+					otherInstructions: data.other_instructions || null,
 				},
 				currentMedications: {
-					dosageSchedule: data.dosage_schedule,
-					otcMedications: data.OTC_medications,
-					prescriptionMedications: data.prescription_medications,
+					dosageSchedule: data.dosage_schedule || null,
+					otcMedications: data.OTC_medications || null,
+					prescriptionMedications: data.prescription_medications || null,
 				},
 				medicalCondition: {
-					allergies: data.allergies,
-					chronicConditions: data.chronic_conditions,
-					pastSurgeries: data.past_surgeries,
+					allergies: data.allergies || null,
+					chronicConditions: data.chronic_conditions || null,
+					pastSurgeries: data.past_surgeries || null,
 				},
 				specialNotes: {
-					cognitiveStatus: data.cognitive_status,
-					dietaryRestrictions: data.dietary_restrictions,
-					mobilityAssistanceNeeds: data.mobility_assistance_needs,
+					cognitiveStatus: data.cognitive_status || null,
+					dietaryRestrictions: data.dietary_restrictions || null,
+					mobilityAssistanceNeeds: data.mobility_assistance_needs || null,
 				},
 			}
 		};
 
-		console.log("Submission Body:", submissionBody);
-
-		try {
-			// Note: If the API requires ONLY the carePlan object and NOT the wrapping user object,
-			// you might need to use a separate PATCH endpoint dedicated to carePlan updates.
-			// For now, we use PUT on the user endpoint and include the nested carePlan.
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+		updateClient(
+			{ id, data: submissionBody },
+			{
+				onSuccess: (res) => {
+					setStatus({ variant: "success", text: "Care plan updated successfully!" });
 				},
-				body: JSON.stringify(submissionBody),
-			});
-
-			const resData = await res.json();
-
-			if (res.ok) {
-				const updatedData = cleanFetchedData(resData.data.user);
-				reset(updatedData);
-				setStatus({ variant: "success", text: "Care plan updated successfully!" });
-			} else {
-				const errorMsg = resData.error || resData.message || `Failed to update care plan (Status ${res.status}).`;
-				setStatus({ variant: "error", text: `Error saving: ${errorMsg}` });
+				onError: (err) => {
+					const resData = err.response?.data;
+					const statusCode = err.response?.status;
+					if (statusCode === 400 && resData?.details?.length > 0) {
+						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
+					} else {
+						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update care plan." });
+					}
+				},
 			}
-		} catch (err) {
-			console.error("Submission Error:", err);
-			setStatus({ variant: "error", text: "Network error or invalid response during submission." });
-		} finally {
-			setIsSubmitting(false);
-		}
+		);
 	};
 
-	// --- 7. Cancel Action ---
 	const handleCancel = () => {
-		reset();
+		reset(cleanFetchedData(clientDetail));
 		setStatus(null);
 	};
-
 
 	if (isLoading) {
 		return <div className={styles.loading}>Loading Care Plan...</div>;
@@ -371,8 +299,8 @@ export default function CarePlan() {
 				<Button variant="secondary" type="button" onClick={handleCancel}>
 					Cancel
 				</Button>
-				<Button variant="primary" type="submit" disabled={isSubmitting}>
-					{isSubmitting ? "Saving..." : "Save Changes"}
+				<Button variant="primary" type="submit" disabled={isActionPending}>
+					{isActionPending ? "Saving..." : "Save Changes"}
 				</Button>
 			</div>
 		</form>

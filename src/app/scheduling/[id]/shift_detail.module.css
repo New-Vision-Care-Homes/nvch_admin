@@ -236,3 +236,48 @@
     .mainColumn, .sideColumn { flex: 1 1 100%; }
     .mapGrid { flex-direction: column; }
 }
+
+/* Forms for Edit Mode */
+.inputField, .textareaField, .selectField {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #111827;
+    background: #fff;
+    margin-top: 4px;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+}
+.inputField:focus, .textareaField:focus, .selectField:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.textareaField {
+    resize: vertical;
+    min-height: 80px;
+}
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.checkboxInput {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+}
+.multiInputRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}

@@ -33,6 +33,10 @@ const schema = yup.object({
 	phone: phoneRule.required("Phone is required"),
 	birth: birthRule.required("Birth date is required"),
 	password: passwordRule.required("Password is required"),
+	confirmPassword: yup
+		.string()
+		.required("Please confirm the password")
+		.oneOf([yup.ref("password")], "Passwords do not match"),
 	region: yup
 		.string()
 		.oneOf(
@@ -44,7 +48,7 @@ const schema = yup.object({
 	maritalStatus: yup
 		.string()
 		.oneOf(
-			["Single", "Married", "Divorced", "Widowed", "Separated"],
+			["single", "married", "divorced", "widowed", "separated"],
 			"Please select a valid marital status"
 		)
 		.nullable(),
@@ -73,7 +77,7 @@ const schema = yup.object({
 		.string()
 		.max(50, "Health card number must be at most 50 characters")
 		.nullable()
-		.optional(),
+		.required("Health card number is required"),
 
 	healthCardExpiryDate: dateRule.nullable().optional(),
 

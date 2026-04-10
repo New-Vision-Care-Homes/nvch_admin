@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
 		BASE: '/api/auth/admin/admins',
 		BY_ID: (id) => `/api/auth/admin/admins/${id}`,
 		CREATE: '/api/auth/register',
+		TOGGLE_STATUS: (id) => `/api/auth/admin/admins/${id}/toggle-status`,
 	},
 
 	/* All related endpoints for caregivers */
