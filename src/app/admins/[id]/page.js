@@ -80,7 +80,7 @@ export default function Page() {
 	// Modal state for general success/error messages
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
-	const [inlineMessage, setInlineMessage] = useState("");
+	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
 	const [error, setError] = useState("");
 
@@ -258,13 +258,13 @@ export default function Page() {
 					isActive: newActiveStatus,
 				}));
 				setIsStatusConfirmModalOpen(false);
-				setInlineMessage(data?.message || `The admin has been ${newActiveStatus ? "activated" : "deactivated"} successfully.`);
-				setTimeout(() => setInlineMessage(""), 5000); // automatically clear after 5s
+				setInlineMessage({ type: 'success', text: data?.message || `The admin has been ${newActiveStatus ? "activated" : "deactivated"} successfully.` });
+				setTimeout(() => setInlineMessage(null), 5000); // automatically clear after 5s
 			},
 			onError: (err) => {
-				setMessage(`Failed to update admin status: ${err.message || "Unexpected error"}`);
 				setIsStatusConfirmModalOpen(false);
-				setIsGeneralModalOpen(true);
+				setInlineMessage({ type: 'error', text: `Failed to update admin status: ${err.message || "Unexpected error"}` });
+				setTimeout(() => setInlineMessage(null), 5000);
 			}
 		});
 	};
@@ -352,6 +352,7 @@ export default function Page() {
 		setIsImageModalOpen(false);
 		setSelectedFile(null);
 		setError("");
+		setUploading(false);
 		cleanupPreviewUrl();
 	};
 
@@ -370,16 +371,16 @@ export default function Page() {
 			<PageLayout>
 				{inlineMessage && (
 					<div style={{
-						backgroundColor: '#dcfce7',
-						color: '#166534',
+						backgroundColor: inlineMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
+						color: inlineMessage.type === 'error' ? '#991b1b' : '#166534',
 						padding: '1rem',
 						borderRadius: '6px',
 						marginBottom: '1rem',
 						fontWeight: '500',
 						textAlign: 'center',
-						border: '1px solid #bbf7d0'
+						border: `1px solid ${inlineMessage.type === 'error' ? '#fecaca' : '#bbf7d0'}`
 					}}>
-						{inlineMessage}
+						{inlineMessage.text}
 					</div>
 				)}
 				<form onSubmit={handleSubmit(onSubmit)}>
@@ -398,10 +399,9 @@ export default function Page() {
 										Edit
 									</Button>
 									<Button
-										variant="primary"
+										variant={activeStatus ? "dangerLight" : "successLight"}
 										icon={<Activity size={16} />}
 										onClick={handleActive}
-										className={`${activeStatus ? styles.inactive : styles.active}`}
 										type="button"
 									>
 										{activeStatus ? "Inactive" : "Active"}
@@ -452,7 +452,11 @@ export default function Page() {
 												<InfoField label="Phone">{user.phone}</InfoField>
 											</div>
 											<div className={styles.row2}>
-												<InfoField label="Status">{activeStatus ? "Active" : "Inactive"}</InfoField>
+												<InfoField label="Status">
+													<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
+														{activeStatus ? "Active" : "Inactive"}
+													</span>
+												</InfoField>
 											</div>
 										</>
 									) : (
@@ -649,13 +653,13 @@ export default function Page() {
 						</div>
 
 						{/* Custom styled file input label */}
-						<label className={styles.fileInputLabel}>
+						<label className={styles.fileInputLabelCustom}>
 							Select File
 							<input
 								type="file"
 								accept={SUPPORTED_FORMATS.join(',')}
 								onChange={handleFileChange}
-								className={styles.hiddenInput}
+								className={styles.hiddenFileInput}
 								disabled={uploading}
 							/>
 						</label>

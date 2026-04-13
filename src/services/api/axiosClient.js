@@ -10,7 +10,7 @@ import axios from 'axios';
  */
 const axiosClient = axios.create({
 	baseURL: process.env.NEXT_PUBLIC_API_URL || "https://nvch-server.onrender.com", //might replace in the future
-	timeout: 15000, // Timeout after 15 seconds
+	timeout: 60000, // Timeout increased to 60s to account for Render cold starts
 });
 
 // Request Interceptor: Attach JWT token to every request automatically

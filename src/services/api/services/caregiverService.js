@@ -62,5 +62,14 @@ export const caregiverService = {
 	update: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.CAREGIVERS.BY_ID(id), updateData);
 		return data;
+	},
+
+	/**
+	 * Toggle active/inactive status of an caregiver.
+	 * @param {string|number} id - The unique identifier of the caregiver.
+	 */
+	toggleStatus: async (id) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.CAREGIVERS.TOGGLE_STATUS(id));
+		return data;
 	}
 };

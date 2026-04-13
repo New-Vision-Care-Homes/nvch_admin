@@ -116,8 +116,9 @@ export default function Timesheet() {
 	// Fetches the caregiver's profile data and provides the update function.
 	const {
 		caregiverDetail,
-		isError: isCaregiverError,
-		errorMessage: caregiverErrorMessage,
+		isCaregiverLoading,
+		isCaregiverActionPending,
+		caregiverActionError,
 		updateCaregiver,
 	} = useCaregivers(id);
 
@@ -213,15 +214,16 @@ export default function Timesheet() {
 	// Persists the edited availability schedule to the backend via `updateCaregiver`.
 	const handleAvailabilitySave = () => {
 		setIsAvailabilityModalOpen(false);
+		console.log("availability: ", availability);
 		updateCaregiver(
-			{ id, data: { employeeId: id, availability } },
+			{ id, data: { ...caregiverDetail, availability: availability } },
 			{
 				onSuccess: () => {
 					setOriginalAvailability(availability);
 					alert("✅ Availability updated successfully!");
 				},
-				onError: (err) => {
-					alert(err?.response?.data?.message || err.message || "Failed to update availability.");
+				onError: () => {
+					alert(caregiverActionError);
 				},
 			}
 		);
@@ -266,15 +268,15 @@ export default function Timesheet() {
 	const handleHoursSave = () => {
 		setIsHoursModalOpen(false);
 		updateCaregiver(
-			{ id, data: { employeeId: id, maxHours: Number(maxHours), lastPeriodHours: Number(lastPeriodHours) } },
+			{ id, data: { ...caregiverDetail, employeeId: id, maxHours: Number(maxHours), lastPeriodHours: Number(lastPeriodHours) } },
 			{
 				onSuccess: () => {
 					setOriginalMaxHours(maxHours);
 					setOriginalLastPeriodHours(lastPeriodHours);
 					alert("✅ Hours updated successfully!");
 				},
-				onError: (err) => {
-					alert(err?.response?.data?.message || err.message || "Failed to update hours.");
+				onError: () => {
+					alert(caregiverActionError);
 				},
 			}
 		);
@@ -341,13 +343,12 @@ export default function Timesheet() {
 	// than defining separate local state variables. This avoids duplication
 	// and keeps the source of truth in one place.
 
-	if (isShiftLoading || isHoursLoading) {
+	if (isShiftLoading || isHoursLoading || isCaregiverLoading) {
 		return <div className={styles.container}><p>Loading…</p></div>;
 	}
 
-	if (fetchShiftError || hoursError || isCaregiverError) {
-		const message = caregiverErrorMessage
-			|| fetchShiftError?.message
+	if (fetchShiftError || hoursError) {
+		const message = fetchShiftError?.message
 			|| hoursError?.message
 			|| "An error occurred.";
 		return <div className={styles.container}><p className={styles.errorText}>{message}</p></div>;
@@ -625,9 +626,9 @@ export default function Timesheet() {
 								<TableCell>n/a</TableCell>
 								<TableCell>
 									{/* Navigation button pointing to the shift detail page */}
-									<Button 
-										variant="ghost" 
-										size="sm" 
+									<Button
+										variant="ghost"
+										size="sm"
 										style={{ padding: "0.25rem 0.5rem" }}
 										onClick={() => router.push(`/scheduling/${shiftId}`)}
 										title="View Shift Details"

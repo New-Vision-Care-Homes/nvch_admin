@@ -85,4 +85,26 @@
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+
+.successLight {
+	background-color: rgba(22, 163, 74, 0.1);
+	color: #16a34a;
+	border: 1px solid rgba(22, 163, 74, 0.2);
+}
+.successLight:hover:not(:disabled) {
+	background-color: #16a34a;
+	color: #ffffff;
+	border-color: #16a34a;
+}
+
+.dangerLight {
+	background-color: rgba(239, 68, 68, 0.1);
+	color: #ef4444;
+	border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.dangerLight:hover:not(:disabled) {
+	background-color: #ef4444;
+	color: #ffffff;
+	border-color: #ef4444;
+}
   

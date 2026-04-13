@@ -69,6 +69,16 @@ export const useCaregivers = (options = {}) => {
 		},
 	});
 
+	// 6. TOGGLE STATUS: Toggle an caregiver's active status
+	const toggleStatusMutation = useMutation({
+		mutationFn: (id) => caregiverService.toggleStatus(id),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["caregivers"] });
+			// Option to invalidate specific admin query:
+			queryClient.invalidateQueries({ queryKey: ["caregiver", variables] });
+		},
+	});
+
 	// --- Error Separation ---
 
 	// Fetch errors: from initial data loading (shown via ErrorState component)
@@ -80,7 +90,8 @@ export const useCaregivers = (options = {}) => {
 	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error;
+		updateMutation.error ||
+		toggleStatusMutation.error;
 
 	return {
 		// Data
@@ -92,22 +103,24 @@ export const useCaregivers = (options = {}) => {
 		totalCount: caregiversQuery.data?.pagination?.totalCount ?? caregiversQuery.data?.totalCount ?? 0,
 
 		// Status Indicators
-		isLoading: caregiversQuery.isLoading || caregiverDetailQuery.isLoading,
-		isActionPending:
+		isCaregiverLoading: caregiversQuery.isLoading || caregiverDetailQuery.isLoading,
+		isCaregiverActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
-			deleteMutation.isPending,
+			deleteMutation.isPending ||
+			toggleStatusMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
-		fetchError: fetchError ? getErrorMessage(fetchError) : null,
+		caregiverFetchError: fetchError ? getErrorMessage(fetchError) : null,
 
 		// Action error → use with toast or inline message
-		actionError: actionError ? getErrorMessage(actionError) : null,
+		caregiverActionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
 		addCaregiver: createMutation.mutate,
 		updateCaregiver: updateMutation.mutate,
 		deleteCaregiver: deleteMutation.mutate,
+		toggleCaregiverStatus: toggleStatusMutation.mutate,
 		refetch: caregiversQuery.refetch,
 	};
 };

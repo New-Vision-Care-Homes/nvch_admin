@@ -102,6 +102,7 @@ export default function ProfilePage() {
 		setIsImageModalOpen(false);
 		setSelectedFile(null);
 		setUploadError("");
+		setUploading(false);
 		if (previewUrl) URL.revokeObjectURL(previewUrl);
 		setPreviewUrl(null);
 	};
@@ -119,6 +120,8 @@ export default function ProfilePage() {
 				},
 				onError: (err) => {
 					setUploadError(err?.message || "Failed to upload image.");
+				},
+				onSettled: () => {
 					setUploading(false);
 				}
 			}

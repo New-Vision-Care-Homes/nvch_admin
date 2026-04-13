@@ -79,7 +79,7 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
-	const { clients } = useClients({ params: { isActive: true } });
+	const { clients, isLoading } = useClients({ params: { isActive: true } });
 
 	return (
 		<PageLayout>
@@ -106,7 +106,17 @@ export default function Dashboard() {
 										<Icon size={18} color={stat.iconColor} />
 									</span>
 								</div>
-								<span className={styles.statValue}>{displayValue}</span>
+								<span className={styles.statValue}>
+									{isLoading ? (
+										<span className={styles.loadingDots}>
+											<span className={styles.dot}></span>
+											<span className={styles.dot}></span>
+											<span className={styles.dot}></span>
+										</span>
+									) : (
+										displayValue
+									)}
+								</span>
 							</div>
 						);
 					})}

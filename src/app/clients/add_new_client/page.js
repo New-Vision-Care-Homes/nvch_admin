@@ -61,6 +61,7 @@ const schema = yup.object({
 	state: shortTextRule.required("Province is required"),
 	pinCode: pinRule.required("Postal code is required"),
 	country: shortTextRule.required("Country is required"),
+	/*
 	latitude: yup
 		.number()
 		.required("Latitude is required")
@@ -71,6 +72,7 @@ const schema = yup.object({
 		.required("Longitude is required")
 		.nullable()
 		.transform((v, o) => (o === "" ? null : v)),
+	*/
 
 	// Health Card
 	healthCardNumber: yup
@@ -398,7 +400,10 @@ export default function Page() {
 								<InputField label="Email" name="email" register={register} error={errors.email} />
 							</div>
 
-							<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
+							<div className={styles.row2}>
+								<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
+								<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
+							</div>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
 
 							{/* Address */}
