@@ -10,7 +10,7 @@ export const API_ENDPOINTS = {
 		BASE: '/api/auth/admin/admins',
 		BY_ID: (id) => `/api/auth/admin/admins/${id}`,
 		CREATE: '/api/auth/register',
-		TOGGLE_STATUS: (id) => `/api/auth/admin/admins/${id}/toggle-status`,
+		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
 	},
 
 	/* All related endpoints for caregivers */
@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
 		BASE: '/api/auth/admin/caregivers',
 		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
+		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
 	},
 
 	/* All related endpoints for clients */
@@ -25,6 +26,7 @@ export const API_ENDPOINTS = {
 		BASE: '/api/auth/admin/clients',
 		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
+		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
 	},
 
 	/* All related endpoints for shifts */

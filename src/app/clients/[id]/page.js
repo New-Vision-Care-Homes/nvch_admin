@@ -32,7 +32,8 @@ export default function Page() {
 		isLoading,
 		isError,
 		errorMessage,
-		isActionPending
+		isActionPending,
+		toggleClientStatus
 	} = useClients(id);
 
 	console.log("client: ", clientDetail);
@@ -46,6 +47,8 @@ export default function Page() {
 
 	// --- General UI States ---
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
+	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
 
 
@@ -71,34 +74,40 @@ export default function Page() {
 					setMessage("Profile picture updated successfully!");
 					setIsGeneralModalOpen(true);
 					handleCloseImageModal();
+				},
+				onError: (err) => {
+					setUploadError(err?.message || "Failed to upload image.");
+				},
+				onSettled: () => {
+					setUploading(false);
 				}
 			}
-		)
+		);
 	};
 
-	/**
-	 * @function handleActive
-	 * @description Toggles user account status between Active and Inactive.
-	 */
-	const handleActive = async () => {
-		const token = localStorage.getItem("token");
-		if (!user || !token) return;
-		const newActiveStatus = !user.data.user.isActive;
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "PUT",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-				body: JSON.stringify({ isActive: newActiveStatus }),
-			});
-			if (res.ok) {
-				await refetch();
-				setMessage(`User status updated to ${newActiveStatus ? "Active" : "Inactive"}`);
-				setIsGeneralModalOpen(true);
+	const handleActive = () => {
+		setIsStatusConfirmModalOpen(true);
+	};
+
+	const confirmToggleStatus = () => {
+		if (!clientDetail) return;
+		toggleClientStatus(id, {
+			onSuccess: (data) => {
+				const newActiveStatus = data?.data?.isActive ?? !clientDetail.isActive;
+				setIsStatusConfirmModalOpen(false);
+				setInlineMessage({ type: 'success', text: data?.message || `The client has been ${newActiveStatus ? "activated" : "deactivated"} successfully.` });
+				setTimeout(() => setInlineMessage(null), 5000);
+			},
+			onError: (err) => {
+				setIsStatusConfirmModalOpen(false);
+				setInlineMessage({ type: 'error', text: `Failed to update client status: ${err.message || "Unexpected error"}` });
+				setTimeout(() => setInlineMessage(null), 5000);
 			}
-		} catch (error) {
-			setMessage("Status update failed.");
-			setIsGeneralModalOpen(true);
-		}
+		});
+	};
+
+	const handleStatusConfirmCancel = () => {
+		setIsStatusConfirmModalOpen(false);
 	};
 
 	// --- File Input Change Handler ---
@@ -122,6 +131,7 @@ export default function Page() {
 		setIsImageModalOpen(false);
 		setSelectedFile(null);
 		setUploadError("");
+		setUploading(false);
 		if (previewUrl) URL.revokeObjectURL(previewUrl); // Free browser memory
 		setPreviewUrl(null);
 	};
@@ -154,14 +164,28 @@ export default function Page() {
 	return (
 		<>
 			<PageLayout>
+				{inlineMessage && (
+					<div style={{
+						backgroundColor: inlineMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
+						color: inlineMessage.type === 'error' ? '#991b1b' : '#166534',
+						padding: '1rem',
+						borderRadius: '6px',
+						marginBottom: '1rem',
+						fontWeight: '500',
+						textAlign: 'center',
+						border: `1px solid ${inlineMessage.type === 'error' ? '#fecaca' : '#bbf7d0'}`
+					}}>
+						{inlineMessage.text}
+					</div>
+				)}
 				<div className={styles.header}>
 					<h1>Client Profile: {clientDetail.firstName} {clientDetail.lastName}</h1>
 					<div className={styles.headerActions}>
 						<Button
-							variant="primary"
+							variant={clientDetail.isActive ? "dangerLight" : "successLight"}
 							icon={<Activity size={16} />}
 							onClick={handleActive}
-							className={`${clientDetail.isActive ? styles.inactive : styles.active}`}
+							disabled={isActionPending}
 						>
 							{clientDetail.isActive ? "Inactive" : "Active"}
 						</Button>
@@ -177,7 +201,11 @@ export default function Page() {
 						<div className={styles.text}>
 							<div className={styles.column}>
 								<InfoField label="Client ID">{clientDetail.clientId}</InfoField>
-								<InfoField label="Status">{clientDetail.isActive ? "Active" : "Inactive"}</InfoField>
+								<InfoField label="Status">
+									<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
+										{clientDetail.isActive ? "Active" : "Inactive"}
+									</span>
+								</InfoField>
 							</div>
 							<div className={styles.column}>
 								<InfoField label="Care Plan Status">On Track</InfoField>
@@ -210,9 +238,29 @@ export default function Page() {
 				</div>
 			</PageLayout>
 
+			{/* Status Confirmation Modal */}
+			<Modal isOpen={isStatusConfirmModalOpen} onClose={handleStatusConfirmCancel}>
+				<div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+					<h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1f2937' }}>
+						Are you sure you want to {clientDetail.isActive ? "deactivate" : "activate"} this client?
+					</h2>
+					<div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+						<Button variant="secondary" onClick={handleStatusConfirmCancel} disabled={isActionPending}>
+							No, Cancel
+						</Button>
+						<Button variant="primary" onClick={confirmToggleStatus} disabled={isActionPending}>
+							Yes, {clientDetail.isActive ? "Deactivate" : "Activate"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
+
 			{/* General Feedback Modal */}
 			<Modal isOpen={isGeneralModalOpen} onClose={() => setIsGeneralModalOpen(false)}>
 				<h2>{message}</h2>
+				<div className={styles.modalActions} style={{ justifyContent: 'center', marginTop: '15px' }}>
+					<Button variant="primary" onClick={() => setIsGeneralModalOpen(false)}>Close</Button>
+				</div>
 			</Modal>
 
 			{/* Image Upload Popup */}

@@ -29,8 +29,9 @@ export default function Page() {
 		isLoading,
 		isError,
 		errorMessage,
-		isActionPending,
-		updateCaregiver
+		isCaregiverActionPending,
+		updateCaregiver,
+		toggleCaregiverStatus
 	} = useCaregivers(id);
 
 	// --- Image Upload States ---
@@ -42,6 +43,8 @@ export default function Page() {
 
 	// --- General UI States ---
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
+	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
 
 	const { uploadProfilePicture, isUploading } = useProfileUpload();
@@ -70,22 +73,28 @@ export default function Page() {
 	};
 
 	const handleActive = () => {
-		if (!caregiverDetail) return;
-		const newActiveStatus = !caregiverDetail.isActive;
+		setIsStatusConfirmModalOpen(true);
+	};
 
-		updateCaregiver(
-			{ id, data: { employeeId: id, isActive: newActiveStatus } },
-			{
-				onSuccess: () => {
-					setMessage(`Caregiver status updated to ${newActiveStatus ? "Active" : "Inactive"}`);
-					setIsGeneralModalOpen(true);
-				},
-				onError: () => {
-					setMessage("Status update failed.");
-					setIsGeneralModalOpen(true);
-				}
+	const confirmToggleStatus = () => {
+		if (!caregiverDetail) return;
+		toggleCaregiverStatus(id, {
+			onSuccess: (data) => {
+				const newActiveStatus = data?.data?.isActive ?? !caregiverDetail.isActive;
+				setIsStatusConfirmModalOpen(false);
+				setInlineMessage({ type: 'success', text: data?.message || `The caregiver has been ${newActiveStatus ? "activated" : "deactivated"} successfully.` });
+				setTimeout(() => setInlineMessage(null), 5000);
+			},
+			onError: (err) => {
+				setIsStatusConfirmModalOpen(false);
+				setInlineMessage({ type: 'error', text: `Failed to update caregiver status: ${err.message || "Unexpected error"}` });
+				setTimeout(() => setInlineMessage(null), 5000);
 			}
-		);
+		});
+	};
+
+	const handleStatusConfirmCancel = () => {
+		setIsStatusConfirmModalOpen(false);
 	};
 
 	// --- Image Modal UI Handlers ---
@@ -116,6 +125,7 @@ export default function Page() {
 		setIsImageModalOpen(false);
 		setSelectedFile(null);
 		setUploadError("");
+		setUploading(false);
 		if (previewUrl) URL.revokeObjectURL(previewUrl);
 		setPreviewUrl(null);
 	};
@@ -135,16 +145,29 @@ export default function Page() {
 	return (
 		<>
 			<PageLayout>
+				{inlineMessage && (
+					<div style={{
+						backgroundColor: inlineMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
+						color: inlineMessage.type === 'error' ? '#991b1b' : '#166534',
+						padding: '1rem',
+						borderRadius: '6px',
+						marginBottom: '1rem',
+						fontWeight: '500',
+						textAlign: 'center',
+						border: `1px solid ${inlineMessage.type === 'error' ? '#fecaca' : '#bbf7d0'}`
+					}}>
+						{inlineMessage.text}
+					</div>
+				)}
 				{/* Header */}
 				<div className={styles.header}>
 					<h1>Caregiver Profile: {caregiverDetail.firstName} {caregiverDetail.lastName}</h1>
 					<div className={styles.headerActions}>
 						<Button
-							variant="primary"
+							variant={activeStatus ? "dangerLight" : "successLight"}
 							icon={<Activity size={16} />}
 							onClick={handleActive}
-							className={`${activeStatus ? styles.inactive : styles.active}`}
-							disabled={isActionPending}
+							disabled={isCaregiverActionPending}
 						>
 							{activeStatus ? "Inactive" : "Active"}
 						</Button>
@@ -164,7 +187,11 @@ export default function Page() {
 								<InfoField label="Next Appointment">2024-08-05 (10:00 AM) default data</InfoField>
 							</div>
 							<div className={styles.column}>
-								<InfoField label="Status">{activeStatus ? "Active" : "Inactive"}</InfoField>
+								<InfoField label="Status">
+									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
+										{activeStatus ? "Active" : "Inactive"}
+									</span>
+								</InfoField>
 								<InfoField label="Care Plan Status">On Track default data</InfoField>
 							</div>
 							<div className={styles.column}>
@@ -199,9 +226,29 @@ export default function Page() {
 				</div>
 			</PageLayout>
 
+			{/* Status Confirmation Modal */}
+			<Modal isOpen={isStatusConfirmModalOpen} onClose={handleStatusConfirmCancel}>
+				<div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+					<h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1f2937' }}>
+						Are you sure you want to {activeStatus ? "deactivate" : "activate"} this caregiver?
+					</h2>
+					<div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+						<Button variant="secondary" onClick={handleStatusConfirmCancel} disabled={isCaregiverActionPending}>
+							No, Cancel
+						</Button>
+						<Button variant="primary" onClick={confirmToggleStatus} disabled={isCaregiverActionPending}>
+							Yes, {activeStatus ? "Deactivate" : "Activate"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
+
 			{/* General Success/Error Modal */}
 			<Modal isOpen={isGeneralModalOpen} onClose={handleGeneralModalCancel}>
 				<h2>{message}</h2>
+				<div className={styles.modalActions} style={{ justifyContent: 'center' }}>
+					<Button variant="primary" onClick={handleGeneralModalCancel}>Close</Button>
+				</div>
 			</Modal>
 
 			{/* Image Upload Modal */}

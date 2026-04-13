@@ -63,5 +63,14 @@ export const clientService = {
 	update: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.CLIENTS.BY_ID(id), updateData);
 		return data.data.user;
+	},
+
+	/**
+	 * Toggle active/inactive status of an client.
+	 * @param {string|number} id - The unique identifier of the client.
+	 */
+	toggleStatus: async (id) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.CLIENTS.TOGGLE_STATUS(id));
+		return data;
 	}
 };

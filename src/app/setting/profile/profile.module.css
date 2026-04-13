@@ -33,7 +33,7 @@
 	width: 100%;
 }
 
-.infoGrid > * {
+.infoGrid>* {
 	flex: 1 1 calc(33.333% - 1.5rem);
 	min-width: 200px;
 }
@@ -43,7 +43,7 @@
 }
 
 @media (max-width: 768px) {
-	.infoGrid > * {
+	.infoGrid>* {
 		flex: 1 1 100%;
 	}
 }
@@ -214,9 +214,11 @@
 		align-items: center;
 		gap: 2rem;
 	}
+
 	.gridContainer {
 		grid-template-columns: 1fr;
 	}
+
 	.text {
 		justify-content: center;
 	}

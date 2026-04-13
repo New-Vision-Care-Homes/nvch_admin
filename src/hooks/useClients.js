@@ -71,6 +71,16 @@ export const useClients = (options = {}) => {
 		},
 	});
 
+	// 6. TOGGLE STATUS: Toggle an client's active status
+	const toggleStatusMutation = useMutation({
+		mutationFn: (id) => clientService.toggleStatus(id),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["clients"] });
+			// Option to invalidate specific client query:
+			queryClient.invalidateQueries({ queryKey: ["client", variables] });
+		},
+	});
+
 	// --- Error Separation ---
 
 	// Fetch errors: from initial data loading (shown via ErrorState component)
@@ -82,7 +92,8 @@ export const useClients = (options = {}) => {
 	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error;
+		updateMutation.error ||
+		toggleStatusMutation.error;
 
 	return {
 		// Data
@@ -97,7 +108,8 @@ export const useClients = (options = {}) => {
 		isActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
-			deleteMutation.isPending,
+			deleteMutation.isPending ||
+			toggleStatusMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
 		fetchError: fetchError ? getErrorMessage(fetchError) : null,
@@ -109,6 +121,7 @@ export const useClients = (options = {}) => {
 		addClient: createMutation.mutate,
 		updateClient: updateMutation.mutate,
 		deleteClient: deleteMutation.mutate,
+		toggleClientStatus: toggleStatusMutation.mutate,
 		refetch: clientsQuery.refetch,
 	};
 };
