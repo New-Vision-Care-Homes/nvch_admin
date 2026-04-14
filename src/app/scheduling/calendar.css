@@ -1,131 +1,343 @@
+/* ═══════════════════════════════════════════════════════════
+   react-big-calendar overrides — modern, breathing, site-matched
+═══════════════════════════════════════════════════════════ */
 
+/* ── Container ── */
 .my_calendar {
-	flex: 1;
-	height: auto !important;
-	max-height: calc(100vh - 180px);
+	height: 100% !important;
 	display: flex;
 	flex-direction: column;
-	background-color: white;
-	border: 1px solid #e5e7eb;
-	border-radius: 12px;
-	padding: 15px;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+	padding: 20px 24px 16px;
+	font-family: var(--font-family-primary, "Inter", sans-serif);
+	font-size: 0.875rem;
+	color: #1e293b;
 }
 
-/* Toolbar */
+/* ════════════════════
+   TOOLBAR
+════════════════════ */
 .my_calendar .rbc-toolbar {
-	margin-bottom: 20px;
-	padding-bottom: 15px;
-	border-bottom: 1px solid #f3f4f6;
-	flex: 0 0 auto;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 18px;
+	padding-bottom: 14px;
+	border-bottom: 1.5px solid #e8eef4;
 }
 
 .my_calendar .rbc-toolbar-label {
-	font-size: 1.25rem !important;
+	font-size: 1.1rem !important;
 	font-weight: 700 !important;
-	color: #111827;
+	color: #0f172a !important;
+	letter-spacing: -0.01em;
 }
 
-/* Header */
+.my_calendar .rbc-btn-group {
+	display: flex;
+	gap: 4px;
+}
+
+.my_calendar .rbc-btn-group button {
+	font-size: 0.78rem !important;
+	font-weight: 500 !important;
+	padding: 6px 14px !important;
+	border: 1.5px solid #dde3ea !important;
+	background: #f8fafc !important;
+	color: #475569 !important;
+	border-radius: 8px !important;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	line-height: 1.4;
+}
+
+.my_calendar .rbc-btn-group button:hover {
+	background: #eff6ff !important;
+	border-color: #1c4a6e !important;
+	color: #1c4a6e !important;
+}
+
+.my_calendar .rbc-btn-group button.rbc-active {
+	background: #1c4a6e !important;
+	border-color: #1c4a6e !important;
+	color: #ffffff !important;
+	box-shadow: 0 2px 8px rgba(28, 74, 110, 0.28) !important;
+}
+
+/* ════════════════════
+   MONTH VIEW — fix header misalignment
+════════════════════ */
+.my_calendar .rbc-month-view {
+	flex: 1;
+	border: none !important;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden; /* prevent misalignment from inner scroll */
+}
+
+/* The header row and data rows must share the same scrollbar context */
+.my_calendar .rbc-month-header {
+	display: flex;
+	border-bottom: 1.5px solid #e2e8f0;
+	/* Remove any internal scroll that would push the header sideways */
+	overflow: hidden;
+}
+
 .my_calendar .rbc-header {
-	padding: 12px 0 !important;
-	font-weight: 600;
-	color: #6b7280;
-	background-color: #f9fafb;
-	border-bottom: 1px solid #e5e7eb !important;
+	flex: 1 1 0% !important; /* equal widths, min 0 */
+	min-width: 0 !important;
+	padding: 10px 0 !important;
+	font-size: 0.72rem !important;
+	font-weight: 600 !important;
+	color: #94a3b8 !important;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	text-align: center;
+	border: none !important;
+	background: transparent !important;
 }
 
-/* Time grid (Week/Day) */
-.my_calendar .rbc-timeslot-group {
-	border-bottom: 1px solid #f3f4f6 !important;
-	min-height: 70px !important;
+.my_calendar .rbc-month-row {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 88px; /* more breathing room */
+	border-bottom: 1px solid #f1f5f9;
+	overflow: hidden;
 }
 
-.my_calendar .rbc-time-content {
-	border-top: 1px solid #e5e7eb !important;
+.my_calendar .rbc-row-bg {
+	display: flex;
+	flex: 1;
+}
+
+.my_calendar .rbc-day-bg {
 	flex: 1 1 0%;
-	overflow-y: auto !important;
+	min-width: 0;
+	border-left: 1px solid #f1f5f9;
+}
+
+.my_calendar .rbc-day-bg:first-child {
+	border-left: none;
+}
+
+.my_calendar .rbc-today {
+	background-color: #eff6ff !important;
+}
+
+.my_calendar .rbc-date-cell {
+	font-size: 0.75rem !important;
+	font-weight: 600 !important;
+	color: #64748b !important;
+	padding: 6px 8px 4px !important;
+	text-align: right;
+}
+
+.my_calendar .rbc-date-cell.rbc-now a {
+	color: #1c4a6e !important;
+	font-weight: 800 !important;
+}
+
+/* Month events — our custom component handles the look;
+   clear react-big-calendar's default styling */
+.my_calendar .rbc-month-view .rbc-event {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	padding: 0 !important;
+	margin: 1px 4px !important;
+	height: auto !important;
+}
+
+.my_calendar .rbc-month-view .rbc-event-content {
+	overflow: visible !important;
+	padding: 0 !important;
+}
+
+.my_calendar .rbc-show-more {
+	font-size: 0.7rem !important;
+	font-weight: 600 !important;
+	color: #1c4a6e !important;
+	background: #eff6ff;
+	border-radius: 6px;
+	padding: 2px 7px !important;
+	margin: 2px 4px !important;
+	text-decoration: none !important;
+	display: inline-block;
+}
+
+/* ════════════════════
+   WEEK / DAY VIEW
+════════════════════ */
+.my_calendar .rbc-time-view {
+	flex: 1;
+	border: none !important;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Fix the header vs content column misalignment caused by the scrollbar */
+.my_calendar .rbc-time-header {
+	overflow: hidden;
+}
+
+.my_calendar .rbc-time-header-content {
+	border-left: none !important;
+}
+
+.my_calendar .rbc-header {
+	border-bottom: 1.5px solid #e2e8f0 !important;
+}
+
+.my_calendar .rbc-timeslot-group {
+	border-bottom: 1px solid #f1f5f9 !important;
+	min-height: 60px !important;
 }
 
 .my_calendar .rbc-time-gutter .rbc-timeslot-group {
 	border-bottom: none !important;
 }
 
+.my_calendar .rbc-label {
+	font-size: 0.68rem !important;
+	color: #94a3b8 !important;
+	font-weight: 500 !important;
+	padding: 0 8px 0 4px !important;
+}
 
+.my_calendar .rbc-time-content {
+	border-top: 1.5px solid #e2e8f0 !important;
+	flex: 1 1 0%;
+	overflow-y: auto !important;
+}
+
+/* react-big-calendar adds .rbc-overflowing and margin-right: 17px to compensate
+   for Windows scrollbars, but on macOS scrollbars are 0-width overlays — so that
+   17px is the sole cause of the column-header misalignment. Remove it. */
+.my_calendar .rbc-time-header.rbc-overflowing {
+	margin-right: 0 !important;
+	border-right: none !important;
+}
+
+/* Custom scrollbar */
+.my_calendar .rbc-time-content::-webkit-scrollbar { width: 5px; }
+.my_calendar .rbc-time-content::-webkit-scrollbar-track { background: transparent; }
+.my_calendar .rbc-time-content::-webkit-scrollbar-thumb {
+	background: #dde3ea;
+	border-radius: 10px;
+}
+
+.my_calendar .rbc-current-time-indicator {
+	background-color: #1c4a6e !important;
+	height: 2px !important;
+}
+
+/* ── Event blocks — card-lift hover on the whole block ── */
 .my_calendar .rbc-event {
-	margin: 2px !important;
-	padding: 0 !important;
-	background-color: #e0f2fe !important;
-	border: 1px solid rgba(0, 0, 0, 0.12) !important;
-	border-radius: 6px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+	border-radius: 10px !important;
 	overflow: hidden !important;
-	display: flex;
-	flex-direction: column;
-	z-index: 1;
+	padding: 0 !important;
+	transition: transform 0.14s ease, box-shadow 0.14s ease !important;
+	cursor: pointer;
 }
 
 .my_calendar .rbc-event:hover {
-	z-index: 10;
+	transform: translateY(-2px) !important;
+	box-shadow: 0 6px 18px rgba(0,0,0,0.14) !important;
+	z-index: 10 !important;
 }
 
 .my_calendar .rbc-event-content {
-	height: 100%;
+	height: 100% !important;
 	width: 100% !important;
 	overflow: hidden !important;
-	padding: 6px 8px;
-	border-left: 4px solid #A2D2FF;
-	box-sizing: border-box;
+	padding: 0 !important;
 }
 
 .my_calendar .rbc-event-label {
 	display: none !important;
 }
 
-
-
-.my_calendar .rbc-month-view .rbc-event {
-	max-height: 3rem;
-	overflow: hidden;
-	height: auto !important;
-	padding: 0 !important; 
-	display: flex;
-	flex-direction: column;
-	justify-content: flex-start;
-	box-sizing: border-box;
+.my_calendar .rbc-day-slot .rbc-event {
+	margin: 2px 3px !important;
 }
 
-.my_calendar .rbc-month-view .eventContentWrapper {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	font-size: 0.75rem;
-	line-height: 1.1;
-	margin-bottom: 0.3rem;
+/* ════════════════════
+   AGENDA VIEW
+════════════════════ */
+.my_calendar .rbc-agenda-view {
+	flex: 1;
+	overflow-y: auto;
 }
 
-
-.my_calendar .rbc-month-view .countInline {
-	margin-top: auto;
-	width: fit-content;
-	font-size: 0.7rem;
-	align-self: flex-start;
+.my_calendar .rbc-agenda-view table.rbc-agenda-table {
+	width: 100%;
+	border-collapse: collapse;
 }
 
-
-
-.my_calendar .rbc-month-row {
-	min-height: 5rem;
+.my_calendar .rbc-agenda-table thead th {
+	font-size: 0.72rem !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #94a3b8 !important;
+	padding: 10px 16px !important;
+	border-bottom: 1.5px solid #e2e8f0 !important;
+	background: #fafbfc;
 }
 
-
-.my_calendar .rbc-time-content::-webkit-scrollbar {
-	width: 6px;
+.my_calendar .rbc-agenda-table tbody tr {
+	border-bottom: 1px solid #f1f5f9 !important;
+	transition: background 0.12s ease;
+	cursor: pointer;
 }
 
-.my_calendar .rbc-time-content::-webkit-scrollbar-thumb {
-	background-color: #e5e7eb;
-	border-radius: 10px;
+.my_calendar .rbc-agenda-table tbody tr:hover {
+	background: #eff6ff !important;
 }
 
-  
+.my_calendar .rbc-agenda-date-cell,
+.my_calendar .rbc-agenda-time-cell {
+	font-size: 0.78rem !important;
+	color: #64748b !important;
+	padding: 12px 16px !important;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.my_calendar .rbc-agenda-date-cell {
+	font-weight: 600 !important;
+}
+
+.my_calendar .rbc-agenda-event-cell {
+	padding: 6px 10px !important;
+	vertical-align: middle;
+}
+
+/* Agenda event — background-colored card (styles come from eventPropGetter) */
+.my_calendar .rbc-agenda-event-cell .rbc-event {
+	border-radius: 8px !important;
+	padding: 6px 12px !important;
+	width: 100%;
+	display: block;
+	transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.my_calendar .rbc-agenda-event-cell .rbc-event:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Agenda row hover */
+.my_calendar .rbc-agenda-table tbody tr:hover {
+	background: transparent !important; /* let event card handle the highlight */
+}
+
+.my_calendar .rbc-agenda-empty {
+	font-size: 0.9rem;
+	color: #94a3b8;
+	padding: 32px;
+	text-align: center;
+}

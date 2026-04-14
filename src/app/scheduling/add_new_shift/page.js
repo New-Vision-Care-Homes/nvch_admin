@@ -123,7 +123,7 @@ export default function AddNewShiftPage() {
 		setClientInput(`${client.firstName} ${client.lastName}`);
 		setShowClientDropdown(false);
 		// Fill hidden form fields with the selected client's data
-		setValue("clientId", client.id);
+		setValue("clientId", client.clientId);
 		setValue("clientPhone", client.phone || "");
 		setValue("clientAddress", joinAddress(client.address));
 	}

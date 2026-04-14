@@ -179,3 +179,7 @@ h6 {
 	background: #f0f5fa;
 }
 
+/* Fix for datepicker popper showing behind modals */
+.react-datepicker-popper {
+	z-index: 9999 !important;
+}

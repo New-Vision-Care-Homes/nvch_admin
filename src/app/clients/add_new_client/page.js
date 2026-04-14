@@ -162,6 +162,7 @@ export default function Page() {
 	const {
 		register,
 		handleSubmit,
+		control,
 		formState: { errors },
 	} = useForm({
 		resolver: yupResolver(schema),
@@ -364,7 +365,7 @@ export default function Page() {
 								<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Date of Birth" name="birth" register={register} error={errors.birth} />
+								<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
 								<InputField
 									label="Marital Status"
 									name="maritalStatus"
@@ -422,7 +423,7 @@ export default function Page() {
 							<h5 className={styles.subSectionTitle}>Health Card</h5>
 							<div className={styles.row2}>
 								<InputField label="Health Card Number" name="healthCardNumber" register={register} error={errors.healthCardNumber} />
-								<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} error={errors.healthCardExpiryDate} />
+								<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} control={control} error={errors.healthCardExpiryDate} type="date" />
 							</div>
 
 							{/* Care Coordinator */}

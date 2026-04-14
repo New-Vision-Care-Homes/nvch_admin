@@ -69,7 +69,7 @@ export default function Certification() {
 	};
 
 
-	const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, watch, setValue, control, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
 	});
 
@@ -161,8 +161,8 @@ export default function Certification() {
 					<InputField label="Certificate Name" name="name" register={register} error={errors.name} />
 
 					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-						<InputField label="Issue Date" type="date" name="issueDate" register={register} error={errors.issueDate} />
-						<InputField label="Expiry Date" type="date" name="expiryDate" register={register} error={errors.expiryDate} />
+						<InputField label="Issue Date" type="date" name="issueDate" register={register} control={control} error={errors.issueDate} />
+						<InputField label="Expiry Date" type="date" name="expiryDate" register={register} control={control} error={errors.expiryDate} />
 					</div>
 
 					<div className={styles.uploadField}>

@@ -1,8 +1,20 @@
 "use client";
 // components/ui/Card.js
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Calendar } from "lucide-react";
+import { Controller } from "react-hook-form";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import styles from "./Card.module.css";
+
+const parseDateString = (str) => {
+	if (!str) return null;
+	const parts = str.split('T')[0].split('-');
+	if (parts.length === 3) {
+		return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+	}
+	return null;
+};
 
 export function Card({ children, className }) {
 	return <div className={`${styles.card} ${className || ""}`}>{children}</div>;
@@ -27,7 +39,7 @@ export function CardContent({ children, className }) {
 	return <div className={`${styles.content} ${className || ""}`}>{children}</div>;
 }
 
-export function InputField({ label, name, register, type = "text", rows = 1, error, options = [], placeholder, ...rest }) {
+export function InputField({ label, name, register, control, type = "text", rows = 1, error, options = [], placeholder, ...rest }) {
 	const [showPassword, setShowPassword] = useState(false);
 	const isPasswordType = type === "password";
 	const currentType = isPasswordType && showPassword ? "text" : type;
@@ -47,6 +59,36 @@ export function InputField({ label, name, register, type = "text", rows = 1, err
 						</option>
 					))}
 				</select>
+			) : type === "date" && control ? (
+				<div className={styles.dateWrapper}>
+					<Controller
+						control={control}
+						name={name}
+						render={({ field }) => (
+							<DatePicker
+								selected={parseDateString(field.value)}
+								onChange={(date) => {
+									if (date) {
+										const y = date.getFullYear();
+										const m = String(date.getMonth() + 1).padStart(2, '0');
+										const d = String(date.getDate()).padStart(2, '0');
+										field.onChange(`${y}-${m}-${d}`);
+									} else {
+										field.onChange("");
+									}
+								}}
+								dateFormat="yyyy-MM-dd"
+								showYearDropdown
+								scrollableYearDropdown
+								yearDropdownItemNumber={100}
+								portalId="root-portal"
+								className={`${styles.input} ${error ? styles.input_error : ""}`}
+								placeholderText={placeholder || "YYYY-MM-DD"}
+							/>
+						)}
+					/>
+					<Calendar className={styles.dateIcon} size={18} />
+				</div>
 			) : isPasswordType ? (
 				<div className={styles.passwordWrapper}>
 					<input

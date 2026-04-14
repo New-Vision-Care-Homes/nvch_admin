@@ -289,7 +289,7 @@ export default function Page() {
 									<InputField label="Phone" name="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Date of Birth" name="dateOfBirth" register={register} error={errors.dateOfBirth} type="date" />
+									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" />
 									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
 										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 									/>

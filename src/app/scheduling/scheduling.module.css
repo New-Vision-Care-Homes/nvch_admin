@@ -1,4 +1,5 @@
 
+/* ── Page Shell ── */
 .page {
 	display: flex;
 	flex-direction: column;
@@ -16,212 +17,188 @@
 .body {
 	display: flex;
 	flex-direction: column;
-	flex: 3;
-	padding: 20px;
-	background-color: #f9fafb;
+	flex: 1;
+	padding: 28px 32px 20px;
+	background: #f4f7fb;
 	overflow: hidden;
+	gap: 18px;
+	min-height: 0;
 }
 
-.title {
+/* ── Header Row ── */
+.titleRow {
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 20px;
+	align-items: flex-start;
+	flex-shrink: 0;
 }
 
+.heading {
+	font-size: 2rem !important;
+	font-weight: 800 !important;
+	color: var(--color-primary) !important;
+	letter-spacing: -0.025em;
+	margin: 0 !important;
+	line-height: 1.1;
+}
 
-.eventWrapper {
-	position: relative;
-	height: 100%;
+.subtitle {
+	margin: 5px 0 0;
+	font-size: 0.83rem;
+	color: var(--color-secondary);
+	font-style: italic;
+}
+
+/* ── Calendar Card ── */
+.calendarCard {
+	flex: 1;
+	min-height: 0;
+	background: #ffffff;
+	border-radius: 18px;
+	overflow: hidden;
+	box-shadow:
+		0 0 0 1px rgba(28, 74, 110, 0.07),
+		0 4px 24px rgba(28, 74, 110, 0.08),
+		0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* ═══════════════════════════════════════
+   MONTH EVENT CARD
+═══════════════════════════════════════ */
+.monthEvent {
 	display: flex;
 	flex-direction: column;
-	padding: 0.6rem;
-	background-color: #A2D2FF;
-	border-radius: 6px;
-	color: #023047;
+	gap: 1px;
+	padding: 4px 8px 4px 10px;
+	background: linear-gradient(135deg, #1c4a6e 0%, #2563eb 100%);
+	border-radius: 7px;
 	cursor: pointer;
+	transition: filter 0.15s ease, transform 0.15s ease;
+	width: calc(100% - 2px);
 	overflow: hidden;
 }
 
-.eventTitle {
-	display: block;
-	font-size: 1rem;
+.monthEvent:hover {
+	filter: brightness(1.08);
+	transform: translateY(-1px);
+}
+
+.monthEventRow {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	color: #fff;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.monthEventIcon {
+	flex-shrink: 0;
+	opacity: 0.8;
+}
+
+.monthEventName {
+	font-size: 0.73rem;
+	font-weight: 600;
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.monthEventTime {
+	font-size: 0.68rem;
+	opacity: 0.82;
+	flex-shrink: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.monthEventMore {
+	font-size: 0.66rem;
+	color: rgba(255,255,255,0.72);
+	font-weight: 500;
+	padding-left: 15px;
+}
+
+/* ═══════════════════════════════════════
+   WEEK / DAY EVENT CARD
+═══════════════════════════════════════ */
+.weekEvent {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	cursor: pointer;
+	overflow: hidden;
+	/* color vars set by eventPropGetter via inline style */
+}
+
+.weekEventBody {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	padding: 7px 9px;
+	height: 100%;
+	overflow: hidden;
+}
+
+.weekEventName {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.8rem;
 	font-weight: 700;
+	color: var(--ev-text, #1e3a5f);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	line-height: 1.2;
 }
 
-.weekEventContent {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-	font-size: 0.9rem;
-	line-height: 1.1;
-	overflow: hidden;
-	position: relative;
-	padding-bottom: 3rem;
-}
-
-.eventTime {
-	font-size: 0.9rem;
-}
-
-.eventLocation {
-	font-style: italic;
-	opacity: 0.9;
+.weekEventName span {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
-.countInline {
-	position: absolute;
-	bottom: 1rem;
-	left: 0;
-	padding: 0.5rem 1rem;
-	width: 100%;
-	font-size: 0.9rem;
-	font-weight: 500;
-	color: #991b1b;
-	background: rgba(239, 68, 68, 0.12);
-	border: 1px solid rgba(239, 68, 68, 0.25);
-	border-radius: 999px;
-	backdrop-filter: blur(2px);
-	-webkit-backdrop-filter: blur(2px);
-	animation: breathe 2.2s ease-in-out infinite;
+.weekEventBadge {
+	flex-shrink: 0;
+	background: var(--ev-text, #1e3a5f);
+	color: #fff;
+	font-size: 0.62rem;
+	font-weight: 700;
+	padding: 1px 6px;
+	border-radius: 10px;
+	opacity: 0.85;
 }
 
-.my_calendar .rbc-month-view .countInline {
-	position: relative;
-	bottom: auto;
-	left: auto;
-	margin-top: 2px;
-	width: fit-content;
-	padding: 0.2rem 0.4rem;
+.weekEventTime,
+.weekEventAddr {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 	font-size: 0.7rem;
+	color: var(--ev-text, #1e3a5f);
+	opacity: 0.75;
+	line-height: 1.1;
+	overflow: hidden;
 }
 
-/* Hover detail */
-.hoverDetail {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	min-width: 220px;
-	background: white;
-	color: #111827;
-	padding: 8px;
-	border-radius: 8px;
-	margin-top: 6px;
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-	z-index: 999;
-	display: none;
+.weekEventAddr span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.eventWrapper:hover .hoverDetail {
-	display: block;
+/* ═══════════════════════════════════════
+   AGENDA EVENT
+═══════════════════════════════════════ */
+.agendaTitle {
+	font-size: 0.88rem;
+	font-weight: 600;
+	cursor: pointer;
 }
 
-.shiftItem {
-	padding: 6px 0;
-	border-bottom: 1px solid #e5e7eb;
-	font-size: 0.75rem;
+.agendaAddr {
+	font-weight: 400;
+	opacity: 0.75;
+	font-size: 0.83rem;
 }
-
-.shiftItem:last-child {
-	border-bottom: none;
-}
-
-.shiftLocation {
-	font-style: italic;
-	color: #6b7280;
-	font-size: 0.7rem;
-}
-  
-
-/*
-.sidebar {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    padding: 1.25rem;
-    background-color: white;
-    border-left: 1px solid #e5e7eb;
-    overflow-y: auto; /* Allow sidebar to scroll if content is long 
-}
-
-/* --- 2. SIDEBAR SECTIONS & CARDS --- 
-.section {
-    background-color: white;
-    border: 1px solid #dee1e6;
-    border-radius: 0.75rem;
-    padding: 1rem;
-}
-
-.sectionHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.badge {
-    background-color: #ef4444; 
-    color: white;
-    font-size: 0.7rem;
-    border-radius: 6px;
-    padding: 2px 6px;
-    font-weight: 600;
-}
-
-/* Common Card Style 
-.shiftCard, .approvalCard {
-    padding: 0.75rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.2s;
-}
-
-.shiftCard:hover, .approvalCard:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.shiftName, .approvalName {
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.shiftDetails {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.75rem;
-    color: #6b7280;
-}
-
-/* --- 3. ALERTS --- 
-.alertCard {
-    padding: 0.75rem;
-    background-color: #fff1f2;
-    border: 1px solid #fecaca;
-    border-radius: 0.5rem;
-    display: flex;
-    gap: 0.75rem;
-}
-
-.alertIcon {
-    width: 16px;
-    color: #ef4444;
-    flex-shrink: 0;
-}
-
-.alertMessage {
-    font-size: 0.75rem;
-    color: #1f2937;
-    line-height: 1.4;
-}
-*/
-

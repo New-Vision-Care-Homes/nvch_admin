@@ -57,5 +57,11 @@ export const API_ENDPOINTS = {
 		GET_PRE_SIGNED_URL: '/api/upload/signed-url',
 		PROFILE_PICTURE: '/api/upload/profile-picture',
 		CERTIFICATE: '/api/upload/certificate',
-	}
+	},
+
+	/* All related endpoints for permissions */
+	PERMISIIONS: {
+		BASE: '/api/permissions',
+		BY_ID: (id) => `/api/permissions/${id}`,
+	},
 };

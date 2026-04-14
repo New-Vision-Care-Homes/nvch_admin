@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key } from "lucide-react";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
 	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
 	{ id: 3, label: "Caregivers", icon: IdCardLanyard, href: "/caregivers" },
 	{ id: 4, label: "Admins", icon: UserLock, href: "/admins" },
+	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions" },
 	{ id: 5, label: "Homes", icon: Building, href: "/homes" },
 	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling" },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
@@ -27,9 +28,10 @@ const tabs = [
 const keywordToTabMap = {
 	"/client": 2,       // any path containing "/client" -> Clients tab
 	"/caregiver": 3,    // any path containing "/caregiver" -> Caregivers tab
-	"/scheduling": 4,   // any path containing "/scheduling" -> Scheduling tab
+	"/admin": 4,        // any path containing "/admin" -> Admins tab
+	"/permission": 4.5, // any path containing "/permission" -> Permissions tab
 	"/homes": 5,        // any path containing "/homes" -> Homes tab
-	"/admin": 6,        // any path containing "/admin" -> Admins tab
+	"/scheduling": 6,   // any path containing "/scheduling" -> Scheduling tab
 	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
