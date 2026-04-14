@@ -13,35 +13,49 @@ export default function ShiftListPage() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 
+	// Three navigation modes:
+	// 1. ?date=yyyy-MM-dd        — from month view (click on a day)
+	// 2. ?startDate=&endDate=    — from week/day view (click on a grouped time slot)
+	const dateParam = searchParams.get("date");
 	const startParam = searchParams.get("startDate");
 	const endParam = searchParams.get("endDate");
 
-	// Fetch all shifts (same data as the calendar)
+	// Fetch all shifts
 	const { shifts = [], isLoading } = useShifts({});
 
-	// Mirror the calendar's exact grouping key: "yyyy-MM-dd HH:mm"_"HH:mm"
-	// Only show shifts that belong to the exact time slot that was clicked.
-	const filteredShifts = shifts.filter(shift => {
-		if (!startParam || !endParam) return true;
-		const slotStart = new Date(startParam);
-		const slotEnd = new Date(endParam);
+	const filteredShifts = shifts.filter((shift) => {
 		const shiftStart = new Date(shift.startTime);
 		const shiftEnd = new Date(shift.endTime);
-		return (
-			format(shiftStart, "yyyy-MM-dd HH:mm") === format(slotStart, "yyyy-MM-dd HH:mm") &&
-			format(shiftEnd, "HH:mm") === format(slotEnd, "HH:mm")
-		);
+
+		if (dateParam) {
+			// Month-view click: match by local calendar date string
+			return format(shiftStart, "yyyy-MM-dd") === dateParam;
+		}
+		if (startParam && endParam) {
+			// Week/Day-view click: exact time slot match
+			const slotStart = new Date(startParam);
+			const slotEnd = new Date(endParam);
+			return (
+				format(shiftStart, "yyyy-MM-dd HH:mm") === format(slotStart, "yyyy-MM-dd HH:mm") &&
+				format(shiftEnd, "HH:mm") === format(slotEnd, "HH:mm")
+			);
+		}
+		return true;
 	});
 
-	console.log("shifts: ", filteredShifts);
-
-	const displayTitle = startParam && endParam
-		? `Shifts on ${format(new Date(startParam), "MMMM do, yyyy")}`
-		: "Shift Details";
-
-	const displayTimeRange = startParam && endParam
-		? `${format(new Date(startParam), "HH:mm")} - ${format(new Date(endParam), "HH:mm")}`
+	// Display helpers
+	const displayDate = dateParam
+		? format(new Date(dateParam + "T12:00:00"), "MMMM d, yyyy") // noon avoids UTC midnight flip
+		: startParam
+		? format(new Date(startParam), "MMMM d, yyyy")
 		: "";
+
+	const displayTitle = displayDate ? `Shifts on ${displayDate}` : "Shift Details";
+
+	const displayTimeRange =
+		!dateParam && startParam && endParam
+			? `${format(new Date(startParam), "HH:mm")} – ${format(new Date(endParam), "HH:mm")}`
+			: "";
 
 	return (
 		<PageLayout>

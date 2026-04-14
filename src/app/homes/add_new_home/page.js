@@ -50,7 +50,7 @@ export default function AddNewHomePage() {
 	const router = useRouter();
 	const { addHome, isActionPending, isError, errorMessage } = useHomes();
 
-	const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm({
+	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			programTypes: [],
@@ -368,6 +368,7 @@ export default function AddNewHomePage() {
 										name="openedAt"
 										type="date"
 										register={register}
+										control={control}
 										error={errors.openedAt}
 									/>
 									<InputField

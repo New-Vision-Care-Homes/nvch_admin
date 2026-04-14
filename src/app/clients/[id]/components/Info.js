@@ -237,6 +237,7 @@ export default function Info() {
 	const {
 		register,
 		handleSubmit,
+		control,
 		formState: { errors },
 		reset,
 	} = useForm({
@@ -377,7 +378,7 @@ export default function Info() {
 							<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
+							<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
 							<InputField
 								label="Marital Status"
 								name="maritalStatus"
@@ -441,7 +442,7 @@ export default function Info() {
 						<h5 className={styles.subSectionTitle}>Health Card</h5>
 						<div className={styles.card_row_2}>
 							<InputField label="Health Card Number" name="healthCardNumber" register={register} error={errors.healthCardNumber} />
-							<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} error={errors.healthCardExpiryDate} />
+							<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} control={control} type="date" error={errors.healthCardExpiryDate} />
 						</div>
 
 						<h5 className={styles.subSectionTitle}>Care Coordinator / DSP Case Manager</h5>

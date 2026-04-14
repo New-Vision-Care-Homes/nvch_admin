@@ -113,6 +113,27 @@
 	color: var(--color-primary);
 }
 
+.dateWrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.dateWrapper :global(.react-datepicker-wrapper) {
+	width: 100%;
+}
+
+.dateIcon {
+	position: absolute;
+	right: 10px;
+	pointer-events: none;
+	color: var(--color-secondary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 
 .info_field {
 	display: flex;

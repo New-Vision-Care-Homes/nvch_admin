@@ -60,7 +60,7 @@ export default function EditHomePage() {
 		errorMessage
 	} = useHomes(homeId);
 
-	const { register, handleSubmit, watch, formState: { errors }, setValue, reset } = useForm({
+	const { register, handleSubmit, watch, control, formState: { errors }, setValue, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			programTypes: [],
@@ -403,6 +403,7 @@ export default function EditHomePage() {
 										name="openedAt"
 										type="date"
 										register={register}
+										control={control}
 										error={errors.openedAt}
 									/>
 									<InputField

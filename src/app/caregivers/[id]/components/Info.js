@@ -92,6 +92,7 @@ export default function Info() {
 	const {
 		register,
 		handleSubmit,
+		control,
 		formState: { errors },
 		reset,
 	} = useForm({
@@ -177,7 +178,7 @@ export default function Info() {
 							<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Date of Birth" name="birth" register={register} error={errors.birth} type="date" />
+							<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
 							<InputField label="Address" name="street" register={register} error={errors.street} />
 						</div>
 						<div className={styles.card_row_2}>
