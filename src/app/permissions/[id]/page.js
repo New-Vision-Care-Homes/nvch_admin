@@ -10,19 +10,20 @@ import styles from "../permissions_group.module.css";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import { PERMISSION_SCHEMAS, ALL_PERMISSION_SLUGS } from "@/utils/permissions";
 import ErrorState from "@/components/UI/ErrorState";
+import ActionMessage from "@/components/UI/ActionMessage";
 
 export default function PermissionGroupDetailPage() {
 	const router = useRouter();
 	const { id } = useParams();
 	const [isEditing, setIsEditing] = useState(false);
 
-	const { 
-		permissionGroupDetail, 
-		isPermissionGroupsLoading, 
-		fetchError, 
-		updatePermissionGroup, 
-		isPermissionGroupsActionPending, 
-		actionError,
+	const {
+		permissionGroupDetail,
+		isPermissionGroupsLoading,
+		permissionGroupsFetchError,
+		updatePermissionGroup,
+		isPermissionGroupsActionPending,
+		permissionGroupsActionError,
 		refetch
 	} = usePermissionGroups({ permissionGroupId: id });
 
@@ -93,14 +94,14 @@ export default function PermissionGroupDetailPage() {
 	return (
 		<PageLayout>
 			<div className={styles.container}>
-				
+
 				<ErrorState
 					isLoading={isPermissionGroupsLoading}
-					errorMessage={fetchError}
+					errorMessage={permissionGroupsFetchError}
 					onRetry={refetch}
 				/>
 
-				{!isPermissionGroupsLoading && !fetchError && permissionGroupDetail && (
+				{!isPermissionGroupsLoading && !permissionGroupsFetchError && permissionGroupDetail && (
 					<>
 						<div className={styles.header}>
 							<h1 className={styles.title}>
@@ -114,7 +115,12 @@ export default function PermissionGroupDetailPage() {
 							)}
 						</div>
 
-						{actionError && isEditing && <div className={styles.globalError}>{actionError}</div>}
+						{permissionGroupsActionError && isEditing &&
+							<ActionMessage
+								variant="error"
+								message={permissionGroupsActionError}
+							/>
+						}
 
 						<form onSubmit={isEditing ? handleSubmit(onSubmit) : (e) => e.preventDefault()}>
 							<Card className={styles.formGrid}>
@@ -192,30 +198,23 @@ export default function PermissionGroupDetailPage() {
 									</>
 								) : (
 									/* View Mode */
-									<div>
-										{getGrantedSchemas(permissionGroupDetail.permissions || []).map(schema => (
-											<div key={schema.module} className={styles.moduleSection}>
-												<div className={styles.moduleTitle}>{schema.module}</div>
-												<div className={styles.slugGrid} style={{ gap: '10px' }}>
-													{schema.activeSlugs.map(slug => (
-														<span key={slug} style={{
-															display: 'inline-block',
-															background: '#EFF6FF',
-															color: '#1D4ED8',
-															padding: '4px 10px',
-															borderRadius: '6px',
-															fontSize: '0.86rem',
-															fontWeight: '500',
-															marginRight: '8px',
-															marginBottom: '8px'
-														}}>
-															{slug}
-														</span>
-													))}
-												</div>
-											</div>
+									<div className={styles.slugGrid} style={{ gap: '10px' }}>
+										{(permissionGroupDetail.permissions || []).map(slug => (
+											<span key={slug} style={{
+												display: 'inline-block',
+												background: '#EFF6FF',
+												color: '#1D4ED8',
+												padding: '4px 10px',
+												borderRadius: '6px',
+												fontSize: '0.86rem',
+												fontWeight: '500',
+												marginRight: '8px',
+												marginBottom: '8px'
+											}}>
+												{slug}
+											</span>
 										))}
-										{getGrantedSchemas(permissionGroupDetail.permissions || []).length === 0 && (
+										{(permissionGroupDetail.permissions || []).length === 0 && (
 											<p style={{ color: '#6B7280', fontSize: '0.9rem' }}>No permissions assigned.</p>
 										)}
 									</div>

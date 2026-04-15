@@ -467,7 +467,7 @@ export default function Page() {
 											</div>
 											<div className={styles.row2}>
 												<InputField label="Email" name="email" register={register} error={errors.email} />
-												<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+												<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 											</div>
 										</>
 									)}

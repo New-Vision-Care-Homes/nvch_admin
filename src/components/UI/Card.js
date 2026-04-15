@@ -108,6 +108,29 @@ export function InputField({ label, name, register, control, type = "text", rows
 						{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
 					</button>
 				</div>
+			) : type === "phone" ? (
+				<input
+					type="text"
+					{...register(name)}
+					{...rest}
+					className={`${styles.input} ${error ? styles.input_error : ""}`}
+					placeholder={placeholder || "(XXX) XXX-XXXX"}
+					maxLength={14}
+					onInput={(e) => {
+						let val = e.target.value.replace(/\D/g, '');
+						if (val.length > 10) val = val.substring(0, 10);
+						
+						let formatted = val;
+						if (val.length > 6) {
+							formatted = `(${val.slice(0, 3)}) ${val.slice(3, 6)}-${val.slice(6)}`;
+						} else if (val.length > 3) {
+							formatted = `(${val.slice(0, 3)}) ${val.slice(3)}`;
+						} else if (val.length > 0) {
+							formatted = `(${val}`;
+						}
+						e.target.value = formatted;
+					}}
+				/>
 			) : (
 				<input
 					type={type}
@@ -143,6 +166,29 @@ export function InputFieldLR({ label, name, register, type = "text", rows = 1, e
 						</option>
 					))}
 				</select>
+			) : type === "phone" ? (
+				<input 
+					type="text" 
+					{...inputProps} 
+					{...rest} 
+					className={`${styles.input} ${error ? styles.input_error : ""}`} 
+					placeholder={placeholder || "(XXX) XXX-XXXX"} 
+					maxLength={14}
+					onInput={(e) => {
+						let val = e.target.value.replace(/\D/g, '');
+						if (val.length > 10) val = val.substring(0, 10);
+						
+						let formatted = val;
+						if (val.length > 6) {
+							formatted = `(${val.slice(0, 3)}) ${val.slice(3, 6)}-${val.slice(6)}`;
+						} else if (val.length > 3) {
+							formatted = `(${val.slice(0, 3)}) ${val.slice(3)}`;
+						} else if (val.length > 0) {
+							formatted = `(${val}`;
+						}
+						e.target.value = formatted;
+					}}
+				/>
 			) : (
 				<input type={type} {...inputProps} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`} placeholder={placeholder} />
 			)}

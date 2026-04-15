@@ -1,5 +1,18 @@
 import * as yup from "yup";
 
+export const phoneRule = yup
+	.string()
+	.notRequired()
+	.transform((value) => {
+		if (!value) return undefined;
+		return value.replace(/\D/g, "");
+	})
+	.matches(/^\d+$/, {
+		message: "Must be digits only",
+		excludeEmptyString: true,
+	})
+	.length(10, "Must be exactly 10 digits");
+
 export const passwordRule = yup
 	.string()
 	.trim()
@@ -29,7 +42,7 @@ export const nameRule = yup
 	.trim()
 	.transform((value) => value === "" ? undefined : value)
 	.min(1, "Name is required")
-	.max(50, "Name must be between 1 and 50 characters")
+	.max(100, "Name must be between 1 and 100 characters")
 	.matches(
 		/^[a-zA-Z\s'-]+$/,
 		"Name can only contain letters, spaces, hyphens, and apostrophes"
@@ -105,12 +118,6 @@ export const emailRule = yup
 	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email')
 	.optional();
 
-export const phoneRule = yup
-	.string()
-	.trim()
-	.transform((value) => value === "" ? undefined : value)
-	.matches(/^[\+]?[1-9][\d]{0,15}$/, 'Please enter a valid phone number')
-	.optional();
 
 export const addressRule = yup
 	.string()

@@ -140,10 +140,14 @@ export default function ShiftDetailPage() {
 			<div style={{ flex: 1 }}>
 				{label && <label className={styles.label}>{label}</label>}
 				<input
-					type={type}
+					type={type === "phone" ? "text" : type}
 					className={styles.inputField}
 					value={value || ""}
 					onChange={(e) => handleChange(e, path)}
+					maxLength={type === "phone" ? 10 : undefined}
+					onInput={type === "phone" ? (e) => {
+						e.target.value = e.target.value.replace(/\D/g, '');
+					} : undefined}
 				/>
 			</div>
 		);
@@ -396,7 +400,7 @@ export default function ShiftDetailPage() {
 							<div className={styles.contactBox}>
 								<label className={styles.label}><Phone size={12} /> Client Phone</label>
 								{isEditing ? (
-									renderField("", "clientPhone", "text")
+									renderField("", "clientPhone", "phone")
 								) : (
 									<p className={styles.mediumVal}>{shift.clientPhone}</p>
 								)}
@@ -406,7 +410,7 @@ export default function ShiftDetailPage() {
 								{isEditing ? (
 									<>
 										{renderField("Name", "contactPerson.name", "text")}
-										<div style={{ marginTop: 8 }}>{renderField("Phone", "contactPerson.phone", "text")}</div>
+										<div style={{ marginTop: 8 }}>{renderField("Phone", "contactPerson.phone", "phone")}</div>
 									</>
 								) : (
 									<>

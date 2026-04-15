@@ -200,7 +200,7 @@ export default function Info() {
 					<CardHeader>Contact Details</CardHeader>
 					<CardContent>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+							<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 							<InputField label="Email" name="email" register={register} error={errors.email} />
 						</div>
 					</CardContent>
@@ -215,7 +215,7 @@ export default function Info() {
 						</div>
 						<div className={styles.card_row_2}>
 							<InputField label="Relationship" name="relationship" register={register} error={errors.relationship} />
-							<InputField label="Phone" name="emergencyPhone" register={register} error={errors.emergencyPhone} />
+							<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} />
 						</div>
 					</CardContent>
 				</Card>

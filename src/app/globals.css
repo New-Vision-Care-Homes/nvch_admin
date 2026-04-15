@@ -31,8 +31,8 @@
 	--font-size-text-lg: 1rem;
 	--font-size-text-md: 0.8rem;
 
-	--font-family-primary: "Inter";
-	--font-family-secondary: "Roboto";
+	--font-family-primary: var(--font-family-primary), "Inter", sans-serif;
+	--font-family-secondary: var(--font-family-secondary), "Roboto", sans-serif;
 
 	--line-height-title-md: 3rem;
 	--line-height-title-xs: 1.5rem;
@@ -69,6 +69,20 @@
 *::before,
 *::after {
 	box-sizing: border-box;
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	overscroll-behavior: none; /* Prevents mac elastic bounce effect on the whole document */
+}
+
+body {
+	font-family: var(--font-family-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	overflow: hidden; /* Prevent body scrolling, only the specific layout panes should scroll */
 }
 
 h1 {
