@@ -11,6 +11,7 @@ import styles from "./add_new_admin.module.css";
 import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
+import { usePermissionGroups } from "@/hooks/usePermissions";
 
 import { nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
 
@@ -48,11 +49,19 @@ const schema = yup.object({
 export default function Page() {
 	const router = useRouter();
 	const { addAdmin, isActionPending, actionError } = useAdmins();
+	const { permissionGroups } = usePermissionGroups();
 
-	// Checkboxes controlled manually
-	const [canManageUsers, setCanManageUsers] = useState(false);
-	const [canManageShifts, setCanManageShifts] = useState(false);
-	const [canViewReports, setCanViewReports] = useState(false);
+	// selectedGroupIds: Set of permission group _ids the admin will be assigned
+	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
+
+	const toggleGroup = (groupId) => {
+		setSelectedGroupIds(prev => {
+			const next = new Set(prev);
+			if (next.has(groupId)) next.delete(groupId);
+			else next.add(groupId);
+			return next;
+		});
+	};
 
 	const {
 		register,
@@ -63,10 +72,9 @@ export default function Page() {
 	});
 
 	const onSubmit = (data) => {
-		const permissions = [];
-		if (canManageUsers) permissions.push("manage_users");
-		if (canManageShifts) permissions.push("manage_shifts");
-		if (canViewReports) permissions.push("view_reports");
+		const selectedIds = [...selectedGroupIds];
+		// Send single ID if only one group selected, array if multiple
+		const permissionsGroup = selectedIds.length === 1 ? selectedIds[0] : selectedIds;
 
 		const body = {
 			email: data.email,
@@ -77,11 +85,8 @@ export default function Page() {
 			role: "admin",
 			phone: data.phone,
 			adminLevel: data.adminLevel,
-			permissions,
 			department: data.department,
-			canManageUsers,
-			canManageShifts,
-			canViewReports,
+			...(selectedIds.length > 0 && { permissionsGroup }),
 		};
 
 		addAdmin(body, {
@@ -123,7 +128,7 @@ export default function Page() {
 								</div>
 								<div className={styles.row2}>
 									<InputField label="Email" name="email" register={register} error={errors.email} />
-									<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
 									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
@@ -165,36 +170,59 @@ export default function Page() {
 
 						{/* Permissions */}
 						<Card>
-							<CardHeader>Permissions</CardHeader>
+							<CardHeader>Permission Groups</CardHeader>
 							<CardContent>
-								<div className="checkboxGroup">
-									<label className="checkboxLabel">
-										<input
-											type="checkbox"
-											checked={canManageUsers}
-											onChange={() => setCanManageUsers(prev => !prev)}
-										/>
-										Manage Users
-									</label>
+								{permissionGroups.length === 0 ? (
+									<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+										No permission groups found.
+									</p>
+								) : (
+									<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+										{permissionGroups.map(group => {
+											const isChecked = selectedGroupIds.has(group._id);
+											const groupSlugs = group.permissions || [];
 
-									<label className="checkboxLabel">
-										<input
-											type="checkbox"
-											checked={canManageShifts}
-											onChange={() => setCanManageShifts(prev => !prev)}
-										/>
-										Manage Shifts
-									</label>
-
-									<label className="checkboxLabel">
-										<input
-											type="checkbox"
-											checked={canViewReports}
-											onChange={() => setCanViewReports(prev => !prev)}
-										/>
-										View Reports
-									</label>
-								</div>
+											return (
+												<div key={group._id} style={{
+													border: `1px solid ${isChecked ? '#3b82f6' : 'var(--border-primary)'}`,
+													borderRadius: '8px',
+													padding: '1rem',
+													background: isChecked ? '#eff6ff' : '#fafafa',
+													transition: 'background 0.15s, border-color 0.15s',
+												}}>
+													{/* Group name as checkbox title */}
+													<label className="checkboxLabel" style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.6rem', display: 'flex' }}>
+														<input
+															type="checkbox"
+															checked={isChecked}
+															onChange={() => toggleGroup(group._id)}
+														/>
+														{group.name}
+													</label>
+													{/* Read-only slug tags showing what permissions this group has */}
+													{groupSlugs.length > 0 && (
+														<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '1.75rem' }}>
+															{groupSlugs.map(slug => (
+																<span key={slug} style={{
+																	display: 'inline-block',
+																	background: isChecked ? '#dbeafe' : '#e5e7eb',
+																	color: isChecked ? '#1d4ed8' : '#374151',
+																	padding: '2px 8px',
+																	borderRadius: '4px',
+																	fontSize: '0.78rem',
+																	fontWeight: '500',
+																	transition: 'background 0.15s, color 0.15s',
+																}}>
+																	{slug}
+																</span>
+															))}
+														</div>
+													)}
+												</div>
+											);
+										})}
+									</div>
+								)}
 							</CardContent>
 						</Card>
 

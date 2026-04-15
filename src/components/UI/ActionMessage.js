@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import styles from "./ActionMessage.module.css";
 
@@ -12,12 +13,25 @@ import styles from "./ActionMessage.module.css";
  *  - onClose:  () => void            (optional) — renders an ✕ dismiss button when provided
  */
 export default function ActionMessage({ variant = "error", message, onClose }) {
+	const messageRef = useRef(null);
+
+	useEffect(() => {
+		// Only auto-scroll when a message exists
+		if (message && messageRef.current) {
+			// A slight delay ensures the layout is ready and the browser scrolls accurately
+			setTimeout(() => {
+				messageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+			}, 100);
+		}
+	}, [message]);
+
 	if (!message) return null;
 
 	const isSuccess = variant === "success";
 
 	return (
 		<div
+			ref={messageRef}
 			className={`${styles.banner} ${isSuccess ? styles.success : styles.error}`}
 			role="alert"
 		>

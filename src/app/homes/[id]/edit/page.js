@@ -384,7 +384,7 @@ export default function EditHomePage() {
 															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
 														}
 													}}
-													
+
 												/>
 												<span>{type}</span>
 											</label>

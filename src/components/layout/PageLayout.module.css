@@ -4,12 +4,14 @@
 	flex-direction: column;
 	width: 100%;
 	height: 100vh;
+	overflow: hidden; /* strictly limit to viewport height */
 }
 
 .container {
 	display: flex;
 	flex: 1;
 	overflow: hidden;
+	min-height: 0; /* Crucial: allows flex child to be smaller than its content, keeping 100vh bounded */
 }
 
 .main {
@@ -17,6 +19,7 @@
 	display: flex;
 	flex-direction: column;
 	flex: 1;
+	min-height: 0; /* Crucial: prevents huge page content from blowing up flex container height */
 	padding: 1rem 4rem;
 	background-color: transparent;
 	border-radius: 0px 0px 0px 0px;

@@ -10,6 +10,7 @@ import Button from "@components/UI/Button";
 import styles from "./add_new_client.module.css";
 import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
+import ActionMessage from "@/components/UI/ActionMessage";
 
 import {
 	IdRule,
@@ -51,7 +52,7 @@ const schema = yup.object({
 			["single", "married", "divorced", "widowed", "separated"],
 			"Please select a valid marital status"
 		)
-		.nullable(),
+		.required("Marital status is required"),
 
 	notes: longTextRule,
 
@@ -81,7 +82,7 @@ const schema = yup.object({
 		.nullable()
 		.required("Health card number is required"),
 
-	healthCardExpiryDate: dateRule.nullable().optional(),
+	healthCardExpiryDate: dateRule.required("Health card expiry date is required"),
 
 	// Emergency Contact
 	emergencyFName: nameRule.required("Emergency contact first name is required"),
@@ -95,17 +96,17 @@ const schema = yup.object({
 	nokPhone: phoneRule,
 	nokEmail: emailRule,
 
-	// SDM
-	sdmFName: nameRule,
-	sdmLName: nameRule,
-	sdmPhone: phoneRule,
-	sdmEmail: emailRule,
+	// Statutory Decision Maker (SDM)
+	sdmFName: nameRule.required("Statutory decision maker first name is required"),
+	sdmLName: nameRule.required("Statutory decision maker last name is required"),
+	sdmPhone: phoneRule.required("Statutory decision maker phone is required"),
+	sdmEmail: emailRule.required("Statutory decision maker email is required"),
 
 	// Care Coordinator -- name + phone + email all required
-	careCoordinatorFName: nameRule,
-	careCoordinatorLName: nameRule,
-	careCoordinatorPhone: phoneRule,
-	careCoordinatorEmail: emailRule,
+	careCoordinatorFName: nameRule.required("Care coordinator first name is required"),
+	careCoordinatorLName: nameRule.required("Care coordinator last name is required"),
+	careCoordinatorPhone: phoneRule.required("Care coordinator phone is required"),
+	careCoordinatorEmail: emailRule.required("Care coordinator email is required"),
 
 	// Power of Attorney -- all optional, name max 100 (50 per part)
 	poaFName: nameRule,
@@ -135,6 +136,8 @@ const schema = yup.object({
 	ctoNotes: longTextRule,
 
 	// Care Plan
+	levelOfSupport: yup.string().required("Level of support is required"),
+
 	chronicConditions: longTextRule,
 	allergies: longTextRule,
 	pastSurgeries: longTextRule,
@@ -155,9 +158,7 @@ const fullName = (first, last) =>
 
 export default function Page() {
 	const router = useRouter();
-	const [loading, setLoading] = useState(false);
-	const [errorMsg, setErrorMsg] = useState(null);
-	const { addClient, isActionPending, isError, errorMessage } = useClients();
+	const { addClient, isActionPending, actionError } = useClients();
 
 	const {
 		register,
@@ -170,8 +171,6 @@ export default function Page() {
 	});
 
 	const onSubmit = async (data) => {
-		setLoading(true);
-
 		const body = {
 			email: data.email,
 			password: data.password,
@@ -281,48 +280,11 @@ export default function Page() {
 			notes: data.notes || null,
 		};
 
-		try {
-			addClient(body, {
-				onSuccess: () => {
-					router.push("/clients");
-					setErrorMsg(null);
-					setLoading(false);
-				},
-				onError: (err) => {
-					const resData = err.response?.data;
-					const status = err.response?.status;
-					let errorMessage = "An unknown error occurred on the server.";
-
-					if (status === 400 && resData) {
-						if (resData.details && Array.isArray(resData.details) && resData.details.length > 0) {
-							errorMessage = resData.details
-								.map((detail) => {
-									const path = detail.path ? `(${detail.path})` : "";
-									return `${detail.msg} ${path}`;
-								})
-								.join(" | ");
-						} else {
-							errorMessage = resData.error || resData.message || errorMessage;
-						}
-						console.error("400 Error:", errorMessage);
-						setErrorMsg(errorMessage);
-					} else if ((status === 401 || status === 403) && resData) {
-						errorMessage = resData.message || "Authentication failed. Please log in again.";
-						console.error("Auth Error:", errorMessage);
-						setErrorMsg(errorMessage);
-					} else {
-						errorMessage = resData?.message || err.message || `Failed to register client (Status ${status}).`;
-						console.error(errorMessage);
-						setErrorMsg(errorMessage);
-					}
-					setLoading(false);
-				}
-			});
-		} catch (err) {
-			console.error("Caught critical error:", err);
-			setErrorMsg("Could not connect to the server or received an invalid response.");
-			setLoading(false);
-		}
+		addClient(body, {
+			onSuccess: () => {
+				router.push("/clients");
+			}
+		});
 	};
 
 	function handleCancel() {
@@ -341,9 +303,9 @@ export default function Page() {
 						variant="primary"
 						type="submit"
 						onClick={handleSubmit(onSubmit)}
-						disabled={loading}
+						disabled={isActionPending}
 					>
-						{loading ? "Saving..." : "Save"}
+						{isActionPending ? "Saving..." : "Save"}
 					</Button>
 				</div>
 			</div>
@@ -351,14 +313,11 @@ export default function Page() {
 			<div className={styles.content}>
 				<div className={styles.rightPanel}>
 
-					{isError && <div className={styles.formError}>Error: {errorMessage}</div>}
+					{actionError && <ActionMessage variant="error" message={actionError} />}
 					{/* ── Personal Information ── */}
 					<Card>
 						<CardHeader>Personal Information</CardHeader>
 						<CardContent>
-							{errorMsg && (
-								<div className={styles.formError}>Error: {errorMsg}</div>
-							)}
 							<InputField label="Client ID" name="clientId" register={register} error={errors.clientId} />
 							<div className={styles.row2}>
 								<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
@@ -397,7 +356,7 @@ export default function Page() {
 										{ label: "South Shore", value: "South Shore" },
 									]}
 								/>
-								<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+								<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								<InputField label="Email" name="email" register={register} error={errors.email} />
 							</div>
 
@@ -449,7 +408,7 @@ export default function Page() {
 							</div>
 							<div className={styles.row2}>
 								<InputField label="Relationship" name="relationship" register={register} error={errors.relationship} />
-								<InputField label="Phone" name="emergencyPhone" register={register} error={errors.emergencyPhone} />
+								<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} />
 							</div>
 						</CardContent>
 					</Card>
@@ -529,8 +488,8 @@ export default function Page() {
 								<InputField label="Email" name="aptEmail" register={register} error={errors.aptEmail} />
 							</div>
 
-							<h5 className={styles.subSectionTitle}>Community Treatment Order</h5>
-							<InputField label="Notes" name="ctoNotes" type="textarea" rows={3} register={register} error={errors.ctoNotes} />
+							<h5 className={styles.subSectionTitle}>Community Treatment Order Notes</h5>
+							<InputField name="ctoNotes" type="textarea" rows={4} register={register} error={errors.ctoNotes} />
 
 						</CardContent>
 					</Card>

@@ -43,9 +43,7 @@ const schema = yup.object({
 	contactLName: nameRule.optional(),
 	contactPhone: phoneRule.optional(),
 	shiftNotes: shortTextRule.optional(),
-	geofenceRadius: yup.number().optional(),
-	alertOnEntry: yup.boolean().notRequired(),
-	alertOnExit: yup.boolean().notRequired(),
+	geofenceRadius: yup.number().required("Geofence radius is required"),
 });
 
 // ─── Utility functions ───────────────────────────────────────────────────────────

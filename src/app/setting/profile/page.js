@@ -213,7 +213,7 @@ export default function ProfilePage() {
 									</InfoField>
 
 									{isEditing ? (
-										<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+										<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 									) : (
 										<InfoField label="Phone" value={profile.phone || "N/A"} />
 									)}
@@ -237,7 +237,7 @@ export default function ProfilePage() {
 										<InfoField label="Name" value={profile.emergencyContact?.name || profile.emergencyContactName || "N/A"} />
 									)}
 									{isEditing ? (
-										<InputField label="Phone" name="emergencyContactPhone" register={register} error={errors.emergencyContactPhone} />
+										<InputField label="Phone" name="emergencyContactPhone" type="phone" register={register} error={errors.emergencyContactPhone} />
 									) : (
 										<InfoField label="Phone" value={profile.emergencyContact?.phone || profile.emergencyContactPhone || "N/A"} />
 									)}

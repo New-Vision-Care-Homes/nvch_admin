@@ -25,7 +25,9 @@ export const usePermissionGroups = (options = {}) => {
 	 * Extracts the most relevant error message from an Axios error object.
 	 */
 	const getErrorMessage = (err) => {
+		console.log(err?.response?.data?.details);
 		return (
+			err?.response?.data?.details[0]?.msg ||
 			err?.response?.data?.error ||
 			"An unexpected error occurred"
 		);
@@ -100,10 +102,10 @@ export const usePermissionGroups = (options = {}) => {
 			deleteMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
-		fetchError: fetchError ? getErrorMessage(fetchError) : null,
+		permissionGroupsFetchError: fetchError ? getErrorMessage(fetchError) : null,
 
 		// Action error → use with toast or inline message
-		actionError: actionError ? getErrorMessage(actionError) : null,
+		permissionGroupsActionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Methods
 		addPermissionGroup: createMutation.mutate,

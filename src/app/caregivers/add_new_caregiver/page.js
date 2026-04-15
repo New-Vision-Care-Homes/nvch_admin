@@ -286,7 +286,7 @@ export default function Page() {
 								</div>
 								<div className={styles.row2}>
 									<InputField label="Email" name="email" register={register} error={errors.email} />
-									<InputField label="Phone" name="phone" register={register} error={errors.phone} />
+									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
 									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" />
@@ -316,7 +316,7 @@ export default function Page() {
 									<InputField label="Last Name" name="emergencyLName" register={register} error={errors.emergencyLName} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Phone" name="emergencyPhone" register={register} error={errors.emergencyPhone} />
+									<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} />
 									<InputField label="Relationship" name="emergencyRelationship" register={register} error={errors.emergencyRelationship} />
 								</div>
 							</CardContent>
