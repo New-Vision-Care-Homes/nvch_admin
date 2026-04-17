@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
 	/* All related endpoints for admins */
 	ADMINS: {
 		BASE: '/api/auth/admin/admins',
-		BY_ID: (id) => `/api/auth/admin/admins/${id}`,
+		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
 		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
 	},
@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
 	HOURS: {
 		GET_CAREGIVER_HOURS: (id) => `/api/hours/caregivers/${id}`,
 		GET_CAREGIVER_HISTORY: (id) => `/api/hours/caregivers/${id}/history`,
+		UPDATE_CAREGIVER_HOURS: (id) => `/api/hours/shifts/${id}`,
 	},
 
 	/* All related endpoints for upload profile picture and certificates */

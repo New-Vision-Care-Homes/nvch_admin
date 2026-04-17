@@ -37,6 +37,7 @@ export const certService = {
 
 		// STEP 3: Save metadata (name, dates, file key) to our database
 		const dbPayload = {
+			userId,
 			fileKey,
 			name: formData.name,
 			// Format dates to ISO strings for database consistency

@@ -29,12 +29,6 @@ const SHIFT_STATUS_OPTIONS = [
 	{ value: "cancelled", label: "Cancelled" },
 ];
 
-// Default availability slots shown before caregiver data is loaded.
-const DEFAULT_AVAILABILITY = [
-	{ day: "monday", startTime: "09:00", endTime: "13:00", isAvailable: true, notes: "" },
-	{ day: "tuesday", startTime: "10:00", endTime: "16:00", isAvailable: true, notes: "" },
-];
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -127,6 +121,7 @@ export default function Timesheet() {
 	const {
 		hours,       // Contains { maxHours, currentPeriod, previousPeriod }
 		hourHistory,
+		updateCompletedHour,
 		isLoading: isHoursLoading,
 		error: hoursError,
 	} = useHours(id);

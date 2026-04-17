@@ -46,8 +46,10 @@ export const useProfileUpload = () => {
 			// Invalidate the specific client and the lists to refresh the UI
 			queryClient.invalidateQueries({ queryKey: ["clients"] });
 			queryClient.invalidateQueries({ queryKey: ["caregivers"] });
+			queryClient.invalidateQueries({ queryKey: ["admins"] });
 			queryClient.invalidateQueries({ queryKey: ["client", variables.userId] });
 			queryClient.invalidateQueries({ queryKey: ["caregiver", variables.userId] });
+			queryClient.invalidateQueries({ queryKey: ["admin", variables.userId] });
 			// Invalidate the image cache tag we used in useImageUrl
 			queryClient.invalidateQueries({ queryKey: ["signedImage"] });
 		}

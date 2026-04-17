@@ -9,6 +9,7 @@ import { hourService } from "@/services/api/services/hourService";
  * @param {Object} options.params - Optional query parameters for the list (search, limit, page)
  */
 export const useHours = (caregiverId) => {
+	const queryClient = useQueryClient();
 
 	const caregiverHourQuery = useQuery({
 		queryKey: ["hours", caregiverId],
@@ -22,10 +23,20 @@ export const useHours = (caregiverId) => {
 		enabled: !!caregiverId,
 	});
 
+
+	const updateCompletedHourMutation = useMutation({
+		mutationFn: ({ id, updateData }) => hourService.updateCompletedHour(id, updateData),
+		onSuccess: () => {
+			queryClient.invalidateQueries(["hours", caregiverId]);
+			queryClient.invalidateQueries(["hours", caregiverId, "history"]);
+		},
+	});
+
 	return {
 		// Data
 		hours: caregiverHourQuery.data,
 		hourHistory: caregiverHourHistoryQuery.data,
+		updateCompletedHour: updateCompletedHourMutation.mutateAsync,
 
 		// Status
 		isLoading: caregiverHourQuery.isLoading || caregiverHourHistoryQuery.isLoading,

@@ -7,6 +7,8 @@ import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import { InputField } from "@components/UI/Card";
+import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState from "@components/UI/ErrorState";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -38,14 +40,15 @@ export default function Certification() {
 
 	// --- 1. Hooks---
 	const { id: userId } = useParams();
-	const { caregiverDetail } = useCaregivers(userId);
-	const { mutate: upload, isLoading: isUploading } = useUploadCertificate(userId);
-	const { mutate: deleteCert, isLoading: isDeleting } = useDeleteCertificate(userId);
+	const { caregiverDetail, isCaregiverLoading, caregiverFetchError } = useCaregivers(userId);
+	const { mutate: upload, isPending: isUploading } = useUploadCertificate(userId);
+	const { mutate: deleteCert, isPending: isDeleting } = useDeleteCertificate(userId);
 
 	// --- 2. State management ---
 	const [isModalOpen, setIsModalOpen] = useState(false); // For Add New
 	const [showDeleteModal, setShowDeleteModal] = useState(false); // For Delete Confirmation
 	const [targetCertId, setTargetCertId] = useState(null);
+	const [actionMsg, setActionMsg] = useState(null);
 
 	const certifications = caregiverDetail?.certifications || [];
 
@@ -63,8 +66,9 @@ export default function Certification() {
 			onSuccess: () => {
 				setShowDeleteModal(false);
 				setTargetCertId(null);
+				setActionMsg({ variant: "success", text: "Certificate deleted successfully." });
 			},
-			onError: (err) => alert(`Delete failed: ${err.message}`)
+			onError: (err) => setActionMsg({ variant: "danger", text: `Delete failed: ${err.message}` })
 		});
 	};
 
@@ -86,9 +90,9 @@ export default function Certification() {
 			onSuccess: () => {
 				setIsModalOpen(false);
 				reset();
-				alert("Upload Successful!");
+				setActionMsg({ variant: "success", text: "Upload Successful!" });
 			},
-			onError: (error) => alert(`Upload Failed: ${error.message}`)
+			onError: (error) => setActionMsg({ variant: "danger", text: `Upload Failed: ${error.message}` })
 		});
 	};
 
@@ -102,6 +106,12 @@ export default function Certification() {
 				</Button>
 			</div>
 
+			{actionMsg && (
+				<div style={{ marginBottom: "1rem" }}>
+					<ActionMessage variant={actionMsg.variant} message={actionMsg.text} onClose={() => setActionMsg(null)} />
+				</div>
+			)}
+
 			<Table>
 				<TableHeader>
 					<TableCell>Name</TableCell>
@@ -111,7 +121,19 @@ export default function Certification() {
 					<TableCell>Document</TableCell>
 					<TableCell>Action</TableCell>
 				</TableHeader>
-				{certifications.length === 0 ? (
+				{isCaregiverLoading ? (
+					<TableContent>
+						<TableCell colSpan={6} style={{ padding: '0' }}>
+							<ErrorState isLoading={true} />
+						</TableCell>
+					</TableContent>
+				) : caregiverFetchError ? (
+					<TableContent>
+						<TableCell colSpan={6} style={{ padding: '0' }}>
+							<ErrorState errorMessage={caregiverFetchError} />
+						</TableCell>
+					</TableContent>
+				) : certifications.length === 0 ? (
 					<TableContent>
 						<TableCell colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
 							No certifications found.
@@ -190,7 +212,9 @@ export default function Certification() {
 
 					<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24, gap: 12 }}>
 						<Button variant="secondary" type="button" onClick={() => { setIsModalOpen(false); reset(); }}>Cancel</Button>
-						<Button type="submit">{isUploading ? "Uploading..." : "Save Certificate"}</Button>
+						<Button type="submit" disabled={isUploading}>
+							{isUploading ? "Saving..." : "Save Certificate"}
+						</Button>
 					</div>
 				</form>
 			</Modal>

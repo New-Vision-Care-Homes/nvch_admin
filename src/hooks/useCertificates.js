@@ -14,7 +14,8 @@ export const useUploadCertificate = (userId) => {
         
         // On success, tell React Query to re-fetch the user data
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user', userId] });
+            // Need to invalidate caregiver query so the UI updates
+            queryClient.invalidateQueries({ queryKey: ['caregiver', userId] });
         }
     });
 };
@@ -30,7 +31,7 @@ export const useDeleteCertificate = (userId) => {
         mutationFn: (certId) => certService.deleteCertificate(certId, userId),
         onSuccess: () => {
             // Refresh user data so the deleted certificate disappears from the table
-            queryClient.invalidateQueries({ queryKey: ['user', userId] });
+            queryClient.invalidateQueries({ queryKey: ['caregiver', userId] });
         }
     });
 };

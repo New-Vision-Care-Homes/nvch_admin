@@ -13,7 +13,7 @@ import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 
-import { nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
+import { idRule, nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -29,6 +29,7 @@ const DEPARTMENT_OPTIONS = [
 ];
 
 const schema = yup.object({
+	adminId: idRule,
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
@@ -44,6 +45,10 @@ const schema = yup.object({
 		.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
+	permissionsGroup: yup
+		.array()
+		.min(1, "Please select at least one permission group")
+		.required("Please select at least one permission group"),
 });
 
 export default function Page() {
@@ -59,6 +64,10 @@ export default function Page() {
 			const next = new Set(prev);
 			if (next.has(groupId)) next.delete(groupId);
 			else next.add(groupId);
+
+			// Sync with react-hook-form so Yup validates it inline
+			setValue("permissionsGroup", Array.from(next), { shouldValidate: true });
+
 			return next;
 		});
 	};
@@ -66,17 +75,22 @@ export default function Page() {
 	const {
 		register,
 		handleSubmit,
+		setValue,
 		formState: { errors },
 	} = useForm({
 		resolver: yupResolver(schema),
+		defaultValues: {
+			permissionsGroup: [], // Initialize array so Yup can validate it properly
+		}
 	});
 
 	const onSubmit = (data) => {
-		const selectedIds = [...selectedGroupIds];
-		// Send single ID if only one group selected, array if multiple
-		const permissionsGroup = selectedIds.length === 1 ? selectedIds[0] : selectedIds;
+		// If 1 group: send string. If >1: send array of strings. 
+		// We'll pass the array for multiple, and single string for one, as the backend requested.
+		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
 
 		const body = {
+			employeeId: data.adminId,
 			email: data.email,
 			password: data.password,
 			region: data.region,
@@ -86,7 +100,7 @@ export default function Page() {
 			phone: data.phone,
 			adminLevel: data.adminLevel,
 			department: data.department,
-			...(selectedIds.length > 0 && { permissionsGroup }),
+			permissionsGroup,
 		};
 
 		addAdmin(body, {
@@ -123,6 +137,12 @@ export default function Page() {
 							<CardHeader>Basic Information</CardHeader>
 							<CardContent>
 								<div className={styles.row2}>
+									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} />
+									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+									/>
+								</div>
+								<div className={styles.row2}>
 									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
 									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
 								</div>
@@ -131,14 +151,8 @@ export default function Page() {
 									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
-										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
-									/>
 									<InputField label="Password" name="password" register={register} error={errors.password} type="password" />
-								</div>
-								<div className={styles.row2}>
 									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" />
-									<div style={{ flex: 1 }} /> {/* spacer to keep grid alignment */}
 								</div>
 							</CardContent>
 						</Card>
@@ -222,6 +236,13 @@ export default function Page() {
 											);
 										})}
 									</div>
+								)}
+
+								{errors.permissionsGroup && (
+									<p style={{ color: "#b91c1c", fontSize: "0.85rem", marginTop: "1rem", display: "flex", alignItems: "center", gap: "6px" }}>
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+										{errors.permissionsGroup.message}
+									</p>
 								)}
 							</CardContent>
 						</Card>

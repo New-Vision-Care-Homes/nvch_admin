@@ -21,4 +21,16 @@ export const hourService = {
 		const response = await axiosClient.get(API_ENDPOINTS.HOURS.GET_CAREGIVER_HISTORY(caregiverId));
 		return response.data.data;
 	},
+
+	/**
+	 * Update completed hour.
+	 * @param {string} id 
+	 * @param {Object} updateData 
+	 */
+	updateCompletedHour: async (id, updateData) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.HOURS.UPDATE_CAREGIVER_HOURS(id), updateData);
+		return data.message;
+	},
+
+
 };

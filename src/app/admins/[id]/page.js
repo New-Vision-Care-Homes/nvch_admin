@@ -14,13 +14,10 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { nameRule, emailRule, phoneRule } from "@/utils/validation";
+import { idRule, nameRule, emailRule, phoneRule } from "@/utils/validation";
 import { useAdmins } from "@/hooks/useAdmins";
-
-// Base URL for the User Management API
-const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
-// Base URL for S3 Upload Endpoints
-const S3_API_BASE_URL = "https://nvch-server.onrender.com/api/upload";
+import { usePermissionGroups } from "@/hooks/usePermissions";
+import { useProfileUpload } from "@/hooks/usePictures";
 
 // --- File Upload Constants ---
 const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
@@ -51,31 +48,55 @@ const schema = yup.object({
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
+	adminId: idRule,
+	permissionsGroup: yup
+		.array()
+		.min(1, "Please select at least one permission group")
+		.required("Please select at least one permission group"),
 });
 
 export default function Page() {
 	const { id } = useParams(); // The userId (MongoDB ObjectId) for the admin
-	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true);
-	const [displayImageUrl, setDisplayImageUrl] = useState(defaultAvatar);
+
+	const {
+		adminDetail: user,
+		isLoading,
+		fetchError,
+		updateAdmin,
+		isActionPending,
+		toggleAdminStatus,
+		refetch
+	} = useAdmins({ adminId: id });
 
 	// --- Editing State & Form Setup ---
 	const [isEditing, setIsEditing] = useState(false);
-	const { updateAdmin, isActionPending, toggleAdminStatus } = useAdmins();
+	const { permissionGroups } = usePermissionGroups();
 
-	const [canManageUsers, setCanManageUsers] = useState(false);
-	const [canManageShifts, setCanManageShifts] = useState(false);
-	const [canViewReports, setCanViewReports] = useState(false);
+	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
 
-	const { register, handleSubmit, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, setValue, clearErrors, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
+		defaultValues: {
+			permissionsGroup: []
+		}
 	});
 
-	// --- Image Upload States ---
+	const toggleGroup = (groupId) => {
+		setSelectedGroupIds(prev => {
+			const next = new Set(prev);
+			if (next.has(groupId)) next.delete(groupId);
+			else next.add(groupId);
+
+			setValue("permissionsGroup", Array.from(next), { shouldValidate: true });
+			return next;
+		});
+	};
+
+	// --- Image Upload States & Hooks ---
+	const { uploadProfilePicture, isUploading } = useProfileUpload();
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 	const [selectedFile, setSelectedFile] = useState(null);
 	const [previewUrl, setPreviewUrl] = useState(null);
-	const [uploading, setUploading] = useState(false);
 
 	// Modal state for general success/error messages
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
@@ -94,155 +115,49 @@ export default function Page() {
 
 	const handleImageUpload = async () => {
 		if (!selectedFile) return;
-
-		setUploading(true);
 		setError("");
 
-		const file = selectedFile;
-		const token = localStorage.getItem("token");
-
-		if (file.size > MAX_FILE_SIZE || !SUPPORTED_FORMATS.includes(file.type)) {
-			setError(`File size must be under ${MAX_FILE_SIZE / 1024}KB and be a valid image format.`);
-			setUploading(false);
-			return;
-		}
-
-		const queryParams = new URLSearchParams({
-			uploadType: "profile-picture",
-			userId: id,
-			mimeType: file.type,
-			fileSize: file.size.toString(),
-		}).toString();
-
-		try {
-			// Step 1: Get Pre-Signed URL
-			const presignRes = await fetch(`${S3_API_BASE_URL}/signed-url?${queryParams}`, {
-				method: "GET",
-				headers: { Authorization: `Bearer ${token}` },
-			});
-
-			const presignData = await presignRes.json();
-
-			if (!presignRes.ok || !presignData.success) {
-				const errorDetail = presignData.message || presignData.error || "Failed to get signed URL.";
-				throw new Error(errorDetail);
-			}
-
-			const { uploadUrl, fileKey } = presignData.data;
-
-			// Step 2: Upload File Directly to S3
-			const s3UploadRes = await fetch(uploadUrl, {
-				method: "PUT",
-				headers: {
-					"Content-Type": file.type,
+		uploadProfilePicture(
+			{ file: selectedFile, userId: id },
+			{
+				onSuccess: () => {
+					setMessage("Profile picture uploaded and saved successfully!");
+					setIsGeneralModalOpen(true);
+					handleCloseImageModal();
 				},
-				body: file,
-			});
-
-			if (!s3UploadRes.ok) {
-				throw new Error(`S3 direct upload failed with status: ${s3UploadRes.status}.`);
+				onError: (err) => {
+					setError(`Image upload failed: ${err.message || "Failed to upload image."}`);
+				}
 			}
-
-			// Step 3: Update Database
-			const updateRes = await fetch(`${S3_API_BASE_URL}/profile-picture`, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ fileKey: fileKey }),
-			});
-
-			const updateData = await updateRes.json();
-
-			if (!updateRes.ok || !updateData.success) {
-				const errorDetail = updateData.message || "Failed to update user record in database.";
-				throw new Error(errorDetail);
-			}
-
-			await fetchUser();
-			setMessage("Profile picture uploaded and saved successfully!");
-			setIsGeneralModalOpen(true);
-			handleCloseImageModal();
-
-		} catch (err) {
-			console.error("S3 Upload Error:", err);
-			setError(`Image upload failed: ${err.message}`);
-			setIsImageModalOpen(true);
-		} finally {
-			setUploading(false);
-		}
+		);
 	}
 
 	// --- API Calls and Handlers (User Data) ---
-	const fetchUser = useCallback(async () => {
-		setLoading(true);
-		const token = localStorage.getItem("token");
-		try {
-			const res = await fetch(`${API_BASE_URL}/${id}`, {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			const data = await res.json();
-			if (data.success) {
-				const fetchedUser = data.data.user;
-				setUser(fetchedUser);
-				reset({
-					firstName: fetchedUser.firstName,
-					lastName: fetchedUser.lastName,
-					email: fetchedUser.email,
-					phone: fetchedUser.phone,
-					adminLevel: fetchedUser.adminLevel || "",
-					department: fetchedUser.department || "",
-					region: fetchedUser.region || "",
-				});
-				setCanManageUsers(fetchedUser.canManageUsers || false);
-				setCanManageShifts(fetchedUser.canManageShifts || false);
-				setCanViewReports(fetchedUser.canViewReports || false);
-			} else {
-				setMessage(data.message || "Failed to fetch user data.");
-				setIsGeneralModalOpen(true);
-			}
-		} catch (err) {
-			setMessage("Error connecting to server.");
-			setIsGeneralModalOpen(true);
-		} finally {
-			setLoading(false);
-		}
-	}, [id, reset]);
-
 	useEffect(() => {
-		fetchUser();
-	}, [fetchUser]);
-
-	const getImageUrl = async (fileKey) => {
-		if (!fileKey) return null;
-		try {
-			const token = localStorage.getItem("token");
-			const res = await fetch(`${S3_API_BASE_URL}/file-url?fileKey=${encodeURIComponent(fileKey)}`, {
-				method: "GET",
-				headers: { Authorization: `Bearer ${token}` },
+		if (user) {
+			reset({
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				phone: user.phone,
+				adminLevel: user.adminLevel || "",
+				department: user.department || "",
+				region: user.region || "",
+				adminId: user.employeeId || "",
 			});
-			const result = await res.json();
-			return result ? result : null;
-		} catch (err) {
-			console.error("Failed to get signed image URL:", err);
-			return null;
-		}
-	};
 
-	useEffect(() => {
-		const refreshImageUrl = async () => {
-			if (user?.profilePicture && !user.profilePicture.startsWith("/img")) {
-				const signedUrl = await getImageUrl(user.profilePicture);
-				if (signedUrl) setDisplayImageUrl(signedUrl);
+			// Initialize selected groups
+			const pg = user.permissionsGroup;
+			const initialSelected = new Set();
+			if (Array.isArray(pg)) {
+				pg.forEach(pid => initialSelected.add(typeof pid === 'string' ? pid : pid._id));
+			} else if (pg) {
+				initialSelected.add(typeof pg === 'string' ? pg : pg._id);
 			}
-		};
-		refreshImageUrl();
-	}, [user?.profilePicture]);
+			setSelectedGroupIds(initialSelected);
+			setValue("permissionsGroup", Array.from(initialSelected));
+		}
+	}, [user, reset, setValue]);
 
 	const handleActive = () => {
 		setIsStatusConfirmModalOpen(true);
@@ -253,10 +168,6 @@ export default function Page() {
 		toggleAdminStatus(id, {
 			onSuccess: (data) => {
 				const newActiveStatus = data?.data?.isActive ?? !user.isActive;
-				setUser(prevUser => ({
-					...prevUser,
-					isActive: newActiveStatus,
-				}));
 				setIsStatusConfirmModalOpen(false);
 				setInlineMessage({ type: 'success', text: data?.message || `The admin has been ${newActiveStatus ? "activated" : "deactivated"} successfully.` });
 				setTimeout(() => setInlineMessage(null), 5000); // automatically clear after 5s
@@ -274,17 +185,12 @@ export default function Page() {
 	};
 
 	const onSubmit = (data) => {
-		const permissions = [];
-		if (canManageUsers) permissions.push("manage_users");
-		if (canManageShifts) permissions.push("manage_shifts");
-		if (canViewReports) permissions.push("view_reports");
+		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
 
 		const body = {
 			...data,
-			permissions,
-			canManageUsers,
-			canManageShifts,
-			canViewReports,
+			employeeId: data.adminId,
+			permissionsGroup,
 		};
 
 		updateAdmin({ id, data: body }, {
@@ -292,7 +198,7 @@ export default function Page() {
 				setIsEditing(false);
 				setMessage("Admin updated successfully!");
 				setIsGeneralModalOpen(true);
-				fetchUser(); // Refresh data using existing endpoint
+				refetch(); // Refresh data using react query
 			},
 			onError: (err) => {
 				setMessage(`Failed to update admin: ${err.message || "Unexpected error"}`);
@@ -311,10 +217,18 @@ export default function Page() {
 				adminLevel: user.adminLevel || "",
 				department: user.department || "",
 				region: user.region || "",
+				adminId: user.employeeId || "",
 			});
-			setCanManageUsers(user.canManageUsers || false);
-			setCanManageShifts(user.canManageShifts || false);
-			setCanViewReports(user.canViewReports || false);
+
+			const pg = user.permissionsGroup;
+			const initialSelected = new Set();
+			if (Array.isArray(pg)) {
+				pg.forEach(pid => initialSelected.add(typeof pid === 'string' ? pid : pid._id));
+			} else if (pg) {
+				initialSelected.add(typeof pg === 'string' ? pg : pg._id);
+			}
+			setSelectedGroupIds(initialSelected);
+			setValue("permissionsGroup", Array.from(initialSelected));
 		}
 		setIsEditing(true);
 	};
@@ -352,7 +266,6 @@ export default function Page() {
 		setIsImageModalOpen(false);
 		setSelectedFile(null);
 		setError("");
-		setUploading(false);
 		cleanupPreviewUrl();
 	};
 
@@ -361,7 +274,8 @@ export default function Page() {
 	}
 
 	// --- Render Logic ---
-	if (loading) return <p>Loading admin data...</p>;
+	if (isLoading) return <p>Loading admin data...</p>;
+	if (fetchError) return <p>{fetchError}</p>;
 	if (!user) return <p>Admin data not found or failed to load.</p>;
 
 	const activeStatus = user.isActive;
@@ -444,6 +358,14 @@ export default function Page() {
 									{!isEditing ? (
 										<>
 											<div className={styles.row2}>
+												<InfoField label="Admin ID">{user.employeeId}</InfoField>
+												<InfoField label="Status">
+													<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
+														{activeStatus ? "Active" : "Inactive"}
+													</span>
+												</InfoField>
+											</div>
+											<div className={styles.row2}>
 												<InfoField label="First Name">{user.firstName}</InfoField>
 												<InfoField label="Last Name">{user.lastName}</InfoField>
 											</div>
@@ -451,16 +373,13 @@ export default function Page() {
 												<InfoField label="Email">{user.email}</InfoField>
 												<InfoField label="Phone">{user.phone}</InfoField>
 											</div>
-											<div className={styles.row2}>
-												<InfoField label="Status">
-													<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
-														{activeStatus ? "Active" : "Inactive"}
-													</span>
-												</InfoField>
-											</div>
 										</>
 									) : (
 										<>
+											<div className={styles.row2}>
+												<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} />
+												<div style={{ flex: 1 }}></div>
+											</div>
 											<div className={styles.row2}>
 												<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
 												<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
@@ -534,47 +453,100 @@ export default function Page() {
 
 							{/* Permissions */}
 							<Card>
-								<CardHeader>Permissions</CardHeader>
+								<CardHeader>Permission Groups</CardHeader>
 								<CardContent>
 									{!isEditing ? (
-										<>
-											<div className={styles.row2}>
-												<InfoField label="Can Manage Users">{user.canManageUsers ? "Yes" : "No"}</InfoField>
-												<InfoField label="Can Manage Shifts">{user.canManageShifts ? "Yes" : "No"}</InfoField>
-											</div>
-											<div className={styles.row2}>
-												<InfoField label="Can View Reports">{user.canViewReports ? "Yes" : "No"}</InfoField>
-											</div>
-										</>
-									) : (
-										<div className={styles.checkboxGroup}>
-											<label className={styles.checkboxLabel}>
-												<input
-													type="checkbox"
-													checked={canManageUsers}
-													onChange={() => setCanManageUsers(prev => !prev)}
-												/>
-												Manage Users
-											</label>
-
-											<label className={styles.checkboxLabel}>
-												<input
-													type="checkbox"
-													checked={canManageShifts}
-													onChange={() => setCanManageShifts(prev => !prev)}
-												/>
-												Manage Shifts
-											</label>
-
-											<label className={styles.checkboxLabel}>
-												<input
-													type="checkbox"
-													checked={canViewReports}
-													onChange={() => setCanViewReports(prev => !prev)}
-												/>
-												View Reports
-											</label>
+										<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+											{Array.from(selectedGroupIds).length > 0 ? Array.from(selectedGroupIds).map(id => {
+												const group = permissionGroups.find(g => g._id === id);
+												if (!group) return null;
+												const groupSlugs = group.permissions || [];
+												return (
+													<div key={id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+														<span style={{ display: 'inline-flex', alignItems: 'center', background: '#f3f4f6', color: '#1f2937', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', fontSize: '0.95rem', width: 'fit-content' }}>
+															<Activity size={14} style={{ marginRight: '6px', color: '#6b7280' }} />
+															{group.name}
+														</span>
+														{groupSlugs.length > 0 && (
+															<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '0.5rem' }}>
+																{groupSlugs.map(slug => (
+																	<span key={slug} style={{
+																		display: 'inline-block',
+																		background: '#e5e7eb',
+																		color: '#374151',
+																		padding: '2px 8px',
+																		borderRadius: '4px',
+																		fontSize: '0.78rem',
+																		fontWeight: '500',
+																	}}>
+																		{slug}
+																	</span>
+																))}
+															</div>
+														)}
+													</div>
+												);
+											}) : <span style={{ color: '#6b7280' }}>No permission groups assigned.</span>}
 										</div>
+									) : (
+										<>
+											{permissionGroups.length === 0 ? (
+												<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+													No permission groups found.
+												</p>
+											) : (
+												<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+													{permissionGroups.map(group => {
+														const isChecked = selectedGroupIds.has(group._id);
+														const groupSlugs = group.permissions || [];
+
+														return (
+															<div key={group._id} style={{
+																border: `1px solid ${isChecked ? '#3b82f6' : 'var(--border-primary)'}`,
+																borderRadius: '8px',
+																padding: '1rem',
+																background: isChecked ? '#eff6ff' : '#fafafa',
+																transition: 'background 0.15s, border-color 0.15s',
+															}}>
+																<label className="checkboxLabel" style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.6rem', display: 'flex' }}>
+																	<input
+																		type="checkbox"
+																		checked={isChecked}
+																		onChange={() => toggleGroup(group._id)}
+																	/>
+																	{group.name}
+																</label>
+																{groupSlugs.length > 0 && (
+																	<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '1.75rem' }}>
+																		{groupSlugs.map(slug => (
+																			<span key={slug} style={{
+																				display: 'inline-block',
+																				background: isChecked ? '#dbeafe' : '#e5e7eb',
+																				color: isChecked ? '#1d4ed8' : '#374151',
+																				padding: '2px 8px',
+																				borderRadius: '4px',
+																				fontSize: '0.78rem',
+																				fontWeight: '500',
+																				transition: 'background 0.15s, color 0.15s',
+																			}}>
+																				{slug}
+																			</span>
+																		))}
+																	</div>
+																)}
+															</div>
+														);
+													})}
+												</div>
+											)}
+
+											{errors.permissionsGroup && (
+												<p style={{ color: "#b91c1c", fontSize: "0.85rem", marginTop: "1rem", display: "flex", alignItems: "center", gap: "6px" }}>
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+													{errors.permissionsGroup.message}
+												</p>
+											)}
+										</>
 									)}
 								</CardContent>
 							</Card>
@@ -587,12 +559,12 @@ export default function Page() {
 								<CardContent>
 									<div className={styles.picture}>
 										<Image
-											src={displayImageUrl}
+											src={user.profilePictureUrl || defaultAvatar}
 											alt="Profile Photo"
 											width={120}
 											height={120}
 											className={styles.image}
-											unoptimized={displayImageUrl !== defaultAvatar}
+											unoptimized
 										/>
 										<Button
 											variant="secondary"
@@ -643,7 +615,7 @@ export default function Page() {
 					<div className={styles.uploadModalContent}>
 						<div className={styles.imagePreview}>
 							<Image
-								src={previewUrl || displayImageUrl}
+								src={previewUrl || user.profilePictureUrl || defaultAvatar}
 								alt="Preview"
 								width={150}
 								height={150}
@@ -660,7 +632,7 @@ export default function Page() {
 								accept={SUPPORTED_FORMATS.join(',')}
 								onChange={handleFileChange}
 								className={styles.hiddenFileInput}
-								disabled={uploading}
+								disabled={isUploading}
 							/>
 						</label>
 
@@ -671,15 +643,15 @@ export default function Page() {
 						<p className={styles.fileNote}>Max {MAX_FILE_SIZE / 1024}KB. Supported formats: JPG, PNG, WEBP.</p>
 
 						<div className={styles.modalActions}>
-							<Button variant="secondary" onClick={handleCloseImageModal} disabled={uploading}>
+							<Button variant="secondary" onClick={handleCloseImageModal} disabled={isUploading}>
 								Cancel
 							</Button>
 							<Button
 								variant="primary"
 								onClick={handleImageUpload}
-								disabled={!selectedFile || uploading || !!error}
+								disabled={!selectedFile || isUploading || !!error}
 							>
-								{uploading ? "Uploading..." : "Save Picture"}
+								{isUploading ? "Uploading..." : "Save Picture"}
 							</Button>
 						</div>
 					</div>

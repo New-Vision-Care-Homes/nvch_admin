@@ -14,7 +14,7 @@ export default function Tabs() {
 		{ id: "personal", label: "Personal Info", component: <Info /> },
 		{ id: "care", label: "Care Plan", component: <CarePlan /> },
 		/*{ id: "caregivers", label: "Assigned Caregivers", component: <Assigned /> },*/
-		{ id: "history", label: "Visit History", component: <History /> },
+		/*{ id: "history", label: "Visit History", component: <History /> },*/
 		/*
 		{ id: "billing", label: "Billing/Invoices", component: <Billing /> },
 		 */
