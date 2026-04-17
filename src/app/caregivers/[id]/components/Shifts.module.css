@@ -1,42 +1,106 @@
+/* ─── Container ────────────────────────────────────────────────────── */
 .container {
 	width: 100%;
-	padding: 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
 }
 
-.buttons {
+/* ─── Header ────────────────────────────────────────────────────────── */
+.header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	padding: 0 0 1.25rem 0;
 }
 
+.header h2 {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0;
+}
 
-.tabContainer {
+/* ─── Tab Header ─────────────────────────────────────────────────────── */
+.tabsHeader {
 	display: flex;
-	gap: 8px;
+	border-bottom: 1px solid #e5e7eb;
+	background: #f9fafb;
+	border-radius: 12px 12px 0 0;
+	padding: 0 1rem;
 }
-  
 
-.tabButton {
-	padding: 8px 16px;
-	border-radius: 12px;
-	font-weight: 500;
-	background-color: #e5e7eb;
-	color: #4b5563;
+.tabBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.85rem 1.25rem;
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: #6b7280;
+	background: transparent;
 	border: none;
+	border-bottom: 2.5px solid transparent;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: color 0.18s, border-color 0.18s;
+	margin-bottom: -1px;
 }
 
-
-.tabButton:hover {
-	background-color: #2563eb;
-	color: white;
+.tabBtn:hover {
+	color: var(--color-primary);
 }
 
-
-.active {
-	background-color: #2563eb;
-	color: white;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+.tabBtnActive {
+	color: var(--color-primary);
+	border-bottom-color: var(--color-primary);
 }
-  
+
+.tabBadge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	background: var(--color-primary);
+	color: #ffffff;
+	font-size: 0.72rem;
+	font-weight: 700;
+	border-radius: 9999px;
+}
+
+/* ─── Pagination ─────────────────────────────────────────────────────── */
+.pagination {
+	margin-top: 1rem;
+	display: flex;
+	justify-content: center;
+	list-style: none;
+	gap: 0.5rem;
+	padding: 1rem 0;
+}
+
+.pageItem {
+	margin: 0;
+}
+
+.pageLink {
+	display: block;
+	padding: 0.4rem 0.8rem;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 0.85rem;
+	color: #374151;
+	transition: all 0.15s;
+}
+
+.pageLink:hover {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+
+.pageActive .pageLink {
+	background-color: var(--color-primary);
+	color: #fff;
+	border-color: var(--color-primary);
+}

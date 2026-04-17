@@ -16,9 +16,6 @@ import { useProfileUpload } from "@/hooks/usePictures";
 import { useClients } from "@/hooks/useClients";
 
 
-// --- API Endpoints Configuration ---
-const API_BASE_URL = "https://nvch-server.onrender.com/api/auth/admin/users";
-
 // --- Constants for File Validation ---
 const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 500 * 1024; // 500KB limit
