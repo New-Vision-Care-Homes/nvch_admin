@@ -11,6 +11,7 @@ import styles from "./add_new_client.module.css";
 import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import ActionMessage from "@/components/UI/ActionMessage";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 
 import {
 	IdRule,
@@ -164,11 +165,20 @@ export default function Page() {
 		register,
 		handleSubmit,
 		control,
+		setValue,
 		formState: { errors },
 	} = useForm({
 		resolver: yupResolver(schema),
 		shouldFocusError: true,
 	});
+
+	function handleAddressSelect({ street, city, state, country, postalCode }) {
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("state", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
+		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+	}
 
 	const onSubmit = async (data) => {
 		const body = {
@@ -368,6 +378,12 @@ export default function Page() {
 
 							{/* Address */}
 							<h5 className={styles.subSectionTitle}>Address</h5>
+							<AddressAutocomplete
+								label="Search Address"
+								onAddressSelect={handleAddressSelect}
+								placeholder="Start typing to search for an address..."
+								id="client-address-autocomplete"
+							/>
 							<div className={styles.row2}>
 								<InputField label="Street" name="street" register={register} error={errors.street} />
 								<InputField label="City" name="city" register={register} error={errors.city} />
@@ -392,7 +408,7 @@ export default function Page() {
 								<InputField label="Last Name" name="careCoordinatorLName" register={register} error={errors.careCoordinatorLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="careCoordinatorPhone" register={register} error={errors.careCoordinatorPhone} />
+								<InputField label="Phone" name="careCoordinatorPhone" type="phone" register={register} error={errors.careCoordinatorPhone} />
 								<InputField label="Email" name="careCoordinatorEmail" register={register} error={errors.careCoordinatorEmail} />
 							</div>
 						</CardContent>
@@ -422,7 +438,7 @@ export default function Page() {
 								<InputField label="Last Name" name="nokLName" register={register} error={errors.nokLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="nokPhone" register={register} error={errors.nokPhone} />
+								<InputField label="Phone" name="nokPhone" type="phone" register={register} error={errors.nokPhone} />
 								<InputField label="Email" name="nokEmail" register={register} error={errors.nokEmail} />
 							</div>
 						</CardContent>
@@ -437,7 +453,7 @@ export default function Page() {
 								<InputField label="Last Name" name="sdmLName" register={register} error={errors.sdmLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="sdmPhone" register={register} error={errors.sdmPhone} />
+								<InputField label="Phone" name="sdmPhone" type="phone" register={register} error={errors.sdmPhone} />
 								<InputField label="Email" name="sdmEmail" register={register} error={errors.sdmEmail} />
 							</div>
 						</CardContent>
@@ -454,7 +470,7 @@ export default function Page() {
 								<InputField label="Last Name" name="poaLName" register={register} error={errors.poaLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="poaPhone" register={register} error={errors.poaPhone} />
+								<InputField label="Phone" name="poaPhone" type="phone" register={register} error={errors.poaPhone} />
 								<InputField label="Email" name="poaEmail" register={register} error={errors.poaEmail} />
 							</div>
 
@@ -464,7 +480,7 @@ export default function Page() {
 								<InputField label="Last Name" name="pdLName" register={register} error={errors.pdLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="pdPhone" register={register} error={errors.pdPhone} />
+								<InputField label="Phone" name="pdPhone" type="phone" register={register} error={errors.pdPhone} />
 								<InputField label="Email" name="pdEmail" register={register} error={errors.pdEmail} />
 							</div>
 
@@ -474,7 +490,7 @@ export default function Page() {
 								<InputField label="Last Name" name="lgLName" register={register} error={errors.lgLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="lgPhone" register={register} error={errors.lgPhone} />
+								<InputField label="Phone" name="lgPhone" type="phone" register={register} error={errors.lgPhone} />
 								<InputField label="Email" name="lgEmail" register={register} error={errors.lgEmail} />
 							</div>
 
@@ -484,7 +500,7 @@ export default function Page() {
 								<InputField label="Last Name" name="aptLName" register={register} error={errors.aptLName} />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="aptPhone" register={register} error={errors.aptPhone} />
+								<InputField label="Phone" name="aptPhone" type="phone" register={register} error={errors.aptPhone} />
 								<InputField label="Email" name="aptEmail" register={register} error={errors.aptEmail} />
 							</div>
 

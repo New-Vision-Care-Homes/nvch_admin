@@ -10,6 +10,7 @@ import Button from "@components/UI/Button";
 import styles from "./add_new_caregiver.module.css";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
@@ -103,7 +104,7 @@ export default function Page() {
 	const [loading, setLoading] = useState(false);
 	const [errorMsg, setErrorMsg] = useState(null);
 
-	const { register, handleSubmit, watch, formState: { errors }, control } = useForm({
+	const { register, handleSubmit, watch, formState: { errors }, control, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			// Arrays are initialized as empty, allowing the user to add slots
@@ -111,6 +112,14 @@ export default function Page() {
 			certifications: []
 		}
 	});
+
+	function handleAddressSelect({ street, city, state, country, postalCode }) {
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("state", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
+		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+	}
 
 	// useFieldArray for Availability Schedule
 	const { fields: availabilityFields, append: appendAvailability, remove: removeAvailability } = useFieldArray({
@@ -127,19 +136,6 @@ export default function Page() {
 	*/
 	const onSubmit = async (data) => {
 		setLoading(true);
-		console.log("DEBUG: onSubmit function triggered");
-
-		// --- PROCESSING CERTIFICATIONS ARRAY ---
-		// Filters out empty entries (where name is blank) before submission
-		const processedCertifications = data.certifications
-			.filter(cert => cert.name && cert.name.trim() !== "")
-			.map(cert => ({
-				name: cert.name,
-				url: "https://lovable.dev/",
-				startDate: cert.startDate ? cert.startDate : null,
-				expiryDate: cert.expiryDate ? cert.expiryDate : null,
-				isActive: true
-			}));
 
 		// --- PROCESSING AVAILABILITY ARRAY ---
 		// Filters out empty entries (where day is blank)
@@ -177,7 +173,6 @@ export default function Page() {
 				},
 			},
 
-			certifications: processedCertifications,
 			availability: processedAvailability,
 
 			emergencyContact: {
@@ -295,6 +290,12 @@ export default function Page() {
 									/>
 								</div>
 								{/* Address */}
+								<AddressAutocomplete
+									label="Search Address"
+									onAddressSelect={handleAddressSelect}
+									placeholder="Start typing to search for an address..."
+									id="caregiver-address-autocomplete"
+								/>
 								<div className={styles.row2}>
 									<InputField label="Street" name="street" register={register} error={errors.street} />
 									<InputField label="City" name="city" register={register} error={errors.city} />
@@ -321,96 +322,6 @@ export default function Page() {
 								</div>
 							</CardContent>
 						</Card>
-
-						{/* Certifications (Dynamic Array using useFieldArray) }
-                        <Card>
-                            <CardHeader>Certifications</CardHeader>
-                            <CardContent>
-                                <div className={styles.fieldArrayContainer}>
-                                    {certFields.map((field, index) => (
-                                        <div key={field.id} className={styles.fieldArrayItem}>
-                                            <h4>Certificate {index+1}</h4>
-                                            
-                                            {/* Dynamic Certification Name }
-                                            <InputField 
-                                                label="Certification Name" 
-                                                name={`certifications.${index}.name`} 
-                                                register={register} 
-                                                error={errors.certifications?.[index]?.name} 
-                                                placeholder="e.g., First Aid"
-                                            />
-                                            
-                                            {/* Dynamic Date Inputs}
-                                            <div className={styles.row2}>
-                                                <InputField 
-                                                    label="Start Date" 
-                                                    name={`certifications.${index}.startDate`} 
-                                                    register={register} 
-                                                    error={errors.certifications?.[index]?.startDate}
-                                                    type="date"
-                                                />
-                                                <InputField 
-                                                    label="Expiry Date" 
-                                                    name={`certifications.${index}.expiryDate`} 
-                                                    register={register} 
-                                                    error={errors.certifications?.[index]?.expiryDate}
-                                                    type="date"
-                                                />
-                                            </div>
-                                            
-                                            {/* File Upload Placeholder UI }
-                                            <div className={styles.uploadRow}>
-                                                {/* Hidden field to carry the static URL or actual URL if implemented }
-                                                <input 
-                                                    type="hidden" 
-                                                    {...register(`certifications.${index}.url`)} 
-                                                    defaultValue={field.url} 
-                                                />
-                                                
-												{/*
-                                                <label className={styles.fileUploadLabel}>
-                                                    <UploadCloud size={20} />
-                                                    <input 
-                                                        type="file" 
-                                                        accept=".pdf,.jpg,.png" 
-                                                        {...register(`certifications.${index}.uploadFile`)} 
-                                                        className={styles.hiddenInput}
-                                                    />
-                                                    <span className={styles.fileName}>
-                                                        {// Display the selected file name or placeholder text}
-                                                        {watch(`certifications.${index}.uploadFile`)?.[0]?.name || "Upload Certificate (PDF/Image) - Static"}
-                                                    </span>
-                                                </label> }
-                                                {/* Remove Button - DISABLED REMOVED }
-                                                <Button 
-                                                    variant="danger" 
-                                                    size="sm"
-                                                    icon={<Trash2 size={16} />}
-                                                    onClick={() => removeCert(index)}
-                                                    className={styles.removeButton}
-                                                    type="button"
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ))}
-									
-                                    
-                                    {/* Add Button }
-                                    <Button 
-                                        variant="secondary" 
-                                        icon={<Plus size={16} />}
-                                        onClick={() => appendCert(emptyCertificationTemplate)}
-                                        className={styles.addButton}
-                                        type="button"
-                                    >
-                                        Add New Certification
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-						{*/}
 
 						{/* Availability (Dynamic Array) */}
 						<Card>

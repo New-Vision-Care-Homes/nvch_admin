@@ -12,6 +12,8 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import ErrorState from "@components/UI/ErrorState";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 
 // --- 1. Data Cleaning/Flattening Function ---
 const cleanFetchedData = (apiData) => {
@@ -85,20 +87,32 @@ export default function Info() {
 	const {
 		caregiverDetail,
 		updateCaregiver,
-		isLoading,
-		isActionPending,
+		isCaregiverLoading,
+		isCaregiverActionPending,
+		caregiverFetchError,
+		caregiverActionError
 	} = useCaregivers(id);
 
 	const {
 		register,
 		handleSubmit,
 		control,
+		setValue,
 		formState: { errors },
 		reset,
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
+
+	// --- Address Autocomplete Handler ---
+	function handleAddressSelect({ street, city, state, country, postalCode }) {
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("state", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
+		if (postalCode) setValue("pincode", postalCode, { shouldValidate: true });
+	}
 
 	// --- 3. Data Loading ---
 	useEffect(() => {
@@ -144,13 +158,16 @@ export default function Info() {
 					setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
 				},
 				onError: (err) => {
+					setStatus({ variant: "error", text: caregiverActionError || "Failed to update caregiver." });
+
+					/*
 					const resData = err.response?.data;
 					const statusCode = err.response?.status;
 					if (statusCode === 400 && resData?.details?.length > 0) {
 						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
 					} else {
 						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update caregiver." });
-					}
+					}*/
 				},
 			}
 		);
@@ -161,8 +178,15 @@ export default function Info() {
 		setStatus(null);
 	};
 
-	if (isLoading) {
-		return <div className={styles.loading}>Loading caregiver profile...</div>;
+
+	if (isCaregiverLoading || caregiverFetchError) {
+		return (
+			<ErrorState
+				isLoading={isCaregiverLoading}
+				errorMessage={caregiverFetchError}
+				onRetry={() => window.location.reload()}
+			/>
+		);
 	}
 
 	return (
@@ -179,16 +203,19 @@ export default function Info() {
 						</div>
 						<div className={styles.card_row_2}>
 							<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
-							<InputField label="Address" name="street" register={register} error={errors.street} />
-						</div>
-						<div className={styles.card_row_2}>
-							<InputField label="City" name="city" register={register} error={errors.city} />
-							<InputField label="State" name="state" register={register} error={errors.state} />
-							<InputField label="Country" name="country" register={register} error={errors.country} />
-							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
 							<InputField label="Region" name="region" type="select" register={register} error={errors.region}
 								options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 							/>
+						</div>
+
+						<AddressAutocomplete onAddressSelect={handleAddressSelect} />
+
+						<div className={styles.card_row_2}>
+							<InputField label="Street" name="street" register={register} error={errors.street} />
+							<InputField label="City" name="city" register={register} error={errors.city} />
+							<InputField label="Province" name="state" register={register} error={errors.state} />
+							<InputField label="Country" name="country" register={register} error={errors.country} />
+							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
 						</div>
 						<div className={styles.card_row_1}>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
@@ -223,8 +250,8 @@ export default function Info() {
 
 			<div className={styles.buttons}>
 				<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
-				<Button type="submit" variant="primary" disabled={isActionPending}>
-					{isActionPending ? "Saving..." : "Save Changes"}
+				<Button type="submit" variant="primary" disabled={isCaregiverActionPending}>
+					{isCaregiverActionPending ? "Saving..." : "Save Changes"}
 				</Button>
 			</div>
 		</form>

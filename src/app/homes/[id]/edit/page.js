@@ -16,6 +16,8 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useGoogleMap } from "@/hooks/useGoogleMap";
 import { Search, X } from "lucide-react";
+import ErrorState from "@components/UI/ErrorState";
+import ActionMessage from "@components/UI/ActionMessage";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -56,8 +58,8 @@ export default function EditHomePage() {
 		updateHome,
 		isActionPending,
 		isLoading: isFetching,
-		isError,
-		errorMessage
+		fetchError,
+		actionError
 	} = useHomes(homeId);
 
 	const { register, handleSubmit, watch, control, formState: { errors }, setValue, reset } = useForm({
@@ -327,7 +329,15 @@ export default function EditHomePage() {
 	}
 
 	if (isFetching) return <PageLayout><div>Loading home details...</div></PageLayout>;
-	if (isError && !home) return <PageLayout><div>Error: {errorMessage}</div></PageLayout>;
+	if (fetchError && !home) return (
+		<PageLayout>
+			<ErrorState
+				isLoading={isFetching}
+				errorMessage={fetchError || "Home not found"}
+				onRetry={() => window.location.reload()}
+			/>
+		</PageLayout>
+	);
 	if (loadError) return <PageLayout><div>Error loading Google Maps</div></PageLayout>;
 
 	return (
@@ -342,7 +352,7 @@ export default function EditHomePage() {
 						</Button>
 					</div>
 				</div>
-				{isError && home && <div className={styles.formError}>Error: {errorMessage}</div>}
+				{actionError && <ActionMessage variant="error" message={actionError} />}
 
 				<div className={styles.content}>
 					<div className={styles.rightPanel} style={{ width: '100%' }}>

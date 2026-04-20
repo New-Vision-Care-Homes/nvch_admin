@@ -7,7 +7,9 @@ import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import ReactPaginate from "react-paginate";
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Edit, Trash2, Plus, Search } from "lucide-react";
+import ErrorState from "@components/UI/ErrorState";
+import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import Modal from "@components/UI/Modal";
@@ -23,9 +25,10 @@ export default function Homes() {
 		homes,
 		pagination,
 		isLoading,
-		isError,
-		errorMessage,
-		deleteHome
+		fetchError,
+		actionError,
+		deleteHome,
+		refetch
 	} = useHomes({
 		page: currentPage + 1,
 		limit: itemsPerPage
@@ -52,11 +55,8 @@ export default function Homes() {
 		setCurrentPage(event.selected);
 	};
 
-	if (isLoading) return <PageLayout><div>Loading homes...</div></PageLayout>;
-	if (isError) return <PageLayout><div>Error: {errorMessage}</div></PageLayout>;
-
 	// Calculate pagination info from API response if available, else fallback
-	const pageCount = pagination.totalPages || 1;
+	const pageCount = pagination?.totalPages || 1;
 
 	return (
 		<>
@@ -70,102 +70,110 @@ export default function Homes() {
 						</Link>
 					</div>
 
+					{actionError && <ActionMessage variant="error" message={actionError} />}
+
 					{/* Homes Table */}
 					<div className={styles.tableWrapper}>
 						<h2 style={{ marginBottom: "1.5rem" }}>All Housing Units</h2>
-						<Table>
-							<TableHeader>
-								<TableCell>Home Name</TableCell>
-								<TableCell>Region</TableCell>
-								<TableCell>Program Type</TableCell>
-								<TableCell>Address</TableCell>
-								<TableCell>Caregivers</TableCell>
-								<TableCell>Admins</TableCell>
-								<TableCell>Clients</TableCell>
-								<TableCell>Night Check</TableCell>
-								<TableCell>Status</TableCell>
-								<TableCell>Opened At</TableCell>
-								<TableCell>Actions</TableCell>
-							</TableHeader>
-							{homes.length > 0 ? (
-								homes.map((home) => (
-									<TableContent key={home.id || home._id}>
-										{/* Home Name */}
-										<TableCell>
-											<span style={{ fontWeight: 600 }}>{home.name}</span>
-										</TableCell>
+						
+						<ErrorState
+							isLoading={isLoading}
+							errorMessage={fetchError}
+							onRetry={refetch}
+						/>
 
-										{/* Region */}
-										<TableCell>{home.region}</TableCell>
+						{!isLoading && !fetchError && (
+							<Table>
+								<TableHeader>
+									<TableCell>Home Name</TableCell>
+									<TableCell>Region</TableCell>
+									<TableCell>Program Type</TableCell>
+									<TableCell>Address</TableCell>
+									<TableCell>Caregivers</TableCell>
+									<TableCell>Admins</TableCell>
+									<TableCell>Clients</TableCell>
+									<TableCell>Night Check</TableCell>
+									<TableCell>Status</TableCell>
+									<TableCell>Opened At</TableCell>
+									<TableCell>Actions</TableCell>
+								</TableHeader>
+								{homes && homes.length > 0 ? (
+									homes.map((home) => (
+										<TableContent key={home.id || home._id}>
+											{/* Home Name */}
+											<TableCell>
+												<span style={{ fontWeight: 600 }}>{home.name}</span>
+											</TableCell>
 
-										{/* Program Type */}
-										<TableCell>
-											{home.programTypes?.join(", ") || "-"}
-										</TableCell>
+											{/* Region */}
+											<TableCell>{home.region}</TableCell>
 
-										{/* Address */}
-										<TableCell>
-											{home.address ? `${home.address.street}, ${home.address.city}` : "-"}
-										</TableCell>
+											{/* Program Type */}
+											<TableCell>
+												{home.programTypes?.join(", ") || "-"}
+											</TableCell>
 
-										{/* Caregivers */}
-										<TableCell>
-											{home.caregivers?.length || 0}
-										</TableCell>
+											{/* Address */}
+											<TableCell>
+												{home.address ? `${home.address.street}, ${home.address.city}` : "-"}
+											</TableCell>
 
-										{/* Admins */}
-										<TableCell>
-											{home.admins?.length || 0}
-										</TableCell>
+											{/* Caregivers */}
+											<TableCell>
+												{home.caregivers?.length || 0}
+											</TableCell>
 
-										{/* Client Number */}
-										<TableCell>
-											{home.clients?.length || 0}
-										</TableCell>
+											{/* Admins */}
+											<TableCell>
+												{home.admins?.length || 0}
+											</TableCell>
 
-										{/* Night Check */}
-										<TableCell>
-											{home.nightChecksEnabled
-												? `Every ${home.nightCheckFrequency} min`
-												: "Disabled"
-											}
-										</TableCell>
+											{/* Client Number */}
+											<TableCell>
+												{home.clients?.length || 0}
+											</TableCell>
 
-										{/* Status */}
-										<TableCell>
-											<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
-												{home.isActive ? "Active" : "Inactive"}
-											</span>
-										</TableCell>
+											{/* Night Check */}
+											<TableCell>
+												{home.nightChecksEnabled
+													? `Every ${home.nightCheckFrequency} min`
+													: "Disabled"
+												}
+											</TableCell>
 
-										{/* Opened At */}
-										<TableCell>
-											{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}
-										</TableCell>
+											{/* Status */}
+											<TableCell>
+												<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
+													{home.isActive ? "Active" : "Inactive"}
+												</span>
+											</TableCell>
 
-										{/* Actions */}
-										<TableCell>
-											<Link href={`/homes/${home.id || home._id}`}>
-												<Eye color="#059669" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem', cursor: 'pointer' }} />
-											</Link>
-											<Link href={`/homes/${home.id || home._id}/edit`}>
-												<Edit color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
-											</Link>
-											<Trash2
-												color="#ef4444"
-												style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-												onClick={() => handleDeleteClick(home.id || home._id)}
-											/>
-										</TableCell>
-									</TableContent>
-								))
-							) : (
-								<div style={{ padding: "1rem" }}>No homes found.</div>
-							)}
-						</Table>
+											{/* Opened At */}
+											<TableCell>
+												{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}
+											</TableCell>
+
+											{/* Actions */}
+											<TableCell>
+												<Link href={`/homes/${home.id || home._id}`}>
+													<Edit color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+												</Link>
+												<Trash2
+													color="#ef4444"
+													style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+													onClick={() => handleDeleteClick(home.id || home._id)}
+												/>
+											</TableCell>
+										</TableContent>
+									))
+								) : (
+									<div style={{ padding: "1rem" }}>No homes found.</div>
+								)}
+							</Table>
+						)}
 
 						{/* Pagination */}
-						{pageCount > 1 && (
+						{!isLoading && !fetchError && pageCount > 1 && (
 							<ReactPaginate
 								pageCount={pageCount}
 								onPageChange={handlePageClick}

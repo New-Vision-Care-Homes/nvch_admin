@@ -109,6 +109,7 @@ export const useGoogleMap = ({
 
 			const autocompleteInstance = new window.google.maps.places.Autocomplete(inputRef.current, {
 				fields: ["geometry", "formatted_address"],
+				componentRestrictions: { country: "ca" },
 			});
 
 			autocompleteInstance.addListener("place_changed", () => {

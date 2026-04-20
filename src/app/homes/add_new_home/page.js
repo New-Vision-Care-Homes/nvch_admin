@@ -16,6 +16,8 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useGoogleMap } from "@/hooks/useGoogleMap";
 import { Search, X } from "lucide-react";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import ActionMessage from "@components/UI/ActionMessage";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -48,7 +50,7 @@ const schema = yup.object({
 
 export default function AddNewHomePage() {
 	const router = useRouter();
-	const { addHome, isActionPending, isError, errorMessage } = useHomes();
+	const { addHome, isActionPending, actionError } = useHomes();
 
 	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
 		resolver: yupResolver(schema),
@@ -72,7 +74,6 @@ export default function AddNewHomePage() {
 		loadError,
 		address: mapAddress,
 		center: mapCenter,
-		addressComponents,
 		updateRadius
 	} = useGoogleMap();
 
@@ -85,21 +86,13 @@ export default function AddNewHomePage() {
 	}, [geofenceRadius, updateRadius]);
 
 	// Auto-fill address fields when address is selected from autocomplete
-	useEffect(() => {
-		if (addressComponents) {
-			const street = addressComponents.street || "";
-			const city = addressComponents.city || "";
-			const province = addressComponents.province || "";
-			const postalCode = addressComponents.postalCode || "";
-			const country = addressComponents.country || "";
-
-			setValue("street", street);
-			setValue("city", city);
-			setValue("province", province);
-			setValue("postalCode", postalCode);
-			setValue("country", country);
-		}
-	}, [addressComponents, setValue]);
+	function handleAddressSelect({ street, city, state, country, postalCode }) {
+		if (street)     setValue("street",   street,     { shouldValidate: true });
+		if (city)       setValue("city",     city,       { shouldValidate: true });
+		if (state)      setValue("province", state,      { shouldValidate: true });
+		if (country)    setValue("country",  country,    { shouldValidate: true });
+		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
+	}
 
 	// Program types state
 	const [selectedProgramTypes, setSelectedProgramTypes] = useState([]);
@@ -307,7 +300,7 @@ export default function AddNewHomePage() {
 						</Button>
 					</div>
 				</div>
-				{isError && <div className={styles.formError}>Error: {errorMessage}</div>}
+				{actionError && <ActionMessage variant="error" message={actionError} />}
 
 				<div className={styles.content}>
 					<div className={styles.rightPanel} style={{ width: '100%' }}>
@@ -644,7 +637,15 @@ export default function AddNewHomePage() {
 							<CardHeader>Location & Geofence</CardHeader>
 							<CardContent>
 								{/* Address Search Input */}
-								<div style={{ marginBottom: '1rem' }}>
+								<AddressAutocomplete
+									label="Search Address"
+									onAddressSelect={handleAddressSelect}
+									placeholder="Start typing to search for an address..."
+									id="home-address-autocomplete"
+								/>
+
+								{/* Map search input (for geofence) */}
+								<div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
 									<label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
 										Search Address
 									</label>
