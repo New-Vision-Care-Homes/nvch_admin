@@ -539,7 +539,7 @@ export default function Timesheet() {
 						<div className={styles.modalContentWrapper}>
 							<div className={styles.inputCard}>
 								<p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280", lineHeight: 1.5 }}>
-									Set the maximum bi-weekly hours and record the last period's total hours for this caregiver.
+									Set the maximum bi-weekly hours and record the last period&apos;s total hours for this caregiver.
 								</p>
 								<InputFieldLR
 									label="Max Hours (Bi-weekly)"

@@ -5,11 +5,11 @@ import styles from "./History.module.css";
 import { forwardRef } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Calendar } from "lucide-react"; 
+import { Calendar } from "lucide-react";
 import { ArrowDownWideNarrow, ArrowUpNarrowWide } from "lucide-react";
 
 
-function VisitHistory() {
+export default function History() {
 	// State
 	const [caregiverFilter, setCaregiverFilter] = useState(""); // Filter by caregiver name
 	const [dateFilter, setDateFilter] = useState(""); // Filter by date
@@ -96,14 +96,14 @@ function VisitHistory() {
 	// Sort icon
 	const SortIcon = (field) => {
 		if (sortField !== field) return null;
-	  
+
 		return sortDirection === "asc" ? (
 			<ArrowUpNarrowWide size={16} />
 		) : (
 			<ArrowDownWideNarrow size={16} />
 		);
 	};
-	  
+
 
 	const CustomInput = forwardRef(({ value, onClick }, ref) => (
 		<div className={styles.dateWrapper} onClick={onClick} ref={ref}>
@@ -156,28 +156,26 @@ function VisitHistory() {
 					</thead>
 					<tbody className={styles.tableBody}>
 						{filteredData.length > 0
-						? filteredData.map(record => (
-							<tr key={record.id}>
-								<td className={styles.visitDate}>{record.visitDate}</td>
-								<td className={styles.caregiverName}>{record.caregiverName}</td>
-								<td className={styles.visitNotes}>{record.visitNotes}</td>
-								<td className={styles.incidents}>{record.incidents}</td>
-							</tr>
-						))
-						: (
-							<tr>
-								<td colSpan="4" className={styles.emptyState}>
-									No visit records found.
-								</td>
-							</tr>
-						)}
+							? filteredData.map(record => (
+								<tr key={record.id}>
+									<td className={styles.visitDate}>{record.visitDate}</td>
+									<td className={styles.caregiverName}>{record.caregiverName}</td>
+									<td className={styles.visitNotes}>{record.visitNotes}</td>
+									<td className={styles.incidents}>{record.incidents}</td>
+								</tr>
+							))
+							: (
+								<tr>
+									<td colSpan="4" className={styles.emptyState}>
+										No visit records found.
+									</td>
+								</tr>
+							)}
 					</tbody>
 				</table>
 			</div>
 		</div>
 	);
 }
-
-export default VisitHistory;
 
 

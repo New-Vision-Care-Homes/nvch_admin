@@ -14,7 +14,7 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { idRule, nameRule, emailRule, phoneRule } from "@/utils/validation";
+import { IdRule, nameRule, emailRule, phoneRule } from "@/utils/validation";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import { useProfileUpload } from "@/hooks/usePictures";
@@ -48,7 +48,7 @@ const schema = yup.object({
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	adminId: idRule,
+	adminId: IdRule,
 	permissionsGroup: yup
 		.array()
 		.min(1, "Please select at least one permission group")

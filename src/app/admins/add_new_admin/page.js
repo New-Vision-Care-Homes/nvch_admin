@@ -13,7 +13,7 @@ import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 
-import { idRule, nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
+import { IdRule, nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -29,7 +29,7 @@ const DEPARTMENT_OPTIONS = [
 ];
 
 const schema = yup.object({
-	adminId: idRule,
+	adminId: IdRule,
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
