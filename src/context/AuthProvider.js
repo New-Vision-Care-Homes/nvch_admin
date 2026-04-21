@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
-const publicPaths = ["/login", "/forget_password"]; // Add any other public paths here
+const publicPaths = ["/", "/forget_password"]; // Add any other public paths here
 const defaultProtectedPath = "/dashboard"; // Where to redirect if a logged-in user visits a public path
 
 export default function AuthProvider({ children }) {
@@ -21,7 +21,7 @@ export default function AuthProvider({ children }) {
 
         // Logic check
         if (!token && !isPublicPath && !isExactRoot) {
-            router.replace("/login");
+            router.replace("/");
             return;
         }
 
@@ -42,7 +42,7 @@ export default function AuthProvider({ children }) {
 
         const logout = () => {
             localStorage.removeItem("token");
-            router.replace("/login");
+            router.replace("/");
         };
 
         const resetTimer = () => {

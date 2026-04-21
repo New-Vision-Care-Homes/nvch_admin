@@ -22,7 +22,7 @@ export default function Navbar() {
 		localStorage.removeItem("token");
 
 		// 2. Redirect to login page
-		router.push("/login");
+		router.push("/");
 	};
 
 	return (
