@@ -37,7 +37,7 @@ import cardStyles from "./Card.module.css";
 
 // Tell the Google Maps loader which extra library we need.
 // "places" is required for AutocompleteService and PlacesService.
-const LIBRARIES = ["places"];
+const LIBRARIES = ["places", "geometry"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: parseAddressComponents

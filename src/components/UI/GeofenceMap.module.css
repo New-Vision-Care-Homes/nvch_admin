@@ -1,0 +1,45 @@
+.wrapper {
+	border-radius: 14px;
+	overflow: hidden;
+	border: 1px solid #e5e7eb;
+	background: #f3f4f6;
+	width: 100%;
+}
+
+/* Shared centered-content state box (loading / error) */
+.stateBox {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.stateText {
+	font-size: 0.88rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+.errorIcon {
+	color: #dc2626;
+}
+
+.stateText:has(+ .errorIcon),
+.stateBox:has(.errorIcon) .stateText {
+	color: #dc2626;
+}
+
+/* Loading spinner */
+.spinner {
+	width: 28px;
+	height: 28px;
+	border: 3px solid #e5e7eb;
+	border-top-color: #3b82f6;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}

@@ -15,6 +15,7 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
+import ActionMessage from "@components/UI/ActionMessage";
 
 export default function Caregivers() {
 	// --- State ---

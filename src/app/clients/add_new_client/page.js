@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -63,18 +62,6 @@ const schema = yup.object({
 	state: shortTextRule.required("Province is required"),
 	pinCode: pinRule.required("Postal code is required"),
 	country: shortTextRule.required("Country is required"),
-	/*
-	latitude: yup
-		.number()
-		.required("Latitude is required")
-		.nullable()
-		.transform((v, o) => (o === "" ? null : v)),
-	longitude: yup
-		.number()
-		.required("Longitude is required")
-		.nullable()
-		.transform((v, o) => (o === "" ? null : v)),
-	*/
 
 	// Health Card
 	healthCardNumber: yup
@@ -172,18 +159,20 @@ export default function Page() {
 		shouldFocusError: true,
 	});
 
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
+	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
 		if (city) setValue("city", city, { shouldValidate: true });
 		if (state) setValue("state", state, { shouldValidate: true });
 		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+		if (latitude !== undefined) setValue("latitude", latitude);
+		if (longitude !== undefined) setValue("longitude", longitude);
 	}
 
 	const onSubmit = async (data) => {
 		const body = {
 			email: data.email,
-			password: data.password,
+			//password: data.password,
 			firstName: data.firstName,
 			lastName: data.lastName,
 			role: "client",
@@ -201,8 +190,8 @@ export default function Page() {
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: 44.6488,
-					longitude: -63.5752,
+					latitude: data.latitude || 44.6488, // fallback to Halifax
+					longitude: data.longitude || -63.5752, // fallback to Halifax
 				},
 			},
 
