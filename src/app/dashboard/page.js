@@ -89,7 +89,7 @@ export default function Dashboard() {
 			<div className={styles.header}>
 				<div>
 					<h1>Dashboard</h1>
-					<h6>Welcome back! Here's what's happening today.</h6>
+					<h6>{`Welcome back! Here's what's happening today.`}</h6>
 				</div>
 			</div>
 

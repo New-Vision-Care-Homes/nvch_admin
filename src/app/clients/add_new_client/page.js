@@ -21,7 +21,6 @@ import {
 	longTextRule,
 	dateRule,
 	pinRule,
-	passwordRule,
 	birthRule,
 } from "@/utils/validation";
 
@@ -33,11 +32,6 @@ const schema = yup.object({
 	email: emailRule.required("Email is required"),
 	phone: phoneRule.required("Phone is required"),
 	birth: birthRule.required("Birth date is required"),
-	password: passwordRule.required("Password is required"),
-	confirmPassword: yup
-		.string()
-		.required("Please confirm the password")
-		.oneOf([yup.ref("password")], "Passwords do not match"),
 	region: yup
 		.string()
 		.oneOf(
@@ -172,7 +166,6 @@ export default function Page() {
 	const onSubmit = async (data) => {
 		const body = {
 			email: data.email,
-			//password: data.password,
 			firstName: data.firstName,
 			lastName: data.lastName,
 			role: "client",
@@ -359,10 +352,6 @@ export default function Page() {
 								<InputField label="Email" name="email" register={register} error={errors.email} />
 							</div>
 
-							<div className={styles.row2}>
-								<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
-								<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
-							</div>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
 
 							{/* Address */}
