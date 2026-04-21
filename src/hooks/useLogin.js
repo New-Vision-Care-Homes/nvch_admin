@@ -24,9 +24,6 @@ export const useLogin = () => {
 			const token = data?.token;
 			if (token) {
 				localStorage.setItem("token", token);
-				console.log("Login successful");
-			} else {
-				console.warn("Login succeeded but no token found in response");
 			}
 			router.push("/dashboard");
 		},

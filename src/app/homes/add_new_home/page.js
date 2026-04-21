@@ -87,10 +87,10 @@ export default function AddNewHomePage() {
 
 	// Auto-fill address fields when address is selected from autocomplete
 	function handleAddressSelect({ street, city, state, country, postalCode }) {
-		if (street)     setValue("street",   street,     { shouldValidate: true });
-		if (city)       setValue("city",     city,       { shouldValidate: true });
-		if (state)      setValue("province", state,      { shouldValidate: true });
-		if (country)    setValue("country",  country,    { shouldValidate: true });
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("province", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
 	}
 
@@ -267,12 +267,10 @@ export default function AddNewHomePage() {
 		};
 
 		try {
-			console.log("homeData", homeData);
 			await addHome(homeData);
 			router.push("/homes");
 		} catch (err) {
-			console.error("Error creating home:", err);
-			// API errors are handled by the hook (isError, errorMessage)
+			alert(err.message);
 		}
 	};
 

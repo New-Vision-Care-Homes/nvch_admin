@@ -18,7 +18,6 @@ import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 // --- 1. Data Cleaning/Flattening Function ---
 const cleanFetchedData = (apiData) => {
 	if (!apiData) return {};
-	console.log("apidata: ", apiData);
 
 	// Base fields
 	const cleanData = {

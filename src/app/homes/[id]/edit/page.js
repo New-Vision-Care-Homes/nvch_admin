@@ -316,11 +316,10 @@ export default function EditHomePage() {
 		};
 
 		try {
-			console.log("Updating homeData", homeData);
 			await updateHome({ id: homeId, data: homeData });
 			router.push("/homes");
 		} catch (err) {
-			console.error("Error updating home:", err);
+			alert(err.message);
 		}
 	};
 

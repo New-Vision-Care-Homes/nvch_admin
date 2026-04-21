@@ -43,7 +43,6 @@ export default function ForgetPasswordPage() {
 				setMessage(data.message || "Something went wrong.");
 			}
 		} catch (err) {
-			console.error("Error connecting to server:", err);
 			setMessage("Error connecting to server");
 		}
 	};

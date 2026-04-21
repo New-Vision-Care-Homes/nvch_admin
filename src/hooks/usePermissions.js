@@ -25,7 +25,6 @@ export const usePermissionGroups = (options = {}) => {
 	 * Extracts the most relevant error message from an Axios error object.
 	 */
 	const getErrorMessage = (err) => {
-		console.log(err?.response?.data?.details);
 		return (
 			err?.response?.data?.details[0]?.msg ||
 			err?.response?.data?.error ||
