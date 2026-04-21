@@ -47,8 +47,8 @@ export default function ShiftListPage() {
 	const displayDate = dateParam
 		? format(new Date(dateParam + "T12:00:00"), "MMMM d, yyyy") // noon avoids UTC midnight flip
 		: startParam
-		? format(new Date(startParam), "MMMM d, yyyy")
-		: "";
+			? format(new Date(startParam), "MMMM d, yyyy")
+			: "";
 
 	const displayTitle = displayDate ? `Shifts on ${displayDate}` : "Shift Details";
 

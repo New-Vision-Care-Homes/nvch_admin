@@ -141,8 +141,8 @@ export default function SchedulingPage() {
 
 	const eventsToShow =
 		view === "month" ? monthEvents :
-		view === "agenda" ? agendaEvents :
-		weekDayEvents;
+			view === "agenda" ? agendaEvents :
+				weekDayEvents;
 
 	// ── Navigation on event click ──
 	const handleSelectEvent = (event) => {

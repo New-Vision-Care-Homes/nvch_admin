@@ -412,6 +412,7 @@ export default function Timesheet() {
 							</div>
 							<Button
 								variant="ghost"
+								disabled={true}
 								className={styles.headerBtn}
 								icon={<SquarePen size={14} />}
 								onClick={() => setIsHoursModalOpen(true)}

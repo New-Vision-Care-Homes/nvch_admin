@@ -11,6 +11,8 @@ import styles from "./add_new_caregiver.module.css";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import { useCaregivers } from "@/hooks/useCaregivers";
+import ActionMessage from "@components/UI/ActionMessage";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
@@ -33,21 +35,17 @@ const availabilitySchema = yup.object({
 	notes: longTextRule.optional(),
 });
 
-// Schema for each Certification entry (Fields are optional)
-const certificationSchema = yup.object({
-	name: shortTextRule.optional(),
-	url: shortTextRule.optional(),
-	startDate: dateRule,
-	expiryDate: dateRule,
-	//uploadFile: yup.mixed().optional(),
-});
-
 
 // Main Form Schema (MODIFIED ARRAY DEFINITIONS)
 const schema = yup.object({
 	employeeId: IdRule.required("Employee ID is required"),
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
+	password: passwordRule.required("Password is required"),
+	confirmPassword: yup
+		.string()
+		.required("Please confirm the password")
+		.oneOf([yup.ref("password")], "Passwords do not match"),
 	email: emailRule.required("Email is required"),
 	phone: phoneRule.required("Phone number is required"),
 	dateOfBirth: birthRule.required("Date of Birth is required"),
@@ -56,17 +54,11 @@ const schema = yup.object({
 		.required("Region is required"),
 
 	// Address Fields
-	street: shortTextRule.required("Street is required"),
+	street: longTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
 	state: shortTextRule.required("State/Province is required"),
 	pinCode: pinRule,
 	country: shortTextRule.required("Country is required"),
-
-	// Dynamic Arrays - FORCED TO PASS VALIDATION
-	certifications: yup.array().of(certificationSchema)
-		.nullable()
-		.default(null)
-		.optional(), // Allows null, undefined, or [] to pass validation
 
 	availability: yup.array().of(availabilitySchema)
 		.nullable()
@@ -78,8 +70,6 @@ const schema = yup.object({
 	emergencyFName: nameRule.required("Emergency Contact Name is required"),
 	emergencyPhone: phoneRule.required("Emergency Contact Phone is required"),
 	emergencyRelationship: shortTextRule.required("Emergency Contact Relationship is required"),
-
-	picture: yup.mixed().optional(),
 });
 
 
@@ -101,24 +91,23 @@ const emptyAvailabilityTemplate = {
 
 export default function Page() {
 	const router = useRouter();
-	const [loading, setLoading] = useState(false);
-	const [errorMsg, setErrorMsg] = useState(null);
 
 	const { register, handleSubmit, watch, formState: { errors }, control, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			// Arrays are initialized as empty, allowing the user to add slots
 			availability: [],
-			certifications: []
 		}
 	});
 
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
+	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
 		if (city) setValue("city", city, { shouldValidate: true });
 		if (state) setValue("state", state, { shouldValidate: true });
 		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+		if (latitude !== undefined) setValue("latitude", latitude);
+		if (longitude !== undefined) setValue("longitude", longitude);
 	}
 
 	// useFieldArray for Availability Schedule
@@ -126,6 +115,8 @@ export default function Page() {
 		control,
 		name: "availability",
 	});
+
+	const { addCaregiver, caregiverActionError, isCaregiverActionPending } = useCaregivers();
 
 
 	/*
@@ -135,7 +126,6 @@ export default function Page() {
 	| Processes data and submits to the API.
 	*/
 	const onSubmit = async (data) => {
-		setLoading(true);
 
 		// --- PROCESSING AVAILABILITY ARRAY ---
 		// Filters out empty entries (where day is blank)
@@ -152,7 +142,7 @@ export default function Page() {
 		// 3. Construct the Caregiver Registration Body
 		const body = {
 			email: data.email,
-			password: "SecurePass123!",
+			password: data.password,
 			firstName: data.firstName,
 			lastName: data.lastName,
 			role: "caregiver",
@@ -168,8 +158,8 @@ export default function Page() {
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					"latitude": 44.6488,
-					"longitude": -63.5752
+					latitude: data.latitude || 44.6488, // fallback to Halifax
+					longitude: data.longitude || -63.5752, // fallback to Halifax
 				},
 			},
 
@@ -183,52 +173,12 @@ export default function Page() {
 		};
 
 		// 4. API Submission Logic
-		try {
-			const token = localStorage.getItem("token");
-			console.log("Submitting Caregiver Body: ", body);
-			//console.log("Submitting Caregiver Body: ", body);
-
-			const res = await fetch("https://nvch-server.onrender.com/api/auth/register", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json; charset=utf-8",
-					Authorization: `Bearer ${token}`
-				},
-				body: JSON.stringify(body)
-			});
-
-			let resData = {};
-			try { resData = await res.json(); } catch (e) { }
-
-			if (res.ok) {
+		addCaregiver(body, {
+			onSuccess: () => {
 				router.push("/caregivers");
-			} else {
-				let errorMessageToDisplay = `Failed to register caregiver (Status ${res.status}).`;
-				if (resData.error) {
-					errorMessageToDisplay = resData.error;
-				} else if (resData.message) {
-					errorMessageToDisplay = resData.message;
-				} else if (res.status === 400 && resData.details) {
-					const detailMessages = resData.details.map(detail => {
-						const path = detail.path ? `(${detail.path})` : '';
-						return `${detail.msg} ${path}`;
-					});
-					errorMessageToDisplay = detailMessages.join(' | ');
-				}
-				if (res.status === 401 || res.status === 403) {
-					if (!resData.error && !resData.message) {
-						errorMessageToDisplay = "Authentication failed. Please log in again.";
-					}
-				}
+			},
+		});
 
-				setErrorMsg(errorMessageToDisplay);
-			}
-		} catch (err) {
-			console.error("Caught critical error:", err);
-			setErrorMsg("Could not connect to the server or received an invalid response.");
-		} finally {
-			setLoading(false);
-		}
 	};
 
 	function handleCancel() {
@@ -259,11 +209,13 @@ export default function Page() {
 					<h1>Caregiver Profile: Add New Caregiver</h1>
 					<div className={styles.buttons}>
 						<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
-						<Button variant="primary" type="submit" disabled={loading}>
-							{loading ? "Saving..." : "Save"}
+						<Button variant="primary" type="submit" disabled={isCaregiverActionPending}>
+							{isCaregiverActionPending ? "Saving..." : "Save"}
 						</Button>
 					</div>
 				</div>
+
+				{caregiverActionError && <ActionMessage variant="error" message={caregiverActionError} />}
 
 				<div className={styles.content}>
 					{/* Form Fields Panel (Right) */}
@@ -272,8 +224,6 @@ export default function Page() {
 						<Card>
 							<CardHeader>General and Contact Information</CardHeader>
 							<CardContent>
-								{errorMsg !== null ? <div className={styles.formError}>Error: {errorMsg}</div> : null}
-
 								<InputField label="Employee ID" name="employeeId" register={register} error={errors.employeeId} />
 								<div className={styles.row2}>
 									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
@@ -283,12 +233,19 @@ export default function Page() {
 									<InputField label="Email" name="email" register={register} error={errors.email} />
 									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
+
 								<div className={styles.row2}>
 									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" />
 									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
 										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 									/>
 								</div>
+
+								<div className={styles.row2}>
+									<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
+									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
+								</div>
+
 								{/* Address */}
 								<AddressAutocomplete
 									label="Search Address"
@@ -339,7 +296,7 @@ export default function Page() {
 													type="select"
 													register={register}
 													error={errors.availability?.[index]?.day}
-													options={[{ label: "Select Day", value: "" }, ...dayOptions]}
+													options={dayOptions}
 												/>
 												{/* Start Time Input */}
 												<InputField

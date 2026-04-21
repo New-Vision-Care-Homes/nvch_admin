@@ -14,6 +14,16 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import { useClients } from "@/hooks/useClients";
 
+/**
+ * Clients Page Component
+ * 
+ * Displays a paginated list of all clients in the system.
+ * Features:
+ * - Debounced text search to find specific clients by name or ID
+ * - Dropdown filter to show only Active or Inactive clients
+ * - Table view with client details and quick actions (Edit, Delete)
+ * - Safe delete confirmation modal
+ */
 export default function Clients() {
 
 	// --- State ---
@@ -52,13 +62,6 @@ export default function Clients() {
 			search: debouncedSearch,
 			isActive: isActiveParam,
 		}
-	});
-
-	console.log("test", {
-		currentPage,
-		totalPages,
-		clientsLength: clients.length,
-		debouncedSearch
 	});
 
 	// Reset to page 1 when filters change

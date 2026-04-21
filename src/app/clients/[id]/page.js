@@ -21,6 +21,16 @@ const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"]
 const MAX_FILE_SIZE = 500 * 1024; // 500KB limit
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 
+/**
+ * Client Profile Page Component
+ * 
+ * Main container for a single client's profile.
+ * Features:
+ * - Fetches and displays top-level client details (Name, ID, Status)
+ * - Toggles active/inactive status
+ * - Uploads and updates the client's profile picture using AWS S3 pre-signed URLs
+ * - Renders a tabbed navigation interface for detailed sub-sections (Info, Care Plan, etc.)
+ */
 export default function Page() {
 	const { id } = useParams();
 

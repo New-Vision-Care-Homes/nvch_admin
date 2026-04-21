@@ -67,6 +67,15 @@ const cleanFetchedData = (apiData) => {
 	};
 };
 
+/**
+ * Care Plan Component
+ * 
+ * Displays and edits the medical and daily care instructions for a specific client.
+ * Features:
+ * - Uses react-hook-form to manage 4 distinct sections: Medical Conditions, Medications, Special Notes, and Care Instructions
+ * - Flattens the nested backend data into a single level object for easier form management (`cleanFetchedData`)
+ * - Reconstructs the nested JSON object when sending updates back to the backend
+ */
 export default function CarePlan() {
 	const { id } = useParams();
 	const [isInitialized, setIsInitialized] = useState(false);
