@@ -88,12 +88,9 @@ export default function Shifts() {
 		},
 	});
 
-	console.log("startDateTime being sent:", nowIsoRef.current);
-	console.log("shifts: ", shifts);
 
 	// --- Past shifts: use hourHistory ---
 	const { hourHistory, isLoading: isHistoryLoading } = useHours(id);
-	console.log("hors: ", hourHistory);
 
 	// Client-side pagination for history (the hook returns all records)
 	const historyList = hourHistory?.history ?? [];

@@ -43,7 +43,6 @@ export default function Page() {
 		toggleClientStatus
 	} = useClients(id);
 
-	console.log("client: ", clientDetail);
 
 	// --- Image Upload States ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);

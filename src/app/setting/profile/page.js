@@ -54,7 +54,6 @@ export default function ProfilePage() {
 
 
 	const onSubmit = (data) => {
-		console.log("onSubmit", data);
 		const body = {
 			phone: data.phone,
 			emergencyContact: {
@@ -65,7 +64,6 @@ export default function ProfilePage() {
 		};
 		updateProfile(body, {
 			onSuccess: () => {
-				console.log("Profile updated successfully!");
 				setIsEditing(false);
 			},
 		});

@@ -209,7 +209,6 @@ export default function Timesheet() {
 	// Persists the edited availability schedule to the backend via `updateCaregiver`.
 	const handleAvailabilitySave = () => {
 		setIsAvailabilityModalOpen(false);
-		console.log("availability: ", availability);
 		updateCaregiver(
 			{ id, data: { ...caregiverDetail, availability: availability } },
 			{
