@@ -38,12 +38,13 @@ const schema = yup.object({
 		.test("is-after-start", "End time must be after start time", function (v) {
 			return new Date(v) > new Date(this.parent.startTime);
 		}),
-	serviceInput: shortTextRule.required("Services required field cannot be empty"),
 	contactFName: nameRule.optional(),
 	contactLName: nameRule.optional(),
 	contactPhone: phoneRule.optional(),
 	shiftNotes: shortTextRule.optional(),
-	geofenceRadius: yup.number().required("Geofence radius is required"),
+	geofenceRadius: yup.number()
+		.typeError("Please select a geofence radius")
+		.required("Geofence radius is required"),
 });
 
 // ─── Utility functions ───────────────────────────────────────────────────────────
@@ -53,7 +54,6 @@ function joinAddress({ street, city, state, pinCode } = {}) {
 }
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-const QUICK_TAGS = ["Urgent", "New Client"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main page component
@@ -61,12 +61,12 @@ const QUICK_TAGS = ["Urgent", "New Client"];
 export default function AddNewShiftPage() {
 	const router = useRouter();
 
-	// ── 1. Form management (react-hook-form) ────────────────────────────────────────
 	const {
 		register,
 		handleSubmit,
 		watch,
 		setValue,
+		control,
 		formState: { errors },
 	} = useForm({ resolver: yupResolver(schema) });
 
@@ -81,15 +81,6 @@ export default function AddNewShiftPage() {
 	useEffect(() => {
 		updateRadius(geofenceRadius);
 	}, [geofenceRadius, updateRadius]);
-
-	// If start time changes and end time is now before it, auto-clear end time
-	useEffect(() => {
-		if (selectedStartTime && selectedEndTime) {
-			if (new Date(selectedEndTime) <= new Date(selectedStartTime)) {
-				setValue("endTime", "");
-			}
-		}
-	}, [selectedStartTime, selectedEndTime, setValue]);
 
 	// ── 3. Client search (using useClients hook) ───────────────────────────────────
 	//
@@ -121,7 +112,7 @@ export default function AddNewShiftPage() {
 		setClientInput(`${client.firstName} ${client.lastName}`);
 		setShowClientDropdown(false);
 		// Fill hidden form fields with the selected client's data
-		setValue("clientId", client.clientId);
+		setValue("clientId", client.id);
 		setValue("clientPhone", client.phone || "");
 		setValue("clientAddress", joinAddress(client.address));
 	}
@@ -196,26 +187,8 @@ export default function AddNewShiftPage() {
 		setTasks((prev) => prev.filter((t) => t.id !== id));
 	}
 
-	// ── 6. Tag management ───────────────────────────────────────────────────────────
-	const [selectedTags, setSelectedTags] = useState([]);
-	const [customTagInput, setCustomTagInput] = useState("");
-
-	function toggleTag(tag) {
-		setSelectedTags((prev) =>
-			prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-		);
-	}
-
-	function addCustomTag() {
-		const tag = customTagInput.trim();
-		if (tag && !selectedTags.includes(tag)) {
-			setSelectedTags((prev) => [...prev, tag]);
-		}
-		setCustomTagInput("");
-	}
-
-	// ── 7. Form submission (using useShifts hook) ───────────────────────────────────
-	const { addShift, isActionPending, isError, errorMessage } = useShifts();
+	// ── 6. Form submission (using useShifts hook) ───────────────────────────────────
+	const { addShift, isShiftActionPending, actionShiftError } = useShifts();
 
 	async function onSubmit(data) {
 		const shiftData = {
@@ -229,23 +202,28 @@ export default function AddNewShiftPage() {
 			},
 			startTime: data.startTime,
 			endTime: data.endTime,
-			servicesRequired: data.serviceInput.split(",").map((s) => s.trim()),
+			timezone: "America/Halifax",
 			notes: data.shiftNotes,
 			tasks: tasks.map((t) => ({ description: t.text, completed: false })),
 			isOpenShift: false,
 			recurringShift: { isRecurring: false },
-			tags: selectedTags,
 			geofence: {
 				center: { latitude: mapCenter.lat, longitude: mapCenter.lng },
 				radius: data.geofenceRadius || 100,
 				shape: "circle",
-				alertOnEntry: data.alertOnEntry || false,
-				alertOnExit: data.alertOnExit || false,
+
 			},
 		};
 
-		await addShift(shiftData);
-		router.push("/scheduling");
+		console.log("shiftData", shiftData);
+
+		try {
+			await addShift(shiftData);
+			router.push("/scheduling");
+		} catch (error) {
+			// useMutation already stores the error in actionShiftError
+			console.error("Failed to add shift", error);
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -259,14 +237,14 @@ export default function AddNewShiftPage() {
 				<h1>Create New Shift</h1>
 				<div className={styles.buttons}>
 					<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
-					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
-						{isActionPending ? "Saving..." : "Save"}
+					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isShiftActionPending}>
+						{isShiftActionPending ? "Saving..." : "Save"}
 					</Button>
 				</div>
 			</div>
 
 			{/* Error banner */}
-			{isError && <ActionMessage variant="error" message={errorMessage} />}
+			{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
 
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div className={styles.cards}>
@@ -348,10 +326,9 @@ export default function AddNewShiftPage() {
 							<CardHeader>Shift Information</CardHeader>
 							<CardContent>
 								<div className={styles.card_row_2}>
-									<InputField label="Start Time" type="datetime-local" name="startTime" register={register} error={errors.startTime} min={now} />
-									<InputField label="End Time" type="datetime-local" name="endTime" register={register} error={errors.endTime} min={selectedStartTime || now} />
+									<InputField label="Start Time" type="datetime-local" name="startTime" register={register} control={control} error={errors.startTime} min={now} />
+									<InputField label="End Time" type="datetime-local" name="endTime" register={register} control={control} error={errors.endTime} min={selectedStartTime || now} />
 								</div>
-								<InputField label="Services Required" name="serviceInput" register={register} error={errors.serviceInput} placeholder="e.g. Cooking, Bathing" />
 								<InputField label="Shift Notes" name="shiftNotes" register={register} />
 							</CardContent>
 						</Card>
@@ -432,68 +409,6 @@ export default function AddNewShiftPage() {
 							))}
 						</div>
 					</Card>
-
-					{/* Additional options (tags) */}
-					<Card>
-						<CardHeader>Additional Options</CardHeader>
-						<CardContent>
-
-							{/* Recurring shift toggle */}
-							<div className={styles.toggleRow}>
-								<label className={styles.label}>Recurring Shift</label>
-								<label className={styles.switch}>
-									<input type="checkbox" {...register("isRecurring")} />
-									<span className={styles.slider}></span>
-								</label>
-							</div>
-
-							<hr className={styles.divider} />
-
-							{/* Selected tags */}
-							<div className={styles.selectedTagsContainer}>
-								{selectedTags.map((tag) => (
-									<span key={tag} className={styles.pill}>
-										{tag}
-										<button type="button" className={styles.removeTagBtn} onClick={() => toggleTag(tag)}>✕</button>
-									</span>
-								))}
-							</div>
-
-							{/* Custom tag input */}
-							<div className={styles.tagsGroup}>
-								<div className={styles.searchWrapper}>
-									<Plus size={16} className={styles.searchIcon} />
-									<input
-										type="text"
-										className={styles.input}
-										placeholder="Add custom tag..."
-										value={customTagInput}
-										onChange={(e) => setCustomTagInput(e.target.value)}
-										onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomTag(); } }}
-									/>
-								</div>
-								<Button type="button" onClick={addCustomTag}>Add</Button>
-							</div>
-
-							{/* Quick tag buttons */}
-							<div className={styles.formGroup} style={{ marginTop: "15px" }}>
-								<label className={styles.label}>Quick Tags:</label>
-								<div className={styles.tagCandidateList}>
-									{QUICK_TAGS.map((tag) => (
-										<button
-											key={tag}
-											type="button"
-											className={`${styles.candidateTag} ${selectedTags.includes(tag) ? styles.activeCandidate : ""}`}
-											onClick={() => toggleTag(tag)}
-										>
-											{selectedTags.includes(tag) ? "✓ " : "+ "}{tag}
-										</button>
-									))}
-								</div>
-							</div>
-
-						</CardContent>
-					</Card>
 				</div>
 
 				{/* ── Geofence ── */}
@@ -531,16 +446,6 @@ export default function AddNewShiftPage() {
 									{ label: "300m", value: 300 },
 								]}
 							/>
-							<div className={styles.checkboxGroup}>
-								<label className={styles.checkboxLabel}>
-									<input type="checkbox" {...register("alertOnEntry")} />
-									<span>Alert on Caregiver Entry</span>
-								</label>
-								<label className={styles.checkboxLabel}>
-									<input type="checkbox" {...register("alertOnExit")} />
-									<span>Alert on Caregiver Exit</span>
-								</label>
-							</div>
 						</div>
 					</div>
 				</Card>

@@ -15,11 +15,12 @@ import { useGoogleMap } from "@/hooks/useGoogleMap";
 import { Edit, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
+import ErrorState from "@components/UI/ErrorState";
 
 export default function HomeDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
-	const { homeDetail: home, isLoading, isError, errorMessage } = useHomes(id);
+	const { homeDetail: home, isLoading, fetchError } = useHomes(id);
 
 	// Normalise admins — API may return [{ admin: {...}, adminLevel }] or flat user objects
 	const normalisedAdmins = (home?.admins || []).map(entry =>
@@ -125,7 +126,15 @@ export default function HomeDetailPage() {
 	});
 
 	if (isLoading) return <PageLayout><div>Loading home details...</div></PageLayout>;
-	if (isError || !home) return <PageLayout><div>Error: {errorMessage || "Home not found"}</div></PageLayout>;
+	if (fetchError || !home) return (
+		<PageLayout>
+			<ErrorState
+				isLoading={isLoading}
+				errorMessage={fetchError || "Home not found"}
+				onRetry={() => window.location.reload()}
+			/>
+		</PageLayout>
+	);
 
 	return (
 		<PageLayout>

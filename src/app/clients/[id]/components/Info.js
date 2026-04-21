@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import {
 	nameRule,
 	emailRule,
@@ -240,10 +241,19 @@ export default function Info() {
 		control,
 		formState: { errors },
 		reset,
+		setValue,
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
+
+	function handleAddressSelect({ street, city, state, country, postalCode }) {
+		if (street)     setValue("street",  street,     { shouldValidate: true });
+		if (city)       setValue("city",    city,       { shouldValidate: true });
+		if (state)      setValue("state",   state,      { shouldValidate: true });
+		if (country)    setValue("country", country,    { shouldValidate: true });
+		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+	}
 
 	useEffect(() => {
 		if (clientDetail && !isInitialized) {
@@ -429,6 +439,12 @@ export default function Info() {
 						</div>
 
 						<h5 className={styles.subSectionTitle}>Address</h5>
+						<AddressAutocomplete
+							label="Search Address"
+							onAddressSelect={handleAddressSelect}
+							placeholder="Start typing to search for an address..."
+							id="client-edit-address-autocomplete"
+						/>
 						<div className={styles.card_row_2}>
 							<InputField label="Street" name="street" register={register} error={errors.street} />
 							<InputField label="City" name="city" register={register} error={errors.city} />

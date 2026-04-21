@@ -13,7 +13,6 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 
@@ -41,10 +40,10 @@ export default function Caregivers() {
 	const {
 		caregivers,
 		totalPages,
-		isLoading,
-		isActionPending,
-		fetchError,
-		actionError,
+		isCaregiverLoading,
+		isCaregiverActionPending,
+		caregiverFetchError,
+		caregiverActionError,
 		deleteCaregiver,
 		refetch,
 	} = useCaregivers({
@@ -96,19 +95,14 @@ export default function Caregivers() {
 					</div>
 
 					{/* Action error — shown when delete/create/update fails */}
-					{actionError && (
-						<p className={styles.actionError}>{actionError}</p>
-					)}
-
-					{/* Fetch error or loading state */}
 					<ErrorState
-						isLoading={isLoading}
-						errorMessage={fetchError}
+						isLoading={isCaregiverLoading}
+						errorMessage={caregiverFetchError}
 						onRetry={refetch}
 					/>
 
 					{/* Only show filters and table when there is no fetch error and not loading */}
-					{!fetchError && !isLoading && (
+					{!caregiverFetchError && !isCaregiverLoading && (
 						<>
 							{/* Filters */}
 							<div className={styles.filter_row}>
