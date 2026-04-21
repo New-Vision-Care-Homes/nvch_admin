@@ -117,6 +117,7 @@ export default function History() {
 			<Calendar className={styles.dateIcon} />
 		</div>
 	));
+	CustomInput.displayName = "HistoryDatePickerInput";
 
 	return (
 		<div className={styles.container}>
