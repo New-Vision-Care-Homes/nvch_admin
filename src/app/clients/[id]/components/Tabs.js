@@ -4,7 +4,6 @@ import Info from "./Info";
 import CarePlan from "./CarePlan";
 import Assigned from "./Assigned"
 import History from "./History";
-import Billing from "./Billing"
 
 
 export default function Tabs() {
