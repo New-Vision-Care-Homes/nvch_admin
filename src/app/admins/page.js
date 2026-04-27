@@ -13,7 +13,7 @@ import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
-
+import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
 
 export default function Admins() {
@@ -142,78 +142,87 @@ export default function Admins() {
 							</div>
 
 							{/* Admins Table */}
-							<div className={styles.tableWrapper}>
-								<h2 style={{ marginBottom: "1.5rem" }}>All Admins</h2>
-								<Table>
-									<TableHeader>
-										<TableCell>Admin Name</TableCell>
-										<TableCell>Employee ID</TableCell>
-										<TableCell>Contact</TableCell>
-										<TableCell>Status</TableCell>
-										<TableCell>Actions</TableCell>
-									</TableHeader>
-									{admins.map(admin => (
-										<TableContent key={admin.id}>
-											{/* Name & Avatar */}
-											<TableCell>
-												<Image
-													src={admin.profilePictureUrl || defaultAvatar}
-													width={50}
-													height={50}
-													alt="avatar"
-													style={{ borderRadius: "50%", objectFit: "cover" }}
-													unoptimized
-												/>
-												<span>{admin.firstName} {admin.lastName}</span>
-											</TableCell>
+							{admins.length === 0 ? (
+								<div style={{ marginTop: "2rem" }}>
+									<EmptyState 
+										title="No admins found" 
+										message="There are no administrators matching your criteria." 
+									/>
+								</div>
+							) : (
+								<div className={styles.tableWrapper}>
+									<h2 style={{ marginBottom: "1.5rem" }}>All Admins</h2>
+									<Table>
+										<TableHeader>
+											<TableCell>Admin Name</TableCell>
+											<TableCell>Employee ID</TableCell>
+											<TableCell>Contact</TableCell>
+											<TableCell>Status</TableCell>
+											<TableCell>Actions</TableCell>
+										</TableHeader>
+										{admins.map(admin => (
+											<TableContent key={admin.id}>
+												{/* Name & Avatar */}
+												<TableCell>
+													<Image
+														src={admin.profilePictureUrl || defaultAvatar}
+														width={50}
+														height={50}
+														alt="avatar"
+														style={{ borderRadius: "50%", objectFit: "cover" }}
+														unoptimized
+													/>
+													<span>{admin.firstName} {admin.lastName}</span>
+												</TableCell>
 
-											{/* Employee ID */}
-											<TableCell>{admin.employeeId}</TableCell>
+												{/* Employee ID */}
+												<TableCell>{admin.employeeId}</TableCell>
 
-											{/* Contact */}
-											<TableCell>{admin.email || "-"}</TableCell>
+												{/* Contact */}
+												<TableCell>{admin.email || "-"}</TableCell>
 
-											{/* Status with pill */}
-											<TableCell>
-												<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
-													{admin.isActive ? "Active" : "Inactive"}
-												</span>
-											</TableCell>
+												{/* Status with pill */}
+												<TableCell>
+													<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
+														{admin.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
 
-											{/* Actions */}
-											<TableCell>
-												<Link href={`/admins/${admin.id}`}>
-													<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-												</Link>
-												<Trash2
-													color="#ef4444"
-													style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-													onClick={() => deleteHandler(admin.id)}
-												/>
-											</TableCell>
-										</TableContent>
-									))}
-								</Table>
+												{/* Actions */}
+												<TableCell>
+													<Link href={`/admins/${admin.id}`}>
+														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+													</Link>
+													<Trash2
+														color="#ef4444"
+														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+														onClick={() => deleteHandler(admin.id)}
+													/>
+												</TableCell>
+											</TableContent>
+										))}
+									</Table>
 
-								{/* Pagination */}
-								<ReactPaginate
-									pageCount={Math.max(totalPages, 1)}
-									forcePage={currentPage - 1}
-									onPageChange={handlePageClick}
-									pageRangeDisplayed={Math.max(totalPages, 1)}
-									marginPagesDisplayed={1}
-									previousLabel={"Prev"}
-									nextLabel={"Next"}
-									containerClassName={styles.pagination}
-									pageClassName={styles.pageItem}
-									pageLinkClassName={styles.pageLink}
-									previousClassName={styles.pageItem}
-									previousLinkClassName={styles.pageLink}
-									nextClassName={styles.pageItem}
-									nextLinkClassName={styles.pageLink}
-									activeClassName={styles.active}
-								/>
-							</div>
+									{/* Pagination */}
+									<ReactPaginate
+										pageCount={Math.max(totalPages, 1)}
+										forcePage={currentPage - 1}
+										onPageChange={handlePageClick}
+										pageRangeDisplayed={Math.max(totalPages, 1)}
+										marginPagesDisplayed={1}
+										previousLabel={"Prev"}
+										nextLabel={"Next"}
+										containerClassName={styles.pagination}
+										pageClassName={styles.pageItem}
+										pageLinkClassName={styles.pageLink}
+										previousClassName={styles.pageItem}
+										previousLinkClassName={styles.pageLink}
+										nextClassName={styles.pageItem}
+										nextLinkClassName={styles.pageLink}
+										activeClassName={styles.active}
+									/>
+								</div>
+							)}
 						</>
 					)}
 				</div>

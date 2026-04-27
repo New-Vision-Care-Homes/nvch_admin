@@ -1,0 +1,39 @@
+/* EmptyState.module.css */
+
+.wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 4rem 2rem;
+	margin: 2rem 0;
+	background-color: #ffffff;
+	border: 1px dashed #D1D5DB;
+	border-radius: 12px;
+	gap: 1rem;
+	text-align: center;
+}
+
+.iconCircle {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	background: #F3F4F6;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.title {
+	font-size: 1.25rem;
+	font-weight: 500;
+	color: #374151;
+	margin: 0;
+}
+
+.message {
+	font-size: 0.95rem;
+	color: #6B7280;
+	max-width: 400px;
+	margin: 0;
+}

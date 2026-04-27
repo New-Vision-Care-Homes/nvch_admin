@@ -10,6 +10,7 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
+import EmptyState from "@/components/UI/EmptyState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import { format } from "date-fns";
 
@@ -85,79 +86,81 @@ export default function Permissions() {
 					/>
 
 					{!isPermissionGroupsLoading && !fetchError && (
-						<div className={styles.tableWrapper}>
-							<Table>
-								<TableHeader>
-									<TableCell>Name</TableCell>
-									<TableCell>Description</TableCell>
-									<TableCell>Granted Permissions</TableCell>
-									<TableCell>Created</TableCell>
-									<TableCell>Updated</TableCell>
-									<TableCell>Actions</TableCell>
-								</TableHeader>
-								{permissionGroups?.map?.((group) => (
-									<TableContent key={group._id}>
-										<TableCell><strong>{group.name}</strong></TableCell>
-										<TableCell>
-											<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
-												{group.description?.length > 60
-													? group.description.substring(0, 60) + "..."
-													: group.description}
-											</span>
-										</TableCell>
-										<TableCell>
-											<span className={styles.pillBadge}>
-												{group.permissions?.length || 0} Modules
-											</span>
-										</TableCell>
-										<TableCell>
-											{format(new Date(group.createdAt), "MMM d, yyyy")}
-										</TableCell>
-										<TableCell>
-											{format(new Date(group.updatedAt), "MMM d, yyyy")}
-										</TableCell>
-										<TableCell>
-											<Link href={`/permissions/${group._id}`}>
-												<Edit color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
-											</Link>
-											<Trash2
-												color="#ef4444"
-												style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-												onClick={() => deleteHandler(group._id)}
-											/>
-										</TableCell>
-									</TableContent>
-								))}
-								{permissionGroups?.length === 0 && (
-									<TableContent style={{ justifyContent: "center", padding: "2rem" }}>
-										<TableCell style={{ textAlign: "center", width: "100%", color: "#6B7280" }}>
-											No permission groups found.
-										</TableCell>
-									</TableContent>
-								)}
-							</Table>
-
-							{/* Pagination */}
-							{totalPages > 1 && (
-								<ReactPaginate
-									pageCount={Math.max(totalPages, 1)}
-									forcePage={currentPage - 1}
-									onPageChange={handlePageClick}
-									pageRangeDisplayed={5}
-									marginPagesDisplayed={1}
-									previousLabel={"Prev"}
-									nextLabel={"Next"}
-									containerClassName={styles.pagination}
-									pageClassName={styles.pageItem}
-									pageLinkClassName={styles.pageLink}
-									previousClassName={styles.pageItem}
-									previousLinkClassName={styles.pageLink}
-									nextClassName={styles.pageItem}
-									nextLinkClassName={styles.pageLink}
-									activeClassName={styles.active}
+						<>
+							{permissionGroups?.length === 0 ? (
+								<EmptyState 
+									title="No permission groups found" 
+									message="There are no permission groups matching your criteria." 
 								/>
+							) : (
+								<div className={styles.tableWrapper}>
+									<Table>
+										<TableHeader>
+											<TableCell>Name</TableCell>
+											<TableCell>Description</TableCell>
+											<TableCell>Granted Permissions</TableCell>
+											<TableCell>Created</TableCell>
+											<TableCell>Updated</TableCell>
+											<TableCell>Actions</TableCell>
+										</TableHeader>
+										{permissionGroups?.map?.((group) => (
+											<TableContent key={group._id}>
+												<TableCell><strong>{group.name}</strong></TableCell>
+												<TableCell>
+													<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
+														{group.description?.length > 60
+															? group.description.substring(0, 60) + "..."
+															: group.description}
+													</span>
+												</TableCell>
+												<TableCell>
+													<span className={styles.pillBadge}>
+														{group.permissions?.length || 0} Modules
+													</span>
+												</TableCell>
+												<TableCell>
+													{format(new Date(group.createdAt), "MMM d, yyyy")}
+												</TableCell>
+												<TableCell>
+													{format(new Date(group.updatedAt), "MMM d, yyyy")}
+												</TableCell>
+												<TableCell>
+													<Link href={`/permissions/${group._id}`}>
+														<Edit color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
+													</Link>
+													<Trash2
+														color="#ef4444"
+														style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+														onClick={() => deleteHandler(group._id)}
+													/>
+												</TableCell>
+											</TableContent>
+										))}
+									</Table>
+
+									{/* Pagination */}
+									{totalPages > 1 && (
+										<ReactPaginate
+											pageCount={Math.max(totalPages, 1)}
+											forcePage={currentPage - 1}
+											onPageChange={handlePageClick}
+											pageRangeDisplayed={5}
+											marginPagesDisplayed={1}
+											previousLabel={"Prev"}
+											nextLabel={"Next"}
+											containerClassName={styles.pagination}
+											pageClassName={styles.pageItem}
+											pageLinkClassName={styles.pageLink}
+											previousClassName={styles.pageItem}
+											previousLinkClassName={styles.pageLink}
+											nextClassName={styles.pageItem}
+											nextLinkClassName={styles.pageLink}
+											activeClassName={styles.active}
+										/>
+									)}
+								</div>
 							)}
-						</div>
+						</>
 					)}
 				</div>
 			</PageLayout>
