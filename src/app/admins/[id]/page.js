@@ -27,7 +27,9 @@ const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
 	{ label: "Manager", value: "manager" },
 	{ label: "Supervisor", value: "supervisor" },
-	{ label: "Staff", value: "staff" },
+	{ label: "Office Admin", value: "office_admin" },
+	{ label: "Team Lead", value: "team_lead" },
+	{ label: "Payroll Admin", value: "payroll" },
 ];
 
 const DEPARTMENT_OPTIONS = [

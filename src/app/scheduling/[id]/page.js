@@ -89,14 +89,14 @@ export default function ShiftDetailPage() {
 					email: shiftDetail.contactPerson?.email || "",
 				},
 				startTime: toHalifaxInputValue(shiftDetail.startTime),
-				endTime:   toHalifaxInputValue(shiftDetail.endTime),
+				endTime: toHalifaxInputValue(shiftDetail.endTime),
 				geofence: {
 					center: {
-						latitude:  shiftDetail.geofence?.center?.latitude  || 0,
+						latitude: shiftDetail.geofence?.center?.latitude || 0,
 						longitude: shiftDetail.geofence?.center?.longitude || 0,
 					},
 					radius: shiftDetail.geofence?.radius || 500,
-					shape:  shiftDetail.geofence?.shape  || "circle",
+					shape: shiftDetail.geofence?.shape || "circle",
 				},
 				tasks: shiftDetail.tasks?.map(t => ({ ...t })) ?? [],
 				notes: shiftDetail.notes || "",
@@ -126,8 +126,8 @@ export default function ShiftDetailPage() {
 	const shift = shiftDetail;
 	const statusClass = styles[`status_${shift.status}`] || styles.status_default;
 	const createdByName = shift.createdBy
-		? (typeof shift.createdBy === 'string' 
-			? shift.createdBy 
+		? (typeof shift.createdBy === 'string'
+			? shift.createdBy
 			: `${shift.createdBy?.firstName || ""} ${shift.createdBy?.lastName || ""}`.trim() || shift.createdBy?.email || "Unknown")
 		: "Unknown";
 
@@ -141,10 +141,10 @@ export default function ShiftDetailPage() {
 					clientAddress: formData.clientAddress,
 					contactPerson: formData.contactPerson,
 					startTime: formData.startTime ? new Date(formData.startTime).toISOString() : undefined,
-					endTime:   formData.endTime   ? new Date(formData.endTime).toISOString()   : undefined,
-					geofence:  formData.geofence,
-					tasks:     formData.tasks,
-					notes:     formData.notes,
+					endTime: formData.endTime ? new Date(formData.endTime).toISOString() : undefined,
+					geofence: formData.geofence,
+					tasks: formData.tasks,
+					notes: formData.notes,
 				},
 			});
 			setIsEditing(false);
@@ -253,7 +253,7 @@ export default function ShiftDetailPage() {
 							{isEditing ? (
 								<>
 									<Field label="Start Time (Halifax)" path="startTime" type="datetime-local" />
-									<Field label="End Time (Halifax)"   path="endTime"   type="datetime-local" />
+									<Field label="End Time (Halifax)" path="endTime" type="datetime-local" />
 								</>
 							) : (
 								<>
@@ -278,7 +278,7 @@ export default function ShiftDetailPage() {
 						<div className={styles.emergencyGrid}>
 							{isEditing ? (
 								<>
-									<Field label="Name"  path="contactPerson.name"  />
+									<Field label="Name" path="contactPerson.name" />
 									<Field label="Phone" path="contactPerson.phone" />
 									<Field label="Email" path="contactPerson.email" />
 								</>
@@ -289,9 +289,9 @@ export default function ShiftDetailPage() {
 										<div className={styles.contactDetails}>
 											<span className={styles.contactName}>{shift.contactPerson?.name || "—"}</span>
 											<span className={styles.contactVal}>
-												<Phone size={10} style={{ display: "inline", marginRight: 4 }} /> 
-												{shift.contactPerson?.phone || "—"} 
-												&nbsp;&nbsp;·&nbsp;&nbsp; 
+												<Phone size={10} style={{ display: "inline", marginRight: 4 }} />
+												{shift.contactPerson?.phone || "—"}
+												&nbsp;&nbsp;·&nbsp;&nbsp;
 												<Mail size={10} style={{ display: "inline", marginRight: 4 }} />
 												{shift.contactPerson?.email || "—"}
 											</span>
@@ -310,15 +310,15 @@ export default function ShiftDetailPage() {
 					<section className={styles.card}>
 						<h3 className={styles.cardTitle}><User size={16} /> Client</h3>
 						<p className={styles.personName}>{shift.client?.fullName || "—"}</p>
-						{shift.client?.email    && <div className={styles.subDetail}><Mail size={12} />{shift.client.email}</div>}
-						{shift.client?.id       && <div className={styles.subDetail}><Hash size={12} />{shift.client.id}</div>}
+						{shift.client?.email && <div className={styles.subDetail}><Mail size={12} />{shift.client.email}</div>}
+						{shift.client?.id && <div className={styles.subDetail}><Hash size={12} />{shift.client.id}</div>}
 					</section>
 
 					{/* Caregiver */}
 					<section className={styles.card}>
 						<h3 className={styles.cardTitle}><User size={16} /> Caregiver</h3>
 						<p className={styles.personName}>{shift.caregiver?.fullName || "—"}</p>
-						{shift.caregiver?.email      && <div className={styles.subDetail}><Mail size={12} />{shift.caregiver.email}</div>}
+						{shift.caregiver?.email && <div className={styles.subDetail}><Mail size={12} />{shift.caregiver.email}</div>}
 						{shift.caregiver?.employeeId && <div className={styles.subDetail}><Hash size={12} />ID: {shift.caregiver.employeeId}</div>}
 					</section>
 

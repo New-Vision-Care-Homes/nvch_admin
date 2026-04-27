@@ -66,7 +66,7 @@ const schema = yup.object({
 	// Address fields
 	street: shortTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("State/Province is required"),
+	state: shortTextRule.required("Province is required"),
 	pincode: pinRule.optional(),
 	country: shortTextRule.required("Country is required"),
 
