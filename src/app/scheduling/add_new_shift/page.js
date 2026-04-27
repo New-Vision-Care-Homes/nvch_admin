@@ -221,7 +221,6 @@ export default function AddNewShiftPage() {
 			router.push("/scheduling");
 		} catch (error) {
 			// useMutation already stores the error in actionShiftError
-			alert("Failed to add shift");
 		}
 	}
 

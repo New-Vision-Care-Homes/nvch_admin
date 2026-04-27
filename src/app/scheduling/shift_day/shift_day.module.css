@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Shift List — shifts within an exact time slot (week/day view)
+   Shift Day — all shifts on a given calendar day
    Primary brand: #1C4A6E  ·  var(--color-primary)
    ───────────────────────────────────────────────────────────────────────── */
 
@@ -36,20 +36,6 @@
 	line-height: 1.15;
 }
 
-.timeRangePill {
-	display: inline-flex;
-	align-items: center;
-	gap: 7px;
-	background: #f0f5fb;
-	color: var(--color-primary, #1C4A6E);
-	font-size: 0.82rem;
-	font-weight: 700;
-	padding: 5px 14px;
-	border-radius: 20px;
-	width: fit-content;
-	border: 1px solid rgba(28, 74, 110, 0.15);
-}
-
 .countBadge {
 	display: inline-flex;
 	align-items: center;
@@ -61,6 +47,7 @@
 	padding: 4px 12px;
 	border-radius: 20px;
 	width: fit-content;
+	margin-top: 2px;
 }
 
 /* ── Shift list ──────────────────────────────────────────────────────────── */
@@ -88,6 +75,41 @@
 	box-shadow: 0 6px 24px rgba(28, 74, 110, 0.12);
 	border-left-color: #2563eb;
 	transform: translateY(-2px);
+}
+
+/* ── Time column (fixed width) ───────────────────────────────────────────── */
+.timeCol {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-width: 72px;
+	background: #f0f5fb;
+	border-radius: 10px;
+	padding: 10px 8px;
+	flex-shrink: 0;
+	gap: 2px;
+}
+
+.timeStart {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--color-primary, #1C4A6E);
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+}
+
+.timeSep {
+	font-size: 0.6rem;
+	color: #9ca3af;
+	font-weight: 600;
+}
+
+.timeEnd {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #4b5563;
+	font-variant-numeric: tabular-nums;
 }
 
 /* ── Main info area ──────────────────────────────────────────────────────── */
@@ -192,6 +214,7 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
 	.header { flex-direction: column; }
-	.shiftCard { flex-wrap: wrap; }
+	.shiftCard { flex-direction: column; align-items: flex-start; gap: 14px; }
+	.timeCol { flex-direction: row; gap: 8px; align-items: baseline; width: 100%; justify-content: flex-start; }
 	.viewBtn { width: 100%; justify-content: center; }
 }

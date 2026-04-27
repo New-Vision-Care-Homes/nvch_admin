@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 const publicPaths = ["/", "/forget_password"]; // Add any other public paths here
 const defaultProtectedPath = "/dashboard"; // Where to redirect if a logged-in user visits a public path

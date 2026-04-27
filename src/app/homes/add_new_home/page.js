@@ -398,7 +398,10 @@ export default function AddNewHomePage() {
 										<input
 											type="text"
 											value={caregiverSearch}
-											onChange={(e) => setCaregiverSearch(e.target.value)}
+											onChange={(e) => {
+												setCaregiverSearch(e.target.value);
+												setShowCaregiverResults(e.target.value.length >= 2);
+											}}
 											onFocus={() => caregiverSearch.length >= 2 && setShowCaregiverResults(true)}
 											placeholder="Search caregivers by name..."
 											className={cardStyles.input}
@@ -477,7 +480,10 @@ export default function AddNewHomePage() {
 										<input
 											type="text"
 											value={clientSearch}
-											onChange={(e) => setClientSearch(e.target.value)}
+											onChange={(e) => {
+												setClientSearch(e.target.value);
+												setShowClientResults(e.target.value.length >= 2);
+											}}
 											onFocus={() => clientSearch.length >= 2 && setShowClientResults(true)}
 											placeholder="Search clients by name..."
 											className={cardStyles.input}
@@ -556,7 +562,10 @@ export default function AddNewHomePage() {
 										<input
 											type="text"
 											value={adminSearch}
-											onChange={(e) => setAdminSearch(e.target.value)}
+											onChange={(e) => {
+												setAdminSearch(e.target.value);
+												setShowAdminResults(e.target.value.length >= 2);
+											}}
 											onFocus={() => adminSearch.length >= 2 && setShowAdminResults(true)}
 											placeholder="Search admins by name or email..."
 											className={cardStyles.input}

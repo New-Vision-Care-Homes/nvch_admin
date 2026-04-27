@@ -56,7 +56,7 @@ const schema = yup.object({
 	// Address Fields
 	street: longTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("State/Province is required"),
+	state: shortTextRule.required("Province is required"),
 	pinCode: pinRule,
 	country: shortTextRule.required("Country is required"),
 
@@ -258,7 +258,7 @@ export default function Page() {
 									<InputField label="City" name="city" register={register} error={errors.city} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="State" name="state" register={register} error={errors.state} />
+									<InputField label="Province" name="state" register={register} error={errors.state} />
 									<InputField label="Country" name="country" register={register} error={errors.country} />
 									<InputField label="Postal Code" name="pinCode" register={register} error={errors.pinCode} />
 								</div>

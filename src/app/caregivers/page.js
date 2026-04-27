@@ -96,6 +96,8 @@ export default function Caregivers() {
 					</div>
 
 					{/* Action error — shown when delete/create/update fails */}
+					<ActionMessage variant="error" message={caregiverActionError} />
+
 					<ErrorState
 						isLoading={isCaregiverLoading}
 						errorMessage={caregiverFetchError}
