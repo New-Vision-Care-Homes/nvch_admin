@@ -15,6 +15,7 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
+import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
 
 export default function Caregivers() {
@@ -55,6 +56,7 @@ export default function Caregivers() {
 			isActive: isActiveParam,
 		}
 	});
+
 
 	// Reset to page 1 when filters change
 	useEffect(() => {
@@ -140,78 +142,87 @@ export default function Caregivers() {
 							</div>
 
 							{/* Caregivers Table */}
-							<div className={styles.tableWrapper}>
-								<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
-								<Table>
-									<TableHeader>
-										<TableCell>Caregiver Name</TableCell>
-										<TableCell>Employee ID</TableCell>
-										<TableCell>Contact</TableCell>
-										<TableCell>Status</TableCell>
-										<TableCell>Actions</TableCell>
-									</TableHeader>
-									{caregivers.map(caregiver => (
-										<TableContent key={caregiver.id}>
-											{/* Name & Avatar */}
-											<TableCell>
-												<Image
-													src={caregiver.profilePictureUrl || defaultAvatar}
-													width={50}
-													height={50}
-													alt="avatar"
-													style={{ borderRadius: "50%", objectFit: "cover" }}
-													unoptimized
-												/>
-												<span>{caregiver.firstName} {caregiver.lastName}</span>
-											</TableCell>
+							{caregivers.length === 0 ? (
+								<div style={{ marginTop: "2rem" }}>
+									<EmptyState
+										title="No caregivers found"
+										message="There are no caregivers matching your criteria."
+									/>
+								</div>
+							) : (
+								<div className={styles.tableWrapper}>
+									<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
+									<Table>
+										<TableHeader>
+											<TableCell>Caregiver Name</TableCell>
+											<TableCell>Employee ID</TableCell>
+											<TableCell>Contact</TableCell>
+											<TableCell>Status</TableCell>
+											<TableCell>Actions</TableCell>
+										</TableHeader>
+										{caregivers.map(caregiver => (
+											<TableContent key={caregiver.id}>
+												{/* Name & Avatar */}
+												<TableCell>
+													<Image
+														src={caregiver.profilePictureUrl || defaultAvatar}
+														width={50}
+														height={50}
+														alt="avatar"
+														style={{ borderRadius: "50%", objectFit: "cover" }}
+														unoptimized
+													/>
+													<span>{caregiver.firstName} {caregiver.lastName}</span>
+												</TableCell>
 
-											{/* Employee ID */}
-											<TableCell>{caregiver.employeeId}</TableCell>
+												{/* Employee ID */}
+												<TableCell>{caregiver.employeeId}</TableCell>
 
-											{/* Contact */}
-											<TableCell>{caregiver.email || "-"}</TableCell>
+												{/* Contact */}
+												<TableCell>{caregiver.email || "-"}</TableCell>
 
-											{/* Status with pill */}
-											<TableCell>
-												<span className={`${styles.statusPill} ${caregiver.isActive ? styles.statusActive : styles.statusInactive}`}>
-													{caregiver.isActive ? "Active" : "Inactive"}
-												</span>
-											</TableCell>
+												{/* Status with pill */}
+												<TableCell>
+													<span className={`${styles.statusPill} ${caregiver.isActive ? styles.statusActive : styles.statusInactive}`}>
+														{caregiver.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
 
-											{/* Actions */}
-											<TableCell>
-												<Link href={`/caregivers/${caregiver.id}`}>
-													<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-												</Link>
-												<Trash2
-													color="#ef4444"
-													style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-													onClick={() => deleteHandler(caregiver.id)}
-												/>
-											</TableCell>
-										</TableContent>
-									))}
-								</Table>
+												{/* Actions */}
+												<TableCell>
+													<Link href={`/caregivers/${caregiver.id}`}>
+														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+													</Link>
+													<Trash2
+														color="#ef4444"
+														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+														onClick={() => deleteHandler(caregiver.id)}
+													/>
+												</TableCell>
+											</TableContent>
+										))}
+									</Table>
 
-								{/* Pagination */}
-								<ReactPaginate
-									pageCount={Math.max(totalPages, 1)}
-									forcePage={currentPage - 1}
-									onPageChange={handlePageClick}
-									pageRangeDisplayed={Math.max(totalPages, 1)}
-									marginPagesDisplayed={1}
-									previousLabel={"Prev"}
-									nextLabel={"Next"}
-									containerClassName={styles.pagination}
-									pageClassName={styles.pageItem}
-									pageLinkClassName={styles.pageLink}
-									previousClassName={styles.pageItem}
-									previousLinkClassName={styles.pageLink}
-									nextClassName={styles.pageItem}
-									nextLinkClassName={styles.pageLink}
-									activeClassName={styles.active}
-								/>
-							</div>
+									{/* Pagination */}
+									<ReactPaginate
+										pageCount={Math.max(totalPages, 1)}
+										forcePage={currentPage - 1}
+										onPageChange={handlePageClick}
+										pageRangeDisplayed={Math.max(totalPages, 1)}
+										marginPagesDisplayed={1}
+										previousLabel={"Prev"}
+										nextLabel={"Next"}
+										containerClassName={styles.pagination}
+										pageClassName={styles.pageItem}
+										pageLinkClassName={styles.pageLink}
+										previousClassName={styles.pageItem}
+										previousLinkClassName={styles.pageLink}
+										nextClassName={styles.pageItem}
+										nextLinkClassName={styles.pageLink}
+										activeClassName={styles.active}
+									/>
+								</div>
+							)}
 						</>
 					)}
 				</div>

@@ -54,6 +54,8 @@ import { useShifts } from "@/hooks//useShifts";
 // ErrorState: shows a loading spinner OR an error message with a retry button
 import ErrorState from "@components/UI/ErrorState";
 
+import EmptyState from "@components/UI/EmptyState";
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. CALENDAR LOCALIZER SETUP
@@ -532,23 +534,34 @@ export default function SchedulingPage() {
 						 * This prevents the calendar from flashing in before data arrives,
 						 * and avoids showing an empty calendar alongside an error message.
 						 */}
-						{!fetchShiftError && !isShiftLoading && <Calendar
-							localizer={localizer}        // date-fns adapter (required)
-							events={eventsToShow}         // the pre-processed event list for the active view
-							startAccessor="start"         // tells react-big-calendar which field is the event start
-							endAccessor="end"             // tells react-big-calendar which field is the event end
-							onSelectEvent={handleSelectEvent} // our click handler (routes to detail/list pages)
-							components={{ event: CustomEvent }} // replaces default pill with our custom card
-							eventPropGetter={eventStyleGetter}  // applies pastel colors to each event wrapper
-							date={date}                   // the currently visible date (controlled)
-							onNavigate={setDate}          // updates `date` when user clicks prev/next/today
-							view={view}                   // the currently active view (controlled)
-							onView={setView}              // updates `view` when user switches tabs
-							className="my_calendar"       // hook for calendar.css global overrides
-							step={30}                     // each time slot = 30 minutes
-							timeslots={2}                 // 2 slots per step = one visual row per 30 min
-							popup={false}                 // disable the built-in "+N more" popup (we handle navigation ourselves)
-						/>}
+						{!fetchShiftError && !isShiftLoading && (
+							shifts && shifts.length === 0 ? (
+								<div style={{ margin: "4rem auto", maxWidth: "500px" }}>
+									<EmptyState 
+										title="No shifts scheduled" 
+										message="There are no shifts available. Click 'Create New Shift' to get started." 
+									/>
+								</div>
+							) : (
+								<Calendar
+									localizer={localizer}        // date-fns adapter (required)
+									events={eventsToShow}         // the pre-processed event list for the active view
+									startAccessor="start"         // tells react-big-calendar which field is the event start
+									endAccessor="end"             // tells react-big-calendar which field is the event end
+									onSelectEvent={handleSelectEvent} // our click handler (routes to detail/list pages)
+									components={{ event: CustomEvent }} // replaces default pill with our custom card
+									eventPropGetter={eventStyleGetter}  // applies pastel colors to each event wrapper
+									date={date}                   // the currently visible date (controlled)
+									onNavigate={setDate}          // updates `date` when user clicks prev/next/today
+									view={view}                   // the currently active view (controlled)
+									onView={setView}              // updates `view` when user switches tabs
+									className="my_calendar"       // hook for calendar.css global overrides
+									step={30}                     // each time slot = 30 minutes
+									timeslots={2}                 // 2 slots per step = one visual row per 30 min
+									popup={false}                 // disable the built-in "+N more" popup (we handle navigation ourselves)
+								/>
+							)
+						)}
 					</div>
 
 				</div>

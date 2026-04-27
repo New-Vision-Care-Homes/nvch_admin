@@ -12,6 +12,7 @@ import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
+import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
 
 /**
@@ -151,70 +152,79 @@ export default function Clients() {
 							</div>
 
 							{/* Clients Table */}
-							<div className={styles.tableWrapper}>
-								<h2 style={{ marginBottom: "1.5rem" }}>All Clients</h2>
-								<Table>
-									<TableHeader>
-										<TableCell>Client Name</TableCell>
-										<TableCell>Client ID</TableCell>
-										<TableCell>Contact</TableCell>
-										<TableCell>Status</TableCell>
-										<TableCell>Actions</TableCell>
-									</TableHeader>
-									{clients.map(client => (
-										<TableContent key={client.id}>
-											<TableCell>
-												<Image
-													src={client.profilePictureUrl || defaultAvatar}
-													width={50}
-													height={50}
-													alt="avatar"
-													style={{ borderRadius: "50%", objectFit: "cover" }}
-													unoptimized
-												/>
-												<span>{client.firstName}</span>
-												<span>{client.lastName}</span>
-											</TableCell>
-											<TableCell>{client.clientId}</TableCell>
-											<TableCell>{client.email}</TableCell>
-											<TableCell>
-												<span className={`${styles.statusPill} ${client.isActive ? styles.statusActive : styles.statusInactive}`}>
-													{client.isActive ? "Active" : "Inactive"}
-												</span>
-											</TableCell>
-											<TableCell>
-												<Link href={`/clients/${client.id}`}>
-													<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-												</Link>
-												<Trash2
-													color="#ef4444"
-													style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
-													onClick={() => deleteHandler(client.id)}
-												/>
-											</TableCell>
-										</TableContent>
-									))}
-								</Table>
+							{clients.length === 0 ? (
+								<div style={{ marginTop: "2rem" }}>
+									<EmptyState 
+										title="No clients found" 
+										message="There are no clients matching your criteria." 
+									/>
+								</div>
+							) : (
+								<div className={styles.tableWrapper}>
+									<h2 style={{ marginBottom: "1.5rem" }}>All Clients</h2>
+									<Table>
+										<TableHeader>
+											<TableCell>Client Name</TableCell>
+											<TableCell>Client ID</TableCell>
+											<TableCell>Contact</TableCell>
+											<TableCell>Status</TableCell>
+											<TableCell>Actions</TableCell>
+										</TableHeader>
+										{clients.map(client => (
+											<TableContent key={client.id}>
+												<TableCell>
+													<Image
+														src={client.profilePictureUrl || defaultAvatar}
+														width={50}
+														height={50}
+														alt="avatar"
+														style={{ borderRadius: "50%", objectFit: "cover" }}
+														unoptimized
+													/>
+													<span>{client.firstName}</span>
+													<span>{client.lastName}</span>
+												</TableCell>
+												<TableCell>{client.clientId}</TableCell>
+												<TableCell>{client.email}</TableCell>
+												<TableCell>
+													<span className={`${styles.statusPill} ${client.isActive ? styles.statusActive : styles.statusInactive}`}>
+														{client.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
+												<TableCell>
+													<Link href={`/clients/${client.id}`}>
+														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+													</Link>
+													<Trash2
+														color="#ef4444"
+														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+														onClick={() => deleteHandler(client.id)}
+													/>
+												</TableCell>
+											</TableContent>
+										))}
+									</Table>
 
-								{/* Pagination */}
-								<ReactPaginate
-									pageCount={Math.max(totalPages, 1)}
-									forcePage={currentPage - 1}
-									onPageChange={handlePageClick}
-									pageRangeDisplayed={5}
-									marginPagesDisplayed={1}
-									previousLabel={"Prev"}
-									nextLabel={"Next"}
-									containerClassName={styles.pagination}
-									pageClassName={styles.pageItem}
-									pageLinkClassName={styles.pageLink}
-									previousClassName={styles.pageItem}
-									previousLinkClassName={styles.pageLink}
-									nextClassName={styles.pageItem}
-									nextLinkClassName={styles.pageLink}
-									activeClassName={styles.active}
-								/>
-							</div>
+									{/* Pagination */}
+									<ReactPaginate
+										pageCount={Math.max(totalPages, 1)}
+										forcePage={currentPage - 1}
+										onPageChange={handlePageClick}
+										pageRangeDisplayed={5}
+										marginPagesDisplayed={1}
+										previousLabel={"Prev"}
+										nextLabel={"Next"}
+										containerClassName={styles.pagination}
+										pageClassName={styles.pageItem}
+										pageLinkClassName={styles.pageLink}
+										previousClassName={styles.pageItem}
+										previousLinkClassName={styles.pageLink}
+										nextClassName={styles.pageItem}
+										nextLinkClassName={styles.pageLink}
+										activeClassName={styles.active}
+									/>
+								</div>
+							)}
 						</>
 					)}
 

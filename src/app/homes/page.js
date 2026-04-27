@@ -9,6 +9,7 @@ import ReactPaginate from "react-paginate";
 import Link from "next/link";
 import { Edit, Trash2, Plus, Search } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
+import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
@@ -83,93 +84,98 @@ export default function Homes() {
 						/>
 
 						{!isLoading && !fetchError && (
-							<Table>
-								<TableHeader>
-									<TableCell>Home Name</TableCell>
-									<TableCell>Region</TableCell>
-									<TableCell>Program Type</TableCell>
-									<TableCell>Address</TableCell>
-									<TableCell>Caregivers</TableCell>
-									<TableCell>Admins</TableCell>
-									<TableCell>Clients</TableCell>
-									<TableCell>Night Check</TableCell>
-									<TableCell>Status</TableCell>
-									<TableCell>Opened At</TableCell>
-									<TableCell>Actions</TableCell>
-								</TableHeader>
+							<>
 								{homes && homes.length > 0 ? (
-									homes.map((home) => (
-										<TableContent key={home.id || home._id}>
-											{/* Home Name */}
-											<TableCell>
-												<span style={{ fontWeight: 600 }}>{home.name}</span>
-											</TableCell>
+									<Table>
+										<TableHeader>
+											<TableCell>Home Name</TableCell>
+											<TableCell>Region</TableCell>
+											<TableCell>Program Type</TableCell>
+											<TableCell>Address</TableCell>
+											<TableCell>Caregivers</TableCell>
+											<TableCell>Admins</TableCell>
+											<TableCell>Clients</TableCell>
+											<TableCell>Night Check</TableCell>
+											<TableCell>Status</TableCell>
+											<TableCell>Opened At</TableCell>
+											<TableCell>Actions</TableCell>
+										</TableHeader>
+										{homes.map((home) => (
+											<TableContent key={home.id || home._id}>
+												{/* Home Name */}
+												<TableCell>
+													<span style={{ fontWeight: 600 }}>{home.name}</span>
+												</TableCell>
 
-											{/* Region */}
-											<TableCell>{home.region}</TableCell>
+												{/* Region */}
+												<TableCell>{home.region}</TableCell>
 
-											{/* Program Type */}
-											<TableCell>
-												{home.programTypes?.join(", ") || "-"}
-											</TableCell>
+												{/* Program Type */}
+												<TableCell>
+													{home.programTypes?.join(", ") || "-"}
+												</TableCell>
 
-											{/* Address */}
-											<TableCell>
-												{home.address ? `${home.address.street}, ${home.address.city}` : "-"}
-											</TableCell>
+												{/* Address */}
+												<TableCell>
+													{home.address ? `${home.address.street}, ${home.address.city}` : "-"}
+												</TableCell>
 
-											{/* Caregivers */}
-											<TableCell>
-												{home.caregivers?.length || 0}
-											</TableCell>
+												{/* Caregivers */}
+												<TableCell>
+													{home.caregivers?.length || 0}
+												</TableCell>
 
-											{/* Admins */}
-											<TableCell>
-												{home.admins?.length || 0}
-											</TableCell>
+												{/* Admins */}
+												<TableCell>
+													{home.admins?.length || 0}
+												</TableCell>
 
-											{/* Client Number */}
-											<TableCell>
-												{home.clients?.length || 0}
-											</TableCell>
+												{/* Client Number */}
+												<TableCell>
+													{home.clients?.length || 0}
+												</TableCell>
 
-											{/* Night Check */}
-											<TableCell>
-												{home.nightChecksEnabled
-													? `Every ${home.nightCheckFrequency} min`
-													: "Disabled"
-												}
-											</TableCell>
+												{/* Night Check */}
+												<TableCell>
+													{home.nightChecksEnabled
+														? `Every ${home.nightCheckFrequency} min`
+														: "Disabled"
+													}
+												</TableCell>
 
-											{/* Status */}
-											<TableCell>
-												<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
-													{home.isActive ? "Active" : "Inactive"}
-												</span>
-											</TableCell>
+												{/* Status */}
+												<TableCell>
+													<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
+														{home.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
 
-											{/* Opened At */}
-											<TableCell>
-												{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}
-											</TableCell>
+												{/* Opened At */}
+												<TableCell>
+													{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}
+												</TableCell>
 
-											{/* Actions */}
-											<TableCell>
-												<Link href={`/homes/${home.id || home._id}`}>
-													<Edit color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
-												</Link>
-												<Trash2
-													color="#ef4444"
-													style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-													onClick={() => handleDeleteClick(home.id || home._id)}
-												/>
-											</TableCell>
-										</TableContent>
-									))
+												{/* Actions */}
+												<TableCell>
+													<Link href={`/homes/${home.id || home._id}`}>
+														<Edit color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+													</Link>
+													<Trash2
+														color="#ef4444"
+														style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+														onClick={() => handleDeleteClick(home.id || home._id)}
+													/>
+												</TableCell>
+											</TableContent>
+										))}
+									</Table>
 								) : (
-									<div style={{ padding: "1rem" }}>No homes found.</div>
+									<EmptyState 
+										title="No homes found" 
+										message="There are no homes available at the moment." 
+									/>
 								)}
-							</Table>
+							</>
 						)}
 
 						{/* Pagination */}
