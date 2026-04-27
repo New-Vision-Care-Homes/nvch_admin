@@ -16,6 +16,7 @@ export const useProfileUpload = () => {
 	const getErrorMessage = (err) => {
 		return (
 			err?.response?.data?.error ||
+			err?.message ||
 			"Upload failed"
 		);
 	};
@@ -50,18 +51,17 @@ export const useProfileUpload = () => {
 			queryClient.invalidateQueries({ queryKey: ["client", variables.userId] });
 			queryClient.invalidateQueries({ queryKey: ["caregiver", variables.userId] });
 			queryClient.invalidateQueries({ queryKey: ["admin", variables.userId] });
-			// Invalidate the image cache tag we used in useImageUrl
 			queryClient.invalidateQueries({ queryKey: ["signedImage"] });
 		}
 	});
 
 	return {
 		uploadProfilePicture: mutation.mutate,
-		isUploading: mutation.isPending,
-		isSuccess: mutation.isSuccess,
+		isProfilePictureUploading: mutation.isPending,
+		isProfilePictureSuccess: mutation.isSuccess,
 		// Using consistent naming for errors
-		isError: mutation.isError,
-		uploadErrorMessage: mutation.isError ? getErrorMessage(mutation.error) : null,
+		isProfilePictureError: mutation.isError,
+		profilePictureErrorMessage: mutation.isError ? getErrorMessage(mutation.error) : null,
 		reset: mutation.reset
 	};
 };

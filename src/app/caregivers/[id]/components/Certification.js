@@ -2,47 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./Certification.module.css";
-import { Trash2, Paperclip, Upload, X, Eye, ExternalLink, FileText } from "lucide-react";
+import { Trash2, Upload, Eye, ExternalLink } from "lucide-react";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
-import { InputField } from "@components/UI/Card";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { dateRule, longTextRule, shortTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
-import { useUploadCertificate, useDeleteCertificate } from "@/hooks/useCertificates";
+import { useCertificates } from "@/hooks/useCertificates";
 
-const schema = yup.object({
-	name: longTextRule.required("Certificate name is required"),
-	issueDate: dateRule.required("Issue date is required"),
-	expiryDate: dateRule
-		.required("Expiry date is required")
-		.test(
-			"is-after-issue",
-			"Expiry date must be after issue date",
-			function (value) {
-				const { issueDate } = this.parent;
-				if (!issueDate || !value) return true;
-				return new Date(value) > new Date(issueDate);
-			}
-		),
-	file: yup.mixed().test("required", "Please upload a document", (value) => {
-		return value && value.length > 0;
-	})
-});
+import CertificateModal from "@components/UI/CertificateModal";
 
 export default function Certification() {
 
 	// --- 1. Hooks---
 	const { id: userId } = useParams();
 	const { caregiverDetail, isCaregiverLoading, caregiverFetchError } = useCaregivers(userId);
-	const { mutate: upload, isPending: isUploading } = useUploadCertificate(userId);
-	const { mutate: deleteCert, isPending: isDeleting } = useDeleteCertificate(userId);
+	const { deleteCertificate: deleteCert, isCertificateDeleting: isDeleting } = useCertificates(userId);
 
 	// --- 2. State management ---
 	const [isModalOpen, setIsModalOpen] = useState(false); // For Add New
@@ -73,28 +50,9 @@ export default function Certification() {
 	};
 
 
-	const { register, handleSubmit, watch, setValue, control, formState: { errors }, reset } = useForm({
-		resolver: yupResolver(schema),
-	});
-
-
-	const selectedFile = watch("file");
-
 	function handleNewCertification() {
-		reset();
 		setIsModalOpen(true);
 	}
-
-	const handleSave = async (formData) => {
-		upload(formData, {
-			onSuccess: () => {
-				setIsModalOpen(false);
-				reset();
-				setActionMsg({ variant: "success", text: "Upload Successful!" });
-			},
-			onError: (error) => setActionMsg({ variant: "danger", text: `Upload Failed: ${error.message}` })
-		});
-	};
 
 	return (
 		<div className={styles.container}>
@@ -176,48 +134,12 @@ export default function Certification() {
 
 
 			{/* Modal */}
-			<Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); reset(); }}>
-				<h2 style={{ marginBottom: '20px' }}>Add New Certificate</h2>
-
-				<form onSubmit={handleSubmit(handleSave)}>
-					<InputField label="Certificate Name" name="name" register={register} error={errors.name} />
-
-					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-						<InputField label="Issue Date" type="date" name="issueDate" register={register} control={control} error={errors.issueDate} />
-						<InputField label="Expiry Date" type="date" name="expiryDate" register={register} control={control} error={errors.expiryDate} />
-					</div>
-
-					<div className={styles.uploadField}>
-						<label className={styles.label}>Certificate Document</label>
-						<div className={`${styles.dropzone} ${errors.file ? styles.errorBorder : ""}`}>
-							<input
-								type="file"
-								id="certFile"
-								{...register("file")}
-								className={styles.hiddenInput}
-							/>
-							<label htmlFor="certFile" className={styles.uploadTrigger}>
-								<Paperclip size={18} />
-								<span>{selectedFile?.[0] ? selectedFile[0].name : "Click to select a file (PDF, JPG...)"}</span>
-								{selectedFile?.[0] && (
-									<X size={16} className={styles.clearFile} onClick={(e) => {
-										e.preventDefault();
-										setValue("file", null);
-									}} />
-								)}
-							</label>
-						</div>
-						{errors.file && <p className={styles.errorMessage}>{errors.file.message}</p>}
-					</div>
-
-					<div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24, gap: 12 }}>
-						<Button variant="secondary" type="button" onClick={() => { setIsModalOpen(false); reset(); }}>Cancel</Button>
-						<Button type="submit" disabled={isUploading}>
-							{isUploading ? "Saving..." : "Save Certificate"}
-						</Button>
-					</div>
-				</form>
-			</Modal>
+			<CertificateModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				userId={userId}
+				onSuccess={() => setActionMsg({ variant: "success", text: "Upload Successful!" })}
+			/>
 
 			{/* Delete Confirmation Modal */}
 			<Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)}>

@@ -15,11 +15,8 @@ import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
 import { Edit, Upload, Save, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
-import { useProfileUpload } from "@/hooks/usePictures";
-
+import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 500 * 1024; // 500KB
 
 const schema = yup.object({
 	phone: phoneRule,
@@ -45,12 +42,6 @@ export default function ProfilePage() {
 
 	// Image Upload States
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-	const [selectedFile, setSelectedFile] = useState(null);
-	const [previewUrl, setPreviewUrl] = useState(null);
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState("");
-
-	const { uploadProfilePicture } = useProfileUpload();
 
 
 	const onSubmit = (data) => {
@@ -79,52 +70,7 @@ export default function ProfilePage() {
 		});
 	};
 
-	// --- Image Upload Handlers ---
-	const handleFileChange = (e) => {
-		const file = e.target.files[0];
-		if (file) {
-			if (file.size > MAX_FILE_SIZE) {
-				setUploadError("File is too large (max 500KB).");
-				return;
-			}
-			if (!SUPPORTED_FORMATS.includes(file.type)) {
-				setUploadError("Unsupported format. Use JPG, PNG or WEBP.");
-				return;
-			}
-			setSelectedFile(file);
-			setPreviewUrl(URL.createObjectURL(file));
-		}
-	};
 
-	const handleCloseImageModal = () => {
-		setIsImageModalOpen(false);
-		setSelectedFile(null);
-		setUploadError("");
-		setUploading(false);
-		if (previewUrl) URL.revokeObjectURL(previewUrl);
-		setPreviewUrl(null);
-	};
-
-	const handleImageUpload = async () => {
-		if (!selectedFile) return;
-		setUploading(true);
-		setUploadError("");
-
-		uploadProfilePicture(
-			{ file: selectedFile, profileId: profile?.id || profile?._id },
-			{
-				onSuccess: () => {
-					handleCloseImageModal();
-				},
-				onError: (err) => {
-					setUploadError(err?.message || "Failed to upload image.");
-				},
-				onSettled: () => {
-					setUploading(false);
-				}
-			}
-		);
-	};
 
 	const formattedLastLogin = profile?.lastLogin ? new Date(profile.lastLogin).toLocaleString() : "N/A";
 	const formattedCreatedAt = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A";
@@ -303,50 +249,13 @@ export default function ProfilePage() {
 			)}
 
 			{/* Image Upload Popup */}
-			<Modal isOpen={isImageModalOpen} onClose={handleCloseImageModal}>
-				<div className={styles.centeredModalContainer}>
-					<h2>Update Profile Picture</h2>
-					<div className={styles.uploadModalContent}>
-						<div className={styles.imagePreview}>
-							<Image
-								src={previewUrl || profile?.profilePicture || profile?.profilePictureUrl || defaultAvatar}
-								alt="Preview"
-								width={150}
-								height={150}
-								className={styles.image}
-								unoptimized
-							/>
-						</div>
-
-						<label className={styles.fileInputLabelCustom}>
-							Select File
-							<input
-								type="file"
-								accept={SUPPORTED_FORMATS.join(',')}
-								onChange={handleFileChange}
-								className={styles.hiddenFileInput}
-								disabled={uploading}
-							/>
-						</label>
-
-						{selectedFile && <p className={styles.fileName}>Selected: {selectedFile.name}</p>}
-						{uploadError && <p className={styles.errorMessage}>{uploadError}</p>}
-
-						<div className={styles.modalActions}>
-							<Button variant="secondary" onClick={handleCloseImageModal} disabled={uploading}>
-								Cancel
-							</Button>
-							<Button
-								variant="primary"
-								onClick={handleImageUpload}
-								disabled={!selectedFile || uploading || !!uploadError}
-							>
-								{uploading ? "Saving..." : "Save Picture"}
-							</Button>
-						</div>
-					</div>
-				</div>
-			</Modal>
+			<ProfilePictureModal
+				isOpen={isImageModalOpen}
+				onClose={() => setIsImageModalOpen(false)}
+				userId={profile?.id || profile?._id}
+				currentImageUrl={profile?.profilePicture || profile?.profilePictureUrl}
+				onSuccess={() => {}}
+			/>
 		</>
 	);
 }
