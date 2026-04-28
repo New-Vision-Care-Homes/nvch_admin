@@ -24,6 +24,16 @@ import {
 	birthRule,
 } from "@/utils/validation";
 
+const TIMEZONE_OPTIONS = [
+	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
+	{ label: "Atlantic Time (America/Halifax)", value: "America/Halifax" },
+	{ label: "Eastern Time (America/Toronto)", value: "America/Toronto" },
+	{ label: "Central Time (America/Winnipeg)", value: "America/Winnipeg" },
+	{ label: "Central Standard Time - Saskatchewan (America/Regina)", value: "America/Regina" },
+	{ label: "Mountain Time (America/Edmonton)", value: "America/Edmonton" },
+	{ label: "Pacific Time (America/Vancouver)", value: "America/Vancouver" },
+];
+
 const schema = yup.object({
 	// Personal
 	clientId: IdRule.required("Client ID is required"),
@@ -39,6 +49,7 @@ const schema = yup.object({
 			"Please select a valid region"
 		)
 		.required("Region is required"),
+	timezone: yup.string().required("Timezone is required"),
 
 	maritalStatus: yup
 		.string()
@@ -151,6 +162,9 @@ export default function Page() {
 	} = useForm({
 		resolver: yupResolver(schema),
 		shouldFocusError: true,
+		defaultValues: {
+			timezone: "America/Halifax",
+		}
 	});
 
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
@@ -173,6 +187,7 @@ export default function Page() {
 			clientId: data.clientId,
 			dateOfBirth: data.birth,
 			region: data.region,
+			timezone: data.timezone,
 			maritalStatus: data.maritalStatus || null,
 			levelOfSupport: data.levelOfSupport || null,
 
@@ -310,7 +325,17 @@ export default function Page() {
 					<Card>
 						<CardHeader>Personal Information</CardHeader>
 						<CardContent>
-							<InputField label="Client ID" name="clientId" register={register} error={errors.clientId} />
+							<div className={styles.row2}>
+								<InputField label="Client ID" name="clientId" register={register} error={errors.clientId} />
+								<InputField
+									label="Timezone"
+									name="timezone"
+									type="select"
+									register={register}
+									error={errors.timezone}
+									options={TIMEZONE_OPTIONS}
+								/>
+							</div>
 							<div className={styles.row2}>
 								<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
 								<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
