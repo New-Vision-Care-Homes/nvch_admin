@@ -14,7 +14,6 @@ import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
 import { Edit, Upload, Save, X } from "lucide-react";
-import Modal from "@components/UI/Modal";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 
@@ -27,6 +26,7 @@ const schema = yup.object({
 
 export default function ProfilePage() {
 	const { profile, updateProfile, isLoading, isActionPending, fetchError, actionError, refetch } = useProfile();
+	console.log(profile);
 
 	const [isEditing, setIsEditing] = useState(false);
 
@@ -254,7 +254,7 @@ export default function ProfilePage() {
 				onClose={() => setIsImageModalOpen(false)}
 				userId={profile?.id || profile?._id}
 				currentImageUrl={profile?.profilePicture || profile?.profilePictureUrl}
-				onSuccess={() => {}}
+				onSuccess={() => { }}
 			/>
 		</>
 	);

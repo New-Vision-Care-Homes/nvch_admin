@@ -2,7 +2,8 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
-import { format } from "date-fns";
+import { useProfile } from "@/hooks/useProfile";
+import { utcToZonedDateObject, utcToDate, utcToWeekday, utcToDisplayTime } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
 import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays } from "lucide-react";
@@ -17,28 +18,10 @@ export default function ShiftDayPage() {
 	const dateParam = searchParams.get("date");
 
 	// Fetch all shifts (no server-side filter — filter client-side by date)
-	const { shifts = [], isShiftLoading } = useShifts({});
+	const { shifts, isShiftLoading } = useShifts({ startDate: dateParam });
+	const { profile } = useProfile();
 
-	// Filter: match shifts whose local calendar date equals dateParam
-	const filteredShifts = shifts.filter((shift) => {
-		if (!dateParam) return true;
-		const shiftStart = new Date(shift.startTime);
-		return format(shiftStart, "yyyy-MM-dd") === dateParam;
-	});
 
-	// Sort chronologically by start time
-	const sortedShifts = [...filteredShifts].sort(
-		(a, b) => new Date(a.startTime) - new Date(b.startTime)
-	);
-
-	// Display helpers — parse as noon to avoid UTC midnight off-by-one
-	const displayDate = dateParam
-		? format(new Date(dateParam + "T12:00:00"), "EEEE, MMMM d, yyyy")
-		: "Day View";
-
-	const shortDate = dateParam
-		? format(new Date(dateParam + "T12:00:00"), "MMM d, yyyy")
-		: "";
 
 	const statusClass = (status) =>
 		styles[`status_${status}`] || styles.status_default;
@@ -48,12 +31,12 @@ export default function ShiftDayPage() {
 			{/* ── Header ── */}
 			<header className={styles.header}>
 				<div className={styles.titleBlock}>
-					<span className={styles.dateLabel}>{shortDate}</span>
-					<h1 className={styles.heading}>{displayDate}</h1>
+					<span className={styles.dateLabel}>{utcToWeekday(dateParam, profile?.timezone || "America/Halifax")}</span>
+					<h1 className={styles.heading}>{utcToDate(dateParam, profile?.timezone || "America/Halifax")}</h1>
 					{!isShiftLoading && (
 						<span className={styles.countBadge}>
 							<CalendarDays size={13} />
-							{sortedShifts.length} shift{sortedShifts.length !== 1 ? "s" : ""}
+							{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
 						</span>
 					)}
 				</div>
@@ -83,14 +66,14 @@ export default function ShiftDayPage() {
 							</div>
 						</div>
 					))
-				) : sortedShifts.length > 0 ? (
-					sortedShifts.map((shift) => {
+				) : shifts.length > 0 ? (
+					shifts.map((shift) => {
 						const shiftId = shift._id || shift.id;
 						const startTime = shift.startTime
-							? format(new Date(shift.startTime), "HH:mm")
+							? utcToDisplayTime(shift.startTime, profile?.timezone || "America/Halifax")
 							: "--:--";
 						const endTime = shift.endTime
-							? format(new Date(shift.endTime), "HH:mm")
+							? utcToDisplayTime(shift.endTime, profile?.timezone || "America/Halifax")
 							: "--:--";
 						const caregiverName =
 							shift.caregiver?.firstName || shift.caregiver?.lastName

@@ -50,11 +50,12 @@ import Link from "next/link";
 
 // Custom hook — fetches all shifts from the API via React Query
 import { useShifts } from "@/hooks//useShifts";
+import { useProfile } from "@/hooks/useProfile";
 
 // ErrorState: shows a loading spinner OR an error message with a retry button
 import ErrorState from "@components/UI/ErrorState";
-
 import EmptyState from "@components/UI/EmptyState";
+import { utcToZonedDateObject } from "@/utils/timeHandling";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,6 +151,7 @@ export default function SchedulingPage() {
 	//   fetchShiftError → error message string if the fetch failed, else null
 	//   refetch         → function to manually re-trigger the fetch (used by ErrorState retry button)
 	const { shifts, isShiftLoading, fetchShiftError, refetch } = useShifts();
+	const { profile } = useProfile();
 
 	// view: which calendar view is currently active ("month" | "week" | "day" | "agenda")
 	// setView is passed to the Calendar so the built-in toolbar can change it.
@@ -190,7 +192,7 @@ export default function SchedulingPage() {
 		// Step 1: Group shifts by their local calendar date string ("yyyy-MM-dd")
 		const dayGroups = {};
 		shifts.forEach((shift) => {
-			const shiftStart = new Date(shift.startTime); // convert ISO string → JS Date
+			const shiftStart = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
 			const dateStr = format(shiftStart, "yyyy-MM-dd"); // e.g. "2025-04-24"
 
 			// Create a new group for this date if we haven't seen it yet
@@ -245,8 +247,8 @@ export default function SchedulingPage() {
 
 		const groups = {};
 		shifts.forEach((shift) => {
-			const start = new Date(shift.startTime);
-			const end = new Date(shift.endTime);
+			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
+			const end = utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax");
 
 			// Build the grouping key: full date+start_time combined with end time
 			const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
@@ -287,13 +289,13 @@ export default function SchedulingPage() {
 		if (!shifts || !Array.isArray(shifts)) return [];
 
 		return shifts.map((shift) => {
-			const start = new Date(shift.startTime);
+			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
 			const dateStr = format(start, "yyyy-MM-dd"); // used for per-day coloring
 			return {
 				id: shift.id || shift._id,
 				title: `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end: new Date(shift.endTime),
+				end: utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax"),
 				_shift: shift,       // the full raw shift object (used to display address in the row)
 				_dateStr: dateStr,   // used by getDayColor() so all shifts on the same day share a color
 				_isAgenda: true,     // flag so CustomEvent renders the Agenda component
@@ -363,8 +365,8 @@ export default function SchedulingPage() {
 	const MonthEventComponent = ({ event }) => {
 		const first = event._shifts?.[0];           // first shift in this day's group
 		const extra = event._count - 1;             // how many additional shifts are not shown
-		const startTime = first?.startTime ? format(new Date(first.startTime), "HH:mm") : "";
-		const endTime = first?.endTime ? format(new Date(first.endTime), "HH:mm") : "";
+		const startTime = first?.startTime ? format(utcToZonedDateObject(first.startTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
+		const endTime = first?.endTime ? format(utcToZonedDateObject(first.endTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
 		return (
 			<div className={styles.monthEvent}>
 				<div className={styles.monthEventRow}>
@@ -537,9 +539,9 @@ export default function SchedulingPage() {
 						{!fetchShiftError && !isShiftLoading && (
 							shifts && shifts.length === 0 ? (
 								<div style={{ margin: "4rem auto", maxWidth: "500px" }}>
-									<EmptyState 
-										title="No shifts scheduled" 
-										message="There are no shifts available. Click 'Create New Shift' to get started." 
+									<EmptyState
+										title="No shifts scheduled"
+										message="There are no shifts available. Click 'Create New Shift' to get started."
 									/>
 								</div>
 							) : (
