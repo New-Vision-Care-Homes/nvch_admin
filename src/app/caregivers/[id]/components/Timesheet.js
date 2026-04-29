@@ -10,6 +10,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useShifts } from "@/hooks/useShifts";
 import { useHours } from "@/hooks/useHours";
+import { useProfile } from "@/hooks/useProfile";
+import { utcToFullDisplay } from "@/utils/timeHandling";
 import ReactPaginate from "react-paginate";
 
 
@@ -125,6 +127,10 @@ export default function Timesheet() {
 		isLoading: isHoursLoading,
 		error: hoursError,
 	} = useHours(id);
+	console.log("hourHistory", hourHistory);
+
+	// use user profile to get the timezone
+	const { profile } = useProfile();
 
 	// 3. Caregiver Local States
 	// `availability` holds the live (possibly edited) schedule slots in the UI.
@@ -574,65 +580,23 @@ export default function Timesheet() {
 			)}
 			<Table>
 				<TableHeader>
-					<TableCell>Status</TableCell>
-					<TableCell>Date</TableCell>
-					<TableCell>Shift Times</TableCell>
-					<TableCell>Client</TableCell>
+					<TableCell>Period Start</TableCell>
+					<TableCell>Period End</TableCell>
+					<TableCell>Total Hours</TableCell>
 					<TableCell>Hours Worked</TableCell>
-					<TableCell>Overtime</TableCell>
-					<TableCell>Approval Status</TableCell>
-					<TableCell>Supervisor Comments</TableCell>
-					<TableCell>Action</TableCell>
+					<TableCell>Other Hours</TableCell>
 				</TableHeader>
 
-				{shifts && shifts.length > 0 ? (
-					shifts.map((shift) => {
-						const shiftId = shift._id;
-
-						// If a status update is pending for this row, show the optimistic value
-						// so the dropdown reflects the user's selection before the API responds.
-						const displayStatus = pendingStatusUpdate?.shiftId === shiftId
-							? pendingStatusUpdate.newStatus
-							: shift.status;
-
-						const normalizedStatus = displayStatus
-							? displayStatus.toLowerCase().replace(/\s+/g, "_")
-							: "scheduled";
+				{hourHistory?.payPeriods && hourHistory.payPeriods.length > 0 ? (
+					hourHistory.payPeriods.map((period) => {
 
 						return (
-							<TableContent key={shiftId}>
-								<TableCell>
-									<select
-										className={`${styles.statusSelect} ${styles["status_" + normalizedStatus] || ""}`}
-										value={normalizedStatus}
-										onChange={(e) => handleStatusChangeRequest(shiftId, e.target.value)}
-									>
-										{SHIFT_STATUS_OPTIONS.map(({ value, label }) => (
-											<option key={value} value={value}>{label}</option>
-										))}
-									</select>
-								</TableCell>
-								<TableCell>{formatDateOnly(shift.startTime)}</TableCell>
-								<TableCell>{formatTimeOnly(shift.startTime)} – {formatTimeOnly(shift.endTime)}</TableCell>
-								<TableCell>{shift.client?.firstName || ""} {shift.client?.lastName || ""}</TableCell>
-								{/* TODO: hours worked, overtime, approval status, and comments are not yet
-								    returned by the API — replace "n/a" once the endpoint is updated. */}
-								<TableCell>n/a</TableCell>
-								<TableCell>n/a</TableCell>
-								<TableCell>n/a</TableCell>
-								<TableCell>n/a</TableCell>
-								<TableCell>
-									{/* Navigation button pointing to the shift detail page */}
-									<Button
-										variant="ghost"
-										size="sm"
-										style={{ padding: "0.25rem 0.5rem" }}
-										onClick={() => router.push(`/scheduling/${shiftId}`)}
-										title="View Shift Details"
-									>
-										<ExternalLink size={16} color="var(--color-secondary)" />
-									</Button>
-								</TableCell>
+							<TableContent>
+								<TableCell>{utcToFullDisplay(period.periodStart, profile?.timezone || "America/Halifax")}</TableCell>
+								<TableCell>{utcToFullDisplay(period.periodEnd, profile?.timezone || "America/Halifax")}</TableCell>
+								<TableCell>{period.totalHours}</TableCell>
+								<TableCell>{period.hours}</TableCell>
+								<TableCell>{period.otherHours}</TableCell>
 							</TableContent>
 						);
 					})

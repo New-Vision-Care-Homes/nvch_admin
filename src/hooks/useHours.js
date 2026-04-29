@@ -8,7 +8,7 @@ import { hourService } from "@/services/api/services/hourService";
  * @param {string|number} options.clientId - Optional ID to fetch specific client details
  * @param {Object} options.params - Optional query parameters for the list (search, limit, page)
  */
-export const useHours = (caregiverId) => {
+export const useHours = (caregiverId, params = {}) => {
 	const queryClient = useQueryClient();
 
 	const caregiverHourQuery = useQuery({
