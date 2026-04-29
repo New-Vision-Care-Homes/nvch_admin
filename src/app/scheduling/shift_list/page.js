@@ -6,7 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { utcToDisplayTime, utcToWeekday, utcToDate } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
-import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2 } from "lucide-react";
+import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe } from "lucide-react";
 import styles from "./shift_list.module.css";
 import Link from "next/link";
 
@@ -27,7 +27,7 @@ export default function ShiftListPage() {
 
 	const timeRange =
 		startParam && endParam
-			? `${utcToDisplayTime(startParam, profile?.timezone || "Atlantic Time (America/Halifax)")} – ${utcToDisplayTime(endParam, profile?.timezone || "Atlantic Time (America/Halifax)")}`
+			? `${utcToDisplayTime(startParam, profile?.timezone || "America/Halifax")} – ${utcToDisplayTime(endParam, profile?.timezone || "America/Halifax")}`
 			: "";
 
 	const statusClass = (status) =>
@@ -38,19 +38,25 @@ export default function ShiftListPage() {
 			{/* ── Header ── */}
 			<header className={styles.header}>
 				<div className={styles.titleBlock}>
-					<span className={styles.dateLabel}>{utcToWeekday(startParam, profile?.timezone || "Atlantic Time (America/Halifax)")}</span>
-					<h1 className={styles.heading}>{utcToDate(startParam, profile?.timezone || "Atlantic Time (America/Halifax)")}</h1>
-					{timeRange && (
-						<span className={styles.timeRangePill}>
-							<Clock size={13} />
-							{timeRange}
+					<span className={styles.dateLabel}>{utcToWeekday(startParam, profile?.timezone || "America/Halifax")}</span>
+					<h1 className={styles.heading}>{utcToDate(startParam, profile?.timezone || "America/Halifax")}</h1>
+					<div className={styles.metaRow}>
+						{timeRange && (
+							<span className={styles.timeRangePill}>
+								<Clock size={13} />
+								{timeRange}
+							</span>
+						)}
+						{!isShiftLoading && (
+							<span className={styles.countBadge}>
+								{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
+							</span>
+						)}
+						<span className={styles.tzBadge}>
+							<Globe size={11} />
+							{profile?.timezone || "America/Halifax"}
 						</span>
-					)}
-					{!isShiftLoading && (
-						<span className={styles.countBadge}>
-							{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
-						</span>
-					)}
+					</div>
 				</div>
 				<Link href="/scheduling">
 					<Button icon={<Undo2 size={16} />} variant="secondary">
@@ -90,6 +96,16 @@ export default function ShiftListPage() {
 								className={styles.shiftCard}
 								onClick={() => router.push(`/scheduling/${shiftId}`)}
 							>
+								{/* Time block */}
+								<div className={styles.timeBlock}>
+									<span className={styles.timeRange}>
+										{utcToDisplayTime(shift.startTime, profile?.timezone || "America/Halifax")} – {utcToDisplayTime(shift.endTime, profile?.timezone || "America/Halifax")}
+									</span>
+									<span className={styles.timeTz}>
+										<Globe size={9} />
+										{(profile?.timezone || "America/Halifax").replace("America/", "")}
+									</span>
+								</div>
 								{/* Main info */}
 								<div className={styles.mainInfo}>
 									{/* Caregiver */}

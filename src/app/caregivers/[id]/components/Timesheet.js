@@ -341,6 +341,7 @@ export default function Timesheet() {
 		return <div className={styles.container}><p>Loading…</p></div>;
 	}
 
+	/*
 	if (fetchShiftError || hoursError) {
 		const message = fetchShiftError?.message
 			|| hoursError?.message
@@ -348,6 +349,7 @@ export default function Timesheet() {
 		return <div className={styles.container}><p className={styles.errorText}>{message}</p></div>;
 	}
 
+	*/
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// RENDER

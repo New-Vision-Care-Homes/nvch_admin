@@ -3,10 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
-import { utcToZonedDateObject, utcToDate, utcToWeekday, utcToDisplayTime } from "@/utils/timeHandling";
+import { utcToDate, utcToWeekday, utcToDisplayTime } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
-import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays } from "lucide-react";
+import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays, Globe } from "lucide-react";
 import styles from "./shift_day.module.css";
 import Link from "next/link";
 
@@ -33,12 +33,18 @@ export default function ShiftDayPage() {
 				<div className={styles.titleBlock}>
 					<span className={styles.dateLabel}>{utcToWeekday(dateParam, profile?.timezone || "America/Halifax")}</span>
 					<h1 className={styles.heading}>{utcToDate(dateParam, profile?.timezone || "America/Halifax")}</h1>
-					{!isShiftLoading && (
-						<span className={styles.countBadge}>
-							<CalendarDays size={13} />
-							{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
+					<div className={styles.metaRow}>
+						{!isShiftLoading && (
+							<span className={styles.countBadge}>
+								<CalendarDays size={13} />
+								{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
+							</span>
+						)}
+						<span className={styles.tzBadge}>
+							<Globe size={11} />
+							{profile?.timezone || "America/Halifax"}
 						</span>
-					)}
+					</div>
 				</div>
 				<Link href="/scheduling">
 					<Button icon={<Undo2 size={16} />} variant="secondary">
@@ -95,6 +101,10 @@ export default function ShiftDayPage() {
 									<span className={styles.timeStart}>{startTime}</span>
 									<span className={styles.timeSep}>to</span>
 									<span className={styles.timeEnd}>{endTime}</span>
+									<span className={styles.timeTz}>
+										<Globe size={9} />
+										{(profile?.timezone || "America/Halifax").replace("America/", "")}
+									</span>
 								</div>
 
 								{/* Main info */}
