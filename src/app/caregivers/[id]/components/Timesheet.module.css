@@ -524,3 +524,110 @@
 	color: #991B1B;
 	border-color: #FECACA;
 }
+
+/* ─── Pay Periods Section ───────────────────────────────────── */
+.sectionHeader {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+	margin-top: 1.5rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 2px solid #f0f4f8;
+}
+
+.sectionTitle {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	letter-spacing: -0.02em;
+	position: relative;
+	padding-left: 0.9rem;
+}
+
+.sectionTitle::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 4px;
+	height: 1.1em;
+	background: var(--color-secondary);
+	border-radius: 3px;
+	opacity: 0.75;
+}
+
+.sectionCount {
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--color-secondary);
+	background: rgba(28, 74, 110, 0.09);
+	border: 1px solid rgba(28, 74, 110, 0.15);
+	padding: 0.25rem 0.75rem;
+	border-radius: 9999px;
+	letter-spacing: 0.03em;
+}
+
+/* ─── Scrollable Table Wrapper (5 rows + sticky header) ─────── */
+/*
+  The Table component uses divs. .header has padding: 1rem 8px ≈ 52px.
+  We override .content padding to 0.75rem inside the wrapper → ~42px per row.
+  5 rows + 1 header = 5×42 + 52 = 262px → set max-height to 265px.
+*/
+.scrollableTable {
+	max-height: 265px;
+	overflow-y: auto;
+	border-radius: 12px;
+	border: 1px solid #f0f4f8;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+	scrollbar-width: thin;
+	scrollbar-color: #d1d5db transparent;
+}
+
+.scrollableTable::-webkit-scrollbar {
+	width: 6px;
+}
+
+.scrollableTable::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.scrollableTable::-webkit-scrollbar-thumb {
+	background: #d1d5db;
+	border-radius: 6px;
+}
+
+.scrollableTable::-webkit-scrollbar-thumb:hover {
+	background: #9ca3af;
+}
+
+/* Compact row padding inside scrollable wrapper */
+.scrollableTable :global([class*="content"]) {
+	padding-top: 0.75rem !important;
+	padding-bottom: 0.75rem !important;
+}
+
+/* Sticky header — Table renders as <div class="header ..."> */
+.scrollableTable :global([class*="header"]) {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	background: #f8fafc;
+	box-shadow: 0 1px 0 #e5e7eb;
+}
+
+/* ─── Hours value formatting in table ───────────────────────── */
+.hoursNum {
+	font-weight: 700;
+	color: var(--color-primary);
+	font-size: 0.95rem;
+}
+
+.hoursUnit {
+	font-size: 0.75rem;
+	color: #9ca3af;
+	font-weight: 400;
+	margin-left: 1px;
+}

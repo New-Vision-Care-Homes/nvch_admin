@@ -11,14 +11,18 @@ import { hourService } from "@/services/api/services/hourService";
 export const useHours = (caregiverId, params = {}) => {
 	const queryClient = useQueryClient();
 
+	/**
+	 * Helper to extract the most relevant error message.
+	 */
+	const getErrorMessage = (err) => {
+		return (
+			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
+			"An unexpected error occurred"  // Fallback string
+		);
+	};
+
 	const caregiverHourQuery = useQuery({
 		queryKey: ["hours", caregiverId],
-		queryFn: () => hourService.getCaregiverHours(caregiverId),
-		enabled: !!caregiverId,
-	});
-
-	const caregiverHourHistoryQuery = useQuery({
-		queryKey: ["hours", caregiverId, "history"],
 		queryFn: () => hourService.getCaregiverHourHistory(caregiverId),
 		enabled: !!caregiverId,
 	});
@@ -32,16 +36,25 @@ export const useHours = (caregiverId, params = {}) => {
 		},
 	});
 
+	// --- Error Separation ---
+
+	// Fetch errors: from initial data loading (shown via ErrorState component)
+	const fetchError = caregiverHourQuery.error
+
+	// Action errors: from mutations (shown via toast or inline message)
+	const actionError = updateCompletedHourMutation.error;
+
 	return {
 		// Data
 		hours: caregiverHourQuery.data,
-		hourHistory: caregiverHourHistoryQuery.data,
 		updateCompletedHour: updateCompletedHourMutation.mutateAsync,
 
-		// Status
-		isLoading: caregiverHourQuery.isLoading || caregiverHourHistoryQuery.isLoading,
-		error: caregiverHourQuery.error || caregiverHourHistoryQuery.error,
+		isHoursLoading: caregiverHourQuery.isLoading,
+		// Fetch error → use with <ErrorState> component
+		hourFetchError: fetchError ? getErrorMessage(fetchError) : null,
+		// Action error → use with toast or inline message
+		hourActionError: actionError ? getErrorMessage(actionError) : null,
+
 		refetch: caregiverHourQuery.refetch,
-		refetchHistory: caregiverHourHistoryQuery.refetch,
 	};
 };

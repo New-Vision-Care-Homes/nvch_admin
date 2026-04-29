@@ -158,15 +158,6 @@ export default function Info() {
 				},
 				onError: (err) => {
 					setStatus({ variant: "error", text: caregiverActionError || "Failed to update caregiver." });
-
-					/*
-					const resData = err.response?.data;
-					const statusCode = err.response?.status;
-					if (statusCode === 400 && resData?.details?.length > 0) {
-						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
-					} else {
-						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update caregiver." });
-					}*/
 				},
 			}
 		);
