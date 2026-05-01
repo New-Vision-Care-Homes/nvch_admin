@@ -15,7 +15,7 @@ export default function AuthProvider({ children }) {
 
     // 1. Route Protection Logic
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const isPublicPath = publicPaths.includes(pathname);
         const isExactRoot = pathname === "/";
 
@@ -35,13 +35,13 @@ export default function AuthProvider({ children }) {
 
     // 2. Auto-Logout Logic
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (!token) return;
 
         let timeoutId;
 
         const logout = () => {
-            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
             router.replace("/");
         };
 

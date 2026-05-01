@@ -146,7 +146,7 @@ export default function Shifts() {
 							<TableCell>Date</TableCell>
 							<TableCell>Shift Times</TableCell>
 							<TableCell>Client</TableCell>
-							<TableCell>Action</TableCell>
+							<TableCell>Edit</TableCell>
 						</TableHeader>
 
 						{isShiftLoading ? (
@@ -241,8 +241,7 @@ export default function Shifts() {
 							<TableCell>Client</TableCell>
 							<TableCell>Hours Worked</TableCell>
 							<TableCell>Overtime</TableCell>
-							<TableCell>Approval</TableCell>
-							<TableCell>Action</TableCell>
+							<TableCell>Edit</TableCell>
 						</TableHeader>
 
 						{isHistoryLoading ? (
@@ -284,20 +283,6 @@ export default function Shifts() {
 												? <span style={{ color: "#f59e0b", fontWeight: 600 }}>{record.overtimeHours}h</span>
 												: <span style={{ color: "#9ca3af" }}>—</span>
 											}
-										</TableCell>
-										<TableCell>
-											<span style={{
-												display: "inline-block",
-												padding: "2px 10px",
-												borderRadius: "9999px",
-												fontSize: "0.78rem",
-												fontWeight: 600,
-												background: approvalStyle.bg,
-												color: approvalStyle.color,
-												border: `1px solid ${approvalStyle.border}`,
-											}}>
-												{formatStatusLabel(record.approvalStatus || "pending")}
-											</span>
 										</TableCell>
 										<TableCell>
 											<Button

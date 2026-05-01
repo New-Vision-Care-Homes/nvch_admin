@@ -18,8 +18,8 @@ export default function Navbar() {
 	};
 
 	const handleLogout = () => {
-		// 1. Remove JWT from localStorage
-		localStorage.removeItem("token");
+		// 1. Remove JWT from sessionStorage
+		sessionStorage.removeItem("token");
 
 		// 2. Redirect to login page
 		router.push("/");
