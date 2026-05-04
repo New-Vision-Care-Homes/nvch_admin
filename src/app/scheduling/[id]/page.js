@@ -95,8 +95,8 @@ export default function ShiftDetailPage() {
 						latitude: shiftDetail.geofence?.center?.latitude || 0,
 						longitude: shiftDetail.geofence?.center?.longitude || 0,
 					},
-					radius: shiftDetail.geofence?.radius || 500,
-					shape: shiftDetail.geofence?.shape || "circle",
+					radius: 100,
+					shape: "circle",
 				},
 				tasks: shiftDetail.tasks?.map(t => ({ ...t })) ?? [],
 				notes: shiftDetail.notes || "",
@@ -420,7 +420,7 @@ export default function ShiftDetailPage() {
 						isLoaded={isLoaded}
 						loadError={loadError}
 						center={isEditing ? formData.geofence?.center : shift.geofence?.center}
-						radius={isEditing ? formData.geofence?.radius : shift.geofence?.radius}
+						radius={shift.geofence?.radius}
 						onMapReady={handleMapReady}
 						height="340px"
 						className={styles.mapBlock}
@@ -432,26 +432,6 @@ export default function ShiftDetailPage() {
 							<Field label="" path="clientAddress" type="textarea" />
 						) : (
 							<p className={styles.addressText}>{shift.clientAddress || "—"}</p>
-						)}
-
-						{isEditing && (
-							<div className={styles.geofenceSettings}>
-								<label className={styles.label}>Geofence Settings</label>
-								<div className={styles.twoCol} style={{ gap: 8, marginTop: 8 }}>
-									<Field label="Radius (m)" path="geofence.radius" type="number" />
-									<div className={styles.fieldGroup}>
-										<label className={styles.label}>Shape</label>
-										<select
-											className={styles.inputField}
-											value={formData.geofence?.shape || "circle"}
-											onChange={(e) => handleChange(e, "geofence.shape")}
-										>
-											<option value="circle">Circle</option>
-											<option value="polygon">Polygon</option>
-										</select>
-									</div>
-								</div>
-							</div>
 						)}
 					</div>
 				</div>

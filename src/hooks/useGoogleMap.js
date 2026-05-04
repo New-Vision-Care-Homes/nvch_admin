@@ -11,10 +11,10 @@ const LIBRARIES = ['places', 'geometry'];
  * Default configuration for the map
  */
 const DEFAULT_CENTER = {
-	lat: 45.5017,
-	lng: -73.5673,
+	lat: 45.0780,
+	lng: -64.4965,
 };
-const DEFAULT_RADIUS = 500;
+const DEFAULT_RADIUS = 100;
 
 /**
  * Custom Hook: useGoogleMap

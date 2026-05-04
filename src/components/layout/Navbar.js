@@ -9,13 +9,19 @@ import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
 import avatarImg from "@/assets/img/navbar/avatar.jpg";
 
+import { useProfile } from "@/hooks/useProfile";
+
 export default function Navbar() {
 	const [search, setSearch] = useState("");
 	const router = useRouter();
 
+	const { profile } = useProfile();
+
+	/*
 	const handleSearch = () => {
 		alert(`Searching: ${search}`);
 	};
+	*/
 
 	const handleLogout = () => {
 		// 1. Remove JWT from sessionStorage
@@ -32,7 +38,7 @@ export default function Navbar() {
 				<Image src={logoImg} alt="App Icon" width={80} height={39} />
 
 				<div className={styles.element}>
-					{/* Search */}
+					{/*}
 					<div className={styles.search}>
 						<span className={styles.searchIcon}>
 							<Search size={16} color="#9095A0" />
@@ -46,7 +52,6 @@ export default function Navbar() {
 						/>
 					</div>
 
-					{/* Notification */}
 					<Link href="/notification" className={styles.notification}>
 						<Bell size={16} />
 						<span>Notification</span>
@@ -63,7 +68,7 @@ export default function Navbar() {
 
 					{/* Profile Image */}
 					<Image
-						src={avatarImg}
+						src={profile?.profilePictureUrl || avatarImg}
 						alt="profile img"
 						width={36}
 						height={36}

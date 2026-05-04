@@ -90,10 +90,10 @@ const schema = yup.object({
 	nokEmail: emailRule,
 
 	// Statutory Decision Maker (SDM)
-	sdmFName: nameRule.required("Statutory decision maker first name is required"),
-	sdmLName: nameRule.required("Statutory decision maker last name is required"),
-	sdmPhone: phoneRule.required("Statutory decision maker phone is required"),
-	sdmEmail: emailRule.required("Statutory decision maker email is required"),
+	sdmFName: nameRule,
+	sdmLName: nameRule,
+	sdmPhone: phoneRule,
+	sdmEmail: emailRule,
 
 	// Care Coordinator -- name + phone + email all required
 	careCoordinatorFName: nameRule.required("Care coordinator first name is required"),

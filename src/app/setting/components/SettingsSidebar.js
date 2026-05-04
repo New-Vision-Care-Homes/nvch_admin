@@ -7,9 +7,9 @@ import styles from "./SettingsSidebar.module.css";
 
 const settingsOptions = [
 	{ id: 1, label: "Profile", icon: User, href: "/setting/profile" },
-	{ id: 2, label: "Notifications", icon: Bell, href: "/setting/notifications" },
-	{ id: 3, label: "Security", icon: Shield, href: "/setting/security" },
-	{ id: 4, label: "Preferences", icon: SlidersHorizontal, href: "/setting/preferences" },
+	//{ id: 2, label: "Notifications", icon: Bell, href: "/setting/notifications" },
+	//{ id: 3, label: "Security", icon: Shield, href: "/setting/security" },
+	//{ id: 4, label: "Preferences", icon: SlidersHorizontal, href: "/setting/preferences" },
 ];
 
 export default function SettingsSidebar() {

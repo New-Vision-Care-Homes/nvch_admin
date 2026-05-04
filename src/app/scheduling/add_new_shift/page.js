@@ -42,9 +42,6 @@ const schema = yup.object({
 	contactLName: nameRule.optional(),
 	contactPhone: phoneRule.optional(),
 	shiftNotes: shortTextRule.optional(),
-	geofenceRadius: yup.number()
-		.typeError("Please select a geofence radius")
-		.required("Geofence radius is required"),
 });
 
 // ─── Utility functions ───────────────────────────────────────────────────────────
@@ -73,14 +70,9 @@ export default function AddNewShiftPage() {
 	// Watch these fields for conditional logic
 	const selectedStartTime = watch("startTime");
 	const selectedEndTime = watch("endTime");
-	const geofenceRadius = watch("geofenceRadius");
 
 	// ── 2. Google Map Hook ──────────────────────────────────────────────────────────
-	const { mapRef, inputRef, isLoaded, loadError, center: mapCenter, updateRadius } = useGoogleMap();
-
-	useEffect(() => {
-		updateRadius(geofenceRadius);
-	}, [geofenceRadius, updateRadius]);
+	const { mapRef, inputRef, isLoaded, loadError, center: mapCenter } = useGoogleMap();
 
 	// ── 3. Client search (using useClients hook) ───────────────────────────────────
 	//
@@ -209,9 +201,8 @@ export default function AddNewShiftPage() {
 			recurringShift: { isRecurring: false },
 			geofence: {
 				center: { latitude: mapCenter.lat, longitude: mapCenter.lng },
-				radius: data.geofenceRadius || 100,
+				radius: 100,
 				shape: "circle",
-
 			},
 		};
 
@@ -431,18 +422,6 @@ export default function AddNewShiftPage() {
 								placeholder="Search address..."
 								className={cardStyles.input}
 								style={{ marginBottom: "10px" }}
-							/>
-							<InputField
-								label="Geofence Radius (meters)"
-								type="select"
-								name="geofenceRadius"
-								register={register}
-								error={errors.geofenceRadius?.message}
-								options={[
-									{ label: "100m", value: 100 },
-									{ label: "200m", value: 200 },
-									{ label: "300m", value: 300 },
-								]}
 							/>
 						</div>
 					</div>

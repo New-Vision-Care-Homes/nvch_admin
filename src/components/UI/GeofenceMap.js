@@ -44,7 +44,7 @@ import styles from "./GeofenceMap.module.css";
 
 export default function GeofenceMap({
 	center,
-	radius = 500,
+	radius = 100,
 	isLoaded,
 	loadError,
 	onMapReady,
