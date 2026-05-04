@@ -165,7 +165,7 @@ export default function Admins() {
 												{/* Name & Avatar */}
 												<TableCell>
 													<Image
-														src={admin.profileImageUrl || defaultAvatar}
+														src={admin.profilePictureUrl || defaultAvatar}
 														width={50}
 														height={50}
 														alt="avatar"
