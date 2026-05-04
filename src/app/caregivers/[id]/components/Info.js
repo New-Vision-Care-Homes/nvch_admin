@@ -27,6 +27,7 @@ const cleanFetchedData = (apiData) => {
 		birth: apiData.dateOfBirth?.split('T')[0] || "",
 		phone: apiData.phone || "",
 		email: apiData.email || "",
+		maxHours: apiData.biWeeklyWorkCapacity?.maxHours || 84,
 
 		// Address field (safely chained)
 		street: apiData.address?.street || "",
@@ -63,6 +64,14 @@ const schema = yup.object({
 	birth: birthRule.optional(),
 	notes: longTextRule.optional(),
 
+	maxHours: yup
+		.number()
+		.transform((value, originalValue) => {
+			return originalValue === "" ? undefined : value;
+		})
+		.nullable()
+		.notRequired(),
+
 	// Address fields
 	street: shortTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
@@ -91,6 +100,7 @@ export default function Info() {
 		caregiverFetchError,
 		caregiverActionError
 	} = useCaregivers(id);
+	console.log(caregiverDetail)
 
 	const {
 		register,
@@ -98,6 +108,7 @@ export default function Info() {
 		control,
 		setValue,
 		formState: { errors },
+		watch,
 		reset,
 	} = useForm({
 		resolver: yupResolver(schema),
@@ -141,6 +152,10 @@ export default function Info() {
 				pinCode: data.pincode,
 				country: data.country,
 				gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
+			},
+
+			biWeeklyWorkCapacity: {
+				maxHours: data.maxHours
 			},
 
 			emergencyContact: {
@@ -197,6 +212,8 @@ export default function Info() {
 								options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 							/>
 						</div>
+
+						<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
 
 						<AddressAutocomplete onAddressSelect={handleAddressSelect} />
 

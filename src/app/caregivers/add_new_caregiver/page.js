@@ -64,6 +64,14 @@ const schema = yup.object({
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
 
+	maxHours: yup
+		.number()
+		.transform((value, originalValue) => {
+			return originalValue === "" ? undefined : value;
+		})
+		.nullable()
+		.notRequired(),
+
 	// Address Fields
 	street: longTextRule.required("Street is required"),
 	city: shortTextRule.required("City is required"),
@@ -163,6 +171,10 @@ export default function Page() {
 			dateOfBirth: data.dateOfBirth,
 			region: data.region,
 			timezone: data.timezone,
+
+			biWeeklyWorkCapacity: {
+				maxHours: data.maxHours
+			},
 
 			address: {
 				street: data.street,
@@ -268,6 +280,8 @@ export default function Page() {
 									<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
 									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
 								</div>
+
+								<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
 
 								{/* Address */}
 								<AddressAutocomplete
