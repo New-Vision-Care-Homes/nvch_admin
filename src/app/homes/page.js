@@ -76,7 +76,7 @@ export default function Homes() {
 					{/* Homes Table */}
 					<div className={styles.tableWrapper}>
 						<h2 style={{ marginBottom: "1.5rem" }}>All Housing Units</h2>
-						
+
 						<ErrorState
 							isLoading={isLoading}
 							errorMessage={fetchError}
@@ -95,7 +95,6 @@ export default function Homes() {
 											<TableCell>Caregivers</TableCell>
 											<TableCell>Admins</TableCell>
 											<TableCell>Clients</TableCell>
-											<TableCell>Night Check</TableCell>
 											<TableCell>Status</TableCell>
 											<TableCell>Opened At</TableCell>
 											<TableCell>Actions</TableCell>
@@ -135,14 +134,6 @@ export default function Homes() {
 													{home.clients?.length || 0}
 												</TableCell>
 
-												{/* Night Check */}
-												<TableCell>
-													{home.nightChecksEnabled
-														? `Every ${home.nightCheckFrequency} min`
-														: "Disabled"
-													}
-												</TableCell>
-
 												{/* Status */}
 												<TableCell>
 													<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
@@ -170,9 +161,9 @@ export default function Homes() {
 										))}
 									</Table>
 								) : (
-									<EmptyState 
-										title="No homes found" 
-										message="There are no homes available at the moment." 
+									<EmptyState
+										title="No homes found"
+										message="There are no homes available at the moment."
 									/>
 								)}
 							</>

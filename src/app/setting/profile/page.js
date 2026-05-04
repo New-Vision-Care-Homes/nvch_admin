@@ -13,13 +13,10 @@ import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
-import { Edit, Upload, Save, X } from "lucide-react";
-import Modal from "@components/UI/Modal";
-import { useProfileUpload } from "@/hooks/usePictures";
-
+import { Edit, Upload, Save, X, Activity } from "lucide-react";
+import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 500 * 1024; // 500KB
+import { usePermissionGroups } from "@/hooks/usePermissions";
 
 const schema = yup.object({
 	phone: phoneRule,
@@ -33,6 +30,8 @@ export default function ProfilePage() {
 
 	const [isEditing, setIsEditing] = useState(false);
 
+	const { permissionGroups } = usePermissionGroups();
+
 	const { register, handleSubmit, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
@@ -45,12 +44,6 @@ export default function ProfilePage() {
 
 	// Image Upload States
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-	const [selectedFile, setSelectedFile] = useState(null);
-	const [previewUrl, setPreviewUrl] = useState(null);
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState("");
-
-	const { uploadProfilePicture } = useProfileUpload();
 
 
 	const onSubmit = (data) => {
@@ -79,55 +72,6 @@ export default function ProfilePage() {
 		});
 	};
 
-	// --- Image Upload Handlers ---
-	const handleFileChange = (e) => {
-		const file = e.target.files[0];
-		if (file) {
-			if (file.size > MAX_FILE_SIZE) {
-				setUploadError("File is too large (max 500KB).");
-				return;
-			}
-			if (!SUPPORTED_FORMATS.includes(file.type)) {
-				setUploadError("Unsupported format. Use JPG, PNG or WEBP.");
-				return;
-			}
-			setSelectedFile(file);
-			setPreviewUrl(URL.createObjectURL(file));
-		}
-	};
-
-	const handleCloseImageModal = () => {
-		setIsImageModalOpen(false);
-		setSelectedFile(null);
-		setUploadError("");
-		setUploading(false);
-		if (previewUrl) URL.revokeObjectURL(previewUrl);
-		setPreviewUrl(null);
-	};
-
-	const handleImageUpload = async () => {
-		if (!selectedFile) return;
-		setUploading(true);
-		setUploadError("");
-
-		uploadProfilePicture(
-			{ file: selectedFile, profileId: profile?.id || profile?._id },
-			{
-				onSuccess: () => {
-					handleCloseImageModal();
-				},
-				onError: (err) => {
-					setUploadError(err?.message || "Failed to upload image.");
-				},
-				onSettled: () => {
-					setUploading(false);
-				}
-			}
-		);
-	};
-
-	const formattedLastLogin = profile?.lastLogin ? new Date(profile.lastLogin).toLocaleString() : "N/A";
-	const formattedCreatedAt = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : "N/A";
 
 	return (
 		<>
@@ -202,7 +146,7 @@ export default function ProfilePage() {
 
 									<InfoField label="Last Name" value={profile.lastName || "N/A"} />
 
-									<InfoField label="ID" value={profile.id || "N/A"} />
+									<InfoField label="ID" value={profile.employeeId || "N/A"} />
 
 									<InfoField label="Email" value={profile.email || "N/A"} />
 
@@ -258,42 +202,50 @@ export default function ProfilePage() {
 										<InfoField label="Department" value={profile.department || "N/A"} />
 										<InfoField label="Admin Level" value={profile.adminLevel || "N/A"} />
 										<InfoField label="Permissions">
-											<div className={styles.tagGroup}>
-												{(profile.permissions && profile.permissions.length > 0) ? (
-													profile.permissions.map((perm, index) => (
-														<span key={index} className={styles.tag}>{perm.replace(/_/g, ' ')}</span>
-													))
-												) : "No specific permissions"}
-											</div>
+											{(() => {
+												const pg = profile.permissionsGroup;
+												const groupIds = Array.isArray(pg) ? pg : (pg ? [pg] : []);
+												if (groupIds.length > 0) {
+													return (
+														<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+															{groupIds.map((g) => {
+																const id = typeof g === 'string' ? g : g._id;
+																const group = permissionGroups?.find(pg => pg._id === id);
+																if (!group) return null;
+																const groupName = group.name;
+																const groupSlugs = group.permissions || [];
+																return (
+																	<div key={id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+																		<span style={{ display: 'inline-flex', alignItems: 'center', background: '#f3f4f6', color: '#1f2937', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', fontSize: '0.95rem', width: 'fit-content' }}>
+																			<Activity size={14} style={{ marginRight: '6px', color: '#6b7280' }} />
+																			{groupName}
+																		</span>
+																		{groupSlugs.length > 0 && (
+																			<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '0.5rem' }}>
+																				{groupSlugs.map((slug) => (
+																					<span key={slug} style={{
+																						display: 'inline-block',
+																						background: '#e5e7eb',
+																						color: '#374151',
+																						padding: '2px 8px',
+																						borderRadius: '4px',
+																						fontSize: '0.78rem',
+																						fontWeight: '500',
+																					}}>
+																						{slug}
+																					</span>
+																				))}
+																			</div>
+																		)}
+																	</div>
+																);
+															})}
+														</div>
+													);
+												}
+												return <span style={{ color: '#6b7280' }}>No permission groups assigned</span>;
+											})()}
 										</InfoField>
-									</div>
-								</div>
-							</Card>
-
-							<Card className={styles.fullHeight}>
-								<CardHeader>Access & Activity</CardHeader>
-								<div className={styles.text}>
-									<div className={styles.column}>
-										<InfoField label="Access Controls">
-											<div className={styles.accessGroup}>
-												<div className={styles.accessItem}>
-													<span className={profile.canManageprofiles ? styles.check : styles.uncheck}>{profile.canManageprofiles ? "✓" : "✗"}</span>
-													<span>Manage profiles</span>
-												</div>
-												<div className={styles.accessItem}>
-													<span className={profile.canManageShifts ? styles.check : styles.uncheck}>{profile.canManageShifts ? "✓" : "✗"}</span>
-													<span>Manage Shifts</span>
-												</div>
-												<div className={styles.accessItem}>
-													<span className={profile.canViewReports ? styles.check : styles.uncheck}>{profile.canViewReports ? "✓" : "✗"}</span>
-													<span>View Reports</span>
-												</div>
-											</div>
-										</InfoField>
-										<div className={styles.timeline}>
-											<InfoField label="Created At" value={formattedCreatedAt} />
-											<InfoField label="Last Login" value={formattedLastLogin} />
-										</div>
 									</div>
 								</div>
 							</Card>
@@ -303,50 +255,13 @@ export default function ProfilePage() {
 			)}
 
 			{/* Image Upload Popup */}
-			<Modal isOpen={isImageModalOpen} onClose={handleCloseImageModal}>
-				<div className={styles.centeredModalContainer}>
-					<h2>Update Profile Picture</h2>
-					<div className={styles.uploadModalContent}>
-						<div className={styles.imagePreview}>
-							<Image
-								src={previewUrl || profile?.profilePicture || profile?.profilePictureUrl || defaultAvatar}
-								alt="Preview"
-								width={150}
-								height={150}
-								className={styles.image}
-								unoptimized
-							/>
-						</div>
-
-						<label className={styles.fileInputLabelCustom}>
-							Select File
-							<input
-								type="file"
-								accept={SUPPORTED_FORMATS.join(',')}
-								onChange={handleFileChange}
-								className={styles.hiddenFileInput}
-								disabled={uploading}
-							/>
-						</label>
-
-						{selectedFile && <p className={styles.fileName}>Selected: {selectedFile.name}</p>}
-						{uploadError && <p className={styles.errorMessage}>{uploadError}</p>}
-
-						<div className={styles.modalActions}>
-							<Button variant="secondary" onClick={handleCloseImageModal} disabled={uploading}>
-								Cancel
-							</Button>
-							<Button
-								variant="primary"
-								onClick={handleImageUpload}
-								disabled={!selectedFile || uploading || !!uploadError}
-							>
-								{uploading ? "Saving..." : "Save Picture"}
-							</Button>
-						</div>
-					</div>
-				</div>
-			</Modal>
+			<ProfilePictureModal
+				isOpen={isImageModalOpen}
+				onClose={() => setIsImageModalOpen(false)}
+				userId={profile?.id || profile?._id}
+				currentImageUrl={profile?.profilePicture || profile?.profilePictureUrl}
+				onSuccess={() => { }}
+			/>
 		</>
 	);
 }

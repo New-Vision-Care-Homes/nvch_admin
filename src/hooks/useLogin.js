@@ -23,7 +23,7 @@ export const useLogin = () => {
 		onSuccess: (data) => {
 			const token = data?.token;
 			if (token) {
-				localStorage.setItem("token", token);
+				sessionStorage.setItem("token", token);
 			}
 			router.push("/dashboard");
 		},

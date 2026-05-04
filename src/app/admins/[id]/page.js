@@ -17,11 +17,7 @@ import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule } from "@/utils/validation";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-import { useProfileUpload } from "@/hooks/usePictures";
-
-// --- File Upload Constants ---
-const SUPPORTED_FORMATS = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
-const MAX_FILE_SIZE = 500 * 1024; // 500KB limit
+import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -95,44 +91,15 @@ export default function Page() {
 	};
 
 	// --- Image Upload States & Hooks ---
-	const { uploadProfilePicture, isUploading } = useProfileUpload();
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-	const [selectedFile, setSelectedFile] = useState(null);
-	const [previewUrl, setPreviewUrl] = useState(null);
 
 	// Modal state for general success/error messages
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
 	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
-	const [error, setError] = useState("");
 
-	// --- Helper Functions (S3 Upload Logic) ---
-	const cleanupPreviewUrl = () => {
-		if (previewUrl) {
-			URL.revokeObjectURL(previewUrl);
-			setPreviewUrl(null);
-		}
-	};
 
-	const handleImageUpload = async () => {
-		if (!selectedFile) return;
-		setError("");
-
-		uploadProfilePicture(
-			{ file: selectedFile, userId: id },
-			{
-				onSuccess: () => {
-					setMessage("Profile picture uploaded and saved successfully!");
-					setIsGeneralModalOpen(true);
-					handleCloseImageModal();
-				},
-				onError: (err) => {
-					setError(`Image upload failed: ${err.message || "Failed to upload image."}`);
-				}
-			}
-		);
-	}
 
 	// --- API Calls and Handlers (User Data) ---
 	useEffect(() => {
@@ -239,37 +206,7 @@ export default function Page() {
 		setIsEditing(false);
 	};
 
-	// --- Image Modal UI Handlers ---
-	const handleFileChange = (e) => {
-		cleanupPreviewUrl();
-		setError("");
-		const file = e.target.files[0];
 
-		if (file) {
-			if (file.size > MAX_FILE_SIZE) {
-				setError(`File is too large (max ${MAX_FILE_SIZE / 1024}KB).`);
-				setSelectedFile(null);
-				return;
-			}
-			if (!SUPPORTED_FORMATS.includes(file.type)) {
-				setError(`Unsupported file type.`);
-				setSelectedFile(null);
-				return;
-			}
-
-			setSelectedFile(file);
-			setPreviewUrl(URL.createObjectURL(file));
-		} else {
-			setSelectedFile(null);
-		}
-	};
-
-	const handleCloseImageModal = () => {
-		setIsImageModalOpen(false);
-		setSelectedFile(null);
-		setError("");
-		cleanupPreviewUrl();
-	};
 
 	function handleGeneralModalCancel() {
 		setIsGeneralModalOpen(false);
@@ -611,54 +548,16 @@ export default function Page() {
 			</Modal>
 
 			{/* Image Upload Modal */}
-			<Modal isOpen={isImageModalOpen} onClose={handleCloseImageModal}>
-				<div className={styles.centeredModalContainer}>
-					<h2>Update Profile Picture</h2>
-					<div className={styles.uploadModalContent}>
-						<div className={styles.imagePreview}>
-							<Image
-								src={previewUrl || user.profilePictureUrl || defaultAvatar}
-								alt="Preview"
-								width={150}
-								height={150}
-								className={styles.image}
-								unoptimized
-							/>
-						</div>
-
-						{/* Custom styled file input label */}
-						<label className={styles.fileInputLabelCustom}>
-							Select File
-							<input
-								type="file"
-								accept={SUPPORTED_FORMATS.join(',')}
-								onChange={handleFileChange}
-								className={styles.hiddenFileInput}
-								disabled={isUploading}
-							/>
-						</label>
-
-						{selectedFile && <p className={styles.fileName}>Selected: {selectedFile.name}</p>}
-
-						{error && <p className={styles.errorMessage}>{error}</p>}
-
-						<p className={styles.fileNote}>Max {MAX_FILE_SIZE / 1024}KB. Supported formats: JPG, PNG, WEBP.</p>
-
-						<div className={styles.modalActions}>
-							<Button variant="secondary" onClick={handleCloseImageModal} disabled={isUploading}>
-								Cancel
-							</Button>
-							<Button
-								variant="primary"
-								onClick={handleImageUpload}
-								disabled={!selectedFile || isUploading || !!error}
-							>
-								{isUploading ? "Uploading..." : "Save Picture"}
-							</Button>
-						</div>
-					</div>
-				</div>
-			</Modal>
+			<ProfilePictureModal
+				isOpen={isImageModalOpen}
+				onClose={() => setIsImageModalOpen(false)}
+				userId={id}
+				currentImageUrl={user.profilePictureUrl}
+				onSuccess={() => {
+					setMessage("Profile picture uploaded and saved successfully!");
+					setIsGeneralModalOpen(true);
+				}}
+			/>
 		</>
 	);
 }

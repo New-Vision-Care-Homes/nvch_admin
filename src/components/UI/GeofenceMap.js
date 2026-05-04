@@ -44,7 +44,7 @@ import styles from "./GeofenceMap.module.css";
 
 export default function GeofenceMap({
 	center,
-	radius = 500,
+	radius = 100,
 	isLoaded,
 	loadError,
 	onMapReady,
@@ -64,7 +64,7 @@ export default function GeofenceMap({
 		const lat = center?.latitude ?? 44.6488;
 		const lng = center?.longitude ?? -63.5752;
 		const mapCenter = { lat, lng };
-		const mapRadius = Number(radius) || 500;
+		const mapRadius = Number(radius) || 100;
 
 		const mapInstance = new window.google.maps.Map(divRef.current, {
 			center: mapCenter,

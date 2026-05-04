@@ -32,6 +32,16 @@ const DEPARTMENT_OPTIONS = [
 	{ label: "Administration", value: "Administration" },
 ];
 
+const TIMEZONE_OPTIONS = [
+	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
+	{ label: "Atlantic Time (America/Halifax)", value: "America/Halifax" },
+	{ label: "Eastern Time (America/Toronto)", value: "America/Toronto" },
+	{ label: "Central Time (America/Winnipeg)", value: "America/Winnipeg" },
+	{ label: "Central Standard Time - Saskatchewan (America/Regina)", value: "America/Regina" },
+	{ label: "Mountain Time (America/Edmonton)", value: "America/Edmonton" },
+	{ label: "Pacific Time (America/Vancouver)", value: "America/Vancouver" },
+];
+
 const schema = yup.object({
 	adminId: IdRule,
 	firstName: nameRule.required("First name is required"),
@@ -49,6 +59,7 @@ const schema = yup.object({
 		.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
+	timezone: yup.string().required("Timezone is required"),
 	permissionsGroup: yup
 		.array()
 		.min(1, "Please select at least one permission group")
@@ -85,6 +96,7 @@ export default function Page() {
 		resolver: yupResolver(schema),
 		defaultValues: {
 			permissionsGroup: [], // Initialize array so Yup can validate it properly
+			timezone: "America/Halifax",
 		}
 	});
 
@@ -104,6 +116,7 @@ export default function Page() {
 			phone: data.phone,
 			adminLevel: data.adminLevel,
 			department: data.department,
+			timezone: data.timezone,
 			permissionsGroup,
 		};
 
@@ -181,6 +194,19 @@ export default function Page() {
 										register={register}
 										error={errors.department}
 										options={DEPARTMENT_OPTIONS}
+									/>
+								</div>
+								<div style={{ marginBottom: "1rem" }}>
+									<p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem', marginBottom: '1rem' }}>
+										Please select the correct timezone for the admin, as this will determine how time is displayed across the website.
+									</p>
+									<InputField
+										label="Timezone"
+										name="timezone"
+										type="select"
+										register={register}
+										error={errors.timezone}
+										options={TIMEZONE_OPTIONS}
 									/>
 								</div>
 							</CardContent>

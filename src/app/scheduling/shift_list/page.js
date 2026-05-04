@@ -2,10 +2,11 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
-import { format } from "date-fns";
+import { useProfile } from "@/hooks/useProfile";
+import { utcToDisplayTime, utcToWeekday, utcToDate } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
-import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2 } from "lucide-react";
+import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe } from "lucide-react";
 import styles from "./shift_list.module.css";
 import Link from "next/link";
 
@@ -17,41 +18,16 @@ export default function ShiftListPage() {
 	const startParam = searchParams.get("startDate");
 	const endParam = searchParams.get("endDate");
 
-	// Fetch all shifts
-	const { shifts = [], isShiftLoading } = useShifts({});
-
-	// Filter: exact time-slot match
-	const filteredShifts = shifts.filter((shift) => {
-		const shiftStart = new Date(shift.startTime);
-		const shiftEnd = new Date(shift.endTime);
-		if (startParam && endParam) {
-			const slotStart = new Date(startParam);
-			const slotEnd = new Date(endParam);
-			return (
-				format(shiftStart, "yyyy-MM-dd HH:mm") === format(slotStart, "yyyy-MM-dd HH:mm") &&
-				format(shiftEnd, "HH:mm") === format(slotEnd, "HH:mm")
-			);
-		}
-		return true;
+	// Fetch all shifts within the time slot
+	const { shifts = [], isShiftLoading } = useShifts({
+		startDateTime: startParam,
+		endDateTime: endParam,
 	});
-
-	// Sort chronologically
-	const sortedShifts = [...filteredShifts].sort(
-		(a, b) => new Date(a.startTime) - new Date(b.startTime)
-	);
-
-	// Display helpers
-	const displayDate = startParam
-		? format(new Date(startParam), "EEEE, MMMM d, yyyy")
-		: "Shift List";
-
-	const shortDate = startParam
-		? format(new Date(startParam), "MMM d, yyyy")
-		: "";
+	const { profile } = useProfile();
 
 	const timeRange =
 		startParam && endParam
-			? `${format(new Date(startParam), "HH:mm")} – ${format(new Date(endParam), "HH:mm")}`
+			? `${utcToDisplayTime(startParam, profile?.timezone || "America/Halifax")} – ${utcToDisplayTime(endParam, profile?.timezone || "America/Halifax")}`
 			: "";
 
 	const statusClass = (status) =>
@@ -62,19 +38,25 @@ export default function ShiftListPage() {
 			{/* ── Header ── */}
 			<header className={styles.header}>
 				<div className={styles.titleBlock}>
-					<span className={styles.dateLabel}>{shortDate}</span>
-					<h1 className={styles.heading}>{displayDate}</h1>
-					{timeRange && (
-						<span className={styles.timeRangePill}>
-							<Clock size={13} />
-							{timeRange}
+					<span className={styles.dateLabel}>{utcToWeekday(startParam, profile?.timezone || "America/Halifax")}</span>
+					<h1 className={styles.heading}>{utcToDate(startParam, profile?.timezone || "America/Halifax")}</h1>
+					<div className={styles.metaRow}>
+						{timeRange && (
+							<span className={styles.timeRangePill}>
+								<Clock size={13} />
+								{timeRange}
+							</span>
+						)}
+						{!isShiftLoading && (
+							<span className={styles.countBadge}>
+								{shifts.length} shift{shifts.length !== 1 ? "s" : ""}
+							</span>
+						)}
+						<span className={styles.tzBadge}>
+							<Globe size={11} />
+							{profile?.timezone || "America/Halifax"}
 						</span>
-					)}
-					{!isShiftLoading && (
-						<span className={styles.countBadge}>
-							{sortedShifts.length} shift{sortedShifts.length !== 1 ? "s" : ""}
-						</span>
-					)}
+					</div>
 				</div>
 				<Link href="/scheduling">
 					<Button icon={<Undo2 size={16} />} variant="secondary">
@@ -96,8 +78,8 @@ export default function ShiftListPage() {
 							</div>
 						</div>
 					))
-				) : sortedShifts.length > 0 ? (
-					sortedShifts.map((shift) => {
+				) : shifts.length > 0 ? (
+					shifts.map((shift) => {
 						const shiftId = shift._id || shift.id;
 						const caregiverName =
 							shift.caregiver?.firstName || shift.caregiver?.lastName
@@ -114,6 +96,16 @@ export default function ShiftListPage() {
 								className={styles.shiftCard}
 								onClick={() => router.push(`/scheduling/${shiftId}`)}
 							>
+								{/* Time block */}
+								<div className={styles.timeBlock}>
+									<span className={styles.timeRange}>
+										{utcToDisplayTime(shift.startTime, profile?.timezone || "America/Halifax")} – {utcToDisplayTime(shift.endTime, profile?.timezone || "America/Halifax")}
+									</span>
+									<span className={styles.timeTz}>
+										<Globe size={9} />
+										{(profile?.timezone || "America/Halifax").replace("America/", "")}
+									</span>
+								</div>
 								{/* Main info */}
 								<div className={styles.mainInfo}>
 									{/* Caregiver */}

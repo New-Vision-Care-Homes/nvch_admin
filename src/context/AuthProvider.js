@@ -15,7 +15,7 @@ export default function AuthProvider({ children }) {
 
     // 1. Route Protection Logic
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         const isPublicPath = publicPaths.includes(pathname);
         const isExactRoot = pathname === "/";
 
@@ -33,43 +33,77 @@ export default function AuthProvider({ children }) {
         setIsAuthorized(true);
     }, [pathname, router]);
 
-    // 2. Auto-Logout Logic
+    // 2. Auto-Logout Logic (Cross-tab supported)
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (!token) return;
 
-        let timeoutId;
-
         const logout = () => {
-            localStorage.removeItem("token");
+            sessionStorage.removeItem("token");
+            localStorage.setItem("logoutEvent", Date.now().toString()); // broadcast logout to other tabs
             router.replace("/");
         };
 
-        const resetTimer = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(logout, INACTIVITY_TIMEOUT);
+        const updateActivity = () => {
+            localStorage.setItem("lastActivity", Date.now().toString());
         };
+
+        // Initialize activity on mount if not present
+        if (!localStorage.getItem("lastActivity")) {
+            updateActivity();
+        }
+
+        let throttleTimer;
+        const throttledUpdateActivity = () => {
+            if (throttleTimer) return;
+            throttleTimer = setTimeout(() => {
+                updateActivity();
+                throttleTimer = null;
+            }, 1000); // throttle to 1 update per second
+        };
+
+        const checkInactivity = () => {
+            const lastActivity = parseInt(localStorage.getItem("lastActivity") || "0", 10);
+            // If the time since last activity is greater than timeout, log out
+            if (Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+                logout();
+            }
+        };
+
+        // Check for inactivity every 5 seconds
+        const intervalId = setInterval(checkInactivity, 5000);
 
         const events = ["mousemove", "keydown", "scroll", "click"];
 
         const setupListeners = () => {
             events.forEach((event) => {
-                window.addEventListener(event, resetTimer);
+                window.addEventListener(event, throttledUpdateActivity);
             });
         };
 
         const cleanupListeners = () => {
             events.forEach((event) => {
-                window.removeEventListener(event, resetTimer);
+                window.removeEventListener(event, throttledUpdateActivity);
             });
-            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+            if (throttleTimer) clearTimeout(throttleTimer);
         };
 
-        resetTimer();
+        // Listen for storage events to sync logout across tabs
+        const handleStorageChange = (e) => {
+            if (e.key === "logoutEvent") {
+                sessionStorage.removeItem("token");
+                router.replace("/");
+            }
+        };
+        window.addEventListener("storage", handleStorageChange);
+
+        // Initial setup
         setupListeners();
 
         return () => {
             cleanupListeners();
+            window.removeEventListener("storage", handleStorageChange);
         };
     }, [pathname, router]);
 

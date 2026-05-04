@@ -16,6 +16,7 @@
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.544.0",
+    "luxon": "^3.7.2",
     "next": "15.5.9",
     "re-resizable": "^6.11.2",
     "react": "19.1.0",

@@ -17,6 +17,16 @@ import ActionMessage from "@components/UI/ActionMessage";
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
 
+const TIMEZONE_OPTIONS = [
+	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
+	{ label: "Atlantic Time (America/Halifax)", value: "America/Halifax" },
+	{ label: "Eastern Time (America/Toronto)", value: "America/Toronto" },
+	{ label: "Central Time (America/Winnipeg)", value: "America/Winnipeg" },
+	{ label: "Central Standard Time - Saskatchewan (America/Regina)", value: "America/Regina" },
+	{ label: "Mountain Time (America/Edmonton)", value: "America/Edmonton" },
+	{ label: "Pacific Time (America/Vancouver)", value: "America/Vancouver" },
+];
+
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +62,15 @@ const schema = yup.object({
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
+	timezone: yup.string().required("Timezone is required"),
+
+	maxHours: yup
+		.number()
+		.transform((value, originalValue) => {
+			return originalValue === "" ? undefined : value;
+		})
+		.nullable()
+		.notRequired(),
 
 	// Address Fields
 	street: longTextRule.required("Street is required"),
@@ -97,6 +116,7 @@ export default function Page() {
 		defaultValues: {
 			// Arrays are initialized as empty, allowing the user to add slots
 			availability: [],
+			timezone: "America/Halifax",
 		}
 	});
 
@@ -150,6 +170,11 @@ export default function Page() {
 			employeeId: data.employeeId,
 			dateOfBirth: data.dateOfBirth,
 			region: data.region,
+			timezone: data.timezone,
+
+			biWeeklyWorkCapacity: {
+				maxHours: data.maxHours
+			},
 
 			address: {
 				street: data.street,
@@ -224,7 +249,17 @@ export default function Page() {
 						<Card>
 							<CardHeader>General and Contact Information</CardHeader>
 							<CardContent>
-								<InputField label="Employee ID" name="employeeId" register={register} error={errors.employeeId} />
+								<div className={styles.row2}>
+									<InputField label="Employee ID" name="employeeId" register={register} error={errors.employeeId} />
+									<InputField
+										label="Timezone"
+										name="timezone"
+										type="select"
+										register={register}
+										error={errors.timezone}
+										options={TIMEZONE_OPTIONS}
+									/>
+								</div>
 								<div className={styles.row2}>
 									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
 									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
@@ -245,6 +280,8 @@ export default function Page() {
 									<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
 									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
 								</div>
+
+								<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
 
 								{/* Address */}
 								<AddressAutocomplete

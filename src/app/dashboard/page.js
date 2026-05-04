@@ -147,6 +147,7 @@ export default function Dashboard() {
 			</section>
 
 			{/* Recent Activity */}
+			{/*
 			<section className={styles.section}>
 				<div className={styles.activityHeader}>
 					<h2 style={{ margin: 0 }}>Recent Activity</h2>
@@ -160,6 +161,7 @@ export default function Dashboard() {
 					</div>
 				</div>
 			</section>
+			*/}
 		</PageLayout>
 	);
 }

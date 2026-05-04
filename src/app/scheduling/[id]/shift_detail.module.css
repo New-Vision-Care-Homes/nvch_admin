@@ -347,6 +347,100 @@
 
 .flex1 { flex: 1; }
 
+.inputFieldDisabled {
+	background: #f3f4f6;
+	color: #6b7280;
+	cursor: not-allowed;
+	border-color: #e5e7eb;
+}
+
+.addressFields {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 12px;
+}
+
+/* Wrapper around the search input + read-only breakdown fields in edit mode */
+.addressFieldsWrap {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* ── Address card — sits on the right of the map (or below on mobile) ── */
+.addressCard {
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 14px;
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.addressCardTitle {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: #374151;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 0 0 4px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+/* ── View-mode address breakdown ── */
+.addressViewGrid {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* One row: icon + label + value */
+.addressViewRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px 10px;
+	background: #fff;
+	border: 1px solid #f3f4f6;
+	border-radius: 8px;
+	transition: border-color 0.15s;
+}
+.addressViewRow:hover { border-color: #d1d5db; }
+
+.addressIcon {
+	color: #6b7280;
+	margin-top: 2px;
+	flex-shrink: 0;
+}
+
+/* Stack label above value inside each row */
+.addressViewRow > div {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.addressViewLabel {
+	font-size: 0.62rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9ca3af;
+}
+
+.addressViewValue {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #111827;
+	line-height: 1.4;
+}
+
 .checkboxInput {
 	width: 16px;
 	height: 16px;
@@ -382,22 +476,33 @@
 
 .mapInfo {
 	flex: 1;
-	min-width: 200px;
+	min-width: 260px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+
+/* Tablet: stack the two-column layout vertically */
 @media (max-width: 1024px) {
 	.row { flex-direction: column; }
 	.colMain, .colSide { flex: 1 1 100%; min-width: 0; }
-	.twoCol { grid-template-columns: 1fr; }
+	.twoCol { grid-template-columns: 1fr 1fr; }
+	/* Stack map above address card on tablet/mobile */
 	.mapRow { flex-direction: column; }
-	.mapBlock { flex: 1 1 100%; }
+	.mapBlock { flex: 1 1 100%; width: 100%; }
+	/* Address card takes full width below the map */
+	.mapInfo { min-width: 0; width: 100%; }
 }
 
+/* Mobile: further simplify */
 @media (max-width: 640px) {
-	.threeCol { grid-template-columns: 1fr; }
 	.header { flex-direction: column; align-items: flex-start; }
+	.headerActions { width: 100%; justify-content: flex-end; }
+	/* Collapse the city/province two-column to single column */
+	.twoCol { grid-template-columns: 1fr; }
+	.title { font-size: 1.4rem; }
+	.card { padding: 16px; }
+	.addressCard { padding: 14px; }
 }

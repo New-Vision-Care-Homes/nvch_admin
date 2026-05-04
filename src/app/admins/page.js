@@ -144,9 +144,9 @@ export default function Admins() {
 							{/* Admins Table */}
 							{admins.length === 0 ? (
 								<div style={{ marginTop: "2rem" }}>
-									<EmptyState 
-										title="No admins found" 
-										message="There are no administrators matching your criteria." 
+									<EmptyState
+										title="No admins found"
+										message="There are no administrators matching your criteria."
 									/>
 								</div>
 							) : (

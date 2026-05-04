@@ -140,10 +140,8 @@
 
 
 .avatar {
-	width: 36px;
-	height: 36px;
 	background: #E6F7F2FF;
 	opacity: 1;
 	overflow: hidden;
-	border-radius: 18px;
+	border-radius: 30px;
 }

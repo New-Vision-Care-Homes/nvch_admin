@@ -63,6 +63,28 @@
 	width: fit-content;
 }
 
+.metaRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.tzBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: #f0f5fb;
+	color: var(--color-primary, #1C4A6E);
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: 20px;
+	border: 1px solid rgba(28, 74, 110, 0.15);
+	letter-spacing: 0.01em;
+}
+
 /* ── Shift list ──────────────────────────────────────────────────────────── */
 .shiftList {
 	display: flex;
@@ -88,6 +110,39 @@
 	box-shadow: 0 6px 24px rgba(28, 74, 110, 0.12);
 	border-left-color: #2563eb;
 	transform: translateY(-2px);
+}
+
+/* ── Time block ─────────────────────────────────────────────────────────── */
+.timeBlock {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-width: 80px;
+	background: #f0f5fb;
+	border-radius: 10px;
+	padding: 10px 12px;
+	flex-shrink: 0;
+	gap: 3px;
+}
+
+.timeRange {
+	font-size: 0.88rem;
+	font-weight: 800;
+	color: var(--color-primary, #1C4A6E);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.timeTz {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 0.6rem;
+	font-weight: 600;
+	color: var(--color-primary, #1C4A6E);
+	opacity: 0.6;
+	letter-spacing: 0.02em;
 }
 
 /* ── Main info area ──────────────────────────────────────────────────────── */

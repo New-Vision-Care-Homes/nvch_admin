@@ -47,7 +47,28 @@
 	padding: 4px 12px;
 	border-radius: 20px;
 	width: fit-content;
-	margin-top: 2px;
+}
+
+.metaRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-top: 4px;
+}
+
+.tzBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: #f0f5fb;
+	color: var(--color-primary, #1C4A6E);
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 3px 10px;
+	border-radius: 20px;
+	border: 1px solid rgba(28, 74, 110, 0.15);
+	letter-spacing: 0.01em;
 }
 
 /* ── Shift list ──────────────────────────────────────────────────────────── */
@@ -110,6 +131,18 @@
 	font-weight: 600;
 	color: #4b5563;
 	font-variant-numeric: tabular-nums;
+}
+
+.timeTz {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 0.6rem;
+	font-weight: 600;
+	color: var(--color-primary, #1C4A6E);
+	opacity: 0.6;
+	margin-top: 2px;
+	letter-spacing: 0.02em;
 }
 
 /* ── Main info area ──────────────────────────────────────────────────────── */
