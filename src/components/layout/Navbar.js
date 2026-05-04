@@ -67,8 +67,8 @@ export default function Navbar() {
 					</button>
 
 					{/* Profile Image */}
-					<Image
-						src={profile?.profilePictureUrl || avatarImg}
+					<img
+						src={profile?.profilePictureUrl || avatarImg.src}
 						alt="profile img"
 						width={36}
 						height={36}
