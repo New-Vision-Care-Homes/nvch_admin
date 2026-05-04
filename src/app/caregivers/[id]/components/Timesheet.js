@@ -121,6 +121,10 @@ export default function Timesheet() {
 		const backendAvailability = caregiverDetail.availability || [];
 		setAvailability(backendAvailability);
 		setOriginalAvailability(backendAvailability);
+
+		const backendMaxHours = caregiverDetail.biWeeklyWorkCapacity?.maxHours ?? 84;
+		setMaxHours(backendMaxHours);
+		setOriginalMaxHours(backendMaxHours);
 	}, [caregiverDetail]);
 
 
@@ -191,14 +195,23 @@ export default function Timesheet() {
 	const handleHoursSave = () => {
 		setIsHoursModalOpen(false);
 		updateCaregiver(
-			{ id, data: { ...caregiverDetail, employeeId: id, maxHours: Number(maxHours), lastPeriodHours: Number(lastPeriodHours) } },
+			{
+				id,
+				data: {
+					...caregiverDetail,
+					biWeeklyWorkCapacity: {
+						...caregiverDetail.biWeeklyWorkCapacity,
+						maxHours: Number(maxHours)
+					}
+				}
+			},
 			{
 				onSuccess: () => {
 					setOriginalMaxHours(maxHours);
-					alert("✅ Hours updated successfully!");
+					setStatus({ variant: "success", text: "Caregiver's max hours updated successfully!" });
 				},
 				onError: () => {
-					alert(caregiverActionError);
+					setStatus({ variant: "error", text: caregiverActionError || "Failed to update caregiver's max hours." });
 				},
 			}
 		);
@@ -290,7 +303,6 @@ export default function Timesheet() {
 							</div>
 							<Button
 								variant="ghost"
-								disabled={true}
 								className={styles.headerBtn}
 								icon={<SquarePen size={14} />}
 								onClick={() => setIsHoursModalOpen(true)}
@@ -299,7 +311,7 @@ export default function Timesheet() {
 							</Button>
 						</CardHeader>
 						<CardContent className={styles.capacityContent}>
-							<InfoField label="Bi-weekly Max Hours" value={`${hours?.maxHours ?? "N/A"} hours`} />
+							<InfoField label="Bi-weekly Max Hours" value={`${caregiverDetail?.biWeeklyWorkCapacity?.maxHours ?? 84} hours`} />
 						</CardContent>
 					</Card>
 
@@ -416,12 +428,13 @@ export default function Timesheet() {
 						<div className={styles.modalContentWrapper}>
 							<div className={styles.inputCard}>
 								<p style={{ margin: 0, fontSize: "0.85rem", color: "#6b7280", lineHeight: 1.5 }}>
-									Set the maximum bi-weekly hours and record the last period&apos;s total hours for this caregiver.
+									Set the maximum bi-weekly hours for this caregiver.
 								</p>
 								<InputFieldLR
 									label="Max Hours (Bi-weekly)"
 									type="number"
 									value={maxHours}
+									placeholder={84 + " (Default)"}
 									onChange={(e) => setMaxHours(e.target.value)}
 								/>
 							</div>
