@@ -380,7 +380,8 @@ export default function AddNewShiftPage() {
 									{selectedClient && (
 										<>
 											<div className={styles.card_row_2}>
-												<InputField label="Client ID" name="clientId" register={register} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6" }} />
+												<input type="hidden" {...register("clientId")} />
+												<InputField label="Client ID" name="clientDisplayId" register={register} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6" }} value={selectedClient.clientId || ""} />
 												<InputField label="Client Phone" name="clientPhone" register={register} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6" }} value={selectedClient.phone || ""} />
 											</div>
 											<div className={styles.card_row_1}>

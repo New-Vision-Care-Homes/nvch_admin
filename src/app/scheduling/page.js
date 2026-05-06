@@ -192,7 +192,7 @@ export default function SchedulingPage() {
 		// Step 1: Group shifts by their local calendar date string ("yyyy-MM-dd")
 		const dayGroups = {};
 		shifts.forEach((shift) => {
-			const shiftStart = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
+			const shiftStart = utcToZonedDateObject(shift.startTime, "America/Halifax");
 			const dateStr = format(shiftStart, "yyyy-MM-dd"); // e.g. "2025-04-24"
 
 			// Create a new group for this date if we haven't seen it yet
@@ -247,8 +247,8 @@ export default function SchedulingPage() {
 
 		const groups = {};
 		shifts.forEach((shift) => {
-			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
-			const end = utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax");
+			const start = utcToZonedDateObject(shift.startTime, "America/Halifax");
+			const end = utcToZonedDateObject(shift.endTime, "America/Halifax");
 
 			// Build the grouping key: full date+start_time combined with end time
 			const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
@@ -289,13 +289,13 @@ export default function SchedulingPage() {
 		if (!shifts || !Array.isArray(shifts)) return [];
 
 		return shifts.map((shift) => {
-			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
+			const start = utcToZonedDateObject(shift.startTime, "America/Halifax");
 			const dateStr = format(start, "yyyy-MM-dd"); // used for per-day coloring
 			return {
 				id: shift.id || shift._id,
 				title: `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end: utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax"),
+				end: utcToZonedDateObject(shift.endTime, "America/Halifax"),
 				_shift: shift,       // the full raw shift object (used to display address in the row)
 				_dateStr: dateStr,   // used by getDayColor() so all shifts on the same day share a color
 				_isAgenda: true,     // flag so CustomEvent renders the Agenda component
@@ -365,8 +365,8 @@ export default function SchedulingPage() {
 	const MonthEventComponent = ({ event }) => {
 		const first = event._shifts?.[0];           // first shift in this day's group
 		const extra = event._count - 1;             // how many additional shifts are not shown
-		const startTime = first?.startTime ? format(utcToZonedDateObject(first.startTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
-		const endTime = first?.endTime ? format(utcToZonedDateObject(first.endTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
+		const startTime = first?.startTime ? format(utcToZonedDateObject(first.startTime, "America/Halifax"), "HH:mm") : "";
+		const endTime = first?.endTime ? format(utcToZonedDateObject(first.endTime, "America/Halifax"), "HH:mm") : "";
 		return (
 			<div className={styles.monthEvent}>
 				<div className={styles.monthEventRow}>

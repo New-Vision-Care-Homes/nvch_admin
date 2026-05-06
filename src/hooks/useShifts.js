@@ -67,12 +67,18 @@ export const useShifts = (options = {}) => {
 	// 5. Update an existing shift's record
 	const updateUpcommingShift = useMutation({
 		mutationFn: ({ id, data }) => shiftService.updateUpcommingShift(id, data),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["shift", shiftId] });
+			queryClient.invalidateQueries({ queryKey: ["shifts"] });
+		}
 	});
 
 	const updateCompletedShift = useMutation({
 		mutationFn: ({ id, data }) => shiftService.updateCompletedShift(id, data),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["shift", shiftId] });
+			queryClient.invalidateQueries({ queryKey: ["shifts"] });
+		},
 	});
 
 	// Fetch errors: from initial data loading (shown via ErrorState component)

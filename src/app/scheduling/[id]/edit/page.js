@@ -6,13 +6,14 @@ import { useShifts } from "@/hooks/useShifts";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
-import { toHalifaxInputValue, halifaxInputToUTC } from "@/utils/timeUtils";
+import { utcToInputDateTime } from "@utils/timeHandling";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState from "@components/UI/ErrorState";
 import cardStyles from "@components/UI/Card.module.css";
 import {
 	Clock, MapPin, FileText, Save, X, Plus, Trash2,
@@ -56,8 +57,6 @@ const completedSchema = yup.object({
 	reason: shortTextRule.required("Please provide a reason for the adjustment"),
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 function personName(obj) {
 	if (!obj) return "—";
@@ -81,7 +80,6 @@ export default function EditShiftPage() {
 	} = useShifts(id);
 
 	const [showInProgressModal, setShowInProgressModal] = useState(false);
-	const [saveError, setSaveError] = useState(null);
 
 	// ── Determine mode from status ────────────────────────────────────────
 	const status = shiftDetail?.status;
@@ -155,8 +153,8 @@ export default function EditShiftPage() {
 				caregiverId: shiftDetail.caregiver?._id || shiftDetail.caregiver?.id || "",
 				clientId: shiftDetail.client?._id || shiftDetail.client?.id || "",
 				homeId: shiftDetail.home?._id || shiftDetail.home?.id || "",
-				startTime: toHalifaxInputValue(shiftDetail.startTime),
-				endTime: toHalifaxInputValue(shiftDetail.endTime),
+				startTime: utcToInputDateTime(shiftDetail.startTime, "America/Halifax"),
+				endTime: utcToInputDateTime(shiftDetail.endTime, "America/Halifax"),
 				notes: shiftDetail.notes || "",
 			});
 			setTasks(shiftDetail.tasks?.map(t => ({ ...t })) ?? []);
@@ -191,8 +189,8 @@ export default function EditShiftPage() {
 
 		if (isCompleted) {
 			completedForm.reset({
-				actualStartTime: toHalifaxInputValue(shiftDetail.actualStartTime || shiftDetail.startTime),
-				actualEndTime: toHalifaxInputValue(shiftDetail.actualEndTime || shiftDetail.endTime),
+				actualStartTime: utcToInputDateTime(shiftDetail.actualStartTime || shiftDetail.startTime, "America/Halifax"),
+				actualEndTime: utcToInputDateTime(shiftDetail.actualEndTime || shiftDetail.endTime, "America/Halifax"),
 				reason: "",
 			});
 		}
@@ -221,11 +219,10 @@ export default function EditShiftPage() {
 
 	// ── Submit: scheduled ─────────────────────────────────────────────────
 	async function onSubmitScheduled(data) {
-		setSaveError(null);
 		const payload = {
 			caregiverId: data.caregiverId,
-			startTime: halifaxInputToUTC(data.startTime),
-			endTime: halifaxInputToUTC(data.endTime),
+			startTime: data.startTime,
+			endTime: data.endTime,
 			timezone: "America/Halifax",
 			notes: data.notes || undefined,
 			tasks: tasks.map(t => ({ description: t.description || t.title || "", completed: t.completed || false })),
@@ -241,39 +238,26 @@ export default function EditShiftPage() {
 		try {
 			await updateUpcommingShift({ id: shiftDetail._id, data: payload });
 			router.push(`/scheduling/${id}`);
-		} catch (err) { setSaveError(err?.message || "Failed to save."); }
+		} catch (err) { }
 	}
 
 	// ── Submit: completed ─────────────────────────────────────────────────
 	async function onSubmitCompleted(data) {
-		setSaveError(null);
 		const payload = {
-			actualStartTime: halifaxInputToUTC(data.actualStartTime),
-			actualEndTime: halifaxInputToUTC(data.actualEndTime),
+			actualStartTime: new Date(data.actualStartTime).toISOString(),
+			actualEndTime: new Date(data.actualEndTime).toISOString(),
 			reason: data.reason || undefined,
 		};
 		try {
 			await updateCompletedShift({ id: shiftDetail._id, data: payload });
 			router.push(`/scheduling/${id}`);
-		} catch (err) { setSaveError(err?.message || "Failed to save."); }
+		} catch (err) { }
 	}
 
 	// ── Guards ────────────────────────────────────────────────────────────
-	if (isShiftLoading || (!shiftDetail && !fetchShiftError)) return (
+	if (isShiftLoading || fetchShiftError || !shiftDetail) return (
 		<PageLayout>
-			<div className={shiftStyles.stateBox}>
-				<Loader size={28} className={shiftStyles.spinnerIcon} />
-				<p>Loading shift…</p>
-			</div>
-		</PageLayout>
-	);
-
-	if (fetchShiftError) return (
-		<PageLayout>
-			<div className={shiftStyles.stateBox}>
-				<AlertTriangle size={32} className={shiftStyles.errorIcon} />
-				<p>{fetchShiftError}</p>
-			</div>
+			<ErrorState isLoading={isShiftLoading || (!shiftDetail && !fetchShiftError)} errorMessage={fetchShiftError} />
 		</PageLayout>
 	);
 
@@ -331,7 +315,7 @@ export default function EditShiftPage() {
 		return (
 			<PageLayout>
 				<Header onSave={cSubmit(onSubmitCompleted)} />
-				{(saveError || actionShiftError) && <ActionMessage variant="error" message={saveError || actionShiftError} />}
+				{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
 
 				<div className={styles.completedNotice}>
 					<Clock size={15} style={{ flexShrink: 0 }} />
@@ -375,7 +359,7 @@ export default function EditShiftPage() {
 	return (
 		<PageLayout>
 			<Header onSave={sSubmit(onSubmitScheduled)} />
-			{(saveError || actionShiftError) && <ActionMessage variant="error" message={saveError || actionShiftError} />}
+			{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
 
 			<form onSubmit={sSubmit(onSubmitScheduled)}>
 				{/* ═══════════════════ ROW 1: 2-column — left wider */}

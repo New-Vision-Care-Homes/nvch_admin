@@ -2,10 +2,11 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
-import { formatHalifaxTime } from "@/utils/timeUtils";
+import { utcToDisplayTime } from "@/utils/timeHandling";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
+import ErrorState from "@components/UI/ErrorState";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
@@ -40,24 +41,12 @@ export default function ShiftDetailPage() {
 	const router = useRouter();
 
 	const { shiftDetail, fetchShiftError, isLoading } = useShifts(id);
+	console.log(shiftDetail);
 
-	// ── Loading state ──────────────────────────────────────────────────────
-	if (isLoading || (!shiftDetail && !fetchShiftError)) return (
+	// ── Loading & Error states ─────────────────────────────────────────────
+	if (isLoading || fetchShiftError || !shiftDetail) return (
 		<PageLayout>
-			<div className={styles.stateBox}>
-				<Loader size={28} className={styles.spinnerIcon} />
-				<p>Loading shift details…</p>
-			</div>
-		</PageLayout>
-	);
-
-	// ── Error state ────────────────────────────────────────────────────────
-	if (fetchShiftError) return (
-		<PageLayout>
-			<div className={styles.stateBox}>
-				<AlertTriangle size={32} className={styles.errorIcon} />
-				<p>{fetchShiftError}</p>
-			</div>
+			<ErrorState isLoading={isLoading || (!shiftDetail && !fetchShiftError)} errorMessage={fetchShiftError} />
 		</PageLayout>
 	);
 
@@ -112,11 +101,11 @@ export default function ShiftDetailPage() {
 						<CardContent>
 							<div className={styles.twoCol}>
 								<InfoField label="Start Time">
-									<p className={styles.boldVal}>{formatHalifaxTime(shift.startTime)}</p>
+									<p className={styles.boldVal}>{utcToDisplayTime(shift.actualStartTime || shift.startTime, "America/Halifax")}</p>
 									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
 								</InfoField>
 								<InfoField label="End Time">
-									<p className={styles.boldVal}>{formatHalifaxTime(shift.endTime)}</p>
+									<p className={styles.boldVal}>{utcToDisplayTime(shift.actualEndTime || shift.endTime, "America/Halifax")}</p>
 									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
 								</InfoField>
 							</div>
@@ -279,12 +268,12 @@ export default function ShiftDetailPage() {
 											<div className={styles.adjustmentTimes}>
 												<div className={styles.adjustmentTimeBlock}>
 													<span className={styles.adjustmentTimeLabel}>Actual Start</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualStartTime ? formatHalifaxTime(adj.actualStartTime) : "—"}</span>
+													<span className={styles.adjustmentTimeVal}>{adj.actualStartTime ? utcToDisplayTime(adj.actualStartTime, "America/Halifax") : "—"}</span>
 												</div>
 												<div className={styles.adjustmentArrow}>→</div>
 												<div className={styles.adjustmentTimeBlock}>
 													<span className={styles.adjustmentTimeLabel}>Actual End</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualEndTime ? formatHalifaxTime(adj.actualEndTime) : "—"}</span>
+													<span className={styles.adjustmentTimeVal}>{adj.actualEndTime ? utcToDisplayTime(adj.actualEndTime, "America/Halifax") : "—"}</span>
 												</div>
 											</div>
 											{adj.reason && (
@@ -295,8 +284,8 @@ export default function ShiftDetailPage() {
 											)}
 											{adj.adjustedAt && (
 												<p className={styles.adjustmentMeta}>
-													Recorded {formatHalifaxTime(adj.adjustedAt)}
-													{adj.adjustedBy ? ` · by ${adj.adjustedBy?.firstName ?? ""} ${adj.adjustedBy?.lastName ?? ""}`.trim() : ""}
+													Recorded {utcToDisplayTime(adj.adjustedAt, "America/Halifax")}
+													{adj.adjustedBy ? ` · by ${adj.adjustedBy}` : ""}
 												</p>
 											)}
 										</div>

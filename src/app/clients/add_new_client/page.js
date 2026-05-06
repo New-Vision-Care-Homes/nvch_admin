@@ -39,8 +39,8 @@ const schema = yup.object({
 	clientId: IdRule.required("Client ID is required"),
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
-	email: emailRule.required("Email is required"),
-	phone: phoneRule.required("Phone is required"),
+	email: emailRule,
+	phone: phoneRule,
 	birth: birthRule.required("Birth date is required"),
 	region: yup
 		.string()
