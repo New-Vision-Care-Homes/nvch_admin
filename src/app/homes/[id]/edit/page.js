@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -14,10 +14,9 @@ import { useHomes } from "@/hooks/useHomes";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useGoogleMap } from "@/hooks/useGoogleMap";
+import GeofenceMap from "@/components/UI/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { Search, X } from "lucide-react";
-import ErrorState from "@components/UI/ErrorState";
-import ActionMessage from "@components/UI/ActionMessage";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -121,53 +120,56 @@ export default function EditHomePage() {
 		}
 	}, [home, reset]);
 
-	// Google Maps Integration
-	const {
-		mapRef,
-		inputRef,
-		isLoaded,
-		loadError,
-		address: mapAddress,
-		center: mapCenter,
-		addressComponents,
-		updateRadius,
-		setAddress
-	} = useGoogleMap({
-		initialCenter: home?.gpsCoordinates ? { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude } : undefined,
-		initialRadius: home?.defaultGeofence?.radius || 200
-	});
+	// Map and Location States
+	const [mapCenter, setMapCenter] = useState(null);
+	const [mapAddress, setMapAddress] = useState("");
+	const mapRefsRef = useRef(null);
 
-	// Update setAddress when home address is loaded
+	// Initialize map center when home data loads
+	useEffect(() => {
+		if (home?.gpsCoordinates && !mapCenter) {
+			setMapCenter({
+				lat: home.gpsCoordinates.latitude,
+				lng: home.gpsCoordinates.longitude
+			});
+		}
+	}, [home, mapCenter]);
+
+	// Initialize map address when home data loads
 	useEffect(() => {
 		if (home?.address?.street && !mapAddress) {
-			setAddress(`${home.address.street}, ${home.address.city}`);
+			setMapAddress(`${home.address.street}, ${home.address.city}`);
 		}
-	}, [home, mapAddress, setAddress]);
+	}, [home, mapAddress]);
+
+	// Auto-fill address fields and pan map when address is selected from autocomplete
+	const handleAddressSelect = useCallback((data) => {
+		const { street, city, state, postalCode, country, latitude, longitude } = data;
+
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("province", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
+		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
+
+		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
+
+		if (latitude && longitude) {
+			const newCenter = { lat: latitude, lng: longitude };
+			setMapCenter(newCenter);
+
+			if (mapRefsRef.current) {
+				const { mapInstance, marker, circle } = mapRefsRef.current;
+				mapInstance?.panTo(newCenter);
+				mapInstance?.setZoom(15);
+				marker?.setPosition(newCenter);
+				circle?.setCenter(newCenter);
+			}
+		}
+	}, [setValue]);
 
 	const geofenceRadius = watch("geofenceRadius");
 	const nightChecksEnabled = watch("nightChecksEnabled");
-
-	// Update map radius when form input changes
-	useEffect(() => {
-		updateRadius(geofenceRadius);
-	}, [geofenceRadius, updateRadius]);
-
-	// Auto-fill address fields when address is selected from autocomplete
-	useEffect(() => {
-		if (addressComponents) {
-			const street = addressComponents.street || "";
-			const city = addressComponents.city || "";
-			const province = addressComponents.province || "";
-			const postalCode = addressComponents.postalCode || "";
-			const country = addressComponents.country || "";
-
-			setValue("street", street);
-			setValue("city", city);
-			setValue("province", province);
-			setValue("postalCode", postalCode);
-			setValue("country", country);
-		}
-	}, [addressComponents, setValue]);
 
 	// Sync selectedProgramTypes with react-hook-form
 	useEffect(() => {
@@ -337,7 +339,6 @@ export default function EditHomePage() {
 			/>
 		</PageLayout>
 	);
-	if (loadError) return <PageLayout><div>Error loading Google Maps</div></PageLayout>;
 
 	return (
 		<PageLayout>
@@ -562,22 +563,17 @@ export default function EditHomePage() {
 						<Card>
 							<CardHeader>Location & Geofence</CardHeader>
 							<CardContent>
-								<div style={{ marginBottom: '1rem' }}>
-									<label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Search Address</label>
-									<input
-										ref={inputRef}
-										type="text"
+								<div style={{ marginBottom: '1.5rem' }}>
+									<AddressAutocomplete
+										label="Search Address"
+										onAddressSelect={handleAddressSelect}
 										placeholder="Start typing an address..."
-										className={cardStyles.input}
+										id="home-address-autocomplete"
+										register={register}
+										isEditing={true}
+										currentAddress={mapAddress}
 									/>
 								</div>
-
-								{/* Hidden fields for address components */}
-								<input type="hidden" {...register("street")} />
-								<input type="hidden" {...register("city")} />
-								<input type="hidden" {...register("province")} />
-								<input type="hidden" {...register("postalCode")} />
-								<input type="hidden" {...register("country")} />
 
 								<div style={{
 									width: '100%',
@@ -587,13 +583,12 @@ export default function EditHomePage() {
 									overflow: 'hidden',
 									border: '1px solid #DEE1E6FF'
 								}}>
-									{isLoaded ? (
-										<div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-									) : (
-										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5' }}>
-											Loading map...
-										</div>
-									)}
+									<GeofenceMap
+										center={mapCenter}
+										radius={geofenceRadius}
+										onMapReady={(refs) => { mapRefsRef.current = refs; }}
+										height="100%"
+									/>
 								</div>
 
 								<div className={styles.row2}>

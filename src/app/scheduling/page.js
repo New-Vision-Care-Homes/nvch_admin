@@ -515,6 +515,12 @@ export default function SchedulingPage() {
 						</Link>
 					</div>
 
+					{/* Atlantic Time notice */}
+					<div className={styles.tzNotice}>
+						<Clock size={13} style={{ flexShrink: 0 }} />
+						<span>All shifts are displayed in <strong>Atlantic Time (America/Halifax)</strong>.</span>
+					</div>
+
 					{/* Calendar card — white rounded container holding the calendar */}
 					<div className={styles.calendarCard}>
 

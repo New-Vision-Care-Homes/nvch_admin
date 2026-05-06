@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
 	SHIFTS: {
 		BASE: '/api/shifts',
 		BY_ID: (id) => `/api/shifts/${id}`,
+		UPDATE_COMPLETED_SHIFT: (id) => `/api/hours/shifts/${id}`,
 	},
 
 	/* All related endpoints for homes */

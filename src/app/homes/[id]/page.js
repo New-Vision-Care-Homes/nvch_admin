@@ -11,7 +11,7 @@ import { useHomes } from "@/hooks/useHomes";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useGoogleMap } from "@/hooks/useGoogleMap";
+import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Edit, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
@@ -115,18 +115,11 @@ export default function HomeDetailPage() {
 		</div>
 	);
 
-	// Build the map center from stored GPS coords (or default)
 	const gpsCenter = home?.gpsCoordinates
 		? { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude }
 		: undefined;
 
-	const { mapRef, isLoaded } = useGoogleMap({
-		initialCenter: gpsCenter,
-		initialRadius: home?.defaultGeofence?.radius || 200,
-	});
-
-	if (isLoading) return <PageLayout><div>Loading home details...</div></PageLayout>;
-	if (fetchError || !home) return (
+	if (fetchError || isLoading) return (
 		<PageLayout>
 			<ErrorState
 				isLoading={isLoading}
@@ -202,10 +195,11 @@ export default function HomeDetailPage() {
 						)}
 						{/* Google Map */}
 						<div style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #DEE1E6FF' }}>
-							{isLoaded
-								? <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-								: <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', color: '#6b7280' }}>Loading map...</div>
-							}
+							<GeofenceMap
+								center={{ latitude: gpsCenter?.lat || 44.6488, longitude: gpsCenter?.lng || -63.5752 }}
+								radius={home?.defaultGeofence?.radius || 100}
+								height="100%"
+							/>
 						</div>
 					</CardContent>
 				</Card>

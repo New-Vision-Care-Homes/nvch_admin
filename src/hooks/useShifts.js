@@ -65,8 +65,13 @@ export const useShifts = (options = {}) => {
 	});
 
 	// 5. Update an existing shift's record
-	const updateMutation = useMutation({
-		mutationFn: ({ id, data }) => shiftService.update(id, data),
+	const updateUpcommingShift = useMutation({
+		mutationFn: ({ id, data }) => shiftService.updateUpcommingShift(id, data),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
+	});
+
+	const updateCompletedShift = useMutation({
+		mutationFn: ({ id, data }) => shiftService.updateCompletedShift(id, data),
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
 	});
 
@@ -79,7 +84,8 @@ export const useShifts = (options = {}) => {
 	const actionError =
 		deleteMutation.error ||
 		createMutation.error ||
-		updateMutation.error;
+		updateUpcommingShift.error ||
+		updateCompletedShift.error;
 
 
 	return {
@@ -95,7 +101,8 @@ export const useShifts = (options = {}) => {
 		isShiftLoading: shiftsQuery.isLoading || shiftDetailQuery.isLoading,
 		isShiftActionPending:
 			createMutation.isPending ||
-			updateMutation.isPending ||
+			updateUpcommingShift.isPending ||
+			updateCompletedShift.isPending ||
 			deleteMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
@@ -106,7 +113,8 @@ export const useShifts = (options = {}) => {
 
 		// Exposed Methods
 		addShift: createMutation.mutateAsync,
-		updateShift: updateMutation.mutateAsync,
+		updateUpcommingShift: updateUpcommingShift.mutateAsync,
+		updateCompletedShift: updateCompletedShift.mutateAsync,
 		deleteShift: deleteMutation.mutateAsync,
 		refetch: shiftsQuery.refetch,
 	};

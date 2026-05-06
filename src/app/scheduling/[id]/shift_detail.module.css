@@ -14,7 +14,9 @@
 	font-size: 0.9rem;
 }
 
-.errorIcon { color: #dc2626; }
+.errorIcon {
+	color: #dc2626;
+}
 
 .spinner {
 	width: 30px;
@@ -25,15 +27,94 @@
 	animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.spinnerIcon {
+	color: var(--color-primary);
+	animation: spin 0.8s linear infinite;
+}
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
-.header {
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ── Person grid inside cards ────────────────────────────────────────────── */
+.personGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.9rem 1.5rem;
+}
+
+/* ── Location section ────────────────────────────────────────────────────── */
+.locationLayout {
 	display: flex;
-	justify-content: space-between;
+	gap: 1.5rem;
+	align-items: stretch;
+}
+
+.locationInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	min-width: 220px;
+	flex: 1;
+}
+
+.mapWrap {
+	flex: 2;
+	min-height: 300px;
+	border-radius: 10px;
+	overflow: hidden;
+	border: 1px solid #e5e7eb;
+}
+
+.geofenceStats {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.coordsText {
+	font-family: ui-monospace, monospace;
+	font-size: 0.82rem;
+	color: #374151;
+}
+
+/* ── Mini label (used for Program Types heading) ─────────────────────────── */
+.miniLabel {
+	font-size: 0.67rem;
+	font-weight: 700;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin-bottom: 6px;
+}
+
+/* ── Done badge on completed tasks ───────────────────────────────────────── */
+.doneBadge {
+	font-size: 0.68rem;
+	font-weight: 700;
+	background: #dcfce7;
+	color: #166534;
+	padding: 2px 8px;
+	border-radius: 999px;
+	flex-shrink: 0;
+}
+
+.taskIndexDone {
+	background: #d1d5db;
+}
+
+
+/* ── Page header — matches homes/caregivers pattern ─────────────────────── */
+.pageHeader {
+	display: flex;
 	align-items: flex-start;
-	gap: 16px;
-	margin-bottom: 24px;
+	justify-content: space-between;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 1rem;
+	margin-bottom: 2rem;
+	gap: 1rem;
 }
 
 .headerActions {
@@ -41,6 +122,7 @@
 	gap: 10px;
 	flex-shrink: 0;
 	align-items: center;
+	padding-top: 4px;
 }
 
 .badgeRow {
@@ -50,90 +132,87 @@
 	margin-bottom: 6px;
 }
 
-.statusBadge {
-	padding: 4px 12px;
-	border-radius: 8px;
-	font-size: 0.65rem;
-	font-weight: 800;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-}
-
-.status_scheduled   { background: #e0f2fe; color: #0369a1; }
-.status_in_progress { background: #fef3c7; color: #92400e; }
-.status_completed   { background: #dcfce7; color: #166534; }
-.status_cancelled   { background: #fee2e2; color: #991b1b; }
-.status_default     { background: #f3f4f6; color: #374151; }
-
-.title {
-	font-size: 1.85rem;
-	font-weight: 800;
-	color: #111827;
-	margin: 0 0 3px;
-}
-
 .shiftId {
 	font-family: ui-monospace, "Cascadia Code", monospace;
 	font-size: 0.78rem;
 	color: #9ca3af;
-	margin: 0 0 5px;
+	margin: 2px 0 5px;
 }
 
-.createdBy {
+.assignedBy {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 	font-size: 0.82rem;
 	color: #6b7280;
+	margin-top: 2px;
 }
 
-.createdBy strong { color: #374151; font-weight: 600; }
-
-/* ── Card ────────────────────────────────────────────────────────────────── */
-.card {
-	background: #fff;
-	border: 1px solid #e5e7eb;
-	border-radius: 16px;
-	padding: 20px 22px;
-	box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.06);
+.assignedBy strong {
+	color: #374151;
+	font-weight: 600;
 }
 
-.cardTitle {
-	display: flex;
-	align-items: center;
-	gap: 9px;
-	font-size: 0.9rem;
+/* ── Status badge ────────────────────────────────────────────────────────── */
+.statusBadge {
+	padding: 3px 12px;
+	border-radius: 9999px;
+	font-size: 0.72rem;
 	font-weight: 700;
-	color: #111827;
-	margin: 0 0 16px;
-	padding-bottom: 11px;
-	border-bottom: 1px solid #f3f4f6;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
-/* ── Main two-column layout row ──────────────────────────────────────────── */
-.row {
+.status_scheduled {
+	background: #e0f2fe;
+	color: #0369a1;
+}
+
+.status_in_progress {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.status_completed {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.status_cancelled {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.status_default {
+	background: #f3f4f6;
+	color: #374151;
+}
+
+/* ── Main 2-column layout ────────────────────────────────────────────────── */
+.mainRow {
 	display: flex;
-	gap: 20px;
+	gap: 1.5rem;
 	align-items: flex-start;
 }
 
-.colMain {
-	flex: 2;
+.colLeft {
+	flex: 1;
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 1.25rem;
 }
 
-.colSide {
+.colRight {
 	flex: 1;
-	min-width: 260px;
+	min-width: 280px;
+	max-width: 420px;
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 1.25rem;
 }
 
-/* ── Two column inner grids ─────────────────────────────────────── */
+/* ── Two column inner grid ───────────────────────────────────────────────── */
 .twoCol {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -247,7 +326,11 @@
 	font-weight: 500;
 }
 
-.dangerText { color: #dc2626; font-weight: 700; font-size: 0.88rem; }
+.dangerText {
+	color: #dc2626;
+	font-weight: 700;
+	font-size: 0.88rem;
+}
 
 .fieldVal {
 	font-size: 0.9rem;
@@ -278,8 +361,65 @@
 	margin: 6px 0 0;
 }
 
+/* ── New utility classes ─────────────────────────────────────────────────── */
+
+.cardTitleInner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.infoLabel {
+	font-size: 0.67rem;
+	font-weight: 700;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin-bottom: 4px;
+}
+
+.pillRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 2px;
+}
+
+.pill {
+	display: inline-flex;
+	align-items: center;
+	background: #eff6ff;
+	color: #1d4ed8;
+	border: 1px solid #bfdbfe;
+	border-radius: 999px;
+	padding: 2px 10px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.addressBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	background: #f0f9ff;
+	border: 1px solid #bae6fd;
+	border-radius: 8px;
+	padding: 0.65rem 0.9rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #0369a1;
+}
+
+.taskDone .taskName {
+	color: #9ca3af;
+}
+
 /* ── Task list (read-only) ───────────────────────────────────────────────── */
-.taskList { display: flex; flex-direction: column; gap: 8px; }
+.taskList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
 
 .taskItem {
 	display: flex;
@@ -291,7 +431,11 @@
 	border-radius: 10px;
 	transition: background 0.15s, border-color 0.15s;
 }
-.taskItem:hover { background: #fff; border-color: #d1d5db; }
+
+.taskItem:hover {
+	background: #fff;
+	border-color: #d1d5db;
+}
 
 .taskIndex {
 	width: 24px;
@@ -307,11 +451,26 @@
 	flex-shrink: 0;
 }
 
-.taskName { flex: 1; font-weight: 600; color: #374151; margin: 0; font-size: 0.88rem; }
-.taskArrow { color: #d1d5db; margin-left: auto; flex-shrink: 0; }
+.taskName {
+	flex: 1;
+	font-weight: 600;
+	color: #374151;
+	margin: 0;
+	font-size: 0.88rem;
+}
+
+.taskArrow {
+	color: #d1d5db;
+	margin-left: auto;
+	flex-shrink: 0;
+}
 
 /* ── Task list (edit mode) ───────────────────────────────────────────────── */
-.taskEditList { display: flex; flex-direction: column; gap: 8px; }
+.taskEditList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
 
 .taskEditRow {
 	display: flex;
@@ -345,7 +504,9 @@
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.flex1 { flex: 1; }
+.flex1 {
+	flex: 1;
+}
 
 .inputFieldDisabled {
 	background: #f3f4f6;
@@ -411,7 +572,10 @@
 	border-radius: 8px;
 	transition: border-color 0.15s;
 }
-.addressViewRow:hover { border-color: #d1d5db; }
+
+.addressViewRow:hover {
+	border-color: #d1d5db;
+}
 
 .addressIcon {
 	color: #6b7280;
@@ -420,7 +584,7 @@
 }
 
 /* Stack label above value inside each row */
-.addressViewRow > div {
+.addressViewRow>div {
 	display: flex;
 	flex-direction: column;
 	gap: 1px;
@@ -461,7 +625,11 @@
 	transition: background 0.15s, color 0.15s;
 	flex-shrink: 0;
 }
-.iconBtn:hover { background: #fee2e2; color: #dc2626; }
+
+.iconBtn:hover {
+	background: #fee2e2;
+	color: #dc2626;
+}
 
 /* ── Location / Map row ──────────────────────────────────────────────────── */
 .mapRow {
@@ -486,23 +654,281 @@
 
 /* Tablet: stack the two-column layout vertically */
 @media (max-width: 1024px) {
-	.row { flex-direction: column; }
-	.colMain, .colSide { flex: 1 1 100%; min-width: 0; }
-	.twoCol { grid-template-columns: 1fr 1fr; }
+	.row {
+		flex-direction: column;
+	}
+
+	.colMain,
+	.colSide {
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+
+	.twoCol {
+		grid-template-columns: 1fr 1fr;
+	}
+
 	/* Stack map above address card on tablet/mobile */
-	.mapRow { flex-direction: column; }
-	.mapBlock { flex: 1 1 100%; width: 100%; }
+	.mapRow {
+		flex-direction: column;
+	}
+
+	.mapBlock {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+
 	/* Address card takes full width below the map */
-	.mapInfo { min-width: 0; width: 100%; }
+	.mapInfo {
+		min-width: 0;
+		width: 100%;
+	}
 }
 
 /* Mobile: further simplify */
 @media (max-width: 640px) {
-	.header { flex-direction: column; align-items: flex-start; }
-	.headerActions { width: 100%; justify-content: flex-end; }
+	.header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.headerActions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+
 	/* Collapse the city/province two-column to single column */
-	.twoCol { grid-template-columns: 1fr; }
-	.title { font-size: 1.4rem; }
-	.card { padding: 16px; }
-	.addressCard { padding: 14px; }
+	.twoCol {
+		grid-template-columns: 1fr;
+	}
+
+	.title {
+		font-size: 1.4rem;
+	}
+
+	.card {
+		padding: 16px;
+	}
+
+	.addressCard {
+		padding: 14px;
+	}
+}
+
+/* ── Main layout responsive ──────────────────────────────────────────────── */
+.mainRow {
+	display: flex;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.colLeft {
+	flex: 3;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.colRight {
+	flex: 2;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+	.mainRow {
+		flex-direction: column;
+	}
+
+	.colLeft,
+	.colRight {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+
+	.personGrid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.locationLayout {
+		flex-direction: column;
+	}
+
+	.locationInfo {
+		min-width: 0;
+	}
+
+	.mapWrap {
+		min-height: 240px;
+	}
+
+	.pageHeader {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	.headerActions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+}
+
+@media (max-width: 640px) {
+	.personGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.twoCol {
+		grid-template-columns: 1fr;
+	}
+
+	.mapWrap {
+		min-height: 200px;
+	}
+
+	.pageHeader h1 {
+		font-size: 1.4rem;
+	}
+
+	.adjustmentTimes {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.adjustmentArrow {
+		transform: rotate(90deg);
+		align-self: flex-start;
+	}
+}
+
+/* ── Hours Adjustments ───────────────────────────────────────────────────── */
+.adjustmentList {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.adjustmentRow {
+	display: flex;
+	gap: 1rem;
+	align-items: flex-start;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	padding: 1rem 1.1rem;
+	transition: border-color 0.15s;
+}
+
+.adjustmentRow:hover {
+	border-color: #d1d5db;
+}
+
+.adjustmentIndex {
+	width: 28px;
+	height: 28px;
+	background: #1c4a6e;
+	color: #fff;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.75rem;
+	font-weight: 700;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.adjustmentBody {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.adjustmentTimes {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.adjustmentTimeBlock {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.adjustmentTimeLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.adjustmentTimeVal {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #111827;
+	font-variant-numeric: tabular-nums;
+}
+
+.adjustmentArrow {
+	color: #9ca3af;
+	font-size: 1.1rem;
+	align-self: flex-end;
+	margin-bottom: 2px;
+}
+
+.adjustmentReason {
+	font-size: 0.85rem;
+	color: #374151;
+	line-height: 1.5;
+	margin: 0;
+	padding: 0.4rem 0.7rem;
+	background: #fff;
+	border-left: 3px solid #bfdbfe;
+	border-radius: 0 6px 6px 0;
+}
+
+.adjustmentReasonLabel {
+	font-weight: 700;
+	color: #1e40af;
+}
+
+.adjustmentMeta {
+	font-size: 0.76rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+/* ── Location layout improvements ───────────────────────────────────────── */
+.locationLayout {
+	display: flex;
+	gap: 1.5rem;
+	align-items: stretch;
+	min-height: 280px;
+}
+
+.locationInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-width: 200px;
+	flex: 1;
+	justify-content: flex-start;
+	padding-top: 0.25rem;
+}
+
+.mapWrap {
+	flex: 2.5;
+	min-height: 280px;
+	border-radius: 10px;
+	overflow: hidden;
+	border: 1px solid #e5e7eb;
 }

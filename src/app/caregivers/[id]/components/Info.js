@@ -215,15 +215,13 @@ export default function Info() {
 
 						<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
 
-						<AddressAutocomplete onAddressSelect={handleAddressSelect} />
-
-						<div className={styles.card_row_2}>
-							<InputField label="Street" name="street" register={register} error={errors.street} />
-							<InputField label="City" name="city" register={register} error={errors.city} />
-							<InputField label="Province" name="state" register={register} error={errors.state} />
-							<InputField label="Country" name="country" register={register} error={errors.country} />
-							<InputField label="Postal Code" name="pincode" register={register} error={errors.pincode} />
-						</div>
+						<AddressAutocomplete 
+							onAddressSelect={handleAddressSelect} 
+							register={register}
+							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
+							isEditing={true}
+							currentAddress={[caregiverDetail?.address?.street, caregiverDetail?.address?.city, caregiverDetail?.address?.state, caregiverDetail?.address?.pinCode, caregiverDetail?.address?.country].filter(Boolean).join(", ")}
+						/>
 						<div className={styles.card_row_1}>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
 						</div>

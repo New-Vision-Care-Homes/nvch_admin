@@ -289,16 +289,9 @@ export default function Page() {
 									onAddressSelect={handleAddressSelect}
 									placeholder="Start typing to search for an address..."
 									id="caregiver-address-autocomplete"
+									register={register}
+									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
 								/>
-								<div className={styles.row2}>
-									<InputField label="Street" name="street" register={register} error={errors.street} />
-									<InputField label="City" name="city" register={register} error={errors.city} />
-								</div>
-								<div className={styles.row2}>
-									<InputField label="Province" name="state" register={register} error={errors.state} />
-									<InputField label="Country" name="country" register={register} error={errors.country} />
-									<InputField label="Postal Code" name="pinCode" register={register} error={errors.pinCode} />
-								</div>
 							</CardContent>
 						</Card>
 

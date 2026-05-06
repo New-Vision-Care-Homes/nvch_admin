@@ -19,8 +19,6 @@
  *
  * USAGE (view mode – no updates needed):
  *   <GeofenceMap
- *     isLoaded={isLoaded}
- *     loadError={loadError}
  *     center={{ latitude: 44.6488, longitude: -63.5752 }}
  *     radius={500}
  *   />
@@ -29,8 +27,6 @@
  *   const mapRefs = useRef(null);
  *   ...
  *   <GeofenceMap
- *     isLoaded={isLoaded}
- *     loadError={loadError}
  *     center={formData.geofence.center}
  *     radius={formData.geofence.radius}
  *     onMapReady={(refs) => { mapRefs.current = refs; }}
@@ -40,17 +36,17 @@
 
 import { useEffect, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import styles from "./GeofenceMap.module.css";
 
 export default function GeofenceMap({
 	center,
 	radius = 100,
-	isLoaded,
-	loadError,
 	onMapReady,
 	height = "360px",
 	className = "",
 }) {
+	const { isLoaded, loadError } = useGoogleMapsLoader();
 	const divRef = useRef(null);
 	const mapInstanceRef = useRef(null);
 	const markerRef = useRef(null);
@@ -60,9 +56,9 @@ export default function GeofenceMap({
 	useEffect(() => {
 		if (!isLoaded || !divRef.current || mapInstanceRef.current) return;
 
-		// Resolve center, falling back to Halifax downtown
-		const lat = center?.latitude ?? 44.6488;
-		const lng = center?.longitude ?? -63.5752;
+		// Resolve center — accept both {latitude,longitude} and {lat,lng}
+		const lat = center?.latitude ?? center?.lat ?? 44.6488;
+		const lng = center?.longitude ?? center?.lng ?? -63.5752;
 		const mapCenter = { lat, lng };
 		const mapRadius = Number(radius) || 100;
 
@@ -118,14 +114,14 @@ export default function GeofenceMap({
 
 	// ── Keep map center in sync when prop changes (read-only mode) ────────────
 	useEffect(() => {
-		if (!center?.latitude || !center?.longitude) return;
-		const newCenter = { lat: center.latitude, lng: center.longitude };
-		if (mapInstanceRef.current) {
-			mapInstanceRef.current.panTo(newCenter);
-		}
+		const lat = center?.latitude ?? center?.lat;
+		const lng = center?.longitude ?? center?.lng;
+		if (!lat || !lng) return;
+		const newCenter = { lat, lng };
+		if (mapInstanceRef.current) mapInstanceRef.current.panTo(newCenter);
 		if (markerRef.current) markerRef.current.setPosition(newCenter);
 		if (circleRef.current) circleRef.current.setCenter(newCenter);
-	}, [center?.latitude, center?.longitude]);
+	}, [center?.latitude, center?.longitude, center?.lat, center?.lng]);
 
 	// ── Render ────────────────────────────────────────────────────────────────
 	const wrapperStyle = { height };

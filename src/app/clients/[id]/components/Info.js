@@ -444,16 +444,11 @@ export default function Info() {
 							onAddressSelect={handleAddressSelect}
 							placeholder="Start typing to search for an address..."
 							id="client-edit-address-autocomplete"
+							register={register}
+							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+							isEditing={true}
+							currentAddress={[clientDetail?.address?.street, clientDetail?.address?.city, clientDetail?.address?.state, clientDetail?.address?.pinCode, clientDetail?.address?.country].filter(Boolean).join(", ")}
 						/>
-						<div className={styles.card_row_2}>
-							<InputField label="Street" name="street" register={register} error={errors.street} />
-							<InputField label="City" name="city" register={register} error={errors.city} />
-						</div>
-						<div className={styles.card_row_2}>
-							<InputField label="Province" name="state" register={register} error={errors.state} />
-							<InputField label="Country" name="country" register={register} error={errors.country} />
-							<InputField label="Postal Code" name="pinCode" register={register} error={errors.pinCode} />
-						</div>
 
 						<h5 className={styles.subSectionTitle}>Health Card</h5>
 						<div className={styles.card_row_2}>

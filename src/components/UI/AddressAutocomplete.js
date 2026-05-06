@@ -30,14 +30,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useJsApiLoader } from "@react-google-maps/api";
+import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import { MapPin, Search, Loader } from "lucide-react";
 import styles from "./AddressAutocomplete.module.css";
 import cardStyles from "./Card.module.css";
-
-// Tell the Google Maps loader which extra library we need.
-// "places" is required for AutocompleteService and PlacesService.
-const LIBRARIES = ["places", "geometry"];
+import { InputField } from "@/components/UI/Card";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: parseAddressComponents
@@ -55,15 +52,12 @@ function parseAddressComponents(components, formattedAddress) {
   const getShort = (type) =>
     components.find((c) => c.types.includes(type))?.short_name || "";
 
-  // Build the street address by combining the street number ("123") and
-  // the route ("Main St"). Fall back to just the route, or the first
-  // segment of the full formatted address if neither is available.
-  const streetNumber = get("street_number");
-  const route = get("route");
-  const street =
-    streetNumber && route
-      ? `${streetNumber} ${route}`
-      : route || streetNumber || formattedAddress.split(",")[0];
+  // Build the street address. The first segment of the full formatted address
+  // is generally the most accurate representation of the street line, as it
+  // automatically includes subpremises (e.g. "5-123 Main St") and correctly
+  // formats the street number and route, even when Google Places API omits them
+  // from the address_components array.
+  const street = formattedAddress ? formattedAddress.split(",")[0].trim() : "";
 
   // City: Google uses different component types depending on the region,
   // so we try each one in priority order until we find a value.
@@ -90,6 +84,12 @@ export default function AddressAutocomplete({
   placeholder = "Start typing an address...",
   error,
   id = "address-autocomplete",
+  register,
+  mode = "split", // "split" or "single"
+  singleAddressName = "clientAddress",
+  fieldNames = { street: "street", city: "city", state: "province", postalCode: "postalCode", country: "country" },
+  currentAddress,
+  isEditing = false,
 }) {
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -108,12 +108,9 @@ export default function AddressAutocomplete({
   const debounceRef = useRef(null); // stores the debounce timer ID
 
   // ── Load Google Maps JavaScript API ───────────────────────────────────────
-  // useJsApiLoader injects the Google Maps <script> tag into the page.
+  // useGoogleMapsLoader injects the Google Maps <script> tag into the page.
   // isLoaded becomes true once that script finishes loading.
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY,
-    libraries: LIBRARIES,
-  });
+  const { isLoaded } = useGoogleMapsLoader();
 
   // ── Effect: Set up Google Places services once the API is ready ───────────
   useEffect(() => {
@@ -297,84 +294,130 @@ export default function AddressAutocomplete({
   return (
     <div className={styles.wrapper} ref={containerRef}>
 
+      {/* If editing and an address exists, show it prominently */}
+      {isEditing && currentAddress && (
+        <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#eef2ff', borderRadius: '6px', border: '1px solid #c7d2fe', color: '#3730a3' }}>
+          <strong style={{ display: 'block', fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem', color: '#4f46e5' }}>Current Selected Address</strong>
+          {currentAddress}
+        </div>
+      )}
+
       {/* Label shown above the search input */}
       <label className={cardStyles.label} htmlFor={id}>
         {label}
       </label>
 
-      {/* Input row: magnifying-glass icon + text input + spinning loader */}
-      <div className={styles.inputWrapper}>
-        <Search size={16} className={styles.searchIcon} />
+      <div style={{ position: 'relative' }}>
+        {/* Input row: magnifying-glass icon + text input + spinning loader */}
+        <div className={styles.inputWrapper}>
+          <Search size={16} className={styles.searchIcon} />
 
-        <input
-          id={id}
-          ref={inputRef}
-          type="text"
-          autoComplete="off"      // disable the browser's own autocomplete popup
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            // Re-open the dropdown if we already have suggestions loaded
-            if (suggestions.length > 0) setIsOpen(true);
-          }}
-          // Show "Loading..." while the Google Maps API script is starting up
-          placeholder={!isLoaded ? "Loading Google Maps..." : placeholder}
-          // Disable the field while the API loads or while fetching place details
-          disabled={!isLoaded || isSelecting}
-          className={`${styles.input} ${error ? styles.inputError : ""}`}
-          aria-autocomplete="list"
-          aria-expanded={isOpen}
-          aria-controls={`${id}-listbox`}
-          aria-activedescendant={
-            activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined
-          }
-        />
+          <input
+            id={id}
+            ref={inputRef}
+            type="text"
+            autoComplete="off"      // disable the browser's own autocomplete popup
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              // Re-open the dropdown if we already have suggestions loaded
+              if (suggestions.length > 0) setIsOpen(true);
+            }}
+            // Show "Loading..." while the Google Maps API script is starting up
+            placeholder={!isLoaded ? "Loading Google Maps..." : placeholder}
+            // Disable the field while the API loads or while fetching place details
+            disabled={!isLoaded || isSelecting}
+            className={`${styles.input} ${error ? styles.inputError : ""}`}
+            aria-autocomplete="list"
+            aria-expanded={isOpen}
+            aria-controls={`${id}-listbox`}
+            aria-activedescendant={
+              activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined
+            }
+          />
 
-        {/* Spinning loader — visible while fetching suggestions or place details */}
-        {(isSearching || isSelecting) && (
-          <Loader size={16} className={styles.spinner} />
+          {/* Spinning loader — visible while fetching suggestions or place details */}
+          {(isSearching || isSelecting) && (
+            <Loader size={16} className={styles.spinner} />
+          )}
+        </div>
+
+        {/* Validation error message (comes from react-hook-form / yup) */}
+        {error && <p className={styles.errorText}>{error}</p>}
+
+        {/* Suggestions dropdown — only rendered when there are results to show */}
+        {isOpen && suggestions.length > 0 && (
+          <ul
+            id={`${id}-listbox`}
+            role="listbox"
+            className={styles.dropdown}
+          >
+            {suggestions.map((prediction, index) => (
+              <li
+                key={prediction.place_id}
+                id={`${id}-option-${index}`}
+                role="option"
+                aria-selected={index === activeIndex}
+                className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""
+                  }`}
+                onMouseDown={(e) => {
+                  // Use onMouseDown instead of onClick because onClick fires
+                  // after the input's onBlur, which would close the dropdown first.
+                  e.preventDefault();
+                  handleSelect(prediction);
+                }}
+                onMouseEnter={() => setActiveIndex(index)}
+              >
+                <MapPin size={14} className={styles.pinIcon} />
+                <span className={styles.optionText}>
+                  {/* Bold the part of the address that matches what the user typed */}
+                  {highlightMatch(
+                    prediction.description,
+                    prediction.matched_substrings
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
-      {/* Validation error message (comes from react-hook-form / yup) */}
-      {error && <p className={styles.errorText}>{error}</p>}
-
-      {/* Suggestions dropdown — only rendered when there are results to show */}
-      {isOpen && suggestions.length > 0 && (
-        <ul
-          id={`${id}-listbox`}
-          role="listbox"
-          className={styles.dropdown}
-        >
-          {suggestions.map((prediction, index) => (
-            <li
-              key={prediction.place_id}
-              id={`${id}-option-${index}`}
-              role="option"
-              aria-selected={index === activeIndex}
-              className={`${styles.option} ${index === activeIndex ? styles.optionActive : ""
-                }`}
-              onMouseDown={(e) => {
-                // Use onMouseDown instead of onClick because onClick fires
-                // after the input's onBlur, which would close the dropdown first.
-                e.preventDefault();
-                handleSelect(prediction);
-              }}
-              onMouseEnter={() => setActiveIndex(index)}
-            >
-              <MapPin size={14} className={styles.pinIcon} />
-              <span className={styles.optionText}>
-                {/* Bold the part of the address that matches what the user typed */}
-                {highlightMatch(
-                  prediction.description,
-                  prediction.matched_substrings
+      {/* Render the disabled auto-filled address fields */}
+      {register && (
+        <div style={{ marginTop: '1rem' }}>
+          {mode === "split" ? (
+            <>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <InputField label="Street" name={fieldNames.street} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <InputField label="City" name={fieldNames.city} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <InputField label="Province/State" name={fieldNames.state} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <InputField label="Postal Code" name={fieldNames.postalCode} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                </div>
+                {fieldNames.country && (
+                  <div style={{ flex: 1 }}>
+                    <InputField label="Country" name={fieldNames.country} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  </div>
                 )}
-              </span>
-            </li>
-          ))}
-        </ul>
+              </div>
+            </>
+          ) : (
+            <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+              <InputField label="Service Address" name={singleAddressName} register={register} readOnly tabIndex={-1} style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} />
+            </div>
+          )}
+        </div>
       )}
+
     </div>
   );
 }
