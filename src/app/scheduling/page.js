@@ -20,7 +20,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // react-big-calendar: the core calendar component + its date-fns adapter
@@ -56,7 +56,9 @@ import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { DateTime } from "luxon";
 
+const HALIFAX_TZ = "America/Halifax";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. CALENDAR LOCALIZER SETUP
@@ -143,6 +145,31 @@ function getDayColor(dateStr) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
+	const [deviceTimeZone, setDeviceTimeZone] = useState(null);
+	const [halifaxNowLabel, setHalifaxNowLabel] = useState("");
+
+	useEffect(() => {
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		setDeviceTimeZone(tz);
+
+		const update = () => {
+			setHalifaxNowLabel(DateTime.now().setZone(HALIFAX_TZ).toFormat("ccc, MMM d, yyyy • h:mm a"));
+		};
+
+		// Update immediately, then align to the next system minute boundary.
+		update();
+		const msToNextMinute = 60_000 - (Date.now() % 60_000);
+		let intervalId;
+		const timeoutId = setTimeout(() => {
+			update();
+			intervalId = setInterval(update, 60_000);
+		}, msToNextMinute);
+
+		return () => {
+			clearTimeout(timeoutId);
+			if (intervalId) clearInterval(intervalId);
+		};
+	}, []);
 
 	// Fetch all shifts from the API.
 	// useShifts() returns:
@@ -159,7 +186,17 @@ export default function SchedulingPage() {
 
 	// date: the "anchor" date the calendar is currently centered on.
 	// Changing this moves the calendar forward/backward (next week, prev month, etc.)
-	const [date, setDate] = useState(new Date());
+	const [date, setDate] = useState(() => {
+		const dt = DateTime.now().setZone(HALIFAX_TZ);
+		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
+	});
+
+	// react-big-calendar draws the "current time" indicator using `getNow()`.
+	// Override it so the red line always reflects Halifax wall-clock time.
+	const getNow = () => {
+		const dt = DateTime.now().setZone(HALIFAX_TZ);
+		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
+	};
 
 
 	// ───────────────────────────────────────────────────────────────────────
@@ -515,11 +552,13 @@ export default function SchedulingPage() {
 						</Link>
 					</div>
 
-					{/* Atlantic Time notice */}
-					<div className={styles.tzNotice}>
-						<Clock size={13} style={{ flexShrink: 0 }} />
-						<span>All shifts are displayed in <strong>Atlantic Time (America/Halifax)</strong>.</span>
-					</div>
+					{/* Halifax current time (only when device TZ differs) */}
+					{deviceTimeZone && deviceTimeZone !== HALIFAX_TZ && (
+						<div className={styles.tzNotice}>
+							<Clock size={13} style={{ flexShrink: 0 }} />
+							<span>Current Halifax time: <strong>{halifaxNowLabel}</strong></span>
+						</div>
+					)}
 
 					{/* Calendar card — white rounded container holding the calendar */}
 					<div className={styles.calendarCard}>
@@ -564,6 +603,7 @@ export default function SchedulingPage() {
 									onNavigate={setDate}          // updates `date` when user clicks prev/next/today
 									view={view}                   // the currently active view (controlled)
 									onView={setView}              // updates `view` when user switches tabs
+									getNow={getNow}               // ensures the "now" line uses Halifax time
 									className="my_calendar"       // hook for calendar.css global overrides
 									step={30}                     // each time slot = 30 minutes
 									timeslots={2}                 // 2 slots per step = one visual row per 30 min

@@ -23,6 +23,7 @@ import shiftStyles from "../shift_detail.module.css";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { DateTime } from "luxon";
 import { shortTextRule, longTextRule, IdRule } from "@/utils/validation";
 import styles from "./edit_shift.module.css";
 
@@ -30,6 +31,7 @@ import styles from "./edit_shift.module.css";
 const SCHEDULED_STATUSES = ["scheduled"];
 const COMPLETED_STATUSES = ["completed", "missed", "late", "no_show"];
 const IN_PROGRESS_STATUSES = ["in_progress", "started"];
+const HALIFAX_TZ = "America/Halifax";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 const scheduledSchema = yup.object({
@@ -39,7 +41,10 @@ const scheduledSchema = yup.object({
 	startTime: yup.string().required("Start time is required"),
 	endTime: yup.string().required("End time is required")
 		.test("after-start", "End time must be after start time", function (v) {
-			return !v || !this.parent.startTime || new Date(v) > new Date(this.parent.startTime);
+			if (!v || !this.parent.startTime) return true;
+			const end = DateTime.fromISO(v, { zone: HALIFAX_TZ });
+			const start = DateTime.fromISO(this.parent.startTime, { zone: HALIFAX_TZ });
+			return end.isValid && start.isValid && end > start;
 		}),
 	notes: shortTextRule.optional(),
 	geofenceStreet: longTextRule.optional(),
@@ -52,7 +57,10 @@ const completedSchema = yup.object({
 	actualStartTime: yup.string().required("Actual start time is required"),
 	actualEndTime: yup.string().required("Actual end time is required")
 		.test("after-start", "Actual end time must be after start time", function (v) {
-			return !v || !this.parent.actualStartTime || new Date(v) > new Date(this.parent.actualStartTime);
+			if (!v || !this.parent.actualStartTime) return true;
+			const end = DateTime.fromISO(v, { zone: HALIFAX_TZ });
+			const start = DateTime.fromISO(this.parent.actualStartTime, { zone: HALIFAX_TZ });
+			return end.isValid && start.isValid && end > start;
 		}),
 	reason: shortTextRule.required("Please provide a reason for the adjustment"),
 });
@@ -223,7 +231,7 @@ export default function EditShiftPage() {
 			caregiverId: data.caregiverId,
 			startTime: data.startTime,
 			endTime: data.endTime,
-			timezone: "America/Halifax",
+			timezone: HALIFAX_TZ,
 			notes: data.notes || undefined,
 			tasks: tasks.map(t => ({ description: t.description || t.title || "", completed: t.completed || false })),
 		};
@@ -243,9 +251,11 @@ export default function EditShiftPage() {
 
 	// ── Submit: completed ─────────────────────────────────────────────────
 	async function onSubmitCompleted(data) {
+		const actualStart = DateTime.fromISO(data.actualStartTime, { zone: HALIFAX_TZ });
+		const actualEnd = DateTime.fromISO(data.actualEndTime, { zone: HALIFAX_TZ });
 		const payload = {
-			actualStartTime: new Date(data.actualStartTime).toISOString(),
-			actualEndTime: new Date(data.actualEndTime).toISOString(),
+			actualStartTime: actualStart.isValid ? actualStart.toUTC().toISO() : undefined,
+			actualEndTime: actualEnd.isValid ? actualEnd.toUTC().toISO() : undefined,
 			reason: data.reason || undefined,
 		};
 		try {
@@ -261,7 +271,7 @@ export default function EditShiftPage() {
 		</PageLayout>
 	);
 
-	const nowLocal = new Date().toISOString().slice(0, 16);
+	const nowLocal = DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm");
 	const statusClass = shiftStyles[`status_${status}`] || shiftStyles.status_default;
 
 	// ── In-progress modal ─────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Search, Trash2, Plus, X, Clock } from "lucide-react";
+import { DateTime } from "luxon";
 
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -26,6 +27,7 @@ import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@/util
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const HALIFAX_TZ = "America/Halifax";
 
 function joinAddress(addressObj) {
 	if (!addressObj) return "";
@@ -49,10 +51,18 @@ const schema = yup.object({
 		return !!value || !!this.parent.clientId;
 	}),
 	startTime: yup.string().required("Start time is required")
-		.test("is-future", "Start time must be in the future", (v) => !v || new Date(v) > new Date()),
+		.test("is-future", "Start time must be in the future", (v) => {
+			if (!v) return true;
+			const start = DateTime.fromISO(v, { zone: HALIFAX_TZ });
+			const now = DateTime.now().setZone(HALIFAX_TZ);
+			return start.isValid && start > now;
+		}),
 	endTime: yup.string().required("End time is required")
 		.test("is-after-start", "End time must be after start time", function (v) {
-			return !v || !this.parent.startTime || new Date(v) > new Date(this.parent.startTime);
+			if (!v || !this.parent.startTime) return true;
+			const end = DateTime.fromISO(v, { zone: HALIFAX_TZ });
+			const start = DateTime.fromISO(this.parent.startTime, { zone: HALIFAX_TZ });
+			return end.isValid && start.isValid && end > start;
 		}),
 	// Contact person — display only, not submitted
 	/*
@@ -73,6 +83,32 @@ const schema = yup.object({
 
 export default function AddNewShiftPage() {
 	const router = useRouter();
+	const [deviceTimeZone, setDeviceTimeZone] = useState(null);
+	const [halifaxNowLabel, setHalifaxNowLabel] = useState("");
+
+	useEffect(() => {
+		// If the user isn't in Halifax timezone, show the current Halifax wall-clock time.
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		setDeviceTimeZone(tz);
+
+		const update = () => {
+			setHalifaxNowLabel(DateTime.now().setZone(HALIFAX_TZ).toFormat("ccc, MMM d, yyyy • h:mm a"));
+		};
+
+		// Update immediately, then align to the next system minute boundary.
+		update();
+		const msToNextMinute = 60_000 - (Date.now() % 60_000);
+		let intervalId;
+		const timeoutId = setTimeout(() => {
+			update();
+			intervalId = setInterval(update, 60_000);
+		}, msToNextMinute);
+
+		return () => {
+			clearTimeout(timeoutId);
+			if (intervalId) clearInterval(intervalId);
+		};
+	}, []);
 
 	const {
 		register,
@@ -210,11 +246,14 @@ export default function AddNewShiftPage() {
 
 	const caregiverParams = { page: 1, limit: 10, search: caregiverSearch, isActive: true };
 	if (selectedStartTime) {
-		const startDate = new Date(selectedStartTime);
-		caregiverParams.availabilityDay = DAY_NAMES[startDate.getDay()];
-		caregiverParams.availabilityStartTime = startDate.toTimeString().slice(0, 5);
+		const startDate = DateTime.fromISO(selectedStartTime, { zone: HALIFAX_TZ });
+		if (startDate.isValid) {
+			caregiverParams.availabilityDay = DAY_NAMES[startDate.weekday % 7]; // Luxon: Monday=1..Sunday=7
+			caregiverParams.availabilityStartTime = startDate.toFormat("HH:mm");
+		}
 		if (selectedEndTime) {
-			caregiverParams.availabilityEndTime = new Date(selectedEndTime).toTimeString().slice(0, 5);
+			const endDate = DateTime.fromISO(selectedEndTime, { zone: HALIFAX_TZ });
+			if (endDate.isValid) caregiverParams.availabilityEndTime = endDate.toFormat("HH:mm");
 		}
 	}
 
@@ -263,7 +302,7 @@ export default function AddNewShiftPage() {
 			caregiverId: data.caregiverId,
 			startTime: data.startTime,
 			endTime: data.endTime,
-			timezone: "America/Halifax",
+			timezone: HALIFAX_TZ,
 			notes: data.shiftNotes || undefined,
 			tasks: tasks.map((t) => ({ description: t.text, completed: false })),
 		};
@@ -297,7 +336,7 @@ export default function AddNewShiftPage() {
 	}
 
 	// ── Min values for time pickers (recalculate each render) ─────────────────
-	const nowLocal = new Date().toISOString().slice(0, 16);
+	const nowLocal = DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm");
 
 	// ── Render ─────────────────────────────────────────────────────────────────
 	return (
@@ -477,22 +516,26 @@ export default function AddNewShiftPage() {
 							<CardHeader>Shift Information</CardHeader>
 							<CardContent>
 
-								{/* Atlantic timezone notice */}
-								<div style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "0.5rem",
-									backgroundColor: "#eff6ff",
-									border: "1px solid #bfdbfe",
-									borderRadius: "6px",
-									padding: "0.65rem 0.9rem",
-									marginBottom: "1.25rem",
-									fontSize: "0.85rem",
-									color: "#1e40af",
-								}}>
-									<Clock size={15} style={{ flexShrink: 0 }} />
-									<span>You are creating this shift based on <strong>Atlantic Time (America/Halifax)</strong>.</span>
-								</div>
+								{/* Halifax time notice (only when device TZ differs) */}
+								{deviceTimeZone && deviceTimeZone !== HALIFAX_TZ && (
+									<div style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										backgroundColor: "#eff6ff",
+										border: "1px solid #bfdbfe",
+										borderRadius: "6px",
+										padding: "0.65rem 0.9rem",
+										marginBottom: "1.25rem",
+										fontSize: "0.85rem",
+										color: "#1e40af",
+									}}>
+										<Clock size={15} style={{ flexShrink: 0 }} />
+										<span>
+											Current Halifax time: <strong>{halifaxNowLabel}</strong>
+										</span>
+									</div>
+								)}
 
 								<div className={styles.card_row_2}>
 									<InputField
