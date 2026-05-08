@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
-import { utcToDisplayTime } from "@/utils/timeHandling";
+import { utcToFullDisplay } from "@/utils/timeHandling";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
@@ -100,15 +100,32 @@ export default function ShiftDetailPage() {
 						</CardHeader>
 						<CardContent>
 							<div className={styles.twoCol}>
-								<InfoField label="Start Time">
-									<p className={styles.boldVal}>{utcToDisplayTime(shift.actualStartTime || shift.startTime, "America/Halifax")}</p>
+								<InfoField label="Scheduled Start">
+									<p className={styles.boldVal}>{utcToFullDisplay(shift.startTime, "America/Halifax")}</p>
 									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
 								</InfoField>
-								<InfoField label="End Time">
-									<p className={styles.boldVal}>{utcToDisplayTime(shift.actualEndTime || shift.endTime, "America/Halifax")}</p>
+								<InfoField label="Scheduled End">
+									<p className={styles.boldVal}>{utcToFullDisplay(shift.endTime, "America/Halifax")}</p>
 									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
 								</InfoField>
 							</div>
+
+							{(shift.actualStartTime || shift.actualEndTime) && (
+								<div className={styles.twoCol} style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+									<InfoField label="Actual Start (Clock-in)">
+										<p className={styles.boldVal} style={{ color: "var(--primary)" }}>
+											{shift.actualStartTime ? utcToFullDisplay(shift.actualStartTime, "America/Halifax") : "—"}
+										</p>
+										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+									</InfoField>
+									<InfoField label="Actual End (Clock-out)">
+										<p className={styles.boldVal} style={{ color: "var(--primary)" }}>
+											{shift.actualEndTime ? utcToFullDisplay(shift.actualEndTime, "America/Halifax") : "—"}
+										</p>
+										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+									</InfoField>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 
@@ -268,12 +285,12 @@ export default function ShiftDetailPage() {
 											<div className={styles.adjustmentTimes}>
 												<div className={styles.adjustmentTimeBlock}>
 													<span className={styles.adjustmentTimeLabel}>Actual Start</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualStartTime ? utcToDisplayTime(adj.actualStartTime, "America/Halifax") : "—"}</span>
+													<span className={styles.adjustmentTimeVal}>{adj.actualStartTime ? utcToFullDisplay(adj.actualStartTime, "America/Halifax") : "—"}</span>
 												</div>
 												<div className={styles.adjustmentArrow}>→</div>
 												<div className={styles.adjustmentTimeBlock}>
 													<span className={styles.adjustmentTimeLabel}>Actual End</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualEndTime ? utcToDisplayTime(adj.actualEndTime, "America/Halifax") : "—"}</span>
+													<span className={styles.adjustmentTimeVal}>{adj.actualEndTime ? utcToFullDisplay(adj.actualEndTime, "America/Halifax") : "—"}</span>
 												</div>
 											</div>
 											{adj.reason && (
@@ -284,7 +301,7 @@ export default function ShiftDetailPage() {
 											)}
 											{adj.adjustedAt && (
 												<p className={styles.adjustmentMeta}>
-													Recorded {utcToDisplayTime(adj.adjustedAt, "America/Halifax")}
+													Recorded {utcToFullDisplay(adj.adjustedAt, "America/Halifax")}
 													{adj.adjustedBy ? ` · by ${adj.adjustedBy}` : ""}
 												</p>
 											)}

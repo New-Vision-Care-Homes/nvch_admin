@@ -344,8 +344,8 @@ export default function SchedulingPage() {
 
 		// WEEK / DAY: go to the "shifts within this exact time slot" list page
 		// We pass the exact ISO start and end times so shift_list can filter precisely
-		const startStr = event.start.toISOString();
-		const endStr = event.end.toISOString();
+		const startStr = event.shifts[0].startTime;
+		const endStr = event.shifts[0].endTime;
 		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`);
 	};
 
@@ -552,6 +552,7 @@ export default function SchedulingPage() {
 								</div>
 							) : (
 								<Calendar
+									culture="en-CA"
 									localizer={localizer}        // date-fns adapter (required)
 									events={eventsToShow}         // the pre-processed event list for the active view
 									startAccessor="start"         // tells react-big-calendar which field is the event start
