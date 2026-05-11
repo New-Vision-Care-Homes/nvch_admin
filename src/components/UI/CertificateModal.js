@@ -12,6 +12,7 @@ import * as yup from "yup";
 import { dateRule, longTextRule } from "@/utils/validation";
 // Import our custom hook that interacts with the backend for certificates
 import { useCertificates } from "@/hooks/useCertificates";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdown_list";
 
 // Define the validation schema for the Certificate Form using Yup.
 // This ensures the user cannot submit the form if required fields are missing or invalid.
@@ -107,10 +108,10 @@ export default function CertificateModal({ isOpen, onClose, userId, onSuccess })
 			{/* The form wraps all inputs. `handleSubmit` ensures `handleSave` only runs if validation passes. */}
 			<form onSubmit={handleSubmit(handleSave)}>
 				{/* The InputField component automatically renders the label and input, and handles error styling. */}
-				<InputField label="Certificate Name" name="name" register={register} error={errors.name} />
+				<InputField label="Certificate Name" type="select" name="name" register={register} error={errors.name} options={CERTIFICATE_OPTIONS} />
 
 				{/* Group the date fields side-by-side using CSS grid */}
-				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
 					<InputField label="Issue Date" type="date" name="issueDate" register={register} control={control} error={errors.issueDate} />
 					<InputField label="Expiry Date" type="date" name="expiryDate" register={register} control={control} error={errors.expiryDate} />
 				</div>

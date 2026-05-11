@@ -11,6 +11,7 @@ import ErrorState from "@components/UI/ErrorState";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useCertificates } from "@/hooks/useCertificates";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdown_list";
 
 import CertificateModal from "@components/UI/CertificateModal";
 
@@ -98,9 +99,12 @@ export default function Certification() {
 						</TableCell>
 					</TableContent>
 				) : (
-					certifications.map(c => (
+					certifications.map(c => {
+						const option = CERTIFICATE_OPTIONS.find(opt => opt.value === c.name);
+						const friendlyName = option ? option.label : c.name;
+						return (
 						<TableContent key={c._id}>
-							<TableCell>{c.name}</TableCell>
+							<TableCell style={{ fontWeight: 600 }}>{friendlyName}</TableCell>
 							<TableCell>{c.startDate ? new Date(c.startDate).toLocaleDateString() : "-"}</TableCell>
 							<TableCell>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : "-"}</TableCell>
 							<TableCell>
@@ -128,7 +132,8 @@ export default function Certification() {
 								/>
 							</TableCell>
 						</TableContent>
-					))
+						);
+					})
 				)}
 			</Table>
 

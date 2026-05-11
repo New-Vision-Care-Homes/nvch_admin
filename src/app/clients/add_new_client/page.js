@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -11,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import ActionMessage from "@/components/UI/ActionMessage";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import { useHomes } from "@/hooks/useHomes";
 
 import {
 	IdRule,
@@ -60,6 +62,10 @@ const schema = yup.object({
 		.required("Marital status is required"),
 
 	notes: longTextRule,
+
+	// Home
+	noHomeSelected: yup.boolean().optional(),
+	homeId: yup.string().nullable().optional(),
 
 	// Address
 	street: shortTextRule.required("Street is required"),
@@ -158,14 +164,43 @@ export default function Page() {
 		handleSubmit,
 		control,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm({
 		resolver: yupResolver(schema),
 		shouldFocusError: true,
 		defaultValues: {
 			timezone: "America/Halifax",
+			noHomeSelected: true,
 		}
 	});
+
+	const { homes } = useHomes({ limit: 100 });
+	const watchHomeId = watch("homeId");
+	const watchNoHomeSelected = watch("noHomeSelected");
+
+	// Auto-fill address when home is selected
+	useEffect(() => {
+		if (watchHomeId && homes?.length > 0) {
+			const selectedHome = homes.find((h) => h.id === watchHomeId || h._id === watchHomeId);
+			if (selectedHome && selectedHome.address) {
+				setValue("street", selectedHome.address.street || "", { shouldValidate: true });
+				setValue("city", selectedHome.address.city || "", { shouldValidate: true });
+				setValue("state", selectedHome.address.province || selectedHome.address.state || "", { shouldValidate: true });
+				setValue("pinCode", selectedHome.address.postalCode || selectedHome.address.pinCode || "", { shouldValidate: true });
+				setValue("country", selectedHome.address.country || "", { shouldValidate: true });
+				setValue("latitude", selectedHome.address.gpsCoordinates?.latitude || undefined);
+				setValue("longitude", selectedHome.address.gpsCoordinates?.longitude || undefined);
+			}
+		}
+	}, [watchHomeId, homes, setValue]);
+
+	// Clear homeId if noHomeSelected becomes checked
+	useEffect(() => {
+		if (watchNoHomeSelected) {
+			setValue("homeId", "");
+		}
+	}, [watchNoHomeSelected, setValue]);
 
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
@@ -190,6 +225,7 @@ export default function Page() {
 			timezone: data.timezone,
 			maritalStatus: data.maritalStatus || null,
 			levelOfSupport: data.levelOfSupport || null,
+			homeId: data.noHomeSelected ? null : (data.homeId || null),
 
 			address: {
 				street: data.street,
@@ -381,6 +417,25 @@ export default function Page() {
 
 							{/* Address */}
 							<h5 className={styles.subSectionTitle}>Address</h5>
+
+							<div style={{ marginBottom: "1rem" }}>
+								<InputField
+									label="Assigned Home"
+									name="homeId"
+									type="select"
+									register={register}
+									error={errors.homeId}
+									disabled={watchNoHomeSelected}
+									options={homes.map(h => ({ label: h.name, value: h.id || h._id }))}
+								/>
+								<div style={{ marginTop: "0.5rem" }}>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+										<input type="checkbox" {...register("noHomeSelected")} />
+										No home selected (manual address entry)
+									</label>
+								</div>
+							</div>
+
 							<AddressAutocomplete
 								label="Search Address"
 								onAddressSelect={handleAddressSelect}
@@ -388,6 +443,7 @@ export default function Page() {
 								id="client-address-autocomplete"
 								register={register}
 								fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+								disabled={!watchNoHomeSelected}
 							/>
 
 							{/* Health Card */}

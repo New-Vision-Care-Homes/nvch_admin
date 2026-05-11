@@ -90,6 +90,7 @@ export default function AddressAutocomplete({
   fieldNames = { street: "street", city: "city", state: "province", postalCode: "postalCode", country: "country" },
   currentAddress,
   isEditing = false,
+  disabled = false,
 }) {
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -326,8 +327,8 @@ export default function AddressAutocomplete({
             }}
             // Show "Loading..." while the Google Maps API script is starting up
             placeholder={!isLoaded ? "Loading Google Maps..." : placeholder}
-            // Disable the field while the API loads or while fetching place details
-            disabled={!isLoaded || isSelecting}
+            // Disable the field while the API loads or while fetching place details or if externally disabled
+            disabled={!isLoaded || isSelecting || disabled}
             className={`${styles.input} ${error ? styles.inputError : ""}`}
             aria-autocomplete="list"
             aria-expanded={isOpen}

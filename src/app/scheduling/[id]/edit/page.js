@@ -226,27 +226,54 @@ export default function EditShiftPage() {
 	}, [scheduledForm]);
 
 	// ── Submit: scheduled ─────────────────────────────────────────────────
+	// This function handles the form submission when editing a "scheduled" shift.
+	// It gathers all the data from the form, formats it for the backend, and sends the update request.
 	async function onSubmitScheduled(data) {
+		// 1. Build the base payload with common shift fields
 		const payload = {
-			caregiverId: data.caregiverId,
-			startTime: data.startTime,
-			endTime: data.endTime,
-			timezone: HALIFAX_TZ,
-			notes: data.notes || undefined,
+			caregiverId: data.caregiverId, // The ID of the assigned caregiver
+			startTime: data.startTime,     // When the shift is scheduled to begin
+			endTime: data.endTime,         // When the shift is scheduled to end
+			timezone: HALIFAX_TZ,          // Explicitly set the timezone to Halifax
+			notes: data.notes || undefined, // Any optional notes for the shift
+			// Map over the tasks array to ensure they have the correct structure (description and completed status)
 			tasks: tasks.map(t => ({ description: t.description || t.title || "", completed: t.completed || false })),
 		};
-		// Client or home — exactly one
-		if (targetType === "client" && data.clientId) payload.clientId = data.clientId;
-		else if (targetType === "home" && data.homeId) payload.homeId = data.homeId;
-		else { payload.clientId = null; payload.homeId = null; }
 
-		if (geofenceCoords) {
-			payload.geofence = { center: geofenceCoords, radius: 100, shape: "circle", address: geofenceAddress || undefined };
+		// 2. Handle Shift Target (Client vs. Home)
+		// A shift can only belong to ONE target: a Client OR a Home. It cannot be both.
+		// When switching from a Home to a Client (or vice versa), we must explicitly set
+		// the previous target's ID to `null`. This tells the backend to remove the old link.
+		// If we don't send `null`, the backend might keep the old ID, causing a conflict 
+		// because the shift would incorrectly have both a clientId and a homeId.
+		if (targetType === "client" && data.clientId) {
+			payload.clientId = data.clientId; // Set the new client ID
+			// We intentionally do not include homeId to let the backend clear it automatically
+		} else if (targetType === "home" && data.homeId) {
+			payload.homeId = data.homeId;     // Set the new home ID
+			// We intentionally do not include clientId to let the backend clear it automatically
 		}
+
+		// 3. Handle Geofencing (Location data for the mobile app)
+		// If coordinates were selected via the map or address autocomplete, include them in the payload
+		if (geofenceCoords) {
+			payload.geofence = { 
+				center: geofenceCoords, // The latitude and longitude coordinates
+				radius: 100,            // The radius in meters around the center
+				shape: "circle",        // The shape of the geofence
+				address: geofenceAddress || undefined // The human-readable address string
+			};
+		}
+
+		// 4. Send the Request
 		try {
+			// Call the hook function to update the shift in the backend
 			await updateUpcommingShift({ id: shiftDetail._id, data: payload });
+			// On success, redirect the user back to the shift detail page
 			router.push(`/scheduling/${id}`);
-		} catch (err) { }
+		} catch (err) { 
+			// Any errors are handled automatically by the useShifts hook and displayed as an ActionMessage
+		}
 	}
 
 	// ── Submit: completed ─────────────────────────────────────────────────
@@ -484,10 +511,25 @@ export default function EditShiftPage() {
 									<select className={cardStyles.input}
 										value={targetType}
 										onChange={e => {
-											const t = e.target.value;
-											setTargetType(t);
-											if (t === "client") { setSelectedHome(null); setHomeInput(""); scheduledForm.setValue("homeId", ""); }
-											else { setSelectedClient(null); setClientInput(""); setClientSearch(""); scheduledForm.setValue("clientId", ""); }
+											const newTargetType = e.target.value;
+											setTargetType(newTargetType); // Update the state to 'client' or 'home'
+											
+											// When the user changes the target type (e.g., from Home to Client),
+											// we immediately clear out the UI state and form values for the previous type.
+											// This ensures the form doesn't hold onto a Client ID when 'Home' is selected,
+											// avoiding confusion and potential form submission errors.
+											if (newTargetType === "client") { 
+												// Switching to Client: clear all Home data
+												setSelectedHome(null); 
+												setHomeInput(""); 
+												scheduledForm.setValue("homeId", ""); 
+											} else { 
+												// Switching to Home: clear all Client data
+												setSelectedClient(null); 
+												setClientInput(""); 
+												setClientSearch(""); 
+												scheduledForm.setValue("clientId", ""); 
+											}
 										}}>
 										<option value="client">Client</option>
 										<option value="home">Home</option>

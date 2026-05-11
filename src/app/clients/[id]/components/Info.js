@@ -21,6 +21,7 @@ import {
 } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
+import { useHomes } from "@/hooks/useHomes";
 
 // --- Helper ---
 const splitName = (full) => {
@@ -69,6 +70,8 @@ const cleanFetchedData = (apiData) => {
 		phone: apiData.phone || "",
 		email: apiData.email || "",
 		notes: apiData.notes || "",
+		homeId: typeof apiData.home === 'string' ? apiData.home : (apiData.home?._id || apiData.home?.id || apiData.homeId || ""),
+		noHomeSelected: !(typeof apiData.home === 'string' ? apiData.home : (apiData.home?._id || apiData.home?.id || apiData.homeId)),
 
 		// Address
 		street: apiData.address?.street || "",
@@ -158,6 +161,8 @@ const schema = yup.object({
 		.nullable()
 		.transform((v, o) => (o === "" ? null : v)),
 	notes: longTextRule,
+	noHomeSelected: yup.boolean().optional(),
+	homeId: yup.string().nullable().optional(),
 
 	// Address
 	street: shortTextRule.required("Street is required"),
@@ -234,6 +239,7 @@ export default function Info() {
 		isLoading,
 		isActionPending,
 	} = useClients(id);
+	console.log(clientDetail)
 
 	const {
 		register,
@@ -242,18 +248,45 @@ export default function Info() {
 		formState: { errors },
 		reset,
 		setValue,
+		watch,
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
 
 	function handleAddressSelect({ street, city, state, country, postalCode }) {
-		if (street)     setValue("street",  street,     { shouldValidate: true });
-		if (city)       setValue("city",    city,       { shouldValidate: true });
-		if (state)      setValue("state",   state,      { shouldValidate: true });
-		if (country)    setValue("country", country,    { shouldValidate: true });
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("state", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
 	}
+
+	const { homes } = useHomes({ limit: 100 });
+	const watchHomeId = watch("homeId");
+	const watchNoHomeSelected = watch("noHomeSelected");
+
+	// Auto-fill address when home is selected
+	useEffect(() => {
+		// Only run if we actually have homes data and a selected home
+		if (watchHomeId && homes?.length > 0) {
+			const selectedHome = homes.find((h) => h.id === watchHomeId || h._id === watchHomeId);
+			if (selectedHome && selectedHome.address) {
+				setValue("street", selectedHome.address.street || "", { shouldValidate: true });
+				setValue("city", selectedHome.address.city || "", { shouldValidate: true });
+				setValue("state", selectedHome.address.province || selectedHome.address.state || "", { shouldValidate: true });
+				setValue("pinCode", selectedHome.address.postalCode || selectedHome.address.pinCode || "", { shouldValidate: true });
+				setValue("country", selectedHome.address.country || "", { shouldValidate: true });
+			}
+		}
+	}, [watchHomeId, homes, setValue]);
+
+	// Clear homeId if noHomeSelected becomes checked
+	useEffect(() => {
+		if (watchNoHomeSelected) {
+			setValue("homeId", "");
+		}
+	}, [watchNoHomeSelected, setValue]);
 
 	useEffect(() => {
 		if (clientDetail && !isInitialized) {
@@ -276,6 +309,7 @@ export default function Info() {
 			maritalStatus: data.maritalStatus || null,
 			levelOfSupport: data.levelOfSupport || null,
 			notes: data.notes || null,
+			homeId: data.noHomeSelected ? null : (data.homeId || null),
 
 			address: {
 				street: data.street,
@@ -344,24 +378,24 @@ export default function Info() {
 			},
 		};
 
-			updateClient(
-				{ id, data: body },
-				{
-					onSuccess: (res) => {
-						reset(cleanFetchedData(res));
-						setStatus({ variant: "success", text: "Update successful!" });
-					},
-					onError: (err) => {
-						const resData = err.response?.data;
-						const status = err.response?.status;
-						if (status === 400 && resData?.details?.length > 0) {
-							setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
-						} else {
-							setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update client." });
-						}
-					},
-				}
-			);
+		updateClient(
+			{ id, data: body },
+			{
+				onSuccess: (res) => {
+					reset(cleanFetchedData(res));
+					setStatus({ variant: "success", text: "Update successful!" });
+				},
+				onError: (err) => {
+					const resData = err.response?.data;
+					const status = err.response?.status;
+					if (status === 400 && resData?.details?.length > 0) {
+						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
+					} else {
+						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update client." });
+					}
+				},
+			}
+		);
 	};
 
 	const handleCancel = () => {
@@ -439,6 +473,25 @@ export default function Info() {
 						</div>
 
 						<h5 className={styles.subSectionTitle}>Address</h5>
+
+						<div style={{ marginBottom: "1rem" }}>
+							<InputField
+								label="Assigned Home"
+								name="homeId"
+								type="select"
+								register={register}
+								error={errors.homeId}
+								disabled={watchNoHomeSelected}
+								options={homes.map(h => ({ label: h.name, value: h.id || h._id }))}
+							/>
+							<div style={{ marginTop: "0.5rem" }}>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+									<input type="checkbox" {...register("noHomeSelected")} />
+									No home selected (manual address entry)
+								</label>
+							</div>
+						</div>
+
 						<AddressAutocomplete
 							label="Search Address"
 							onAddressSelect={handleAddressSelect}
@@ -448,6 +501,7 @@ export default function Info() {
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
 							isEditing={true}
 							currentAddress={[clientDetail?.address?.street, clientDetail?.address?.city, clientDetail?.address?.state, clientDetail?.address?.pinCode, clientDetail?.address?.country].filter(Boolean).join(", ")}
+							disabled={!watchNoHomeSelected}
 						/>
 
 						<h5 className={styles.subSectionTitle}>Health Card</h5>
