@@ -9,11 +9,12 @@ import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
 // Importing validation rules used in the Client page for consistency
-import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule } from "@/utils/validation";
+import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule, dateRuleOptional } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // --- 1. Data Cleaning/Flattening Function ---
 const cleanFetchedData = (apiData) => {
@@ -28,6 +29,7 @@ const cleanFetchedData = (apiData) => {
 		phone: apiData.phone || "",
 		email: apiData.email || "",
 		maxHours: apiData.biWeeklyWorkCapacity?.maxHours || 84,
+		employeeStartDate: apiData.employeeStartDate?.split('T')[0] || "",
 
 		// Address field (safely chained)
 		street: apiData.address?.street || "",
@@ -36,6 +38,8 @@ const cleanFetchedData = (apiData) => {
 		country: apiData.address?.country || "",
 		pincode: apiData.address?.pinCode || "",
 		region: apiData.region || "",
+		supervisor: apiData.supervisor || "",
+		teamLead: apiData.teamLead || "",
 	};
 
 	// Emergency Contact
@@ -62,6 +66,7 @@ const schema = yup.object({
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
 	birth: birthRule.optional(),
+	employeeStartDate: dateRuleOptional.optional(),
 	notes: longTextRule.optional(),
 
 	maxHours: yup
@@ -78,6 +83,10 @@ const schema = yup.object({
 	state: shortTextRule.required("Province is required"),
 	pincode: pinRule.optional(),
 	country: shortTextRule.required("Country is required"),
+
+	// Supervisor / Team Lead
+	supervisor: yup.string().required("Supervisor is required"),
+	teamLead: yup.string().optional(),
 
 	// Emergency Contact
 	emergencyFName: nameRule.optional(),
@@ -100,7 +109,6 @@ export default function Info() {
 		caregiverFetchError,
 		caregiverActionError
 	} = useCaregivers(id);
-	console.log(caregiverDetail)
 
 	const {
 		register,
@@ -142,6 +150,7 @@ export default function Info() {
 			lastName: data.lastName,
 			phone: data.phone || null,
 			dateOfBirth: data.birth || null,
+			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
 			region: data.region,
 			notes: data.notes ? data.notes : null,
 
@@ -158,6 +167,9 @@ export default function Info() {
 				maxHours: data.maxHours
 			},
 
+			supervisor: data.supervisor || null,
+			teamLead: data.teamLead || null,
+
 			emergencyContact: {
 				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
 				phone: data.emergencyPhone || null,
@@ -172,7 +184,8 @@ export default function Info() {
 					setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
 				},
 				onError: (err) => {
-					setStatus({ variant: "error", text: caregiverActionError || "Failed to update caregiver." });
+					const backendError = err?.response?.data?.error || err?.response?.data?.message || err?.message || "Failed to update caregiver.";
+					setStatus({ variant: "error", text: backendError });
 				},
 			}
 		);
@@ -213,12 +226,21 @@ export default function Info() {
 							/>
 						</div>
 
-						<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
+						<div className={styles.card_row_2}>
+							<InputField label="Employee Start Date" name="employeeStartDate" register={register} control={control} error={errors.employeeStartDate} type="date" />
+							<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
+						</div>
 
-						<AddressAutocomplete 
-							onAddressSelect={handleAddressSelect} 
+						<div className={styles.card_row_2}>
+							<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" />
+							<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" />
+						</div>
+
+						<AddressAutocomplete
+							onAddressSelect={handleAddressSelect}
 							register={register}
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
+							error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
 							isEditing={true}
 							currentAddress={[caregiverDetail?.address?.street, caregiverDetail?.address?.city, caregiverDetail?.address?.state, caregiverDetail?.address?.pinCode, caregiverDetail?.address?.country].filter(Boolean).join(", ")}
 						/>

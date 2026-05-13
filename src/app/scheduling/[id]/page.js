@@ -41,7 +41,6 @@ export default function ShiftDetailPage() {
 	const router = useRouter();
 
 	const { shiftDetail, fetchShiftError, isLoading } = useShifts(id);
-	console.log(shiftDetail);
 
 	// ── Loading & Error states ─────────────────────────────────────────────
 	if (isLoading || fetchShiftError || !shiftDetail) return (

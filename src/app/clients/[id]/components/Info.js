@@ -22,6 +22,7 @@ import {
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import { useHomes } from "@/hooks/useHomes";
+import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
 
 // --- Helper ---
 const splitName = (full) => {
@@ -134,6 +135,9 @@ const cleanFetchedData = (apiData) => {
 
 		// Community Treatment Order
 		ctoNotes: apiData.communityTreatmentOrder?.notes || "",
+
+		latitude: apiData.address?.gpsCoordinates?.latitude || null,
+		longitude: apiData.address?.gpsCoordinates?.longitude || null,
 	};
 };
 
@@ -225,6 +229,9 @@ const schema = yup.object({
 
 	// Community Treatment Order
 	ctoNotes: yup.string().max(2000).nullable().optional(),
+
+	latitude: yup.number().nullable().optional(),
+	longitude: yup.number().nullable().optional(),
 });
 
 // --- Component ---
@@ -239,7 +246,6 @@ export default function Info() {
 		isLoading,
 		isActionPending,
 	} = useClients(id);
-	console.log(clientDetail)
 
 	const {
 		register,
@@ -254,17 +260,25 @@ export default function Info() {
 		defaultValues: cleanFetchedData(null),
 	});
 
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
+	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
 		if (city) setValue("city", city, { shouldValidate: true });
 		if (state) setValue("state", state, { shouldValidate: true });
 		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+		if (latitude !== undefined) setValue("latitude", latitude, { shouldValidate: true });
+		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true });
 	}
 
 	const { homes } = useHomes({ limit: 100 });
 	const watchHomeId = watch("homeId");
 	const watchNoHomeSelected = watch("noHomeSelected");
+
+	const watchStreet = watch("street");
+	const watchCity = watch("city");
+	const watchState = watch("state");
+	const watchPinCode = watch("pinCode");
+	const watchCountry = watch("country");
 
 	// Auto-fill address when home is selected
 	useEffect(() => {
@@ -277,6 +291,9 @@ export default function Info() {
 				setValue("state", selectedHome.address.province || selectedHome.address.state || "", { shouldValidate: true });
 				setValue("pinCode", selectedHome.address.postalCode || selectedHome.address.pinCode || "", { shouldValidate: true });
 				setValue("country", selectedHome.address.country || "", { shouldValidate: true });
+				setValue("latitude", selectedHome.gpsCoordinates?.latitude || null, { shouldValidate: true });
+				setValue("longitude", selectedHome.gpsCoordinates?.longitude || null, { shouldValidate: true });
+				setValue("noHomeSelected", false);
 			}
 		}
 	}, [watchHomeId, homes, setValue]);
@@ -317,7 +334,10 @@ export default function Info() {
 				state: data.state,
 				pinCode: data.pinCode,
 				country: data.country,
-				gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
+				gpsCoordinates: {
+					latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6488,
+					longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5752,
+				},
 			},
 
 			healthCard: {
@@ -429,13 +449,7 @@ export default function Info() {
 								type="select"
 								register={register}
 								error={errors.maritalStatus}
-								options={[
-									{ label: "Single", value: "single" },
-									{ label: "Married", value: "married" },
-									{ label: "Divorced", value: "divorced" },
-									{ label: "Widowed", value: "widowed" },
-									{ label: "Separated", value: "separated" },
-								]}
+								options={MARITAL_STATUS_OPTIONS}
 							/>
 							<InputField
 								label="Level of Support"
@@ -459,14 +473,7 @@ export default function Info() {
 								type="select"
 								register={register}
 								error={errors.region}
-								options={[
-									{ label: "Central", value: "Central" },
-									{ label: "Windsor", value: "Windsor" },
-									{ label: "HRM", value: "HRM" },
-									{ label: "Yarmouth", value: "Yarmouth" },
-									{ label: "Shelburne", value: "Shelburne" },
-									{ label: "South Shore", value: "South Shore" },
-								]}
+								options={REGION_OPTIONS}
 							/>
 							<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 							<InputField label="Email" name="email" register={register} error={errors.email} />
@@ -476,6 +483,7 @@ export default function Info() {
 
 						<div style={{ marginBottom: "1rem" }}>
 							<InputField
+								key={homes.length}
 								label="Assigned Home"
 								name="homeId"
 								type="select"
@@ -500,7 +508,7 @@ export default function Info() {
 							register={register}
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
 							isEditing={true}
-							currentAddress={[clientDetail?.address?.street, clientDetail?.address?.city, clientDetail?.address?.state, clientDetail?.address?.pinCode, clientDetail?.address?.country].filter(Boolean).join(", ")}
+							currentAddress={[watchStreet, watchCity, watchState, watchPinCode, watchCountry].filter(Boolean).join(", ")}
 							disabled={!watchNoHomeSelected}
 						/>
 

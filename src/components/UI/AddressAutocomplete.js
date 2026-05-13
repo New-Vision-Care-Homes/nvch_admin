@@ -83,6 +83,7 @@ export default function AddressAutocomplete({
   label = "Search Address",
   placeholder = "Start typing an address...",
   error,
+  errors,
   id = "address-autocomplete",
   register,
   mode = "split", // "split" or "single"

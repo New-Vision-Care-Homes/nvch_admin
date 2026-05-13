@@ -189,8 +189,8 @@ export default function Page() {
 				setValue("state", selectedHome.address.province || selectedHome.address.state || "", { shouldValidate: true });
 				setValue("pinCode", selectedHome.address.postalCode || selectedHome.address.pinCode || "", { shouldValidate: true });
 				setValue("country", selectedHome.address.country || "", { shouldValidate: true });
-				setValue("latitude", selectedHome.address.gpsCoordinates?.latitude || undefined);
-				setValue("longitude", selectedHome.address.gpsCoordinates?.longitude || undefined);
+				setValue("latitude", selectedHome.gpsCoordinates?.latitude || undefined);
+				setValue("longitude", selectedHome.gpsCoordinates?.longitude || undefined);
 			}
 		}
 	}, [watchHomeId, homes, setValue]);

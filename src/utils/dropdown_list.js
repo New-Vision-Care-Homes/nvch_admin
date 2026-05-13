@@ -9,3 +9,20 @@ export const CERTIFICATE_OPTIONS = [
 	{ value: "whmis", label: "WHMIS" },
 	{ value: "immigration-documentation", label: "Immigration Documentation" },
 ];
+
+export const REGION_OPTIONS = [
+	{ value: "Central", label: "Central" },
+	{ value: "Windsor", value: "Windsor" },
+	{ value: "HRM", value: "HRM" },
+	{ value: "Yarmouth", value: "Yarmouth" },
+	{ value: "Shelburne", value: "Shelburne" },
+	{ value: "South Shore", value: "South Shore" }
+];
+
+export const MARITAL_STATUS_OPTIONS = [
+	{ value: "single", label: "Single" },
+	{ value: "married", label: "Married" },
+	{ value: "divorced", label: "Divorced" },
+	{ value: "widowed", label: "Widowed" },
+	{ value: "separated", label: "Separated" },
+];

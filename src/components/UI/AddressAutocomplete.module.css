@@ -33,7 +33,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Text input – mirrors Card.module.css .input ── */
@@ -46,7 +48,8 @@
   border-radius: var(--border-size-sm);
   border: 1.5px solid #dee1e6;
   outline: none;
-  padding: 0.55rem 0.75rem 0.55rem 2.1rem; /* left room for search icon */
+  padding: 0.55rem 0.75rem 0.55rem 2.1rem;
+  /* left room for search icon */
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -148,10 +151,12 @@
 .dropdown::-webkit-scrollbar {
   width: 5px;
 }
+
 .dropdown::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
+
 .dropdown::-webkit-scrollbar-thumb {
   background: #c1ccd6;
   border-radius: 4px;

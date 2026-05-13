@@ -13,6 +13,7 @@ import { Plus, Trash2 } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ActionMessage from "@components/UI/ActionMessage";
+import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
@@ -59,6 +60,7 @@ const schema = yup.object({
 	email: emailRule.required("Email is required"),
 	phone: phoneRule.required("Phone number is required"),
 	dateOfBirth: birthRule.required("Date of Birth is required"),
+	employeeStartDate: dateRule.required("Employee Start Date is required"),
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
@@ -83,6 +85,10 @@ const schema = yup.object({
 		.nullable()
 		.default(null)
 		.optional(), // Allows null, undefined, or [] to pass validation
+
+	// Supervisor / Team Lead
+	supervisor: yup.string().required("Supervisor is required"),
+	teamLead: yup.string().optional(),
 
 	// Emergency Contact fields
 	emergencyLName: nameRule.required("Emergency Contact Name is required"),
@@ -169,6 +175,7 @@ export default function Page() {
 			phone: data.phone,
 			employeeId: data.employeeId,
 			dateOfBirth: data.dateOfBirth,
+			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
 			region: data.region,
 			timezone: data.timezone,
 
@@ -189,6 +196,9 @@ export default function Page() {
 			},
 
 			availability: processedAvailability,
+
+			supervisor: data.supervisor || null,
+			teamLead: data.teamLead || null,
 
 			emergencyContact: {
 				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
@@ -277,11 +287,19 @@ export default function Page() {
 								</div>
 
 								<div className={styles.row2}>
+									<InputField label="Employee Start Date" name="employeeStartDate" register={register} control={control} error={errors.employeeStartDate} type="date" />
+									<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
+								</div>
+
+								<div className={styles.row2}>
 									<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
 									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
 								</div>
 
-								<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
+								<div className={styles.row2}>
+									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" />
+									<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" />
+								</div>
 
 								{/* Address */}
 								<AddressAutocomplete
@@ -290,7 +308,9 @@ export default function Page() {
 									placeholder="Start typing to search for an address..."
 									id="caregiver-address-autocomplete"
 									register={register}
+									errors={errors}
 									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+									error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
 								/>
 							</CardContent>
 						</Card>
