@@ -1,7 +1,7 @@
 export const API_ENDPOINTS = {
 	/* All related endpoints for auth */
 	AUTH: {
-		LOGIN: '/api/auth/login',
+		LOGIN: '/api/auth/login/portal',
 		FORGOT_PASSWORD: '/api/auth/forgot-password',
 	},
 
