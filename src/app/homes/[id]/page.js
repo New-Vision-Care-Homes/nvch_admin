@@ -158,12 +158,12 @@ export default function HomeDetailPage() {
 							<InfoItem label="Opened At">
 								{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 							</InfoItem>
-							<InfoItem label="Program Types">
-								<div className={styles.chipRow}>
-									{(home.programTypes || []).map(t => (
-										<span key={t} className={styles.chip}>{t}</span>
-									))}
-								</div>
+							<InfoItem label="Home Type">
+								{home.homeType ? (
+									<span className={styles.chip}>{home.homeType}</span>
+								) : (
+									"—"
+								)}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>

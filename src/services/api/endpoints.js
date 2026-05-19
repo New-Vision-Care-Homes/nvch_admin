@@ -66,4 +66,9 @@ export const API_ENDPOINTS = {
 		BASE: '/api/permissions',
 		BY_ID: (id) => `/api/permissions/${id}`,
 	},
+
+	FOCUS_NOTES: {
+		BY_CLIENT_ID: (clientId) => `/api/focus-notes/client/${clientId}`,
+		BY_ID: (focusNoteId) => `/api/focus-notes/${focusNoteId}`,
+	},
 };

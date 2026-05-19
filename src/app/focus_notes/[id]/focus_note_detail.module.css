@@ -1,0 +1,233 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Focus Note Detail / Edit Page
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Page header ─────────────────────────────────────────────────────────── */
+.pageHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #e5e7eb;
+	margin-bottom: 1.5rem;
+	flex-wrap: wrap;
+}
+
+.headerLeft {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.headerMeta {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 2px;
+}
+
+.headerIcon {
+	color: #1c4a6e;
+}
+
+.headerLabel {
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: #6b7280;
+}
+
+.mockBadge {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #fde68a;
+	border-radius: 6px;
+	padding: 1px 8px;
+	font-size: 0.68rem;
+	font-weight: 700;
+}
+
+.pageHeader h1 {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0;
+}
+
+.noteId {
+	font-family: ui-monospace, "Cascadia Code", monospace;
+	font-size: 0.76rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+.headerActions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	padding-top: 4px;
+	flex-wrap: wrap;
+}
+
+/* ── Status / banner messages ────────────────────────────────────────────── */
+.statusWrap {
+	margin-bottom: 1rem;
+}
+
+.editBanner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0.6rem 1rem;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 8px;
+	font-size: 0.84rem;
+	font-weight: 500;
+	color: #1d4ed8;
+	margin-bottom: 1.25rem;
+}
+
+/* ── Two-column grid ─────────────────────────────────────────────────────── */
+.mainGrid {
+	display: grid;
+	grid-template-columns: 1fr 1.6fr;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.colLeft,
+.colRight {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Card title inner span (icon + text) ─────────────────────────────────── */
+.cardTitle {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+}
+
+/* ── Meta info grid inside left cards ────────────────────────────────────── */
+.metaGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem 1.5rem;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+.boldVal {
+	font-weight: 700;
+	font-size: 0.92rem;
+	color: #111827;
+	margin: 0;
+	line-height: 1.4;
+}
+
+.tzNote {
+	font-size: 0.7rem;
+	color: #9ca3af;
+	margin: 2px 0 0;
+}
+
+.noteText {
+	font-size: 0.9rem;
+	color: #1f2937;
+	line-height: 1.7;
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.emptyText {
+	font-style: italic;
+	color: #9ca3af;
+}
+
+/* ── Textarea (edit mode) ────────────────────────────────────────────────── */
+.textarea {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.88rem;
+	color: #111827;
+	background: #fff;
+	font-family: inherit;
+	line-height: 1.65;
+	resize: vertical;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.textarea:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ── Role badge ──────────────────────────────────────────────────────────── */
+.roleBadge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: capitalize;
+	letter-spacing: 0.03em;
+}
+
+.roleCaregiver { background: #ede9fe; color: #6d28d9; }
+.roleAdmin     { background: #dbeafe; color: #1d4ed8; }
+.roleSupervisor{ background: #fef3c7; color: #92400e; }
+.roleDefault   { background: #f3f4f6; color: #374151; }
+
+/* ── Shift status badge ──────────────────────────────────────────────────── */
+.statusBadge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: capitalize;
+}
+
+.statusScheduled   { background: #e0f2fe; color: #0369a1; }
+.statusInProgress  { background: #fef3c7; color: #92400e; }
+.statusCompleted   { background: #dcfce7; color: #166534; }
+.statusCancelled   { background: #fee2e2; color: #991b1b; }
+.statusMissed      { background: #f3f4f6; color: #374151; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+	.mainGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.metaGrid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.pageHeader {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.headerActions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+}
+
+@media (max-width: 640px) {
+	.metaGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.pageHeader h1 {
+		font-size: 1.25rem;
+	}
+}

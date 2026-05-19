@@ -90,7 +90,7 @@ export default function Homes() {
 										<TableHeader>
 											<TableCell>Home Name</TableCell>
 											<TableCell>Region</TableCell>
-											<TableCell>Program Type</TableCell>
+											<TableCell>Home Type</TableCell>
 											<TableCell>Address</TableCell>
 											<TableCell>Caregivers</TableCell>
 											<TableCell>Admins</TableCell>
@@ -109,9 +109,9 @@ export default function Homes() {
 												{/* Region */}
 												<TableCell>{home.region}</TableCell>
 
-												{/* Program Type */}
+												{/* Home Type */}
 												<TableCell>
-													{home.programTypes?.join(", ") || "-"}
+													{home.homeType || "-"}
 												</TableCell>
 
 												{/* Address */}

@@ -17,16 +17,17 @@ import { useAdmins } from "@/hooks/useAdmins";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { Search, X } from "lucide-react";
+import ActionMessage from "@components/UI/ActionMessage";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	programTypes: yup.array()
-		.of(yup.string().oneOf(['DSP', 'Seniors', 'ILS', 'IF']))
-		.min(1, "At least one program type is required")
-		.required("At least one program type is required"),
+	homeType: yup.string()
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.required("Home type is required"),
 
 	// Geofence
 	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
@@ -64,7 +65,7 @@ export default function EditHomePage() {
 	const { register, handleSubmit, watch, control, formState: { errors }, setValue, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
-			programTypes: [],
+			homeType: "",
 			nightChecksEnabled: true,
 			nightCheckFrequency: 60,
 			allowTemporaryLeave: true,
@@ -75,8 +76,6 @@ export default function EditHomePage() {
 		}
 	});
 
-	// Program types state
-	const [selectedProgramTypes, setSelectedProgramTypes] = useState([]);
 	// Staff search state
 	const [selectedCaregivers, setSelectedCaregivers] = useState([]);
 	const [selectedAdmins, setSelectedAdmins] = useState([]);
@@ -88,7 +87,7 @@ export default function EditHomePage() {
 			reset({
 				name: home.name,
 				region: home.region,
-				programTypes: home.programTypes || [],
+				homeType: home.homeType || "",
 				geofenceRadius: home.defaultGeofence?.radius || 200,
 				geofenceShape: home.defaultGeofence?.shape || "circle",
 				nightChecksEnabled: home.nightChecksEnabled,
@@ -105,7 +104,7 @@ export default function EditHomePage() {
 				country: home.address?.country || "Canada",
 			});
 
-			setSelectedProgramTypes(home.programTypes || []);
+
 			setSelectedCaregivers(home.caregivers || []);
 			// API returns admins as [{ admin: {...}, adminLevel }], normalise to flat user objects
 			// with an extra adminLevel field so we can display names and re-submit correctly
@@ -171,10 +170,7 @@ export default function EditHomePage() {
 	const geofenceRadius = watch("geofenceRadius");
 	const nightChecksEnabled = watch("nightChecksEnabled");
 
-	// Sync selectedProgramTypes with react-hook-form
-	useEffect(() => {
-		setValue("programTypes", selectedProgramTypes, { shouldValidate: true });
-	}, [selectedProgramTypes, setValue]);
+
 
 	// Caregiver Search States
 	const [caregiverSearch, setCaregiverSearch] = useState("");
@@ -289,7 +285,7 @@ export default function EditHomePage() {
 		const homeData = {
 			name: data.name,
 			region: data.region,
-			programTypes: data.programTypes,
+			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
 				city: data.city || "",
@@ -379,32 +375,15 @@ export default function EditHomePage() {
 									/>
 								</div>
 
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Program Types *</label>
-									<div className="checkboxGroup horizontal" style={{ marginTop: '0.5rem' }}>
-										{['DSP', 'Seniors', 'ILS', 'IF'].map(type => (
-											<label key={type} className="checkboxLabel">
-												<input
-													type="checkbox"
-													checked={selectedProgramTypes.includes(type)}
-													onChange={(e) => {
-														if (e.target.checked) {
-															setSelectedProgramTypes([...selectedProgramTypes, type]);
-														} else {
-															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
-														}
-													}}
-
-												/>
-												<span>{type}</span>
-											</label>
-										))}
-									</div>
-									{errors.programTypes && (
-										<div className={cardStyles.error}>
-											{errors.programTypes.message}
-										</div>
-									)}
+								<div className={styles.row2}>
+									<InputField
+										label="Home Type *"
+										name="homeType"
+										type="select"
+										register={register}
+										error={errors.homeType}
+										options={HOME_TYPE_OPTIONS}
+									/>
 								</div>
 
 								<div className={styles.row2}>

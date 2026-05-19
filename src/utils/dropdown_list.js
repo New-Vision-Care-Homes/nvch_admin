@@ -26,3 +26,12 @@ export const MARITAL_STATUS_OPTIONS = [
 	{ value: "widowed", label: "Widowed" },
 	{ value: "separated", label: "Separated" },
 ];
+
+export const HOME_TYPE_OPTIONS = [
+	{ value: "SOH", label: "SOH" },
+	{ value: "TEA", label: "TEA" },
+	{ value: "TSA", label: "TSA" },
+	{ value: "ILS", label: "ILS" },
+	{ value: "IF", label: "IF" },
+	{ value: "DSLTC", label: "DSLTC" },
+];

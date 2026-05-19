@@ -2,7 +2,8 @@ import { useState } from "react";
 import styles from "./Tabs.module.css";
 import Info from "./Info";
 import CarePlan from "./CarePlan";
-import Assigned from "./Assigned"
+import FocusNotes from "./FocusNotes";
+import Assigned from "./Assigned";
 import History from "./History";
 
 
@@ -12,6 +13,7 @@ export default function Tabs() {
 	const tabs = [
 		{ id: "personal", label: "Personal Info", component: <Info /> },
 		{ id: "care", label: "Care Plan", component: <CarePlan /> },
+		{ id: "focus", label: "Focus Notes", component: <FocusNotes /> },
 		/*{ id: "caregivers", label: "Assigned Caregivers", component: <Assigned /> },*/
 		/*{ id: "history", label: "Visit History", component: <History /> },*/
 		/*

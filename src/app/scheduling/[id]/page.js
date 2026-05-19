@@ -10,7 +10,7 @@ import ErrorState from "@components/UI/ErrorState";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
-	UserCheck, AlertTriangle, Home,
+	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
@@ -170,13 +170,11 @@ export default function ShiftDetailPage() {
 									{shift.home.region && <InfoField label="Region" value={shift.home.region} />}
 									<InfoField label="Status" value={shift.home.isActive ? "Active" : "Inactive"} />
 								</div>
-								{shift.home.programTypes?.length > 0 && (
+								{shift.home.homeType && (
 									<div style={{ marginTop: "1rem" }}>
-										<p className={styles.miniLabel}>Program Types</p>
+										<p className={styles.miniLabel}>Home Type</p>
 										<div className={styles.pillRow}>
-											{shift.home.programTypes.map((pt) => (
-												<span key={pt} className={styles.pill}>{pt}</span>
-											))}
+											<span className={styles.pill}>{shift.home.homeType}</span>
 										</div>
 									</div>
 								)}
@@ -220,13 +218,42 @@ export default function ShiftDetailPage() {
 						</CardContent>
 					</Card>
 
+					{/* Shift Flags */}
+
+					<Card>
+						<CardHeader>
+							<span className={styles.cardTitleInner}><Flag size={15} /> Shift Flags</span>
+						</CardHeader>
+						<CardContent>
+							{shift.flags?.length > 0 ? (
+								<div className={styles.flagList}>
+									{shift.flags.map((flag) => (
+										<div key={flag} className={styles.flagItem}>
+											<AlertTriangle size={15} className={styles.flagIcon} />
+											<span className={styles.flagText}>
+												{flag.replace(/_/g, " ")}
+											</span>
+										</div>
+									))}
+								</div>
+							) : (
+								<p className={styles.emptyText}>No flags assigned.</p>
+							)}
+						</CardContent>
+					</Card>
+
+
 					{/* Notes */}
 					<Card>
 						<CardHeader>
 							<span className={styles.cardTitleInner}><FileText size={15} /> Notes</span>
 						</CardHeader>
 						<CardContent>
-							<p className={styles.notesContent}>{shift.notes || "No additional notes."}</p>
+							{shift.notes ? (
+								<p className={styles.notesContent}>{shift.notes}</p>
+							) : (
+								<p className={styles.emptyText}>No notes added.</p>
+							)}
 						</CardContent>
 					</Card>
 

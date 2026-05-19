@@ -18,16 +18,16 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	programTypes: yup.array()
-		.of(yup.string().oneOf(['DSP', 'Seniors', 'ILS', 'IF']))
-		.min(1, "At least one program type is required")
-		.required("At least one program type is required"),
+	homeType: yup.string()
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.required("Home type is required"),
 
 	// Geofence
 	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
@@ -55,7 +55,7 @@ export default function AddNewHomePage() {
 	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
-			programTypes: [],
+			homeType: "",
 			nightChecksEnabled: true,
 			nightCheckFrequency: 60,
 			allowTemporaryLeave: true,
@@ -100,13 +100,7 @@ export default function AddNewHomePage() {
 		}
 	}, [setValue]);
 
-	// Program types state
-	const [selectedProgramTypes, setSelectedProgramTypes] = useState([]);
 
-	// Sync selectedProgramTypes with react-hook-form
-	useEffect(() => {
-		setValue("programTypes", selectedProgramTypes, { shouldValidate: true });
-	}, [selectedProgramTypes, setValue]);
 
 	// Caregiver search state
 	const [caregiverSearch, setCaregiverSearch] = useState("");
@@ -244,7 +238,7 @@ export default function AddNewHomePage() {
 		const homeData = {
 			name: data.name,
 			region: data.region,
-			programTypes: data.programTypes,
+			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
 				city: data.city || "",
@@ -325,31 +319,15 @@ export default function AddNewHomePage() {
 									/>
 								</div>
 
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Program Types *</label>
-									<div className="checkboxGroup horizontal" style={{ marginTop: '0.5rem' }}>
-										{['DSP', 'Seniors', 'ILS', 'IF'].map(type => (
-											<label key={type} className="checkboxLabel">
-												<input
-													type="checkbox"
-													checked={selectedProgramTypes.includes(type)}
-													onChange={(e) => {
-														if (e.target.checked) {
-															setSelectedProgramTypes([...selectedProgramTypes, type]);
-														} else {
-															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
-														}
-													}}
-												/>
-												<span>{type}</span>
-											</label>
-										))}
-									</div>
-									{errors.programTypes && (
-										<div className={cardStyles.error}>
-											{errors.programTypes.message}
-										</div>
-									)}
+								<div className={styles.row2}>
+									<InputField
+										label="Home Type *"
+										name="homeType"
+										type="select"
+										register={register}
+										error={errors.homeType}
+										options={HOME_TYPE_OPTIONS}
+									/>
 								</div>
 
 								<div className={styles.row2}>
