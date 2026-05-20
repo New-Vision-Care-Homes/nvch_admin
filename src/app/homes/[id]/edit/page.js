@@ -18,6 +18,7 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { Search, X } from "lucide-react";
 import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState from "@components/UI/ErrorState";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({

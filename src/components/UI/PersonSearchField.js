@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Controller } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 import { Search, X, User, Loader2 } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useClients } from "@/hooks/useClients";
@@ -206,44 +206,43 @@ export default function PersonSearchField({
 			type === "client" ? isClientLoading :
 				isAdminLoading;
 
+	const fieldValue = useWatch({ control, name });
+	const fetchCaregiverId = type === "caregiver" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+	const fetchClientId = type === "client" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+	const fetchAdminId = type === "admin" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+
+	const { caregiverDetail } = useCaregivers(fetchCaregiverId);
+	const { clientDetail } = useClients(fetchClientId);
+	const { adminDetail } = useAdmins(fetchAdminId);
+
+	const initialPerson =
+		type === "caregiver" ? caregiverDetail :
+			type === "client" ? clientDetail :
+				type === "admin" ? adminDetail : null;
+
+	const initialDisplayName = initialPerson
+		? `${initialPerson.firstName || ""} ${initialPerson.lastName || ""}`.trim()
+		: "";
+
 	return (
 		<Controller
 			control={control}
 			name={name}
-			render={({ field: { onChange, value } }) => {
-				// We need to fetch the initial detail if value is an ID and we don't have the name yet
-				// We call hooks unconditionally but only pass the ID if it matches the type
-				const fetchCaregiverId = type === "caregiver" && value && typeof value === "string" ? value : "";
-				const fetchClientId = type === "client" && value && typeof value === "string" ? value : "";
-				const fetchAdminId = type === "admin" && value && typeof value === "string" ? value : "";
-
-				const { caregiverDetail } = useCaregivers(fetchCaregiverId);
-				const { clientDetail } = useClients(fetchClientId);
-				const { adminDetail } = useAdmins(fetchAdminId);
-
-				const initialPerson = 
-					type === "caregiver" ? caregiverDetail :
-					type === "client" ? clientDetail :
-					type === "admin" ? adminDetail : null;
-				
-				const initialDisplayName = initialPerson ? `${initialPerson.firstName || ""} ${initialPerson.lastName || ""}`.trim() : "";
-
-				return (
-					<PersonSearchInput
-						label={label}
-						error={error}
-						placeholder={placeholder}
-						people={people}
-						isFetching={isFetching}
-						value={value ?? ""}
-						onChange={onChange}
-						type={type}
-						searchQuery={searchQuery}
-						onSearchChange={setSearchQuery}
-						initialDisplayName={initialDisplayName}
-					/>
-				);
-			}}
+			render={({ field: { onChange, value } }) => (
+				<PersonSearchInput
+					label={label}
+					error={error}
+					placeholder={placeholder}
+					people={people}
+					isFetching={isFetching}
+					value={value ?? ""}
+					onChange={onChange}
+					type={type}
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					initialDisplayName={initialDisplayName}
+				/>
+			)}
 		/>
 	);
 }
