@@ -49,8 +49,13 @@ export const shiftService = {
 	 * @param {string|number} id - The unique identifier.
 	 * @param {Object} updateData - The fields to be updated.
 	 */
-	update: async (id, updateData) => {
+	updateUpcommingShift: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.BY_ID(id), updateData);
+		return data.data.shift;
+	},
+
+	updateCompletedShift: async (id, updateData) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.UPDATE_COMPLETED_SHIFT(id), updateData);
 		return data.data.shift;
 	}
 };

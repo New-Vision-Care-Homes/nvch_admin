@@ -37,3 +37,11 @@ export function utcToFullDisplay(utcString, timeZone) {
         .setZone(timeZone)
         .toFormat("MMM d, yyyy HH:mm");
 }
+
+// For <input type="datetime-local"> pre-filling ("YYYY-MM-DDTHH:mm")
+export function utcToInputDateTime(utcString, timeZone) {
+    if (!utcString) return "";
+    return DateTime.fromISO(utcString, { zone: "utc" })
+        .setZone(timeZone)
+        .toFormat("yyyy-MM-dd'T'HH:mm");
+}

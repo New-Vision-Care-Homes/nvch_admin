@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -14,20 +14,20 @@ import { useHomes } from "@/hooks/useHomes";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useGoogleMap } from "@/hooks/useGoogleMap";
+import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	programTypes: yup.array()
-		.of(yup.string().oneOf(['DSP', 'Seniors', 'ILS', 'IF']))
-		.min(1, "At least one program type is required")
-		.required("At least one program type is required"),
+	homeType: yup.string()
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.required("Home type is required"),
 
 	// Geofence
 	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
@@ -55,7 +55,7 @@ export default function AddNewHomePage() {
 	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
-			programTypes: [],
+			homeType: "",
 			nightChecksEnabled: true,
 			nightCheckFrequency: 60,
 			allowTemporaryLeave: true,
@@ -66,41 +66,41 @@ export default function AddNewHomePage() {
 		}
 	});
 
-	// Google Maps Integration
-	const {
-		mapRef,
-		inputRef,
-		isLoaded,
-		loadError,
-		address: mapAddress,
-		center: mapCenter,
-		updateRadius
-	} = useGoogleMap();
+	// Map and Location States
+	const [mapCenter, setMapCenter] = useState({ lat: 44.6488, lng: -63.5752 }); // Default Halifax
+	const [mapAddress, setMapAddress] = useState("");
+	const mapRefsRef = useRef(null);
 
 	const geofenceRadius = watch("geofenceRadius");
 	const nightChecksEnabled = watch("nightChecksEnabled");
 
-	// Update map radius when form input changes
-	useEffect(() => {
-		updateRadius(geofenceRadius);
-	}, [geofenceRadius, updateRadius]);
+	// Auto-fill address fields and pan map when address is selected from autocomplete
+	const handleAddressSelect = useCallback((data) => {
+		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-	// Auto-fill address fields when address is selected from autocomplete
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
 		if (street) setValue("street", street, { shouldValidate: true });
 		if (city) setValue("city", city, { shouldValidate: true });
 		if (state) setValue("province", state, { shouldValidate: true });
 		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
-	}
 
-	// Program types state
-	const [selectedProgramTypes, setSelectedProgramTypes] = useState([]);
+		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
 
-	// Sync selectedProgramTypes with react-hook-form
-	useEffect(() => {
-		setValue("programTypes", selectedProgramTypes, { shouldValidate: true });
-	}, [selectedProgramTypes, setValue]);
+		if (latitude && longitude) {
+			const newCenter = { lat: latitude, lng: longitude };
+			setMapCenter(newCenter);
+
+			if (mapRefsRef.current) {
+				const { mapInstance, marker, circle } = mapRefsRef.current;
+				mapInstance?.panTo(newCenter);
+				mapInstance?.setZoom(15);
+				marker?.setPosition(newCenter);
+				circle?.setCenter(newCenter);
+			}
+		}
+	}, [setValue]);
+
+
 
 	// Caregiver search state
 	const [caregiverSearch, setCaregiverSearch] = useState("");
@@ -238,7 +238,7 @@ export default function AddNewHomePage() {
 		const homeData = {
 			name: data.name,
 			region: data.region,
-			programTypes: data.programTypes,
+			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
 				city: data.city || "",
@@ -278,13 +278,6 @@ export default function AddNewHomePage() {
 		router.push("/homes");
 	}
 
-	if (loadError) {
-		return (
-			<PageLayout>
-				<div>Error loading Google Maps</div>
-			</PageLayout>
-		);
-	}
 
 	return (
 		<PageLayout>
@@ -326,31 +319,15 @@ export default function AddNewHomePage() {
 									/>
 								</div>
 
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Program Types *</label>
-									<div className="checkboxGroup horizontal" style={{ marginTop: '0.5rem' }}>
-										{['DSP', 'Seniors', 'ILS', 'IF'].map(type => (
-											<label key={type} className="checkboxLabel">
-												<input
-													type="checkbox"
-													checked={selectedProgramTypes.includes(type)}
-													onChange={(e) => {
-														if (e.target.checked) {
-															setSelectedProgramTypes([...selectedProgramTypes, type]);
-														} else {
-															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
-														}
-													}}
-												/>
-												<span>{type}</span>
-											</label>
-										))}
-									</div>
-									{errors.programTypes && (
-										<div className={cardStyles.error}>
-											{errors.programTypes.message}
-										</div>
-									)}
+								<div className={styles.row2}>
+									<InputField
+										label="Home Type *"
+										name="homeType"
+										type="select"
+										register={register}
+										error={errors.homeType}
+										options={HOME_TYPE_OPTIONS}
+									/>
 								</div>
 
 								<div className={styles.row2}>
@@ -644,38 +621,15 @@ export default function AddNewHomePage() {
 							<CardHeader>Location & Geofence</CardHeader>
 							<CardContent>
 								{/* Address Search Input */}
-								<AddressAutocomplete
-									label="Search Address"
-									onAddressSelect={handleAddressSelect}
-									placeholder="Start typing to search for an address..."
-									id="home-address-autocomplete"
-								/>
-
-								{/* Map search input (for geofence) */}
-								<div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
-									<label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-										Search Address
-									</label>
-									<input
-										ref={inputRef}
-										type="text"
-										placeholder="Start typing an address..."
-										style={{
-											width: '100%',
-											padding: '0.75rem',
-											border: '1px solid #DEE1E6FF',
-											borderRadius: '6px',
-											fontSize: '1rem'
-										}}
+								<div style={{ marginBottom: '1.5rem' }}>
+									<AddressAutocomplete
+										label="Search Address"
+										onAddressSelect={handleAddressSelect}
+										placeholder="Start typing to search for an address..."
+										id="home-address-autocomplete"
+										register={register}
 									/>
 								</div>
-
-								{/* Hidden fields for address components */}
-								<input type="hidden" {...register("street")} />
-								<input type="hidden" {...register("city")} />
-								<input type="hidden" {...register("province")} />
-								<input type="hidden" {...register("postalCode")} />
-								<input type="hidden" {...register("country")} />
 
 								{/* Map Container */}
 								<div style={{
@@ -686,19 +640,12 @@ export default function AddNewHomePage() {
 									overflow: 'hidden',
 									border: '1px solid #DEE1E6FF'
 								}}>
-									{isLoaded ? (
-										<div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-									) : (
-										<div style={{
-											display: 'flex',
-											alignItems: 'center',
-											justifyContent: 'center',
-											height: '100%',
-											background: '#f5f5f5'
-										}}>
-											Loading map...
-										</div>
-									)}
+									<GeofenceMap
+										center={mapCenter}
+										radius={geofenceRadius}
+										onMapReady={(refs) => { mapRefsRef.current = refs; }}
+										height="100%"
+									/>
 								</div>
 
 								{/* Geofence Controls */}

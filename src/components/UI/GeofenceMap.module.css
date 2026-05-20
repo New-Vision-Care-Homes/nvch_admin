@@ -43,3 +43,9 @@
 @keyframes spin {
 	to { transform: rotate(360deg); }
 }
+
+.mapContainer {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+}

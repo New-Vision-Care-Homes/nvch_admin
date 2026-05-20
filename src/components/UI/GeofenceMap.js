@@ -1,68 +1,45 @@
 "use client";
 
-/**
- * GeofenceMap.js
- * ─────────────────────────────────────────────────────────────────────────────
- * A reusable Google Map component that shows a location pin + geofence circle.
- * Supports both read-only (view) and interactive (edit) modes.
- *
- * PROPS:
- *   center     { latitude, longitude }   – Map center & marker position
- *   radius     number                    – Geofence circle radius in metres
- *   isLoaded   boolean                   – Whether the Maps JS API is loaded
- *   loadError  Error|undefined           – Any API load error
- *   onMapReady (refs) => void            – Called once the map is initialised,
- *                                          passing { mapInstance, marker, circle }
- *                                          so the parent can imperatively update.
- *   height     string                    – CSS height for the map (default "360px")
- *   className  string                    – Extra CSS class on the wrapper
- *
- * USAGE (view mode – no updates needed):
- *   <GeofenceMap
- *     isLoaded={isLoaded}
- *     loadError={loadError}
- *     center={{ latitude: 44.6488, longitude: -63.5752 }}
- *     radius={500}
- *   />
- *
- * USAGE (edit mode – parent controls panning):
- *   const mapRefs = useRef(null);
- *   ...
- *   <GeofenceMap
- *     isLoaded={isLoaded}
- *     loadError={loadError}
- *     center={formData.geofence.center}
- *     radius={formData.geofence.radius}
- *     onMapReady={(refs) => { mapRefs.current = refs; }}
- *   />
- *   // then call mapRefs.current.mapInstance.panTo(...) etc.
- */
-
+/* ==========================================================================
+	SCOPE: Imports & Dependencies
+========================================================================== */
 import { useEffect, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import styles from "./GeofenceMap.module.css";
 
+/* ==========================================================================
+	SCOPE: Main Component
+========================================================================== */
+/**
+ * GeofenceMap
+ * A reusable Google Map component that shows a location pin + geofence circle.
+ * Supports both read-only (view) and interactive (edit) modes.
+ */
 export default function GeofenceMap({
 	center,
 	radius = 100,
-	isLoaded,
-	loadError,
 	onMapReady,
 	height = "360px",
 	className = "",
 }) {
+	/* ==========================================================================
+		SCOPE: State & References
+	========================================================================== */
+	const { isLoaded, loadError } = useGoogleMapsLoader();
 	const divRef = useRef(null);
 	const mapInstanceRef = useRef(null);
 	const markerRef = useRef(null);
 	const circleRef = useRef(null);
 
-	// ── Build / rebuild the map once the API is ready ─────────────────────────
+	/* ==========================================================================
+		SCOPE: Map Initialization
+	========================================================================== */
 	useEffect(() => {
 		if (!isLoaded || !divRef.current || mapInstanceRef.current) return;
 
-		// Resolve center, falling back to Halifax downtown
-		const lat = center?.latitude ?? 44.6488;
-		const lng = center?.longitude ?? -63.5752;
+		const lat = center?.latitude ?? center?.lat ?? 44.6488;
+		const lng = center?.longitude ?? center?.lng ?? -63.5752;
 		const mapCenter = { lat, lng };
 		const mapRadius = Number(radius) || 100;
 
@@ -101,14 +78,15 @@ export default function GeofenceMap({
 		markerRef.current = marker;
 		circleRef.current = circle;
 
-		// Notify parent so it can imperatively update the map
 		if (onMapReady) {
 			onMapReady({ mapInstance, marker, circle });
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isLoaded]);
 
-	// ── Keep circle radius in sync when prop changes ──────────────────────────
+	/* ==========================================================================
+		SCOPE: Sync Props (Radius & Center)
+	========================================================================== */
 	useEffect(() => {
 		const r = Number(radius);
 		if (!isNaN(r) && r > 0 && circleRef.current) {
@@ -116,20 +94,25 @@ export default function GeofenceMap({
 		}
 	}, [radius]);
 
-	// ── Keep map center in sync when prop changes (read-only mode) ────────────
 	useEffect(() => {
-		if (!center?.latitude || !center?.longitude) return;
-		const newCenter = { lat: center.latitude, lng: center.longitude };
-		if (mapInstanceRef.current) {
-			mapInstanceRef.current.panTo(newCenter);
-		}
+		const lat = center?.latitude ?? center?.lat;
+		const lng = center?.longitude ?? center?.lng;
+		if (!lat || !lng) return;
+		const newCenter = { lat, lng };
+
+		if (mapInstanceRef.current) mapInstanceRef.current.panTo(newCenter);
 		if (markerRef.current) markerRef.current.setPosition(newCenter);
 		if (circleRef.current) circleRef.current.setCenter(newCenter);
-	}, [center?.latitude, center?.longitude]);
+	}, [center?.latitude, center?.longitude, center?.lat, center?.lng]);
 
-	// ── Render ────────────────────────────────────────────────────────────────
+	/* ==========================================================================
+		SCOPE: Render Helpers
+	========================================================================== */
 	const wrapperStyle = { height };
 
+	/* ==========================================================================
+		SCOPE: Render
+	========================================================================== */
 	if (loadError) {
 		return (
 			<div className={`${styles.wrapper} ${styles.stateBox} ${className}`} style={wrapperStyle}>
@@ -150,7 +133,7 @@ export default function GeofenceMap({
 
 	return (
 		<div className={`${styles.wrapper} ${className}`} style={wrapperStyle}>
-			<div ref={divRef} style={{ width: "100%", height: "100%", borderRadius: "inherit" }} />
+			<div ref={divRef} className={styles.mapContainer} />
 		</div>
 	);
 }

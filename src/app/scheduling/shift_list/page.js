@@ -85,10 +85,11 @@ export default function ShiftListPage() {
 							shift.caregiver?.firstName || shift.caregiver?.lastName
 								? `${shift.caregiver.firstName ?? ""} ${shift.caregiver.lastName ?? ""}`.trim()
 								: "Unassigned";
-						const clientName =
-							shift.client?.firstName || shift.client?.lastName
-								? `${shift.client.firstName ?? ""} ${shift.client.lastName ?? ""}`.trim()
-								: shift.client?.fullName || "—";
+						const targetName = shift.client
+							? `Client: ${shift.client.firstName ?? ""} ${shift.client.lastName ?? ""}`.trim()
+							: shift.home
+							? `Home: ${shift.home.name || shift.home._id || shift.home.id || ""}`.trim()
+							: "—";
 
 						return (
 							<div
@@ -114,10 +115,10 @@ export default function ShiftListPage() {
 										<span className={styles.primaryText}>{caregiverName}</span>
 									</div>
 
-									{/* Client */}
+									{/* Target (Client/Home) */}
 									<div className={styles.infoRow}>
 										<ClipboardList size={16} className={styles.icon} />
-										<span className={styles.secondaryText}>{clientName}</span>
+										<span className={styles.secondaryText}>{targetName}</span>
 									</div>
 
 									{/* Location */}

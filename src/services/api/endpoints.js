@@ -1,7 +1,7 @@
 export const API_ENDPOINTS = {
 	/* All related endpoints for auth */
 	AUTH: {
-		LOGIN: '/api/auth/login',
+		LOGIN: '/api/auth/login/portal',
 		FORGOT_PASSWORD: '/api/auth/forgot-password',
 	},
 
@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
 	SHIFTS: {
 		BASE: '/api/shifts',
 		BY_ID: (id) => `/api/shifts/${id}`,
+		UPDATE_COMPLETED_SHIFT: (id) => `/api/hours/shifts/${id}`,
 	},
 
 	/* All related endpoints for homes */
@@ -64,5 +65,12 @@ export const API_ENDPOINTS = {
 	PERMISIIONS: {
 		BASE: '/api/permissions',
 		BY_ID: (id) => `/api/permissions/${id}`,
+	},
+
+	FOCUS_NOTES: {
+		BASE: '/api/focus-notes',
+		BY_CLIENT_ID: (clientId) => `/api/focus-notes/client/${clientId}`,
+		BY_SHIFT_ID: (shiftId) => `/api/focus-notes/shift/${shiftId}`,
+		BY_ID: (id) => `/api/focus-notes/${id}`,
 	},
 };

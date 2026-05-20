@@ -21,6 +21,8 @@ import {
 } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
+import { useHomes } from "@/hooks/useHomes";
+import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
 
 // --- Helper ---
 const splitName = (full) => {
@@ -69,6 +71,8 @@ const cleanFetchedData = (apiData) => {
 		phone: apiData.phone || "",
 		email: apiData.email || "",
 		notes: apiData.notes || "",
+		homeId: typeof apiData.home === 'string' ? apiData.home : (apiData.home?._id || apiData.home?.id || apiData.homeId || ""),
+		noHomeSelected: !(typeof apiData.home === 'string' ? apiData.home : (apiData.home?._id || apiData.home?.id || apiData.homeId)),
 
 		// Address
 		street: apiData.address?.street || "",
@@ -131,6 +135,9 @@ const cleanFetchedData = (apiData) => {
 
 		// Community Treatment Order
 		ctoNotes: apiData.communityTreatmentOrder?.notes || "",
+
+		latitude: apiData.address?.gpsCoordinates?.latitude || null,
+		longitude: apiData.address?.gpsCoordinates?.longitude || null,
 	};
 };
 
@@ -158,6 +165,8 @@ const schema = yup.object({
 		.nullable()
 		.transform((v, o) => (o === "" ? null : v)),
 	notes: longTextRule,
+	noHomeSelected: yup.boolean().optional(),
+	homeId: yup.string().nullable().optional(),
 
 	// Address
 	street: shortTextRule.required("Street is required"),
@@ -220,6 +229,9 @@ const schema = yup.object({
 
 	// Community Treatment Order
 	ctoNotes: yup.string().max(2000).nullable().optional(),
+
+	latitude: yup.number().nullable().optional(),
+	longitude: yup.number().nullable().optional(),
 });
 
 // --- Component ---
@@ -242,18 +254,56 @@ export default function Info() {
 		formState: { errors },
 		reset,
 		setValue,
+		watch,
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
 
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
-		if (street)     setValue("street",  street,     { shouldValidate: true });
-		if (city)       setValue("city",    city,       { shouldValidate: true });
-		if (state)      setValue("state",   state,      { shouldValidate: true });
-		if (country)    setValue("country", country,    { shouldValidate: true });
+	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("state", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
+		if (latitude !== undefined) setValue("latitude", latitude, { shouldValidate: true });
+		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true });
 	}
+
+	const { homes } = useHomes({ limit: 100 });
+	const watchHomeId = watch("homeId");
+	const watchNoHomeSelected = watch("noHomeSelected");
+
+	const watchStreet = watch("street");
+	const watchCity = watch("city");
+	const watchState = watch("state");
+	const watchPinCode = watch("pinCode");
+	const watchCountry = watch("country");
+
+	// Auto-fill address when home is selected
+	useEffect(() => {
+		// Only run if we actually have homes data and a selected home
+		if (watchHomeId && homes?.length > 0) {
+			const selectedHome = homes.find((h) => h.id === watchHomeId || h._id === watchHomeId);
+			if (selectedHome && selectedHome.address) {
+				setValue("street", selectedHome.address.street || "", { shouldValidate: true });
+				setValue("city", selectedHome.address.city || "", { shouldValidate: true });
+				setValue("state", selectedHome.address.province || selectedHome.address.state || "", { shouldValidate: true });
+				setValue("pinCode", selectedHome.address.postalCode || selectedHome.address.pinCode || "", { shouldValidate: true });
+				setValue("country", selectedHome.address.country || "", { shouldValidate: true });
+				setValue("latitude", selectedHome.gpsCoordinates?.latitude || null, { shouldValidate: true });
+				setValue("longitude", selectedHome.gpsCoordinates?.longitude || null, { shouldValidate: true });
+				setValue("noHomeSelected", false);
+			}
+		}
+	}, [watchHomeId, homes, setValue]);
+
+	// Clear homeId if noHomeSelected becomes checked
+	useEffect(() => {
+		if (watchNoHomeSelected) {
+			setValue("homeId", "");
+		}
+	}, [watchNoHomeSelected, setValue]);
 
 	useEffect(() => {
 		if (clientDetail && !isInitialized) {
@@ -276,6 +326,7 @@ export default function Info() {
 			maritalStatus: data.maritalStatus || null,
 			levelOfSupport: data.levelOfSupport || null,
 			notes: data.notes || null,
+			homeId: data.noHomeSelected ? null : (data.homeId || null),
 
 			address: {
 				street: data.street,
@@ -283,7 +334,10 @@ export default function Info() {
 				state: data.state,
 				pinCode: data.pinCode,
 				country: data.country,
-				gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
+				gpsCoordinates: {
+					latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6488,
+					longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5752,
+				},
 			},
 
 			healthCard: {
@@ -344,24 +398,24 @@ export default function Info() {
 			},
 		};
 
-			updateClient(
-				{ id, data: body },
-				{
-					onSuccess: (res) => {
-						reset(cleanFetchedData(res));
-						setStatus({ variant: "success", text: "Update successful!" });
-					},
-					onError: (err) => {
-						const resData = err.response?.data;
-						const status = err.response?.status;
-						if (status === 400 && resData?.details?.length > 0) {
-							setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
-						} else {
-							setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update client." });
-						}
-					},
-				}
-			);
+		updateClient(
+			{ id, data: body },
+			{
+				onSuccess: (res) => {
+					reset(cleanFetchedData(res));
+					setStatus({ variant: "success", text: "Update successful!" });
+				},
+				onError: (err) => {
+					const resData = err.response?.data;
+					const status = err.response?.status;
+					if (status === 400 && resData?.details?.length > 0) {
+						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
+					} else {
+						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update client." });
+					}
+				},
+			}
+		);
 	};
 
 	const handleCancel = () => {
@@ -395,13 +449,7 @@ export default function Info() {
 								type="select"
 								register={register}
 								error={errors.maritalStatus}
-								options={[
-									{ label: "Single", value: "single" },
-									{ label: "Married", value: "married" },
-									{ label: "Divorced", value: "divorced" },
-									{ label: "Widowed", value: "widowed" },
-									{ label: "Separated", value: "separated" },
-								]}
+								options={MARITAL_STATUS_OPTIONS}
 							/>
 							<InputField
 								label="Level of Support"
@@ -425,35 +473,44 @@ export default function Info() {
 								type="select"
 								register={register}
 								error={errors.region}
-								options={[
-									{ label: "Central", value: "Central" },
-									{ label: "Windsor", value: "Windsor" },
-									{ label: "HRM", value: "HRM" },
-									{ label: "Yarmouth", value: "Yarmouth" },
-									{ label: "Shelburne", value: "Shelburne" },
-									{ label: "South Shore", value: "South Shore" },
-								]}
+								options={REGION_OPTIONS}
 							/>
 							<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 							<InputField label="Email" name="email" register={register} error={errors.email} />
 						</div>
 
 						<h5 className={styles.subSectionTitle}>Address</h5>
+
+						<div style={{ marginBottom: "1rem" }}>
+							<InputField
+								key={homes.length}
+								label="Assigned Home"
+								name="homeId"
+								type="select"
+								register={register}
+								error={errors.homeId}
+								disabled={watchNoHomeSelected}
+								options={homes.map(h => ({ label: h.name, value: h.id || h._id }))}
+							/>
+							<div style={{ marginTop: "0.5rem" }}>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+									<input type="checkbox" {...register("noHomeSelected")} />
+									No home selected (manual address entry)
+								</label>
+							</div>
+						</div>
+
 						<AddressAutocomplete
 							label="Search Address"
 							onAddressSelect={handleAddressSelect}
 							placeholder="Start typing to search for an address..."
 							id="client-edit-address-autocomplete"
+							register={register}
+							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+							isEditing={true}
+							currentAddress={[watchStreet, watchCity, watchState, watchPinCode, watchCountry].filter(Boolean).join(", ")}
+							disabled={!watchNoHomeSelected}
 						/>
-						<div className={styles.card_row_2}>
-							<InputField label="Street" name="street" register={register} error={errors.street} />
-							<InputField label="City" name="city" register={register} error={errors.city} />
-						</div>
-						<div className={styles.card_row_2}>
-							<InputField label="Province" name="state" register={register} error={errors.state} />
-							<InputField label="Country" name="country" register={register} error={errors.country} />
-							<InputField label="Postal Code" name="pinCode" register={register} error={errors.pinCode} />
-						</div>
 
 						<h5 className={styles.subSectionTitle}>Health Card</h5>
 						<div className={styles.card_row_2}>

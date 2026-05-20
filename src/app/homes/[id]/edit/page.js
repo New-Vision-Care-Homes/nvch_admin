@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -14,20 +14,21 @@ import { useHomes } from "@/hooks/useHomes";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useGoogleMap } from "@/hooks/useGoogleMap";
+import GeofenceMap from "@/components/UI/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { Search, X } from "lucide-react";
-import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState from "@components/UI/ErrorState";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	programTypes: yup.array()
-		.of(yup.string().oneOf(['DSP', 'Seniors', 'ILS', 'IF']))
-		.min(1, "At least one program type is required")
-		.required("At least one program type is required"),
+	homeType: yup.string()
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.required("Home type is required"),
 
 	// Geofence
 	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
@@ -65,19 +66,17 @@ export default function EditHomePage() {
 	const { register, handleSubmit, watch, control, formState: { errors }, setValue, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
-			programTypes: [],
+			homeType: "",
 			nightChecksEnabled: true,
 			nightCheckFrequency: 60,
 			allowTemporaryLeave: true,
 			requireLocationCheckIn: true,
 			isActive: true,
-			geofenceRadius: 200,
+			geofenceRadius: 100,
 			geofenceShape: "circle",
 		}
 	});
 
-	// Program types state
-	const [selectedProgramTypes, setSelectedProgramTypes] = useState([]);
 	// Staff search state
 	const [selectedCaregivers, setSelectedCaregivers] = useState([]);
 	const [selectedAdmins, setSelectedAdmins] = useState([]);
@@ -89,9 +88,8 @@ export default function EditHomePage() {
 			reset({
 				name: home.name,
 				region: home.region,
-				programTypes: home.programTypes || [],
-				geofenceRadius: home.defaultGeofence?.radius || 200,
-				geofenceShape: home.defaultGeofence?.shape || "circle",
+				homeType: home.homeType || "",
+				geofenceRadius: 100,
 				nightChecksEnabled: home.nightChecksEnabled,
 				nightCheckFrequency: home.nightCheckFrequency,
 				allowTemporaryLeave: home.allowTemporaryLeave,
@@ -106,7 +104,7 @@ export default function EditHomePage() {
 				country: home.address?.country || "Canada",
 			});
 
-			setSelectedProgramTypes(home.programTypes || []);
+
 			setSelectedCaregivers(home.caregivers || []);
 			// API returns admins as [{ admin: {...}, adminLevel }], normalise to flat user objects
 			// with an extra adminLevel field so we can display names and re-submit correctly
@@ -121,58 +119,53 @@ export default function EditHomePage() {
 		}
 	}, [home, reset]);
 
-	// Google Maps Integration
-	const {
-		mapRef,
-		inputRef,
-		isLoaded,
-		loadError,
-		address: mapAddress,
-		center: mapCenter,
-		addressComponents,
-		updateRadius,
-		setAddress
-	} = useGoogleMap({
-		initialCenter: home?.gpsCoordinates ? { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude } : undefined,
-		initialRadius: home?.defaultGeofence?.radius || 200
-	});
+	// Map and Location States
+	const [mapCenter, setMapCenter] = useState(null);
+	const [mapAddress, setMapAddress] = useState("");
+	const mapRefsRef = useRef(null);
 
-	// Update setAddress when home address is loaded
+	// Initialize map center when home data loads
+	useEffect(() => {
+		if (home?.gpsCoordinates && !mapCenter) {
+			setMapCenter({
+				lat: home.gpsCoordinates.latitude,
+				lng: home.gpsCoordinates.longitude
+			});
+		}
+	}, [home, mapCenter]);
+
+	// Initialize map address when home data loads
 	useEffect(() => {
 		if (home?.address?.street && !mapAddress) {
-			setAddress(`${home.address.street}, ${home.address.city}`);
+			setMapAddress(`${home.address.street}, ${home.address.city}`);
 		}
-	}, [home, mapAddress, setAddress]);
+	}, [home, mapAddress]);
 
-	const geofenceRadius = watch("geofenceRadius");
-	const nightChecksEnabled = watch("nightChecksEnabled");
+	// Auto-fill address fields and pan map when address is selected from autocomplete
+	const handleAddressSelect = useCallback((data) => {
+		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-	// Update map radius when form input changes
-	useEffect(() => {
-		updateRadius(geofenceRadius);
-	}, [geofenceRadius, updateRadius]);
+		if (street) setValue("street", street, { shouldValidate: true });
+		if (city) setValue("city", city, { shouldValidate: true });
+		if (state) setValue("province", state, { shouldValidate: true });
+		if (country) setValue("country", country, { shouldValidate: true });
+		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
 
-	// Auto-fill address fields when address is selected from autocomplete
-	useEffect(() => {
-		if (addressComponents) {
-			const street = addressComponents.street || "";
-			const city = addressComponents.city || "";
-			const province = addressComponents.province || "";
-			const postalCode = addressComponents.postalCode || "";
-			const country = addressComponents.country || "";
+		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
 
-			setValue("street", street);
-			setValue("city", city);
-			setValue("province", province);
-			setValue("postalCode", postalCode);
-			setValue("country", country);
+		if (latitude && longitude) {
+			const newCenter = { lat: latitude, lng: longitude };
+			setMapCenter(newCenter);
+
+			if (mapRefsRef.current) {
+				const { mapInstance, marker, circle } = mapRefsRef.current;
+				mapInstance?.panTo(newCenter);
+				mapInstance?.setZoom(15);
+				marker?.setPosition(newCenter);
+				circle?.setCenter(newCenter);
+			}
 		}
-	}, [addressComponents, setValue]);
-
-	// Sync selectedProgramTypes with react-hook-form
-	useEffect(() => {
-		setValue("programTypes", selectedProgramTypes, { shouldValidate: true });
-	}, [selectedProgramTypes, setValue]);
+	}, [setValue]);
 
 	// Caregiver Search States
 	const [caregiverSearch, setCaregiverSearch] = useState("");
@@ -287,7 +280,7 @@ export default function EditHomePage() {
 		const homeData = {
 			name: data.name,
 			region: data.region,
-			programTypes: data.programTypes,
+			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
 				city: data.city || "",
@@ -300,14 +293,11 @@ export default function EditHomePage() {
 				longitude: mapCenter.lng,
 			},
 			defaultGeofence: {
-				radius: data.geofenceRadius,
-				shape: data.geofenceShape,
+				radius: 100,
 			},
 			caregivers: selectedCaregivers.map(s => s.id),
 			admins: selectedAdmins.map(a => ({ admin: a.id, adminLevel: a.adminLevel || 'supervisor' })),
 			clients: selectedClients.map(c => c.id),
-			nightChecksEnabled: data.nightChecksEnabled || false,
-			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
 			requireLocationCheckIn: data.requireLocationCheckIn || false,
 			isActive: data.isActive || false,
@@ -337,7 +327,6 @@ export default function EditHomePage() {
 			/>
 		</PageLayout>
 	);
-	if (loadError) return <PageLayout><div>Error loading Google Maps</div></PageLayout>;
 
 	return (
 		<PageLayout>
@@ -378,32 +367,15 @@ export default function EditHomePage() {
 									/>
 								</div>
 
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Program Types *</label>
-									<div className="checkboxGroup horizontal" style={{ marginTop: '0.5rem' }}>
-										{['DSP', 'Seniors', 'ILS', 'IF'].map(type => (
-											<label key={type} className="checkboxLabel">
-												<input
-													type="checkbox"
-													checked={selectedProgramTypes.includes(type)}
-													onChange={(e) => {
-														if (e.target.checked) {
-															setSelectedProgramTypes([...selectedProgramTypes, type]);
-														} else {
-															setSelectedProgramTypes(selectedProgramTypes.filter(t => t !== type));
-														}
-													}}
-
-												/>
-												<span>{type}</span>
-											</label>
-										))}
-									</div>
-									{errors.programTypes && (
-										<div className={cardStyles.error}>
-											{errors.programTypes.message}
-										</div>
-									)}
+								<div className={styles.row2}>
+									<InputField
+										label="Home Type *"
+										name="homeType"
+										type="select"
+										register={register}
+										error={errors.homeType}
+										options={HOME_TYPE_OPTIONS}
+									/>
 								</div>
 
 								<div className={styles.row2}>
@@ -562,22 +534,17 @@ export default function EditHomePage() {
 						<Card>
 							<CardHeader>Location & Geofence</CardHeader>
 							<CardContent>
-								<div style={{ marginBottom: '1rem' }}>
-									<label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Search Address</label>
-									<input
-										ref={inputRef}
-										type="text"
+								<div style={{ marginBottom: '1.5rem' }}>
+									<AddressAutocomplete
+										label="Search Address"
+										onAddressSelect={handleAddressSelect}
 										placeholder="Start typing an address..."
-										className={cardStyles.input}
+										id="home-address-autocomplete"
+										register={register}
+										isEditing={true}
+										currentAddress={mapAddress}
 									/>
 								</div>
-
-								{/* Hidden fields for address components */}
-								<input type="hidden" {...register("street")} />
-								<input type="hidden" {...register("city")} />
-								<input type="hidden" {...register("province")} />
-								<input type="hidden" {...register("postalCode")} />
-								<input type="hidden" {...register("country")} />
 
 								<div style={{
 									width: '100%',
@@ -587,27 +554,11 @@ export default function EditHomePage() {
 									overflow: 'hidden',
 									border: '1px solid #DEE1E6FF'
 								}}>
-									{isLoaded ? (
-										<div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-									) : (
-										<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5' }}>
-											Loading map...
-										</div>
-									)}
-								</div>
-
-								<div className={styles.row2}>
-									<InputField label="Geofence Radius (meters)" name="geofenceRadius" type="number" register={register} error={errors.geofenceRadius} />
-									<InputField
-										label="Geofence Shape"
-										name="geofenceShape"
-										type="select"
-										register={register}
-										error={errors.geofenceShape}
-										options={[
-											{ label: "Circle", value: "circle" },
-											{ label: "Polygon", value: "polygon" }
-										]}
+									<GeofenceMap
+										center={mapCenter}
+										radius={100}
+										onMapReady={(refs) => { mapRefsRef.current = refs; }}
+										height="100%"
 									/>
 								</div>
 
@@ -616,29 +567,6 @@ export default function EditHomePage() {
 										<strong>Selected Address:</strong> {mapAddress}
 									</div>
 								)}
-							</CardContent>
-						</Card>
-
-						{/* Night Check Configuration */}
-						<Card>
-							<CardHeader>Night Check Configuration</CardHeader>
-							<CardContent>
-								<div className={styles.row2}>
-									<InputField
-										label="Night Checks Enabled"
-										name="nightChecksEnabled"
-										type="select"
-										register={register}
-										error={errors.nightChecksEnabled}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-									{nightChecksEnabled && (
-										<InputField label="Check Frequency (minutes)" name="nightCheckFrequency" type="number" register={register} error={errors.nightCheckFrequency} />
-									)}
-								</div>
 							</CardContent>
 						</Card>
 

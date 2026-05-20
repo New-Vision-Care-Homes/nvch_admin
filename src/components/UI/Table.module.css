@@ -30,3 +30,136 @@
 .column:last-child {
 	border-bottom: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Table2 — reusable HTML <table> component (e.g. Focus Notes)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper ─────────────────────────────────────────────────────────────── */
+.t2Wrap {
+	overflow-x: auto;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	background: #fff;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.t2Table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.84rem;
+	color: #374151;
+}
+
+.t2Table thead {
+	background: #f8fafc;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.t2Table th {
+	padding: 11px 14px;
+	text-align: left;
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #6b7280;
+	white-space: nowrap;
+}
+
+.t2ThAction {
+	width: 48px;
+}
+
+.t2Table tbody tr {
+	border-bottom: 1px solid #f3f4f6;
+	transition: background 0.12s;
+}
+
+.t2Table tbody tr:last-child {
+	border-bottom: none;
+}
+
+.t2Table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.t2Table td {
+	padding: 12px 14px;
+	vertical-align: top;
+}
+
+/* ── Empty row ────────────────────────────────────────────────────────────── */
+.t2EmptyRow {
+	text-align: center;
+	padding: 3rem 1rem !important;
+	color: #9ca3af;
+}
+
+.t2EmptyRow .t2EmptyIcon {
+	color: #d1d5db;
+	margin: 0 auto 0.75rem;
+	display: block;
+}
+
+.t2EmptyRow p {
+	margin: 0;
+	font-size: 0.9rem;
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────────── */
+.t2Pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.t2PageInfo {
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.t2PageButtons {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+}
+
+.t2PageBtn {
+	min-width: 32px;
+	height: 32px;
+	border-radius: 7px;
+	border: 1px solid #e5e7eb;
+	background: #fff;
+	color: #374151;
+	font-size: 0.8rem;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 6px;
+	transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.t2PageBtn:hover:not(:disabled) {
+	background: #f3f4f6;
+	border-color: #d1d5db;
+}
+
+.t2PageBtn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
+
+.t2PageBtnActive {
+	background: #1c4a6e;
+	border-color: #1c4a6e;
+	color: #fff;
+}
+
+.t2PageBtnActive:hover {
+	background: #1c4a6e !important;
+}

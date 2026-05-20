@@ -1,0 +1,223 @@
+/* PersonSearchField.module.css
+   Intentionally mirrors Card.module.css token values so it blends in
+   seamlessly when used alongside InputField inside a Card.
+*/
+
+/* ── Field wrapper (same as Card .field) ─────────────────────────────────── */
+.field {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	gap: 0.2rem;
+	position: relative; /* needed for dropdown positioning */
+}
+
+/* ── Label (same as Card .label) ─────────────────────────────────────────── */
+.label {
+	font-family: var(--font-family-inter);
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+/* ── Input wrapper — holds the search icon, input, and clear button ─────── */
+.inputWrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+	background: #FAFBFC;
+	border-radius: var(--border-size-sm);
+	border: 1.5px solid #DEE1E6;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.inputWrapper:hover {
+	background: #F0F5FA;
+	border-color: #b0bec5;
+}
+
+.inputWrapper:focus-within {
+	border-color: var(--color-primary);
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.12);
+}
+
+.inputWrapper_error {
+	border-color: #E53E3E;
+	background: #FFF5F5;
+}
+
+.inputWrapper_error:focus-within {
+	box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.12);
+}
+
+/* ── Search icon ──────────────────────────────────────────────────────────── */
+.searchIcon {
+	flex-shrink: 0;
+	margin-left: 0.65rem;
+	color: var(--color-secondary);
+	opacity: 0.7;
+}
+
+/* ── The actual <input> — no border; the wrapper provides the border ──────── */
+.input {
+	flex: 1;
+	width: 100%;
+	font-family: var(--font-family-inter);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-sm);
+	background: transparent;
+	border: none;
+	outline: none;
+	padding: 0.55rem 0.5rem;
+	line-height: 1.4;
+	color: #171A1F;
+}
+
+.input::placeholder {
+	color: #9ca3af;
+}
+
+/* ── Clear (×) button ─────────────────────────────────────────────────────── */
+.clearBtn {
+	flex-shrink: 0;
+	margin-right: 0.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	padding: 3px;
+	border-radius: 50%;
+	cursor: pointer;
+	color: var(--color-secondary);
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.clearBtn:hover {
+	color: var(--color-primary);
+	background: rgba(28, 74, 110, 0.08);
+}
+
+/* ── Loading spinner ──────────────────────────────────────────────────────── */
+.spinner {
+	flex-shrink: 0;
+	margin-right: 0.5rem;
+	color: var(--color-secondary);
+	opacity: 0.6;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}
+
+
+/* ── Dropdown container ───────────────────────────────────────────────────── */
+.dropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	z-index: 200;
+	background: #fff;
+	border: 1.5px solid #DEE1E6;
+	border-radius: var(--border-size-sm);
+	box-shadow: 0 8px 24px rgba(28, 74, 110, 0.12);
+	max-height: 220px;
+	overflow-y: auto;
+	/* Smooth open animation */
+	animation: dropdownOpen 0.12s ease;
+}
+
+@keyframes dropdownOpen {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Thin custom scrollbar */
+.dropdown::-webkit-scrollbar {
+	width: 5px;
+}
+.dropdown::-webkit-scrollbar-track {
+	background: transparent;
+}
+.dropdown::-webkit-scrollbar-thumb {
+	background: #DEE1E6;
+	border-radius: 99px;
+}
+
+/* ── Individual option row ────────────────────────────────────────────────── */
+.option {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+	padding: 0.55rem 0.75rem;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	font-family: var(--font-family-inter);
+	font-size: var(--font-size-sm);
+	color: #171A1F;
+	transition: background 0.12s ease;
+}
+
+.option:hover {
+	background: #F0F5FA;
+}
+
+.option_selected {
+	background: rgba(28, 74, 110, 0.06);
+	font-weight: 600;
+}
+
+/* Avatar icon circle */
+.optionAvatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: rgba(28, 74, 110, 0.1);
+	color: var(--color-primary);
+	flex-shrink: 0;
+}
+
+.optionName {
+	flex: 1;
+}
+
+/* Selected checkmark */
+.optionCheck {
+	font-size: 0.75rem;
+	color: var(--color-primary);
+	font-weight: 700;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.emptyState {
+	padding: 0.75rem;
+	text-align: center;
+	font-size: var(--font-size-sm);
+	color: #9ca3af;
+}
+
+/* ── Yup error text (same as Card .error_text) ───────────────────────────── */
+.error_text {
+	font-size: var(--font-size-sm);
+	color: #E53E3E;
+	margin-top: 2px;
+}

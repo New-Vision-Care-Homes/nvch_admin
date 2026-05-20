@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
-import { utcToDate, utcToWeekday, utcToDisplayTime } from "@/utils/timeHandling";
+import { utcToDate, utcToWeekday, utcToDisplayTime, utcToInputDateTime } from "@/utils/timeHandling";
+import { DateTime } from "luxon";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
 import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays, Globe } from "lucide-react";
@@ -17,22 +19,34 @@ export default function ShiftDayPage() {
 	// ?date=yyyy-MM-dd — from month view click
 	const dateParam = searchParams.get("date");
 
-	// Fetch all shifts (no server-side filter — filter client-side by date)
-	const { shifts, isShiftLoading } = useShifts({ startDate: dateParam });
+	// Fetch all shifts (uses cached data from previous pages)
+	const { shifts: rawShifts = [], isShiftLoading } = useShifts();
 	const { profile } = useProfile();
 
-
+	// Client-side filter to strictly only show shifts on this specific day
+	const shifts = useMemo(() => {
+		if (!dateParam || !rawShifts.length) return [];
+		return rawShifts.filter(shift => {
+			// Convert shift time to Halifax, then extract just the YYYY-MM-DD part
+			const shiftDateStr = utcToInputDateTime(shift.startTime, profile?.timezone || "America/Halifax").split("T")[0];
+			return shiftDateStr === dateParam;
+		});
+	}, [rawShifts, dateParam, profile?.timezone]);
 
 	const statusClass = (status) =>
 		styles[`status_${status}`] || styles.status_default;
+
+	// Parse the dateParam directly without timezone shifting (since it's already a localized string like "2026-05-06")
+	const displayDate = dateParam ? DateTime.fromFormat(dateParam, "yyyy-MM-dd").toFormat("MMMM d, yyyy") : "—";
+	const displayWeekday = dateParam ? DateTime.fromFormat(dateParam, "yyyy-MM-dd").toFormat("cccc") : "—";
 
 	return (
 		<PageLayout>
 			{/* ── Header ── */}
 			<header className={styles.header}>
 				<div className={styles.titleBlock}>
-					<span className={styles.dateLabel}>{utcToWeekday(dateParam, profile?.timezone || "America/Halifax")}</span>
-					<h1 className={styles.heading}>{utcToDate(dateParam, profile?.timezone || "America/Halifax")}</h1>
+					<span className={styles.dateLabel}>{displayWeekday}</span>
+					<h1 className={styles.heading}>{displayDate}</h1>
 					<div className={styles.metaRow}>
 						{!isShiftLoading && (
 							<span className={styles.countBadge}>
@@ -85,10 +99,11 @@ export default function ShiftDayPage() {
 							shift.caregiver?.firstName || shift.caregiver?.lastName
 								? `${shift.caregiver.firstName ?? ""} ${shift.caregiver.lastName ?? ""}`.trim()
 								: "Unassigned";
-						const clientName =
-							shift.client?.firstName || shift.client?.lastName
-								? `${shift.client.firstName ?? ""} ${shift.client.lastName ?? ""}`.trim()
-								: shift.client?.fullName || "—";
+						const targetName = shift.client
+							? `Client: ${shift.client.firstName ?? ""} ${shift.client.lastName ?? ""}`.trim()
+							: shift.home
+								? `Home: ${shift.home.name || shift.home._id || shift.home.id || ""}`.trim()
+								: "—";
 
 						return (
 							<div
@@ -115,10 +130,10 @@ export default function ShiftDayPage() {
 										<span className={styles.primaryText}>{caregiverName}</span>
 									</div>
 
-									{/* Client */}
+									{/* Target (Client/Home) */}
 									<div className={styles.infoRow}>
 										<ClipboardList size={16} className={styles.icon} />
-										<span className={styles.secondaryText}>{clientName}</span>
+										<span className={styles.secondaryText}>{targetName}</span>
 									</div>
 
 									{/* Location */}

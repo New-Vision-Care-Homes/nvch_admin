@@ -20,7 +20,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // react-big-calendar: the core calendar component + its date-fns adapter
@@ -56,7 +56,9 @@ import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { DateTime } from "luxon";
 
+const HALIFAX_TZ = "America/Halifax";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. CALENDAR LOCALIZER SETUP
@@ -143,6 +145,31 @@ function getDayColor(dateStr) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
+	const [deviceTimeZone, setDeviceTimeZone] = useState(null);
+	const [halifaxNowLabel, setHalifaxNowLabel] = useState("");
+
+	useEffect(() => {
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		setDeviceTimeZone(tz);
+
+		const update = () => {
+			setHalifaxNowLabel(DateTime.now().setZone(HALIFAX_TZ).toFormat("ccc, MMM d, yyyy • h:mm a"));
+		};
+
+		// Update immediately, then align to the next system minute boundary.
+		update();
+		const msToNextMinute = 60_000 - (Date.now() % 60_000);
+		let intervalId;
+		const timeoutId = setTimeout(() => {
+			update();
+			intervalId = setInterval(update, 60_000);
+		}, msToNextMinute);
+
+		return () => {
+			clearTimeout(timeoutId);
+			if (intervalId) clearInterval(intervalId);
+		};
+	}, []);
 
 	// Fetch all shifts from the API.
 	// useShifts() returns:
@@ -159,7 +186,17 @@ export default function SchedulingPage() {
 
 	// date: the "anchor" date the calendar is currently centered on.
 	// Changing this moves the calendar forward/backward (next week, prev month, etc.)
-	const [date, setDate] = useState(new Date());
+	const [date, setDate] = useState(() => {
+		const dt = DateTime.now().setZone(HALIFAX_TZ);
+		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
+	});
+
+	// react-big-calendar draws the "current time" indicator using `getNow()`.
+	// Override it so the red line always reflects Halifax wall-clock time.
+	const getNow = () => {
+		const dt = DateTime.now().setZone(HALIFAX_TZ);
+		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
+	};
 
 
 	// ───────────────────────────────────────────────────────────────────────
@@ -192,7 +229,7 @@ export default function SchedulingPage() {
 		// Step 1: Group shifts by their local calendar date string ("yyyy-MM-dd")
 		const dayGroups = {};
 		shifts.forEach((shift) => {
-			const shiftStart = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
+			const shiftStart = utcToZonedDateObject(shift.startTime, "America/Halifax");
 			const dateStr = format(shiftStart, "yyyy-MM-dd"); // e.g. "2025-04-24"
 
 			// Create a new group for this date if we haven't seen it yet
@@ -247,8 +284,8 @@ export default function SchedulingPage() {
 
 		const groups = {};
 		shifts.forEach((shift) => {
-			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
-			const end = utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax");
+			const start = utcToZonedDateObject(shift.startTime, "America/Halifax");
+			const end = utcToZonedDateObject(shift.endTime, "America/Halifax");
 
 			// Build the grouping key: full date+start_time combined with end time
 			const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
@@ -289,13 +326,13 @@ export default function SchedulingPage() {
 		if (!shifts || !Array.isArray(shifts)) return [];
 
 		return shifts.map((shift) => {
-			const start = utcToZonedDateObject(shift.startTime, profile?.timezone || "America/Halifax");
+			const start = utcToZonedDateObject(shift.startTime, "America/Halifax");
 			const dateStr = format(start, "yyyy-MM-dd"); // used for per-day coloring
 			return {
 				id: shift.id || shift._id,
 				title: `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end: utcToZonedDateObject(shift.endTime, profile?.timezone || "America/Halifax"),
+				end: utcToZonedDateObject(shift.endTime, "America/Halifax"),
 				_shift: shift,       // the full raw shift object (used to display address in the row)
 				_dateStr: dateStr,   // used by getDayColor() so all shifts on the same day share a color
 				_isAgenda: true,     // flag so CustomEvent renders the Agenda component
@@ -344,8 +381,8 @@ export default function SchedulingPage() {
 
 		// WEEK / DAY: go to the "shifts within this exact time slot" list page
 		// We pass the exact ISO start and end times so shift_list can filter precisely
-		const startStr = event.start.toISOString();
-		const endStr = event.end.toISOString();
+		const startStr = event.shifts[0].startTime;
+		const endStr = event.shifts[0].endTime;
 		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`);
 	};
 
@@ -365,8 +402,8 @@ export default function SchedulingPage() {
 	const MonthEventComponent = ({ event }) => {
 		const first = event._shifts?.[0];           // first shift in this day's group
 		const extra = event._count - 1;             // how many additional shifts are not shown
-		const startTime = first?.startTime ? format(utcToZonedDateObject(first.startTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
-		const endTime = first?.endTime ? format(utcToZonedDateObject(first.endTime, profile?.timezone || "America/Halifax"), "HH:mm") : "";
+		const startTime = first?.startTime ? format(utcToZonedDateObject(first.startTime, "America/Halifax"), "HH:mm") : "";
+		const endTime = first?.endTime ? format(utcToZonedDateObject(first.endTime, "America/Halifax"), "HH:mm") : "";
 		return (
 			<div className={styles.monthEvent}>
 				<div className={styles.monthEventRow}>
@@ -515,6 +552,14 @@ export default function SchedulingPage() {
 						</Link>
 					</div>
 
+					{/* Halifax current time (only when device TZ differs) */}
+					{deviceTimeZone && deviceTimeZone !== HALIFAX_TZ && (
+						<div className={styles.tzNotice}>
+							<Clock size={13} style={{ flexShrink: 0 }} />
+							<span>Current Halifax time: <strong>{halifaxNowLabel}</strong></span>
+						</div>
+					)}
+
 					{/* Calendar card — white rounded container holding the calendar */}
 					<div className={styles.calendarCard}>
 
@@ -546,6 +591,7 @@ export default function SchedulingPage() {
 								</div>
 							) : (
 								<Calendar
+									culture="en-CA"
 									localizer={localizer}        // date-fns adapter (required)
 									events={eventsToShow}         // the pre-processed event list for the active view
 									startAccessor="start"         // tells react-big-calendar which field is the event start
@@ -557,6 +603,7 @@ export default function SchedulingPage() {
 									onNavigate={setDate}          // updates `date` when user clicks prev/next/today
 									view={view}                   // the currently active view (controlled)
 									onView={setView}              // updates `view` when user switches tabs
+									getNow={getNow}               // ensures the "now" line uses Halifax time
 									className="my_calendar"       // hook for calendar.css global overrides
 									step={30}                     // each time slot = 30 minutes
 									timeslots={2}                 // 2 slots per step = one visual row per 30 min

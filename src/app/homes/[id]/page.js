@@ -11,7 +11,7 @@ import { useHomes } from "@/hooks/useHomes";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useGoogleMap } from "@/hooks/useGoogleMap";
+import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Edit, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
@@ -115,18 +115,11 @@ export default function HomeDetailPage() {
 		</div>
 	);
 
-	// Build the map center from stored GPS coords (or default)
 	const gpsCenter = home?.gpsCoordinates
 		? { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude }
 		: undefined;
 
-	const { mapRef, isLoaded } = useGoogleMap({
-		initialCenter: gpsCenter,
-		initialRadius: home?.defaultGeofence?.radius || 200,
-	});
-
-	if (isLoading) return <PageLayout><div>Loading home details...</div></PageLayout>;
-	if (fetchError || !home) return (
+	if (fetchError || isLoading) return (
 		<PageLayout>
 			<ErrorState
 				isLoading={isLoading}
@@ -165,12 +158,12 @@ export default function HomeDetailPage() {
 							<InfoItem label="Opened At">
 								{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 							</InfoItem>
-							<InfoItem label="Program Types">
-								<div className={styles.chipRow}>
-									{(home.programTypes || []).map(t => (
-										<span key={t} className={styles.chip}>{t}</span>
-									))}
-								</div>
+							<InfoItem label="Home Type">
+								{home.homeType ? (
+									<span className={styles.chip}>{home.homeType}</span>
+								) : (
+									"—"
+								)}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>
@@ -191,21 +184,13 @@ export default function HomeDetailPage() {
 								</span>
 							</div>
 						)}
-						{/* Geofence info */}
-						{home.defaultGeofence?.radius && (
-							<div className={styles.infoItem} style={{ marginBottom: '1rem' }}>
-								<span className={styles.infoLabel}>Geofence</span>
-								<span className={styles.infoValue}>
-									{home.defaultGeofence.radius} m ({home.defaultGeofence.shape})
-								</span>
-							</div>
-						)}
 						{/* Google Map */}
 						<div style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #DEE1E6FF' }}>
-							{isLoaded
-								? <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-								: <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', color: '#6b7280' }}>Loading map...</div>
-							}
+							<GeofenceMap
+								center={{ latitude: gpsCenter?.lat || 44.6488, longitude: gpsCenter?.lng || -63.5752 }}
+								radius={100}
+								height="100%"
+							/>
 						</div>
 					</CardContent>
 				</Card>
@@ -215,11 +200,6 @@ export default function HomeDetailPage() {
 					<CardHeader>Settings</CardHeader>
 					<CardContent>
 						<div className={styles.infoGrid}>
-							<InfoItem label="Night Checks">
-								<span className={`${styles.statusPill} ${home.nightChecksEnabled ? styles.statusEnabled : styles.statusDisabled}`}>
-									{home.nightChecksEnabled ? `Enabled — every ${home.nightCheckFrequency} min` : "Disabled"}
-								</span>
-							</InfoItem>
 							<InfoItem label="Allow Temporary Leave">
 								{home.allowTemporaryLeave ? "Yes" : "No"}
 							</InfoItem>
