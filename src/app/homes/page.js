@@ -7,7 +7,7 @@ import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import ReactPaginate from "react-paginate";
 import Link from "next/link";
-import { Edit, Trash2, Plus, Search } from "lucide-react";
+import { Eye, Trash2, Plus, Search } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -149,7 +149,7 @@ export default function Homes() {
 												{/* Actions */}
 												<TableCell>
 													<Link href={`/homes/${home.id || home._id}`}>
-														<Edit color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+														<Eye color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
 													</Link>
 													<Trash2
 														color="#ef4444"

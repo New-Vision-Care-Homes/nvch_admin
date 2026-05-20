@@ -21,6 +21,12 @@ import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
 
+const toBoolean = (value) => {
+	if (value === true || value === "true") return true;
+	if (value === false || value === "false") return false;
+	return value;
+};
+
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
@@ -30,18 +36,7 @@ const schema = yup.object({
 		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
 		.required("Home type is required"),
 
-	// Geofence
-	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
-	geofenceShape: yup.string().oneOf(["circle", "polygon"], "Invalid shape").required("Geofence shape is required"),
-
-	// Night Checks
-	nightChecksEnabled: yup.boolean(),
-	nightCheckFrequency: yup.number().positive("Frequency must be positive").nullable(),
-
-	// Settings
-	allowTemporaryLeave: yup.boolean(),
-	requireLocationCheckIn: yup.boolean(),
-	isActive: yup.boolean(),
+	isActive: yup.boolean().transform(toBoolean).nullable(),
 
 	openedAt: yup.date().nullable(),
 	notes: yup.string().nullable(),
@@ -63,17 +58,11 @@ export default function EditHomePage() {
 		actionError
 	} = useHomes(homeId);
 
-	const { register, handleSubmit, watch, control, formState: { errors }, setValue, reset } = useForm({
+	const { register, handleSubmit, control, formState: { errors }, setValue, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			homeType: "",
-			nightChecksEnabled: true,
-			nightCheckFrequency: 60,
-			allowTemporaryLeave: true,
-			requireLocationCheckIn: true,
 			isActive: true,
-			geofenceRadius: 100,
-			geofenceShape: "circle",
 		}
 	});
 
@@ -89,12 +78,7 @@ export default function EditHomePage() {
 				name: home.name,
 				region: home.region,
 				homeType: home.homeType || "",
-				geofenceRadius: 100,
-				nightChecksEnabled: home.nightChecksEnabled,
-				nightCheckFrequency: home.nightCheckFrequency,
-				allowTemporaryLeave: home.allowTemporaryLeave,
-				requireLocationCheckIn: home.requireLocationCheckIn,
-				isActive: home.isActive,
+				isActive: home.isActive ?? true,
 				openedAt: home.openedAt ? new Date(home.openedAt).toISOString().split('T')[0] : null,
 				notes: home.notes,
 				street: home.address?.street || "",
@@ -208,12 +192,14 @@ export default function EditHomePage() {
 	const debouncedSearchCaregivers = useCallback(debounce(searchCaregivers, 300), [selectedCaregivers]);
 	useEffect(() => { debouncedSearchCaregivers(caregiverSearch); }, [caregiverSearch, debouncedSearchCaregivers]);
 
+	const getStaffId = (person) => person._id || person.id;
+
 	const handleCaregiverSelect = (caregiver) => {
 		setSelectedCaregivers([...selectedCaregivers, caregiver]);
 		setCaregiverSearch("");
 		setShowCaregiverResults(false);
 	};
-	const removeCaregiver = (id) => { setSelectedCaregivers(selectedCaregivers.filter(c => c.id !== id)); };
+	const removeCaregiver = (id) => { setSelectedCaregivers(selectedCaregivers.filter(c => getStaffId(c) !== id)); };
 
 	// Search Clients
 	const [clientSearchParams, setClientSearchParams] = useState({});
@@ -232,7 +218,7 @@ export default function EditHomePage() {
 		if (!searchedClients || !clientSearchParams.search) return [];
 
 		return searchedClients.filter(client => {
-			const exists = selectedClients.find(c => c.id === client.id);
+			const exists = selectedClients.find(c => getStaffId(c) === getStaffId(client));
 			return !exists;
 		});
 	}, [searchedClients, clientSearchParams.search, selectedClients]);
@@ -245,7 +231,7 @@ export default function EditHomePage() {
 		setClientSearch("");
 		setShowClientResults(false);
 	};
-	const removeClient = (id) => { setSelectedClients(selectedClients.filter(c => c.id !== id)); };
+	const removeClient = (id) => { setSelectedClients(selectedClients.filter(c => getStaffId(c) !== id)); };
 
 	// Search Admins via useAdmins hook (GET /api/auth/admin/admins)
 	const [adminSearchParams, setAdminSearchParams] = useState({});
@@ -262,7 +248,7 @@ export default function EditHomePage() {
 	const adminResults = useMemo(() => {
 		if (!searchedAdmins || !adminSearchParams.search) return [];
 		return searchedAdmins.filter(
-			admin => !selectedAdmins.find(a => (a.id || a._id) === (admin.id || admin._id))
+			admin => !selectedAdmins.find(a => getStaffId(a) === getStaffId(admin))
 		);
 	}, [searchedAdmins, adminSearchParams.search, selectedAdmins]);
 
@@ -274,7 +260,7 @@ export default function EditHomePage() {
 		setAdminSearch("");
 		setShowAdminResults(false);
 	};
-	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => (a.id || a._id) !== id)); };
+	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
 
 	const onSubmit = async (data) => {
 		const homeData = {
@@ -294,13 +280,14 @@ export default function EditHomePage() {
 			},
 			defaultGeofence: {
 				radius: 100,
+				shape: "circle"
 			},
-			caregivers: selectedCaregivers.map(s => s.id),
-			admins: selectedAdmins.map(a => ({ admin: a.id, adminLevel: a.adminLevel || 'supervisor' })),
-			clients: selectedClients.map(c => c.id),
-			allowTemporaryLeave: data.allowTemporaryLeave || false,
-			requireLocationCheckIn: data.requireLocationCheckIn || false,
-			isActive: data.isActive || false,
+			caregivers: selectedCaregivers.map(s => getStaffId(s)),
+			admins: selectedAdmins.map(a => ({ admin: getStaffId(a), adminLevel: a.adminLevel || 'supervisor' })),
+			clients: selectedClients.map(c => getStaffId(c)),
+			allowTemporaryLeave: data.allowTemporaryLeave ?? false,
+			requireLocationCheckIn: data.requireLocationCheckIn ?? false,
+			isActive: data.isActive ?? false,
 			openedAt: data.openedAt || new Date().toISOString(),
 			notes: data.notes || "",
 		};
@@ -428,6 +415,7 @@ export default function EditHomePage() {
 												setShowCaregiverResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => caregiverSearch.length >= 2 && setShowCaregiverResults(true)}
+											onBlur={() => setTimeout(() => setShowCaregiverResults(false), 150)}
 											placeholder="Search caregivers..."
 											className={cardStyles.input}
 										/>
@@ -435,22 +423,22 @@ export default function EditHomePage() {
 											<div className={cardStyles.searchResults}>
 												{caregiverResults.map(caregiver => (
 													<div
-														key={caregiver.id}
-														onClick={() => handleCaregiverSelect(caregiver)}
+														key={getStaffId(caregiver)}
+														onMouseDown={() => handleCaregiverSelect(caregiver)}
 														className={cardStyles.searchItem}
 													>
-														<div style={{ fontWeight: '500' }}>{caregiver.firstName} {caregiver.lastName}</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>{caregiver.email || caregiver.phone}</div>
+														<span className={cardStyles.searchItemName}>{caregiver.firstName} {caregiver.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{caregiver.email || caregiver.phone}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-									<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+									<div className={cardStyles.badgeList}>
 										{selectedCaregivers.map(caregiver => (
-											<div key={caregiver.id} className={cardStyles.badge}>
+											<div key={getStaffId(caregiver)} className={`${cardStyles.badge} ${cardStyles.badgeCaregiver}`}>
 												<span>{caregiver.firstName} {caregiver.lastName}</span>
-												<X size={16} onClick={() => removeCaregiver(caregiver.id)} style={{ cursor: 'pointer' }} />
+												<X size={14} onClick={() => removeCaregiver(getStaffId(caregiver))} />
 											</div>
 										))}
 									</div>
@@ -468,25 +456,26 @@ export default function EditHomePage() {
 												setShowClientResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => clientSearch.length >= 2 && setShowClientResults(true)}
+											onBlur={() => setTimeout(() => setShowClientResults(false), 150)}
 											placeholder="Search clients..."
 											className={cardStyles.input}
 										/>
 										{showClientResults && clientResults.length > 0 && (
 											<div className={cardStyles.searchResults}>
 												{clientResults.map(client => (
-													<div key={client.id} onClick={() => handleClientSelect(client)} className={cardStyles.searchItem}>
-														<div style={{ fontWeight: '500' }}>{client.firstName} {client.lastName}</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>{client.email || client.phone}</div>
+													<div key={getStaffId(client)} onMouseDown={() => handleClientSelect(client)} className={cardStyles.searchItem}>
+														<span className={cardStyles.searchItemName}>{client.firstName} {client.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{client.email || client.phone}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-									<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+									<div className={cardStyles.badgeList}>
 										{selectedClients.map(client => (
-											<div key={client.id} className={cardStyles.badge} style={{ background: '#e8f5e9' }}>
+											<div key={getStaffId(client)} className={`${cardStyles.badge} ${cardStyles.badgeClient}`}>
 												<span>{client.firstName} {client.lastName}</span>
-												<X size={16} onClick={() => removeClient(client.id)} style={{ cursor: 'pointer' }} />
+												<X size={14} onClick={() => removeClient(getStaffId(client))} />
 											</div>
 										))}
 									</div>
@@ -504,25 +493,26 @@ export default function EditHomePage() {
 												setShowAdminResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => adminSearch.length >= 2 && setShowAdminResults(true)}
+											onBlur={() => setTimeout(() => setShowAdminResults(false), 150)}
 											placeholder="Search admins..."
 											className={cardStyles.input}
 										/>
 										{showAdminResults && adminResults.length > 0 && (
 											<div className={cardStyles.searchResults}>
 												{adminResults.map(admin => (
-													<div key={admin.id || admin._id} onClick={() => handleAdminSelect(admin)} className={cardStyles.searchItem}>
-														<div style={{ fontWeight: '500' }}>{admin.firstName} {admin.lastName}</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>{admin.email}</div>
+													<div key={getStaffId(admin)} onMouseDown={() => handleAdminSelect(admin)} className={cardStyles.searchItem}>
+														<span className={cardStyles.searchItemName}>{admin.firstName} {admin.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{admin.email}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-									<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+									<div className={cardStyles.badgeList}>
 										{selectedAdmins.map(admin => (
-											<div key={admin.id || admin._id} className={cardStyles.badge} style={{ background: '#f3e5f5' }}>
+											<div key={getStaffId(admin)} className={`${cardStyles.badge} ${cardStyles.badgeAdmin}`}>
 												<span>{admin.firstName} {admin.lastName}</span>
-												<X size={16} onClick={() => removeAdmin(admin.id || admin._id)} style={{ cursor: 'pointer' }} />
+												<X size={14} onClick={() => removeAdmin(getStaffId(admin))} />
 											</div>
 										))}
 									</div>
@@ -567,37 +557,6 @@ export default function EditHomePage() {
 										<strong>Selected Address:</strong> {mapAddress}
 									</div>
 								)}
-							</CardContent>
-						</Card>
-
-						{/* Additional Settings */}
-						<Card>
-							<CardHeader>Additional Settings</CardHeader>
-							<CardContent>
-								<div className={styles.row2}>
-									<InputField
-										label="Allow Temporary Leave"
-										name="allowTemporaryLeave"
-										type="select"
-										register={register}
-										error={errors.allowTemporaryLeave}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-									<InputField
-										label="Require Location Check-In"
-										name="requireLocationCheckIn"
-										type="select"
-										register={register}
-										error={errors.requireLocationCheckIn}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-								</div>
 							</CardContent>
 						</Card>
 					</div>

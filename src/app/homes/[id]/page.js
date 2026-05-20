@@ -195,20 +195,6 @@ export default function HomeDetailPage() {
 					</CardContent>
 				</Card>
 
-				{/* Settings */}
-				<Card>
-					<CardHeader>Settings</CardHeader>
-					<CardContent>
-						<div className={styles.infoGrid}>
-							<InfoItem label="Allow Temporary Leave">
-								{home.allowTemporaryLeave ? "Yes" : "No"}
-							</InfoItem>
-							<InfoItem label="Require Location Check-In">
-								{home.requireLocationCheckIn ? "Yes" : "No"}
-							</InfoItem>
-						</div>
-					</CardContent>
-				</Card>
 
 				{/* Caregivers */}
 				<Card>

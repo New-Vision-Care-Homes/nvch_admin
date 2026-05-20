@@ -25,21 +25,11 @@ const schema = yup.object({
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
+
 	homeType: yup.string()
 		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
 		.required("Home type is required"),
 
-	// Geofence
-	geofenceRadius: yup.number().positive("Radius must be positive").required("Geofence radius is required"),
-	geofenceShape: yup.string().oneOf(["circle", "polygon"], "Invalid shape").required("Geofence shape is required"),
-
-	// Night Checks
-	nightChecksEnabled: yup.boolean(),
-	nightCheckFrequency: yup.number().positive("Frequency must be positive").nullable(),
-
-	// Settings
-	allowTemporaryLeave: yup.boolean(),
-	requireLocationCheckIn: yup.boolean(),
 	isActive: yup.boolean(),
 
 	openedAt: yup.date().nullable(),
@@ -56,12 +46,9 @@ export default function AddNewHomePage() {
 		resolver: yupResolver(schema),
 		defaultValues: {
 			homeType: "",
-			nightChecksEnabled: true,
-			nightCheckFrequency: 60,
-			allowTemporaryLeave: true,
-			requireLocationCheckIn: true,
+
 			isActive: true,
-			geofenceRadius: 200,
+			geofenceRadius: 100,
 			geofenceShape: "circle",
 		}
 	});
@@ -70,9 +57,6 @@ export default function AddNewHomePage() {
 	const [mapCenter, setMapCenter] = useState({ lat: 44.6488, lng: -63.5752 }); // Default Halifax
 	const [mapAddress, setMapAddress] = useState("");
 	const mapRefsRef = useRef(null);
-
-	const geofenceRadius = watch("geofenceRadius");
-	const nightChecksEnabled = watch("nightChecksEnabled");
 
 	// Auto-fill address fields and pan map when address is selected from autocomplete
 	const handleAddressSelect = useCallback((data) => {
@@ -149,15 +133,14 @@ export default function AddNewHomePage() {
 		debouncedSearchCaregivers(caregiverSearch);
 	}, [caregiverSearch, debouncedSearchCaregivers]);
 
+	const getStaffId = (person) => person._id || person.id;
+
 	const handleCaregiverSelect = (caregiver) => {
 		setSelectedCaregivers([...selectedCaregivers, caregiver]);
 		setCaregiverSearch("");
 		setShowCaregiverResults(false);
 	};
-
-	const removeCaregiver = (id) => {
-		setSelectedCaregivers(selectedCaregivers.filter(c => c.id !== id));
-	};
+	const removeCaregiver = (id) => { setSelectedCaregivers(selectedCaregivers.filter(c => getStaffId(c) !== id)); };
 
 	// Search Clients
 	const [clientSearchParams, setClientSearchParams] = useState({});
@@ -178,7 +161,7 @@ export default function AddNewHomePage() {
 		if (!searchedClients || !clientSearchParams.search) return [];
 
 		return searchedClients.filter(client => {
-			const exists = selectedClients.find(c => c.id === client.id);
+			const exists = selectedClients.find(c => getStaffId(c) === getStaffId(client));
 			return !exists;
 		});
 	}, [searchedClients, clientSearchParams.search, selectedClients]);
@@ -194,10 +177,7 @@ export default function AddNewHomePage() {
 		setClientSearch("");
 		setShowClientResults(false);
 	};
-
-	const removeClient = (id) => {
-		setSelectedClients(selectedClients.filter(c => c.id !== id));
-	};
+	const removeClient = (id) => { setSelectedClients(selectedClients.filter(c => getStaffId(c) !== id)); };
 
 	// Search Admins via useAdmins hook (GET /api/auth/admin/admins)
 	const [adminSearchParams, setAdminSearchParams] = useState({});
@@ -214,25 +194,19 @@ export default function AddNewHomePage() {
 	const adminResults = useMemo(() => {
 		if (!searchedAdmins || !adminSearchParams.search) return [];
 		return searchedAdmins.filter(
-			admin => !selectedAdmins.find(a => (a.id || a._id) === (admin.id || admin._id))
+			admin => !selectedAdmins.find(a => getStaffId(a) === getStaffId(admin))
 		);
 	}, [searchedAdmins, adminSearchParams.search, selectedAdmins]);
 
 	const debouncedSearchAdmins = useCallback(debounce(searchAdmins, 300), [selectedAdmins]);
-
-	useEffect(() => {
-		debouncedSearchAdmins(adminSearch);
-	}, [adminSearch, debouncedSearchAdmins]);
+	useEffect(() => { debouncedSearchAdmins(adminSearch); }, [adminSearch, debouncedSearchAdmins]);
 
 	const handleAdminSelect = (admin) => {
-		setSelectedAdmins([...selectedAdmins, admin]);
+		setSelectedAdmins([...selectedAdmins, { ...admin, adminLevel: 'supervisor' }]);
 		setAdminSearch("");
 		setShowAdminResults(false);
 	};
-
-	const removeAdmin = (id) => {
-		setSelectedAdmins(selectedAdmins.filter(a => (a.id || a._id) !== id));
-	};
+	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
 
 	const onSubmit = async (data) => {
 		const homeData = {
@@ -254,9 +228,9 @@ export default function AddNewHomePage() {
 				radius: data.geofenceRadius,
 				shape: data.geofenceShape,
 			},
-			caregivers: selectedCaregivers.map(s => s.id),
-			admins: selectedAdmins.map(a => ({ admin: a.id, adminLevel: "supervisor" })),
-			clients: selectedClients.map(c => c.id),
+			caregivers: selectedCaregivers.map(s => getStaffId(s)),
+			admins: selectedAdmins.map(a => ({ admin: getStaffId(a), adminLevel: a.adminLevel || 'supervisor' })),
+			clients: selectedClients.map(c => getStaffId(c)),
 			nightChecksEnabled: data.nightChecksEnabled || false,
 			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
@@ -380,74 +354,33 @@ export default function AddNewHomePage() {
 												setShowCaregiverResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => caregiverSearch.length >= 2 && setShowCaregiverResults(true)}
-											placeholder="Search caregivers by name..."
+											onBlur={() => setTimeout(() => setShowCaregiverResults(false), 150)}
+											placeholder="Search caregivers..."
 											className={cardStyles.input}
 										/>
 										{showCaregiverResults && caregiverResults.length > 0 && (
-											<div style={{
-												position: 'absolute',
-												top: '100%',
-												left: 0,
-												right: 0,
-												background: 'white',
-												border: '1px solid #DEE1E6FF',
-												borderRadius: '6px',
-												maxHeight: '200px',
-												overflowY: 'auto',
-												zIndex: 10,
-												marginTop: '4px',
-												boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-											}}>
+											<div className={cardStyles.searchResults}>
 												{caregiverResults.map(caregiver => (
 													<div
-														key={caregiver.id}
-														onClick={() => handleCaregiverSelect(caregiver)}
-														style={{
-															padding: '0.75rem',
-															cursor: 'pointer',
-															borderBottom: '1px solid #f0f0f0'
-														}}
-														onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
-														onMouseLeave={(e) => e.target.style.background = 'white'}
+														key={getStaffId(caregiver)}
+														onMouseDown={() => handleCaregiverSelect(caregiver)}
+														className={cardStyles.searchItem}
 													>
-														<div style={{ fontWeight: '500' }}>
-															{caregiver.firstName} {caregiver.lastName}
-														</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>
-															{caregiver.email || caregiver.phone}
-														</div>
+														<span className={cardStyles.searchItemName}>{caregiver.firstName} {caregiver.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{caregiver.email || caregiver.phone}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-
-									{/* Selected Caregivers */}
-									{selectedCaregivers.length > 0 && (
-										<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-											{selectedCaregivers.map(caregiver => (
-												<div
-													key={caregiver.id}
-													style={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: '0.5rem',
-														padding: '0.5rem 0.75rem',
-														background: '#e3f2fd',
-														borderRadius: '20px',
-														fontSize: '0.9rem'
-													}}
-												>
-													<span>{caregiver.firstName} {caregiver.lastName}</span>
-													<X
-														size={16}
-														style={{ cursor: 'pointer' }}
-														onClick={() => removeCaregiver(caregiver.id)}
-													/>
-												</div>
-											))}
-										</div>
-									)}
+									<div className={cardStyles.badgeList}>
+										{selectedCaregivers.map(caregiver => (
+											<div key={getStaffId(caregiver)} className={`${cardStyles.badge} ${cardStyles.badgeCaregiver}`}>
+												<span>{caregiver.firstName} {caregiver.lastName}</span>
+												<X size={14} onClick={() => removeCaregiver(getStaffId(caregiver))} />
+											</div>
+										))}
+									</div>
 								</div>
 
 								{/* Clients */}
@@ -462,74 +395,29 @@ export default function AddNewHomePage() {
 												setShowClientResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => clientSearch.length >= 2 && setShowClientResults(true)}
-											placeholder="Search clients by name..."
+											onBlur={() => setTimeout(() => setShowClientResults(false), 150)}
+											placeholder="Search clients..."
 											className={cardStyles.input}
 										/>
 										{showClientResults && clientResults.length > 0 && (
-											<div style={{
-												position: 'absolute',
-												top: '100%',
-												left: 0,
-												right: 0,
-												background: 'white',
-												border: '1px solid #DEE1E6FF',
-												borderRadius: '6px',
-												maxHeight: '200px',
-												overflowY: 'auto',
-												zIndex: 10,
-												marginTop: '4px',
-												boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-											}}>
+											<div className={cardStyles.searchResults}>
 												{clientResults.map(client => (
-													<div
-														key={client.id}
-														onClick={() => handleClientSelect(client)}
-														style={{
-															padding: '0.75rem',
-															cursor: 'pointer',
-															borderBottom: '1px solid #f0f0f0'
-														}}
-														onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
-														onMouseLeave={(e) => e.target.style.background = 'white'}
-													>
-														<div style={{ fontWeight: '500' }}>
-															{client.firstName} {client.lastName}
-														</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>
-															{client.email || client.phone}
-														</div>
+													<div key={getStaffId(client)} onMouseDown={() => handleClientSelect(client)} className={cardStyles.searchItem}>
+														<span className={cardStyles.searchItemName}>{client.firstName} {client.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{client.email || client.phone}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-
-									{/* Selected Clients */}
-									{selectedClients.length > 0 && (
-										<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-											{selectedClients.map(client => (
-												<div
-													key={client.id}
-													style={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: '0.5rem',
-														padding: '0.5rem 0.75rem',
-														background: '#e8f5e9',
-														borderRadius: '20px',
-														fontSize: '0.9rem'
-													}}
-												>
-													<span>{client.firstName} {client.lastName}</span>
-													<X
-														size={16}
-														style={{ cursor: 'pointer' }}
-														onClick={() => removeClient(client.id)}
-													/>
-												</div>
-											))}
-										</div>
-									)}
+									<div className={cardStyles.badgeList}>
+										{selectedClients.map(client => (
+											<div key={getStaffId(client)} className={`${cardStyles.badge} ${cardStyles.badgeClient}`}>
+												<span>{client.firstName} {client.lastName}</span>
+												<X size={14} onClick={() => removeClient(getStaffId(client))} />
+											</div>
+										))}
+									</div>
 								</div>
 
 								{/* Admins */}
@@ -544,74 +432,29 @@ export default function AddNewHomePage() {
 												setShowAdminResults(e.target.value.length >= 2);
 											}}
 											onFocus={() => adminSearch.length >= 2 && setShowAdminResults(true)}
-											placeholder="Search admins by name or email..."
+											onBlur={() => setTimeout(() => setShowAdminResults(false), 150)}
+											placeholder="Search admins..."
 											className={cardStyles.input}
 										/>
 										{showAdminResults && adminResults.length > 0 && (
-											<div style={{
-												position: 'absolute',
-												top: '100%',
-												left: 0,
-												right: 0,
-												background: 'white',
-												border: '1px solid #DEE1E6FF',
-												borderRadius: '6px',
-												maxHeight: '200px',
-												overflowY: 'auto',
-												zIndex: 10,
-												marginTop: '4px',
-												boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-											}}>
+											<div className={cardStyles.searchResults}>
 												{adminResults.map(admin => (
-													<div
-														key={admin.id || admin._id}
-														onClick={() => handleAdminSelect(admin)}
-														style={{
-															padding: '0.75rem',
-															cursor: 'pointer',
-															borderBottom: '1px solid #f0f0f0'
-														}}
-														onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
-														onMouseLeave={(e) => e.target.style.background = 'white'}
-													>
-														<div style={{ fontWeight: '500' }}>
-															{admin.firstName} {admin.lastName}
-														</div>
-														<div style={{ fontSize: '0.85rem', color: '#666' }}>
-															{admin.email}
-														</div>
+													<div key={getStaffId(admin)} onMouseDown={() => handleAdminSelect(admin)} className={cardStyles.searchItem}>
+														<span className={cardStyles.searchItemName}>{admin.firstName} {admin.lastName}</span>
+														<span className={cardStyles.searchItemSub}>{admin.email}</span>
 													</div>
 												))}
 											</div>
 										)}
 									</div>
-
-									{/* Selected Admins */}
-									{selectedAdmins.length > 0 && (
-										<div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-											{selectedAdmins.map(admin => (
-												<div
-													key={admin.id || admin._id}
-													style={{
-														display: 'flex',
-														alignItems: 'center',
-														gap: '0.5rem',
-														padding: '0.5rem 0.75rem',
-														background: '#f3e5f5',
-														borderRadius: '20px',
-														fontSize: '0.9rem'
-													}}
-												>
-													<span>{admin.firstName} {admin.lastName}</span>
-													<X
-														size={16}
-														style={{ cursor: 'pointer' }}
-														onClick={() => removeAdmin(admin.id || admin._id)}
-													/>
-												</div>
-											))}
-										</div>
-									)}
+									<div className={cardStyles.badgeList}>
+										{selectedAdmins.map(admin => (
+											<div key={getStaffId(admin)} className={`${cardStyles.badge} ${cardStyles.badgeAdmin}`}>
+												<span>{admin.firstName} {admin.lastName}</span>
+												<X size={14} onClick={() => removeAdmin(getStaffId(admin))} />
+											</div>
+										))}
+									</div>
 								</div>
 							</CardContent>
 						</Card>
@@ -642,31 +485,9 @@ export default function AddNewHomePage() {
 								}}>
 									<GeofenceMap
 										center={mapCenter}
-										radius={geofenceRadius}
+										radius={100}
 										onMapReady={(refs) => { mapRefsRef.current = refs; }}
 										height="100%"
-									/>
-								</div>
-
-								{/* Geofence Controls */}
-								<div className={styles.row2}>
-									<InputField
-										label="Geofence Radius (meters)"
-										name="geofenceRadius"
-										type="number"
-										register={register}
-										error={errors.geofenceRadius}
-									/>
-									<InputField
-										label="Geofence Shape"
-										name="geofenceShape"
-										type="select"
-										register={register}
-										error={errors.geofenceShape}
-										options={[
-											{ label: "Circle", value: "circle" },
-											{ label: "Polygon", value: "polygon" }
-										]}
 									/>
 								</div>
 
@@ -682,66 +503,6 @@ export default function AddNewHomePage() {
 										<strong>Selected Address:</strong> {mapAddress}
 									</div>
 								)}
-							</CardContent>
-						</Card>
-
-						{/* Night Check Configuration */}
-						<Card>
-							<CardHeader>Night Check Configuration</CardHeader>
-							<CardContent>
-								<div className={styles.row2}>
-									<InputField
-										label="Night Checks Enabled"
-										name="nightChecksEnabled"
-										type="select"
-										register={register}
-										error={errors.nightChecksEnabled}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-									{nightChecksEnabled && (
-										<InputField
-											label="Check Frequency (minutes)"
-											name="nightCheckFrequency"
-											type="number"
-											register={register}
-											error={errors.nightCheckFrequency}
-										/>
-									)}
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Additional Settings */}
-						<Card>
-							<CardHeader>Additional Settings</CardHeader>
-							<CardContent>
-								<div className={styles.row2}>
-									<InputField
-										label="Allow Temporary Leave"
-										name="allowTemporaryLeave"
-										type="select"
-										register={register}
-										error={errors.allowTemporaryLeave}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-									<InputField
-										label="Require Location Check-In"
-										name="requireLocationCheckIn"
-										type="select"
-										register={register}
-										error={errors.requireLocationCheckIn}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-								</div>
 							</CardContent>
 						</Card>
 					</div>
