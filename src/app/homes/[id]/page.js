@@ -184,20 +184,11 @@ export default function HomeDetailPage() {
 								</span>
 							</div>
 						)}
-						{/* Geofence info */}
-						{home.defaultGeofence?.radius && (
-							<div className={styles.infoItem} style={{ marginBottom: '1rem' }}>
-								<span className={styles.infoLabel}>Geofence</span>
-								<span className={styles.infoValue}>
-									{home.defaultGeofence.radius} m ({home.defaultGeofence.shape})
-								</span>
-							</div>
-						)}
 						{/* Google Map */}
 						<div style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #DEE1E6FF' }}>
 							<GeofenceMap
 								center={{ latitude: gpsCenter?.lat || 44.6488, longitude: gpsCenter?.lng || -63.5752 }}
-								radius={home?.defaultGeofence?.radius || 100}
+								radius={100}
 								height="100%"
 							/>
 						</div>
@@ -209,11 +200,6 @@ export default function HomeDetailPage() {
 					<CardHeader>Settings</CardHeader>
 					<CardContent>
 						<div className={styles.infoGrid}>
-							<InfoItem label="Night Checks">
-								<span className={`${styles.statusPill} ${home.nightChecksEnabled ? styles.statusEnabled : styles.statusDisabled}`}>
-									{home.nightChecksEnabled ? `Enabled — every ${home.nightCheckFrequency} min` : "Disabled"}
-								</span>
-							</InfoItem>
 							<InfoItem label="Allow Temporary Leave">
 								{home.allowTemporaryLeave ? "Yes" : "No"}
 							</InfoItem>

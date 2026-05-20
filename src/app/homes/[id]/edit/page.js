@@ -71,7 +71,7 @@ export default function EditHomePage() {
 			allowTemporaryLeave: true,
 			requireLocationCheckIn: true,
 			isActive: true,
-			geofenceRadius: 200,
+			geofenceRadius: 100,
 			geofenceShape: "circle",
 		}
 	});
@@ -88,8 +88,7 @@ export default function EditHomePage() {
 				name: home.name,
 				region: home.region,
 				homeType: home.homeType || "",
-				geofenceRadius: home.defaultGeofence?.radius || 200,
-				geofenceShape: home.defaultGeofence?.shape || "circle",
+				geofenceRadius: 100,
 				nightChecksEnabled: home.nightChecksEnabled,
 				nightCheckFrequency: home.nightCheckFrequency,
 				allowTemporaryLeave: home.allowTemporaryLeave,
@@ -166,11 +165,6 @@ export default function EditHomePage() {
 			}
 		}
 	}, [setValue]);
-
-	const geofenceRadius = watch("geofenceRadius");
-	const nightChecksEnabled = watch("nightChecksEnabled");
-
-
 
 	// Caregiver Search States
 	const [caregiverSearch, setCaregiverSearch] = useState("");
@@ -298,14 +292,11 @@ export default function EditHomePage() {
 				longitude: mapCenter.lng,
 			},
 			defaultGeofence: {
-				radius: data.geofenceRadius,
-				shape: data.geofenceShape,
+				radius: 100,
 			},
 			caregivers: selectedCaregivers.map(s => s.id),
 			admins: selectedAdmins.map(a => ({ admin: a.id, adminLevel: a.adminLevel || 'supervisor' })),
 			clients: selectedClients.map(c => c.id),
-			nightChecksEnabled: data.nightChecksEnabled || false,
-			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
 			requireLocationCheckIn: data.requireLocationCheckIn || false,
 			isActive: data.isActive || false,
@@ -564,24 +555,9 @@ export default function EditHomePage() {
 								}}>
 									<GeofenceMap
 										center={mapCenter}
-										radius={geofenceRadius}
+										radius={100}
 										onMapReady={(refs) => { mapRefsRef.current = refs; }}
 										height="100%"
-									/>
-								</div>
-
-								<div className={styles.row2}>
-									<InputField label="Geofence Radius (meters)" name="geofenceRadius" type="number" register={register} error={errors.geofenceRadius} />
-									<InputField
-										label="Geofence Shape"
-										name="geofenceShape"
-										type="select"
-										register={register}
-										error={errors.geofenceShape}
-										options={[
-											{ label: "Circle", value: "circle" },
-											{ label: "Polygon", value: "polygon" }
-										]}
 									/>
 								</div>
 
@@ -590,29 +566,6 @@ export default function EditHomePage() {
 										<strong>Selected Address:</strong> {mapAddress}
 									</div>
 								)}
-							</CardContent>
-						</Card>
-
-						{/* Night Check Configuration */}
-						<Card>
-							<CardHeader>Night Check Configuration</CardHeader>
-							<CardContent>
-								<div className={styles.row2}>
-									<InputField
-										label="Night Checks Enabled"
-										name="nightChecksEnabled"
-										type="select"
-										register={register}
-										error={errors.nightChecksEnabled}
-										options={[
-											{ label: "Yes", value: true },
-											{ label: "No", value: false }
-										]}
-									/>
-									{nightChecksEnabled && (
-										<InputField label="Check Frequency (minutes)" name="nightCheckFrequency" type="number" register={register} error={errors.nightCheckFrequency} />
-									)}
-								</div>
 							</CardContent>
 						</Card>
 

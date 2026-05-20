@@ -430,3 +430,113 @@
 		justify-content: center;
 	}
 }
+
+/* ── Cell helpers (from Focus Notes table) ────────────────────────────────── */
+.tdDate {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	color: #6b7280;
+	font-size: 0.8rem;
+}
+
+.tdAuthor {
+	font-weight: 600;
+	color: #111827;
+	white-space: nowrap;
+}
+
+.tdShift {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	white-space: nowrap;
+}
+
+.shiftTime {
+	font-size: 0.78rem;
+	color: #374151;
+	font-variant-numeric: tabular-nums;
+}
+
+.shiftArrow {
+	font-size: 0.7rem;
+	color: #d1d5db;
+}
+
+.tdNote {
+	max-width: 200px;
+	color: #4b5563;
+	line-height: 1.5;
+}
+
+.tdAction {
+	text-align: center;
+	white-space: nowrap;
+	width: 48px;
+}
+
+.cellEmpty {
+	color: #d1d5db;
+	font-style: italic;
+}
+
+.updatedRole {
+	font-weight: 400;
+	color: #9ca3af;
+	font-size: 0.76rem;
+}
+
+/* ── Role badge ───────────────────────────────────────────────────────────── */
+.roleBadge {
+	display: inline-block;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: capitalize;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+}
+
+.roleCaregiver { background: #ede9fe; color: #6d28d9; }
+.roleAdmin     { background: #dbeafe; color: #1d4ed8; }
+.roleSupervisor{ background: #fef3c7; color: #92400e; }
+.roleDefault   { background: #f3f4f6; color: #374151; }
+
+/* ── Shift status badge ───────────────────────────────────────────────────── */
+.statusBadge {
+	display: inline-block;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: capitalize;
+	white-space: nowrap;
+}
+
+.statusScheduled  { background: #e0f2fe; color: #0369a1; }
+.statusInProgress { background: #fef3c7; color: #92400e; }
+.statusCompleted  { background: #dcfce7; color: #166534; }
+.statusCancelled  { background: #fee2e2; color: #991b1b; }
+.statusMissed     { background: #f3f4f6; color: #374151; }
+
+/* ── Action button ────────────────────────────────────────────────────────── */
+.actionBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 7px;
+	border: 1px solid #e5e7eb;
+	background: #f9fafb;
+	color: #6b7280;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.actionBtn:hover {
+	background: #eff6ff;
+	border-color: #bfdbfe;
+	color: #1d4ed8;
+}

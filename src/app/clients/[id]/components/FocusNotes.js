@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import ErrorState from "@components/UI/ErrorState";
-import { FileText, Download, Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Table2, Table2Pagination } from "@components/UI/Table";
+import { FileText, Download, Search, ExternalLink } from "lucide-react";
 import styles from "./FocusNotes.module.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,39 +88,41 @@ export default function FocusNotes() {
 	const { id } = useParams();
 	const router = useRouter();
 
-	const { focusNotesOfClient, isFocusNotesOfClientLoading, fetchError } = useFocusNotes(id);
-
-	// Use real data if available, fall back to mock for layout preview
-	const allNotes = focusNotesOfClient.length > 0 ? focusNotesOfClient : MOCK_NOTES;
-	const isMock = focusNotesOfClient.length === 0 && !isFocusNotesOfClientLoading && !fetchError;
-
 	// ── Filter + search state
 	const [search, setSearch] = useState("");
 	const [roleFilter, setRoleFilter] = useState("all");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [page, setPage] = useState(1);
 
-	// ── Filtered + paginated data
-	const filtered = useMemo(() => {
-		return allNotes.filter((n) => {
-			const matchSearch =
-				!search ||
-				personName(n.createdBy).toLowerCase().includes(search.toLowerCase()) ||
-				(n.opportunitiesConcerns || "").toLowerCase().includes(search.toLowerCase()) ||
-				(n.successes || "").toLowerCase().includes(search.toLowerCase()) ||
-				(n.generalNotes || "").toLowerCase().includes(search.toLowerCase());
+	// Build query parameters to send to the backend
+	const queryParams = useMemo(() => {
+		const params = { page, limit: PAGE_SIZE };
+		// Pass filters only if they are being used
+		if (search) params.search = search;
+		if (roleFilter !== "all") params.role = roleFilter;
+		if (statusFilter !== "all") params.status = statusFilter;
+		return params;
+	}, [page, search, roleFilter, statusFilter]);
 
-			const matchRole = roleFilter === "all" || n.createdByRole === roleFilter;
-			const matchStatus = statusFilter === "all" || n.shift?.status === statusFilter;
+	// Fetch data from the backend using the dynamic query parameters
+	const {
+		focusNotesOfClient,
+		pagination,
+		isFocusNotesOfClientLoading,
+		fetchError
+	} = useFocusNotes(id, queryParams);
+	console.log(focusNotesOfClient);
 
-			return matchSearch && matchRole && matchStatus;
-		});
-	}, [allNotes, search, roleFilter, statusFilter]);
+	// Use real data if available, fall back to mock for layout preview only if no data and not loading
+	const pageNotes = focusNotesOfClient.length > 0 ? focusNotesOfClient : (isFocusNotesOfClientLoading ? [] : MOCK_NOTES);
+	const isMock = focusNotesOfClient.length === 0 && !isFocusNotesOfClientLoading && !fetchError;
 
-	const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-	const currentPage = Math.min(page, totalPages);
-	const pageNotes = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+	// Extract pagination info from the backend response, falling back to defaults
+	const currentPage = pagination?.currentPage || page;
+	const totalPages = pagination?.totalPages || 1;
+	const totalItems = pagination?.totalItems || pageNotes.length;
 
+	// When filters change, reset to page 1
 	const handleSearchChange = (e) => { setSearch(e.target.value); setPage(1); };
 	const handleRoleChange = (e) => { setRoleFilter(e.target.value); setPage(1); };
 	const handleStatusChange = (e) => { setStatusFilter(e.target.value); setPage(1); };
@@ -127,6 +130,86 @@ export default function FocusNotes() {
 	if (isFocusNotesOfClientLoading || fetchError) {
 		return <ErrorState isLoading={isFocusNotesOfClientLoading} errorMessage={fetchError} />;
 	}
+
+	// ── Table Configuration ────────────────────────────────────────────────
+
+	const tableColumns = [
+		{
+			label: "Date",
+			className: styles.tdDate,
+			render: (note) => note.createdAt ? utcToFullDisplay(note.createdAt, TZ) : "—"
+		},
+		{
+			label: "Created By",
+			className: styles.tdAuthor,
+			render: (note) => personName(note.createdBy)
+		},
+		{
+			label: "Role",
+			render: (note) => (
+				<span className={`${styles.roleBadge} ${ROLE_CLASS[note.createdByRole] || styles.roleDefault}`}>
+					{note.createdByRole || "—"}
+				</span>
+			)
+		},
+		{
+			label: "Shift Window",
+			className: styles.tdShift,
+			render: (note) => {
+				const start = note.shift?.startTime ? utcToFullDisplay(note.shift.startTime, TZ) : "—";
+				const end = note.shift?.endTime ? utcToFullDisplay(note.shift.endTime, TZ) : "—";
+				return (
+					<>
+						<span className={styles.shiftTime}>{start}</span>
+						<span className={styles.shiftArrow}>→</span>
+						<span className={styles.shiftTime}>{end}</span>
+					</>
+				);
+			}
+		},
+		{
+			label: "Shift Status",
+			render: (note) => {
+				const status = note.shift?.status;
+				if (!status) return <span className={styles.cellEmpty}>—</span>;
+				return (
+					<span className={`${styles.statusBadge} ${STATUS_CLASS[status] || ""}`}>
+						{status.replace(/_/g, " ")}
+					</span>
+				);
+			}
+		},
+		{ label: "Opportunities / Concerns", className: styles.tdNote, render: (note) => truncate(note.opportunitiesConcerns) },
+		{ label: "Successes", className: styles.tdNote, render: (note) => truncate(note.successes) },
+		{ label: "General Notes", className: styles.tdNote, render: (note) => truncate(note.generalNotes) },
+		{
+			label: "Last Edited By",
+			className: styles.tdAuthor,
+			render: (note) => {
+				if (!note.updatedBy) return <span className={styles.cellEmpty}>—</span>;
+				return (
+					<>
+						{personName(note.updatedBy)}
+						<span className={styles.updatedRole}> ({note.updatedByRole})</span>
+					</>
+				);
+			}
+		},
+		{
+			label: "",
+			className: styles.tdAction,
+			headerClassName: styles.tdAction,
+			render: (note) => (
+				<button
+					className={styles.actionBtn}
+					title="View focus note detail"
+					onClick={() => router.push(`/focus_notes/${note._id}`)}
+				>
+					<ExternalLink size={14} />
+				</button>
+			)
+		}
+	];
 
 	return (
 		<div className={styles.root}>
@@ -136,7 +219,7 @@ export default function FocusNotes() {
 				<div className={styles.toolbarLeft}>
 					<FileText size={16} className={styles.toolbarIcon} />
 					<span className={styles.toolbarTitle}>Focus Notes</span>
-					<span className={styles.countBadge}>{filtered.length}</span>
+					<span className={styles.countBadge}>{totalItems}</span>
 					{isMock && (
 						<span className={styles.mockBadge}>Preview — no data yet</span>
 					)}
@@ -182,124 +265,21 @@ export default function FocusNotes() {
 			</div>
 
 			{/* ── Table ───────────────────────────────────────────── */}
-			<div className={styles.tableWrap}>
-				<table className={styles.table}>
-					<thead>
-						<tr>
-							<th>Date</th>
-							<th>Created By</th>
-							<th>Role</th>
-							<th>Shift Window</th>
-							<th>Shift Status</th>
-							<th>Opportunities / Concerns</th>
-							<th>Successes</th>
-							<th>General Notes</th>
-							<th>Last Edited By</th>
-							<th className={styles.thAction}></th>
-						</tr>
-					</thead>
-					<tbody>
-						{pageNotes.length === 0 ? (
-							<tr>
-								<td colSpan={10} className={styles.emptyRow}>
-									<FileText size={28} className={styles.emptyIcon} />
-									<p>No focus notes match your filters.</p>
-								</td>
-							</tr>
-						) : (
-							pageNotes.map((note) => {
-								const shiftStart = note.shift?.startTime
-									? utcToFullDisplay(note.shift.startTime, TZ)
-									: "—";
-								const shiftEnd = note.shift?.endTime
-									? utcToFullDisplay(note.shift.endTime, TZ)
-									: "—";
-								const shiftStatus = note.shift?.status || null;
-
-								return (
-									<tr key={note._id} className={styles.row}>
-										<td className={styles.tdDate}>
-											{note.createdAt ? utcToFullDisplay(note.createdAt, TZ) : "—"}
-										</td>
-										<td className={styles.tdAuthor}>
-											{personName(note.createdBy)}
-										</td>
-										<td>
-											<span className={`${styles.roleBadge} ${ROLE_CLASS[note.createdByRole] || styles.roleDefault}`}>
-												{note.createdByRole || "—"}
-											</span>
-										</td>
-										<td className={styles.tdShift}>
-											<span className={styles.shiftTime}>{shiftStart}</span>
-											<span className={styles.shiftArrow}>→</span>
-											<span className={styles.shiftTime}>{shiftEnd}</span>
-										</td>
-										<td>
-											{shiftStatus ? (
-												<span className={`${styles.statusBadge} ${STATUS_CLASS[shiftStatus] || ""}`}>
-													{shiftStatus.replace(/_/g, " ")}
-												</span>
-											) : "—"}
-										</td>
-										<td className={styles.tdNote}>{truncate(note.opportunitiesConcerns)}</td>
-										<td className={styles.tdNote}>{truncate(note.successes)}</td>
-										<td className={styles.tdNote}>{truncate(note.generalNotes)}</td>
-										<td className={styles.tdAuthor}>
-											{note.updatedBy
-												? <>{personName(note.updatedBy)} <span className={styles.updatedRole}>({note.updatedByRole})</span></>
-												: <span className={styles.cellEmpty}>—</span>
-											}
-										</td>
-										<td className={styles.tdAction}>
-											<button
-												className={styles.viewBtn}
-												title="View focus note detail"
-												onClick={() => router.push(`/focus_notes/${note._id}`)}
-											>
-												<ExternalLink size={14} />
-											</button>
-										</td>
-									</tr>
-								);
-							})
-						)}
-					</tbody>
-				</table>
-			</div>
+			<Table2
+				columns={tableColumns}
+				data={pageNotes}
+				emptyMessage="No focus notes match your filters."
+				emptyIcon={<FileText size={28} />}
+			/>
 
 			{/* ── Pagination ──────────────────────────────────────── */}
-			{totalPages > 1 && (
-				<div className={styles.pagination}>
-					<span className={styles.pageInfo}>
-						Page {currentPage} of {totalPages} · {filtered.length} notes
-					</span>
-					<div className={styles.pageButtons}>
-						<button
-							className={styles.pageBtn}
-							disabled={currentPage === 1}
-							onClick={() => setPage((p) => p - 1)}
-						>
-							<ChevronLeft size={15} />
-						</button>
-						{Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-							<button
-								key={p}
-								className={`${styles.pageBtn} ${p === currentPage ? styles.pageBtnActive : ""}`}
-								onClick={() => setPage(p)}
-							>
-								{p}
-							</button>
-						))}
-						<button
-							className={styles.pageBtn}
-							disabled={currentPage === totalPages}
-							onClick={() => setPage((p) => p + 1)}
-						>
-							<ChevronRight size={15} />
-						</button>
-					</div>
-				</div>
-			)}
+			<Table2Pagination
+				currentPage={currentPage}
+				totalPages={totalPages}
+				totalItems={totalItems}
+				itemLabel="notes"
+				onPageChange={setPage}
+			/>
 		</div>
 	);
 }

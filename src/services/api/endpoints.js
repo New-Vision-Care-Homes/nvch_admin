@@ -68,7 +68,9 @@ export const API_ENDPOINTS = {
 	},
 
 	FOCUS_NOTES: {
+		BASE: '/api/focus-notes',
 		BY_CLIENT_ID: (clientId) => `/api/focus-notes/client/${clientId}`,
-		BY_ID: (focusNoteId) => `/api/focus-notes/${focusNoteId}`,
+		BY_SHIFT_ID: (shiftId) => `/api/focus-notes/shift/${shiftId}`,
+		BY_ID: (id) => `/api/focus-notes/${id}`,
 	},
 };
