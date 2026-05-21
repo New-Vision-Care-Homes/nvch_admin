@@ -25,10 +25,12 @@ export const useClients = (options = {}) => {
 	 * Extracts the most relevant error message from an Axios error object.
 	 */
 	const getErrorMessage = (err) => {
-		return (
-			err?.response?.data?.error ||
-			"An unexpected error occurred"
-		);
+		const data = err?.response?.data;
+		const sdmDetail = data?.details?.find((d) => d.path === "statutoryDecisionMaker");
+		if (sdmDetail) {
+			return "Statutory Decision Maker: phone or email is required (at least one)";
+		}
+		return data?.error || "An unexpected error occurred";
 	};
 
 	// --- Queries ---
