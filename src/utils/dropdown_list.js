@@ -12,11 +12,11 @@ export const CERTIFICATE_OPTIONS = [
 
 export const REGION_OPTIONS = [
 	{ value: "Central", label: "Central" },
-	{ value: "Windsor", value: "Windsor" },
-	{ value: "HRM", value: "HRM" },
-	{ value: "Yarmouth", value: "Yarmouth" },
-	{ value: "Shelburne", value: "Shelburne" },
-	{ value: "South Shore", value: "South Shore" }
+	{ value: "Windsor", label: "Windsor" },
+	{ value: "HRM", label: "HRM" },
+	{ value: "Yarmouth", label: "Yarmouth" },
+	{ value: "Shelburne", label: "Shelburne" },
+	{ value: "South Shore", label: "South Shore" },
 ];
 
 export const MARITAL_STATUS_OPTIONS = [
