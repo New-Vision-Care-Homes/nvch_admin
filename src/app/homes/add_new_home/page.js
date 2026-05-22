@@ -27,7 +27,7 @@ const schema = yup.object({
 		.required("Region is required"),
 
 	homeType: yup.string()
-		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"], "Please select a valid home type")
 		.required("Home type is required"),
 
 	isActive: yup.boolean(),
@@ -208,7 +208,7 @@ export default function AddNewHomePage() {
 	};
 	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
 
-	const onSubmit = async (data) => {
+	const onSubmit = (data) => {
 		const homeData = {
 			name: data.name,
 			region: data.region,
@@ -240,12 +240,11 @@ export default function AddNewHomePage() {
 			notes: data.notes || "",
 		};
 
-		try {
-			await addHome(homeData);
-			router.push("/homes");
-		} catch (err) {
-			alert(err.message);
-		}
+		addHome(homeData, {
+			onSuccess: () => {
+				router.push("/homes");
+			}
+		});
 	};
 
 	function handleCancel() {

@@ -33,7 +33,7 @@ const schema = yup.object({
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
 	homeType: yup.string()
-		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"], "Please select a valid home type")
 		.required("Home type is required"),
 
 	isActive: yup.boolean().transform(toBoolean).nullable(),
@@ -262,7 +262,7 @@ export default function EditHomePage() {
 	};
 	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
 
-	const onSubmit = async (data) => {
+	const onSubmit = (data) => {
 		const homeData = {
 			name: data.name,
 			region: data.region,
@@ -292,12 +292,11 @@ export default function EditHomePage() {
 			notes: data.notes || "",
 		};
 
-		try {
-			await updateHome({ id: homeId, data: homeData });
-			router.push("/homes");
-		} catch (err) {
-			alert(err.message);
-		}
+		updateHome({ id: homeId, data: homeData }, {
+			onSuccess: () => {
+				router.push("/homes");
+			}
+		});
 	};
 
 	function handleCancel() {

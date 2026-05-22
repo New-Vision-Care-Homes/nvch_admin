@@ -13,12 +13,19 @@ export const useHomes = (arg = null) => {
 	const params = !isId && typeof arg === "object" ? arg : {};
 
 	/**
-	 * Helper to extract error message
+	 * Extracts the most relevant error message from an Axios error object.
+	 *
+	 * Priority:
+	 * 1. First express-validator field error (details[0].msg) — specific backend
+	 *    validation message, e.g. "Home name is already in use".
+	 * 2. Top-level error string — standard { success: false, error: "..." } shape.
+	 * 3. Generic fallback.
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
+			err?.response?.data?.details?.[0]?.msg ||
+			err?.response?.data?.error ||
+			"An unexpected error occurred"
 		);
 	};
 
@@ -91,8 +98,8 @@ export const useHomes = (arg = null) => {
 		actionError: actionError ? getErrorMessage(actionError) : null,
 
 		// Actions
-		addHome: createMutation.mutateAsync,
-		updateHome: updateMutation.mutateAsync,
+		addHome: createMutation.mutate,
+		updateHome: updateMutation.mutate,
 		deleteHome: deleteMutation.mutateAsync,
 
 		isActionPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,

@@ -68,6 +68,7 @@ const schema = yup.object({
 
 	maxHours: yup
 		.number()
+		.typeError("Max hours must be a number")
 		.transform((value, originalValue) => {
 			return originalValue === "" ? undefined : value;
 		})

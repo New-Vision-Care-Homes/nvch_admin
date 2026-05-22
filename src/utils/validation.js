@@ -68,7 +68,7 @@ export const birthRule = yup
 	// 1. Format Check: Must be YYYY-MM-DD
 	.test(
 		'is-iso-date',
-		'Date of birth must be a valid date in YYYY-MM-DD format.',
+		'Please enter a valid date of birth',
 		(value) => {
 			if (!value) return false; // Fail if required and empty
 			// This regex helps ensure the YYYY-MM-DD format
@@ -114,8 +114,8 @@ export const emailRule = yup
 	.string()
 	.trim()
 	.transform((value) => value === "" ? undefined : value)
-	.email("Invalid email")
-	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email')
+	.email("Please enter a valid email address")
+	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please enter a valid email address")
 	.optional();
 
 
@@ -151,8 +151,8 @@ export const booleanRule = yup.boolean().optional();
 // --- BASE LOGIC (Your existing dateRule without the .required() part) ---
 const baseDateValidation = yup
 	.string()
-	.matches(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
-	.test("is-valid-date", "Invalid date", (value) => {
+	.matches(/^\d{4}-\d{2}-\d{2}$/, "Please enter a valid date")
+	.test("is-valid-date", "Please enter a valid date", (value) => {
 		// Crucial: Allow empty values to pass this specific test
 		if (!value) return true;
 
