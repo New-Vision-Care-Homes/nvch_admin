@@ -8,10 +8,10 @@ export const phoneRule = yup
 		return value.replace(/\D/g, "");
 	})
 	.matches(/^\d+$/, {
-		message: "Must be digits only",
+		message: "Phone number can only contain digits",
 		excludeEmptyString: true,
 	})
-	.length(10, "Must be exactly 10 digits");
+	.length(10, "Phone number must be exactly 10 digits");
 
 export const passwordRule = yup
 	.string()
@@ -32,9 +32,9 @@ export const IdRule = yup
 	.uppercase("ID must contain only uppercase letters and numbers")
 	.matches(
 		/^[A-Z0-9]+$/,
-		"Client ID must contain only uppercase letters and numbers"
+		"ID must contain only uppercase letters and numbers (A–Z, 0–9)"
 	)
-	.required("Client ID is required for clients");
+	.optional()
 
 
 export const nameRule = yup

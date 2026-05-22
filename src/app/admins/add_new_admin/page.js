@@ -13,7 +13,7 @@ import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 
-import { IdRule, nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
+import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -43,7 +43,7 @@ const TIMEZONE_OPTIONS = [
 ];
 
 const schema = yup.object({
-	adminId: IdRule,
+	adminId: IdRule.required("Admin ID is required"),
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
@@ -60,6 +60,7 @@ const schema = yup.object({
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
+	employeeStartDate: dateRule,
 	permissionsGroup: yup
 		.array()
 		.min(1, "Please select at least one permission group")
@@ -117,6 +118,7 @@ export default function Page() {
 			adminLevel: data.adminLevel,
 			department: data.department,
 			timezone: data.timezone,
+			employeeStartDate: data.employeeStartDate,
 			permissionsGroup,
 		};
 
@@ -198,10 +200,15 @@ export default function Page() {
 										required
 									/>
 								</div>
-								<div style={{ marginBottom: "1rem" }}>
-									<p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem', marginBottom: '1rem' }}>
-										Please select the correct timezone for the admin, as this will determine how time is displayed across the website.
-									</p>
+								<div className={styles.row2}>
+									<InputField
+										label="Employee Start Date"
+										name="employeeStartDate"
+										type="date"
+										register={register}
+										error={errors.employeeStartDate}
+										required
+									/>
 									<InputField
 										label="Timezone"
 										name="timezone"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InfoField, InputField } from "@components/UI/Card";
@@ -14,7 +14,7 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { IdRule, nameRule, emailRule, phoneRule } from "@/utils/validation";
+import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
@@ -46,7 +46,8 @@ const schema = yup.object({
 	region: yup.string()
 		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
 		.required("Region is required"),
-	adminId: IdRule,
+	adminId: IdRule.required("Admin ID is required"),
+	employeeStartDate: dateRule,
 	permissionsGroup: yup
 		.array()
 		.min(1, "Please select at least one permission group")
@@ -63,7 +64,6 @@ export default function Page() {
 		updateAdmin,
 		isActionPending,
 		toggleAdminStatus,
-		refetch
 	} = useAdmins({ adminId: id });
 
 	// --- Editing State & Form Setup ---
@@ -72,7 +72,7 @@ export default function Page() {
 
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
 
-	const { register, handleSubmit, setValue, clearErrors, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			permissionsGroup: []
@@ -113,6 +113,7 @@ export default function Page() {
 				department: user.department || "",
 				region: user.region || "",
 				adminId: user.employeeId || "",
+				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
 			});
 
 			// Initialize selected groups
@@ -159,6 +160,7 @@ export default function Page() {
 		const body = {
 			...data,
 			employeeId: data.adminId,
+			employeeStartDate: data.employeeStartDate,
 			permissionsGroup,
 		};
 
@@ -167,10 +169,11 @@ export default function Page() {
 				setIsEditing(false);
 				setMessage("Admin updated successfully!");
 				setIsGeneralModalOpen(true);
-				refetch(); // Refresh data using react query
 			},
 			onError: (err) => {
-				setMessage(`Failed to update admin: ${err.message || "Unexpected error"}`);
+				const data = err?.response?.data;
+				const msg = data?.error || data?.message || "An unexpected error occurred";
+				setMessage(msg);
 				setIsGeneralModalOpen(true);
 			}
 		});
@@ -187,6 +190,7 @@ export default function Page() {
 				department: user.department || "",
 				region: user.region || "",
 				adminId: user.employeeId || "",
+				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
 			});
 
 			const pg = user.permissionsGroup;
@@ -346,6 +350,10 @@ export default function Page() {
 												<InfoField label="Department">{user.department || "—"}</InfoField>
 												<InfoField label="Region">{user.region || "—"}</InfoField>
 											</div>
+											<div className={styles.row2}>
+												<InfoField label="Employee Start Date">{user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "—"}</InfoField>
+												<div style={{ flex: 1 }} />
+											</div>
 										</>
 									) : (
 										<>
@@ -387,6 +395,17 @@ export default function Page() {
 														{ label: "South Shore", value: "South Shore" }
 													]}
 												/>
+											</div>
+											<div className={styles.row2}>
+												<InputField
+													label="Employee Start Date"
+													name="employeeStartDate"
+													type="date"
+													register={register}
+													error={errors.employeeStartDate}
+													required
+												/>
+												<div style={{ flex: 1 }} />
 											</div>
 										</>
 									)}
