@@ -136,7 +136,6 @@ export const shortTextRule = yup
 export const longTextRule = yup
 	.string()
 	.trim()
-	.max(2000, "Cannot exceed 2000 characters")
 	.optional();
 
 

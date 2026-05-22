@@ -471,19 +471,27 @@ export default function SchedulingPage() {
 		const displayStart = isOvernight ? event._originalStart : event.start;
 		const displayEnd = isOvernight ? event._originalEnd : event.end;
 		const tooltip = `${event.title ? event.title + "\n" : ""}${format(displayStart, "HH:mm")} – ${format(displayEnd, "HH:mm")}`;
+
+		// For shifts under 1 hour the block is too small to fit more than one line —
+		// show only the caregiver name with reduced padding to avoid overflow.
+		const durationMins = (event.end - event.start) / 60_000;
+		const isShort = durationMins < 60;
+
 		return (
 			<div className={styles.weekEvent} style={{ "--ev-text": color.text }} title={tooltip}>
-				<div className={styles.weekEventBody}>
+				<div className={`${styles.weekEventBody} ${isShort ? styles.weekEventBodyCompact : ""}`}>
 					<div className={styles.weekEventName}>
 						{multi ? <Users size={11} /> : <User size={11} />}
 						<span>{event.title}</span>
 						{multi && <span className={styles.weekEventBadge}>+{event.count - 1}</span>}
 					</div>
-					<div className={styles.weekEventTime}>
-						<Clock size={9} />
-						<span>{format(displayStart, "HH:mm")} – {format(displayEnd, "HH:mm")}</span>
-					</div>
-					{!multi && event.shifts?.[0]?.clientAddress && (
+					{!isShort && (
+						<div className={styles.weekEventTime}>
+							<Clock size={9} />
+							<span>{format(displayStart, "HH:mm")} – {format(displayEnd, "HH:mm")}</span>
+						</div>
+					)}
+					{!isShort && !multi && event.shifts?.[0]?.clientAddress && (
 						<div className={styles.weekEventAddr}>
 							<MapPin size={9} />
 							<span>{event.shifts[0].clientAddress}</span>
