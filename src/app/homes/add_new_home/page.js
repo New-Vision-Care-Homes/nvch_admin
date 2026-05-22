@@ -275,13 +275,14 @@ export default function AddNewHomePage() {
 							<CardContent>
 
 								<div className={styles.row2}>
-									<InputField label="Home Name" name="name" register={register} error={errors.name} />
+									<InputField label="Home Name" name="name" register={register} error={errors.name} required />
 									<InputField
 										label="Region"
 										name="region"
 										type="select"
 										register={register}
 										error={errors.region}
+										required
 										options={[
 											{ label: "Central", value: "Central" },
 											{ label: "Windsor", value: "Windsor" },
@@ -295,11 +296,12 @@ export default function AddNewHomePage() {
 
 								<div className={styles.row2}>
 									<InputField
-										label="Home Type *"
+										label="Home Type"
 										name="homeType"
 										type="select"
 										register={register}
 										error={errors.homeType}
+										required
 										options={HOME_TYPE_OPTIONS}
 									/>
 								</div>

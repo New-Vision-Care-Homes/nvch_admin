@@ -260,7 +260,7 @@ export default function Page() {
 							<CardHeader>General and Contact Information</CardHeader>
 							<CardContent>
 								<div className={styles.row2}>
-									<InputField label="Employee ID" name="employeeId" register={register} error={errors.employeeId} />
+									<InputField label="Employee ID" name="employeeId" register={register} error={errors.employeeId} required />
 									<InputField
 										label="Timezone"
 										name="timezone"
@@ -268,36 +268,37 @@ export default function Page() {
 										register={register}
 										error={errors.timezone}
 										options={TIMEZONE_OPTIONS}
+										required
 									/>
 								</div>
 								<div className={styles.row2}>
-									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
-									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
+									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
+									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} required />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Email" name="email" register={register} error={errors.email} />
-									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
+									<InputField label="Email" name="email" register={register} error={errors.email} required />
+									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} required />
 								</div>
 
 								<div className={styles.row2}>
-									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" required />
+									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
 										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 									/>
 								</div>
 
 								<div className={styles.row2}>
-									<InputField label="Employee Start Date" name="employeeStartDate" register={register} control={control} error={errors.employeeStartDate} type="date" />
+									<InputField label="Employee Start Date" name="employeeStartDate" register={register} control={control} error={errors.employeeStartDate} type="date" required />
 									<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder={84 + "(Default)"} />
 								</div>
 
 								<div className={styles.row2}>
-									<InputField label="Password" name="password" type="password" register={register} error={errors.password} />
-									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} />
+									<InputField label="Password" name="password" type="password" register={register} error={errors.password} required />
+									<InputField label="Confirm Password" name="confirmPassword" type="password" register={register} error={errors.confirmPassword} required />
 								</div>
 
 								<div className={styles.row2}>
-									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" />
+									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" required />
 									<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" />
 								</div>
 
@@ -320,12 +321,12 @@ export default function Page() {
 							<CardHeader>Emergency Contact</CardHeader>
 							<CardContent className={styles.cardContent}>
 								<div className={styles.row2}>
-									<InputField label="First Name" name="emergencyFName" register={register} error={errors.emergencyFName} />
-									<InputField label="Last Name" name="emergencyLName" register={register} error={errors.emergencyLName} />
+									<InputField label="First Name" name="emergencyFName" register={register} error={errors.emergencyFName} required />
+									<InputField label="Last Name" name="emergencyLName" register={register} error={errors.emergencyLName} required />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} />
-									<InputField label="Relationship" name="emergencyRelationship" register={register} error={errors.emergencyRelationship} />
+									<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} required />
+									<InputField label="Relationship" name="emergencyRelationship" register={register} error={errors.emergencyRelationship} required />
 								</div>
 							</CardContent>
 						</Card>

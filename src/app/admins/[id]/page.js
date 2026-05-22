@@ -358,6 +358,7 @@ export default function Page() {
 													register={register}
 													error={errors.adminLevel}
 													options={ADMIN_LEVEL_OPTIONS}
+													required
 												/>
 											</div>
 											<div className={styles.row2}>
@@ -368,6 +369,7 @@ export default function Page() {
 													register={register}
 													error={errors.department}
 													options={DEPARTMENT_OPTIONS}
+													required
 												/>
 												<InputField
 													label="Region"
@@ -375,6 +377,7 @@ export default function Page() {
 													type="select"
 													register={register}
 													error={errors.region}
+													required
 													options={[
 														{ label: "Central", value: "Central" },
 														{ label: "Windsor", value: "Windsor" },
@@ -429,6 +432,9 @@ export default function Page() {
 										</div>
 									) : (
 										<>
+											<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+												Select Group <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
+											</p>
 											{permissionGroups.length === 0 ? (
 												<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
 													No permission groups found.

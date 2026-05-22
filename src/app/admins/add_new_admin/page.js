@@ -154,22 +154,22 @@ export default function Page() {
 							<CardHeader>Basic Information</CardHeader>
 							<CardContent>
 								<div className={styles.row2}>
-									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
+									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} required />
+									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
 										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
 									/>
 								</div>
 								<div className={styles.row2}>
-									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
-									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
+									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
+									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} required />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Email" name="email" register={register} error={errors.email} />
+									<InputField label="Email" name="email" register={register} error={errors.email} required />
 									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Password" name="password" register={register} error={errors.password} type="password" />
-									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" />
+									<InputField label="Password" name="password" register={register} error={errors.password} type="password" required />
+									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" required />
 								</div>
 							</CardContent>
 						</Card>
@@ -186,6 +186,7 @@ export default function Page() {
 										register={register}
 										error={errors.adminLevel}
 										options={ADMIN_LEVEL_OPTIONS}
+										required
 									/>
 									<InputField
 										label="Department"
@@ -194,6 +195,7 @@ export default function Page() {
 										register={register}
 										error={errors.department}
 										options={DEPARTMENT_OPTIONS}
+										required
 									/>
 								</div>
 								<div style={{ marginBottom: "1rem" }}>
@@ -207,6 +209,7 @@ export default function Page() {
 										register={register}
 										error={errors.timezone}
 										options={TIMEZONE_OPTIONS}
+										required
 									/>
 								</div>
 							</CardContent>
@@ -216,6 +219,9 @@ export default function Page() {
 						<Card>
 							<CardHeader>Permission Groups</CardHeader>
 							<CardContent>
+								<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+									Select Group <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
+								</p>
 								{permissionGroups.length === 0 ? (
 									<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
 										No permission groups found.

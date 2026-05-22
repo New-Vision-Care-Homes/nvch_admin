@@ -366,7 +366,7 @@ export default function AddNewShiftPage() {
 							{/* Selector dropdown */}
 							<div className={styles.card_row_1}>
 								<label className={styles.label} style={{ display: 'block', marginBottom: '0.5rem' }}>
-									Shift Target
+									Shift Target <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span>
 								</label>
 								<select
 									className={styles.input}
@@ -383,7 +383,7 @@ export default function AddNewShiftPage() {
 							{targetType === "client" && (
 								<>
 									<div className={styles.searchContainer}>
-										<label className={styles.label}>Search Client</label>
+										<label className={styles.label}>Search Client <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
 											<input
@@ -438,7 +438,7 @@ export default function AddNewShiftPage() {
 							{targetType === "home" && (
 								<>
 									<div className={styles.searchContainer}>
-										<label className={styles.label}>Search Home</label>
+										<label className={styles.label}>Search Home <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
 											<input
@@ -546,6 +546,7 @@ export default function AddNewShiftPage() {
 										control={control}
 										error={errors.startTime}
 										min={nowLocal}
+										required
 									/>
 									<InputField
 										label="End Time"
@@ -555,6 +556,7 @@ export default function AddNewShiftPage() {
 										control={control}
 										error={errors.endTime}
 										min={selectedStartTime || nowLocal}
+										required
 									/>
 								</div>
 								<InputField label="Shift Notes" name="shiftNotes" register={register} />
@@ -566,7 +568,7 @@ export default function AddNewShiftPage() {
 							<CardHeader>Caregiver Assignment</CardHeader>
 							<CardContent>
 								<div className={styles.searchContainer}>
-									<label className={styles.label}>Search Caregiver</label>
+									<label className={styles.label}>Search Caregiver <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 									<div className={styles.searchWrapper}>
 										<Search className={styles.searchIcon} />
 										<input
