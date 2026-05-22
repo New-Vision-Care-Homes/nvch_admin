@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
 	PERMISIIONS: {
 		BASE: '/api/permissions',
 		BY_ID: (id) => `/api/permissions/${id}`,
+		DEFINITIONS: '/api/permissions/definitions',
 	},
 
 	FOCUS_NOTES: {
