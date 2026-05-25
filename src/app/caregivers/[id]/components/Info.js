@@ -9,7 +9,7 @@ import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
 // Importing validation rules used in the Client page for consistency
-import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule, dateRuleOptional } from "@/utils/validation";
+import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -79,11 +79,11 @@ const schema = yup.object({
 		.notRequired(),
 
 	// Address fields
-	street: shortTextRule.required("Street is required"),
-	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("Province is required"),
+	street: addressComponentRule.required("Street is required"),
+	city: addressComponentRule.required("City is required"),
+	state: addressComponentRule.required("Province is required"),
 	pincode: pinRule.optional(),
-	country: shortTextRule.required("Country is required"),
+	country: addressComponentRule.required("Country is required"),
 
 	// Supervisor / Team Lead
 	supervisor: yup.string().required("Supervisor is required"),
@@ -123,6 +123,12 @@ export default function Info() {
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
+
+	const watchStreet = watch("street");
+	const watchCity = watch("city");
+	const watchState = watch("state");
+	const watchPincode = watch("pincode");
+	const watchCountry = watch("country");
 
 	// --- Address Autocomplete Handler ---
 	function handleAddressSelect({ street, city, state, country, postalCode }) {
@@ -243,7 +249,7 @@ export default function Info() {
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
 							error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
 							isEditing={true}
-							currentAddress={[caregiverDetail?.address?.street, caregiverDetail?.address?.city, caregiverDetail?.address?.state, caregiverDetail?.address?.pinCode, caregiverDetail?.address?.country].filter(Boolean).join(", ")}
+							currentAddress={[watchStreet, watchCity, watchState, watchPincode, watchCountry].filter(Boolean).join(", ")}
 						/>
 						<div className={styles.card_row_1}>
 							<InputField label="Notes" name="notes" type="textarea" rows={4} register={register} error={errors.notes} />
