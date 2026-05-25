@@ -24,6 +24,7 @@ import {
 	dateRule,
 	pinRule,
 	birthRule,
+	addressComponentRule,
 } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 
@@ -69,11 +70,11 @@ const schema = yup.object({
 	homeId: yup.string().nullable().optional(),
 
 	// Address
-	street: shortTextRule.required("Street is required"),
-	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("Province is required"),
+	street: addressComponentRule.required("Street is required"),
+	city: addressComponentRule.required("City is required"),
+	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule.required("Postal code is required"),
-	country: shortTextRule.required("Country is required"),
+	country: addressComponentRule.required("Country is required"),
 
 	// Health Card
 	healthCardNumber: yup

@@ -16,7 +16,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // Importing custom validation rules
-import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
+import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const TIMEZONE_OPTIONS = [
@@ -78,10 +78,10 @@ const schema = yup.object({
 
 	// Address Fields
 	street: longTextRule.required("Street is required"),
-	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("Province is required"),
+	city: addressComponentRule.required("City is required"),
+	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule,
-	country: shortTextRule.required("Country is required"),
+	country: addressComponentRule.required("Country is required"),
 
 	availability: yup.array().of(availabilitySchema)
 		.nullable()

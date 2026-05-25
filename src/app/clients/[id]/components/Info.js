@@ -18,6 +18,7 @@ import {
 	shortTextRule,
 	longTextRule,
 	dateRule,
+	addressComponentRule,
 } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
@@ -169,11 +170,11 @@ const schema = yup.object({
 	homeId: yup.string().nullable().optional(),
 
 	// Address
-	street: shortTextRule.required("Street is required"),
-	city: shortTextRule.required("City is required"),
-	state: shortTextRule.required("Province is required"),
+	street: addressComponentRule.required("Street is required"),
+	city: addressComponentRule.required("City is required"),
+	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule,
-	country: shortTextRule.required("Country is required"),
+	country: addressComponentRule.required("Country is required"),
 
 	// Health Card
 	healthCardNumber: yup.string().max(50).nullable().optional(),
