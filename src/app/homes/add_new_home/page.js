@@ -18,12 +18,12 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
-import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
+import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 
 	homeType: yup.string()
@@ -282,14 +282,7 @@ export default function AddNewHomePage() {
 										register={register}
 										error={errors.region}
 										required
-										options={[
-											{ label: "Central", value: "Central" },
-											{ label: "Windsor", value: "Windsor" },
-											{ label: "HRM", value: "HRM" },
-											{ label: "Yarmouth", value: "Yarmouth" },
-											{ label: "Shelburne", value: "Shelburne" },
-											{ label: "South Shore", value: "South Shore" }
-										]}
+										options={REGION_OPTIONS}
 									/>
 								</div>
 

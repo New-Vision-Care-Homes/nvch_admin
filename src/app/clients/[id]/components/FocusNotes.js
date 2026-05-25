@@ -9,47 +9,6 @@ import { Table2, Table2Pagination } from "@components/UI/Table";
 import { FileText, Download, Search, ExternalLink } from "lucide-react";
 import styles from "./FocusNotes.module.css";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock data — shown when the real API returns nothing (for layout preview)
-// ─────────────────────────────────────────────────────────────────────────────
-const MOCK_NOTES = [
-	{
-		_id: "fn_001",
-		createdAt: "2026-10-25T16:30:00.000Z",
-		createdByRole: "caregiver",
-		createdBy: { firstName: "Alex", lastName: "Stone", email: "alex@example.com" },
-		shift: { startTime: "2026-10-25T12:00:00.000Z", endTime: "2026-10-25T20:00:00.000Z", status: "completed" },
-		opportunitiesConcerns: "Family asked about weekend coverage options.",
-		successes: "Completed medication pass and evening routine on time.",
-		generalNotes: "Handoff to night staff completed verbally.",
-		updatedBy: null,
-		updatedByRole: null,
-	},
-	{
-		_id: "fn_002",
-		createdAt: "2026-10-26T09:15:00.000Z",
-		createdByRole: "caregiver",
-		createdBy: { firstName: "Maria", lastName: "Chen", email: "maria@example.com" },
-		shift: { startTime: "2026-10-26T08:00:00.000Z", endTime: "2026-10-26T16:00:00.000Z", status: "completed" },
-		opportunitiesConcerns: "",
-		successes: "Client was in good spirits. Bath completed without resistance.",
-		generalNotes: "Reminded client about upcoming doctor's appointment on the 28th.",
-		updatedBy: { firstName: "Admin", lastName: "User" },
-		updatedByRole: "admin",
-	},
-	{
-		_id: "fn_003",
-		createdAt: "2026-10-27T20:45:00.000Z",
-		createdByRole: "supervisor",
-		createdBy: { firstName: "James", lastName: "Wright", email: "james@example.com" },
-		shift: { startTime: "2026-10-27T12:00:00.000Z", endTime: "2026-10-27T20:00:00.000Z", status: "in_progress" },
-		opportunitiesConcerns: "Client expressed concern about pain levels increasing in the evening.",
-		successes: "Physiotherapy exercises completed for the first time this week.",
-		generalNotes: "",
-		updatedBy: null,
-		updatedByRole: null,
-	},
-];
 
 const TZ = "America/Halifax";
 const PAGE_SIZE = 10;
@@ -111,11 +70,8 @@ export default function FocusNotes() {
 		isFocusNotesOfClientLoading,
 		fetchError
 	} = useFocusNotes(id, queryParams);
-	console.log(focusNotesOfClient);
 
-	// Use real data if available, fall back to mock for layout preview only if no data and not loading
-	const pageNotes = focusNotesOfClient.length > 0 ? focusNotesOfClient : (isFocusNotesOfClientLoading ? [] : MOCK_NOTES);
-	const isMock = focusNotesOfClient.length === 0 && !isFocusNotesOfClientLoading && !fetchError;
+	const pageNotes = focusNotesOfClient;
 
 	// Extract pagination info from the backend response, falling back to defaults
 	const currentPage = pagination?.currentPage || page;
@@ -220,9 +176,6 @@ export default function FocusNotes() {
 					<FileText size={16} className={styles.toolbarIcon} />
 					<span className={styles.toolbarTitle}>Focus Notes</span>
 					<span className={styles.countBadge}>{totalItems}</span>
-					{isMock && (
-						<span className={styles.mockBadge}>Preview — no data yet</span>
-					)}
 				</div>
 				<div className={styles.toolbarRight}>
 					{/* Export buttons — logic wired later */}

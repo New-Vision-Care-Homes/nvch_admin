@@ -17,6 +17,7 @@ import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule } from "@/utils/validation";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -62,7 +63,7 @@ const schema = yup.object({
 	dateOfBirth: birthRule.required("Date of Birth is required"),
 	employeeStartDate: dateRule.required("Employee Start Date is required"),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
 
@@ -284,7 +285,7 @@ export default function Page() {
 								<div className={styles.row2}>
 									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" required />
 									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
-										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+										options={REGION_OPTIONS}
 									/>
 								</div>
 

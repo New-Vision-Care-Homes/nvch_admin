@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
@@ -44,7 +45,7 @@ const schema = yup.object({
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	adminId: IdRule.required("Admin ID is required"),
 	employeeStartDate: dateRule,
@@ -386,14 +387,7 @@ export default function Page() {
 													register={register}
 													error={errors.region}
 													required
-													options={[
-														{ label: "Central", value: "Central" },
-														{ label: "Windsor", value: "Windsor" },
-														{ label: "HRM", value: "HRM" },
-														{ label: "Yarmouth", value: "Yarmouth" },
-														{ label: "Shelburne", value: "Shelburne" },
-														{ label: "South Shore", value: "South Shore" }
-													]}
+													options={REGION_OPTIONS}
 												/>
 											</div>
 											<div className={styles.row2}>

@@ -19,7 +19,7 @@ import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { Search, X } from "lucide-react";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
-import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
+import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const toBoolean = (value) => {
 	if (value === true || value === "true") return true;
@@ -30,7 +30,7 @@ const toBoolean = (value) => {
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	homeType: yup.string()
 		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"], "Please select a valid home type")
@@ -343,14 +343,7 @@ export default function EditHomePage() {
 										register={register}
 										error={errors.region}
 										required
-										options={[
-											{ label: "Central", value: "Central" },
-											{ label: "Windsor", value: "Windsor" },
-											{ label: "HRM", value: "HRM" },
-											{ label: "Yarmouth", value: "Yarmouth" },
-											{ label: "Shelburne", value: "Shelburne" },
-											{ label: "South Shore", value: "South Shore" }
-										]}
+										options={REGION_OPTIONS}
 									/>
 								</div>
 

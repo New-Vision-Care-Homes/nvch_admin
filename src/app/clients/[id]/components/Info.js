@@ -151,7 +151,7 @@ const schema = yup.object({
 	region: yup
 		.string()
 		.oneOf(
-			["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"],
+			REGION_OPTIONS.map(o => o.value),
 			"Please select a valid region"
 		)
 		.required("Region is required"),

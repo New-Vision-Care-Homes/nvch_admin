@@ -16,7 +16,6 @@ export const REGION_OPTIONS = [
 	{ value: "HRM", label: "HRM" },
 	{ value: "Yarmouth", label: "Yarmouth" },
 	{ value: "Shelburne", label: "Shelburne" },
-	{ value: "South Shore", label: "South Shore" },
 ];
 
 export const MARITAL_STATUS_OPTIONS = [

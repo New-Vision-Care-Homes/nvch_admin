@@ -10,6 +10,7 @@ import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
 // Importing validation rules used in the Client page for consistency
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, longTextRule, dateRuleOptional } from "@/utils/validation";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
@@ -63,7 +64,7 @@ const schema = yup.object({
 	email: emailRule.optional(),
 	phone: phoneRule.optional(),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	birth: birthRule.optional(),
 	employeeStartDate: dateRuleOptional.optional(),
@@ -222,7 +223,7 @@ export default function Info() {
 						<div className={styles.card_row_2}>
 							<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
 							<InputField label="Region" name="region" type="select" register={register} error={errors.region}
-								options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+								options={REGION_OPTIONS}
 							/>
 						</div>
 

@@ -1,13 +1,3 @@
-/*
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./*"]
-    }
-  }
-}
-*/
-
 {
   "compilerOptions": {
     "baseUrl": ".",

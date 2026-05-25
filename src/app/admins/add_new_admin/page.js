@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
@@ -57,7 +57,7 @@ const schema = yup.object({
 	department: yup.string().required("Department is required"),
 	region: yup
 		.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
 	employeeStartDate: dateRule,
@@ -158,7 +158,7 @@ export default function Page() {
 								<div className={styles.row2}>
 									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} required />
 									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
-										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+										options={REGION_OPTIONS}
 									/>
 								</div>
 								<div className={styles.row2}>
