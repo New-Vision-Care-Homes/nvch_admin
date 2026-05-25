@@ -18,14 +18,29 @@ export const useAdmins = (options = {}) => {
 		}
 	}
 
-	/**
-	 * Helper to extract the most relevant error message.
-	 */
+	
+	 //Extract the most relevant human-readable error message from an Axios error.
+
 	const getErrorMessage = (err) => {
-		return (
-			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
-		);
+		const data = err?.response?.data;
+
+		if (!data) {
+			if (err?.code === "ECONNABORTED" || err?.message?.includes("timeout")) {
+				return "Request timed out. Please try again.";
+			}
+			return "Network error. Please check your connection and try again.";
+		}
+
+		if (Array.isArray(data.details) && data.details.length > 0) {
+			const msgs = data.details
+				.map((d) => d.msg || (typeof d === "string" ? d : null))
+				.filter(Boolean);
+			if (msgs.length > 0) return msgs.join("; ");
+		}
+
+		if (typeof data.error === "string" && data.error) return data.error;
+
+		return "An unexpected error occurred. Please try again.";
 	};
 
 	// 1. Fetch all admins for the list view (with optional search params)
@@ -64,8 +79,7 @@ export const useAdmins = (options = {}) => {
 		mutationFn: ({ id, data }) => adminService.update(id, data),
 		onSuccess: (data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["admins"] });
-			// Option to invalidate specific admin query:
-			// queryClient.invalidateQueries({ queryKey: ["admin", variables.id] });
+			queryClient.invalidateQueries({ queryKey: ["admin", variables.id] });
 		},
 	});
 

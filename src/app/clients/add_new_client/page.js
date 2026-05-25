@@ -25,6 +25,7 @@ import {
 	pinRule,
 	birthRule,
 } from "@/utils/validation";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -47,7 +48,7 @@ const schema = yup.object({
 	region: yup
 		.string()
 		.oneOf(
-			["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"],
+			REGION_OPTIONS.map(o => o.value),
 			"Please select a valid region"
 		)
 		.required("Region is required"),
@@ -362,7 +363,7 @@ export default function Page() {
 						<CardHeader>Personal Information</CardHeader>
 						<CardContent>
 							<div className={styles.row2}>
-								<InputField label="Client ID" name="clientId" register={register} error={errors.clientId} />
+								<InputField label="Client ID" name="clientId" register={register} error={errors.clientId} required />
 								<InputField
 									label="Timezone"
 									name="timezone"
@@ -370,20 +371,22 @@ export default function Page() {
 									register={register}
 									error={errors.timezone}
 									options={TIMEZONE_OPTIONS}
+									required
 								/>
 							</div>
 							<div className={styles.row2}>
-								<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
-								<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
+								<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
+								<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} required />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
+								<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" required />
 								<InputField
 									label="Marital Status"
 									name="maritalStatus"
 									type="select"
 									register={register}
 									error={errors.maritalStatus}
+									required
 									options={[
 										{ label: "Single", value: "single" },
 										{ label: "Married", value: "married" },
@@ -400,14 +403,8 @@ export default function Page() {
 									type="select"
 									register={register}
 									error={errors.region}
-									options={[
-										{ label: "Central", value: "Central" },
-										{ label: "Windsor", value: "Windsor" },
-										{ label: "HRM", value: "HRM" },
-										{ label: "Yarmouth", value: "Yarmouth" },
-										{ label: "Shelburne", value: "Shelburne" },
-										{ label: "South Shore", value: "South Shore" },
-									]}
+									required
+									options={REGION_OPTIONS}
 								/>
 								<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								<InputField label="Email" name="email" register={register} error={errors.email} />
@@ -449,19 +446,19 @@ export default function Page() {
 							{/* Health Card */}
 							<h5 className={styles.subSectionTitle}>Health Card</h5>
 							<div className={styles.row2}>
-								<InputField label="Health Card Number" name="healthCardNumber" register={register} error={errors.healthCardNumber} />
-								<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} control={control} error={errors.healthCardExpiryDate} type="date" />
+								<InputField label="Health Card Number" name="healthCardNumber" register={register} error={errors.healthCardNumber} required />
+								<InputField label="Health Card Expiry Date" name="healthCardExpiryDate" register={register} control={control} error={errors.healthCardExpiryDate} type="date" required />
 							</div>
 
 							{/* Care Coordinator */}
 							<h5 className={styles.subSectionTitle}>Care Coordinator / DSP Case Manager</h5>
 							<div className={styles.row2}>
-								<InputField label="First Name" name="careCoordinatorFName" register={register} error={errors.careCoordinatorFName} />
-								<InputField label="Last Name" name="careCoordinatorLName" register={register} error={errors.careCoordinatorLName} />
+								<InputField label="First Name" name="careCoordinatorFName" register={register} error={errors.careCoordinatorFName} required />
+								<InputField label="Last Name" name="careCoordinatorLName" register={register} error={errors.careCoordinatorLName} required />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Phone" name="careCoordinatorPhone" type="phone" register={register} error={errors.careCoordinatorPhone} />
-								<InputField label="Email" name="careCoordinatorEmail" register={register} error={errors.careCoordinatorEmail} />
+								<InputField label="Phone" name="careCoordinatorPhone" type="phone" register={register} error={errors.careCoordinatorPhone} required />
+								<InputField label="Email" name="careCoordinatorEmail" register={register} error={errors.careCoordinatorEmail} required />
 							</div>
 						</CardContent>
 					</Card>
@@ -471,12 +468,12 @@ export default function Page() {
 						<CardHeader>Emergency Contact</CardHeader>
 						<CardContent>
 							<div className={styles.row2}>
-								<InputField label="First Name" name="emergencyFName" register={register} error={errors.emergencyFName} />
-								<InputField label="Last Name" name="emergencyLName" register={register} error={errors.emergencyLName} />
+								<InputField label="First Name" name="emergencyFName" register={register} error={errors.emergencyFName} required />
+								<InputField label="Last Name" name="emergencyLName" register={register} error={errors.emergencyLName} required />
 							</div>
 							<div className={styles.row2}>
-								<InputField label="Relationship" name="relationship" register={register} error={errors.relationship} />
-								<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} />
+								<InputField label="Relationship" name="relationship" register={register} error={errors.relationship} required />
+								<InputField label="Phone" name="emergencyPhone" type="phone" register={register} error={errors.emergencyPhone} required />
 							</div>
 						</CardContent>
 					</Card>
@@ -592,6 +589,7 @@ export default function Page() {
 								type="select"
 								register={register}
 								error={errors.levelOfSupport}
+								required
 								options={[
 									{ label: "1", value: 1 },
 									{ label: "2", value: 2 },

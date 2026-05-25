@@ -151,7 +151,7 @@ const schema = yup.object({
 	region: yup
 		.string()
 		.oneOf(
-			["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"],
+			REGION_OPTIONS.map(o => o.value),
 			"Please select a valid region"
 		)
 		.required("Region is required"),
@@ -524,7 +524,7 @@ export default function Info() {
 							<InputField label="Last Name" name="careCoordinatorLName" register={register} error={errors.careCoordinatorLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="careCoordinatorPhone" register={register} error={errors.careCoordinatorPhone} />
+							<InputField label="Phone" name="careCoordinatorPhone" type="phone" register={register} error={errors.careCoordinatorPhone} />
 							<InputField label="Email" name="careCoordinatorEmail" register={register} error={errors.careCoordinatorEmail} />
 						</div>
 
@@ -556,7 +556,7 @@ export default function Info() {
 							<InputField label="Last Name" name="nokLName" register={register} error={errors.nokLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="nokPhone" register={register} error={errors.nokPhone} />
+							<InputField label="Phone" name="nokPhone" type="phone" register={register} error={errors.nokPhone} />
 							<InputField label="Email" name="nokEmail" register={register} error={errors.nokEmail} />
 						</div>
 					</CardContent>
@@ -571,7 +571,7 @@ export default function Info() {
 							<InputField label="Last Name" name="sdmLName" register={register} error={errors.sdmLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="sdmPhone" register={register} error={errors.sdmPhone} />
+							<InputField label="Phone" name="sdmPhone" type="phone" register={register} error={errors.sdmPhone} />
 							<InputField label="Email" name="sdmEmail" register={register} error={errors.sdmEmail} />
 						</div>
 					</CardContent>
@@ -588,7 +588,7 @@ export default function Info() {
 							<InputField label="Last Name" name="poaLName" register={register} error={errors.poaLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="poaPhone" register={register} error={errors.poaPhone} />
+							<InputField label="Phone" name="poaPhone" type="phone" register={register} error={errors.poaPhone} />
 							<InputField label="Email" name="poaEmail" register={register} error={errors.poaEmail} />
 						</div>
 
@@ -598,7 +598,7 @@ export default function Info() {
 							<InputField label="Last Name" name="pdLName" register={register} error={errors.pdLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="pdPhone" register={register} error={errors.pdPhone} />
+							<InputField label="Phone" name="pdPhone" type="phone" register={register} error={errors.pdPhone} />
 							<InputField label="Email" name="pdEmail" register={register} error={errors.pdEmail} />
 						</div>
 
@@ -608,7 +608,7 @@ export default function Info() {
 							<InputField label="Last Name" name="lgLName" register={register} error={errors.lgLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="lgPhone" register={register} error={errors.lgPhone} />
+							<InputField label="Phone" name="lgPhone" type="phone" register={register} error={errors.lgPhone} />
 							<InputField label="Email" name="lgEmail" register={register} error={errors.lgEmail} />
 						</div>
 
@@ -618,7 +618,7 @@ export default function Info() {
 							<InputField label="Last Name" name="aptLName" register={register} error={errors.aptLName} />
 						</div>
 						<div className={styles.card_row_2}>
-							<InputField label="Phone" name="aptPhone" register={register} error={errors.aptPhone} />
+							<InputField label="Phone" name="aptPhone" type="phone" register={register} error={errors.aptPhone} />
 							<InputField label="Email" name="aptEmail" register={register} error={errors.aptEmail} />
 						</div>
 

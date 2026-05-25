@@ -8,10 +8,10 @@ export const phoneRule = yup
 		return value.replace(/\D/g, "");
 	})
 	.matches(/^\d+$/, {
-		message: "Must be digits only",
+		message: "Phone number can only contain digits",
 		excludeEmptyString: true,
 	})
-	.length(10, "Must be exactly 10 digits");
+	.length(10, "Phone number must be exactly 10 digits");
 
 export const passwordRule = yup
 	.string()
@@ -32,9 +32,9 @@ export const IdRule = yup
 	.uppercase("ID must contain only uppercase letters and numbers")
 	.matches(
 		/^[A-Z0-9]+$/,
-		"Client ID must contain only uppercase letters and numbers"
+		"ID must contain only uppercase letters and numbers (A–Z, 0–9)"
 	)
-	.required("Client ID is required for clients");
+	.optional()
 
 
 export const nameRule = yup
@@ -68,7 +68,7 @@ export const birthRule = yup
 	// 1. Format Check: Must be YYYY-MM-DD
 	.test(
 		'is-iso-date',
-		'Date of birth must be a valid date in YYYY-MM-DD format.',
+		'Please enter a valid date of birth',
 		(value) => {
 			if (!value) return false; // Fail if required and empty
 			// This regex helps ensure the YYYY-MM-DD format
@@ -114,8 +114,8 @@ export const emailRule = yup
 	.string()
 	.trim()
 	.transform((value) => value === "" ? undefined : value)
-	.email("Invalid email")
-	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email')
+	.email("Please enter a valid email address")
+	.matches(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, "Please enter a valid email address")
 	.optional();
 
 
@@ -136,7 +136,6 @@ export const shortTextRule = yup
 export const longTextRule = yup
 	.string()
 	.trim()
-	.max(2000, "Cannot exceed 2000 characters")
 	.optional();
 
 
@@ -151,8 +150,8 @@ export const booleanRule = yup.boolean().optional();
 // --- BASE LOGIC (Your existing dateRule without the .required() part) ---
 const baseDateValidation = yup
 	.string()
-	.matches(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
-	.test("is-valid-date", "Invalid date", (value) => {
+	.matches(/^\d{4}-\d{2}-\d{2}$/, "Please enter a valid date")
+	.test("is-valid-date", "Please enter a valid date", (value) => {
 		// Crucial: Allow empty values to pass this specific test
 		if (!value) return true;
 

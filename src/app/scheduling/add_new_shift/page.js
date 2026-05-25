@@ -63,6 +63,13 @@ const schema = yup.object({
 			const end = DateTime.fromISO(v, { zone: HALIFAX_TZ });
 			const start = DateTime.fromISO(this.parent.startTime, { zone: HALIFAX_TZ });
 			return end.isValid && start.isValid && end > start;
+		})
+		.test("min-duration", "Shift must be at least 30 minutes long", function (v) {
+			if (!v || !this.parent.startTime) return true;
+			const end = DateTime.fromISO(v, { zone: HALIFAX_TZ });
+			const start = DateTime.fromISO(this.parent.startTime, { zone: HALIFAX_TZ });
+			if (!end.isValid || !start.isValid) return true;
+			return end.diff(start, "minutes").minutes >= 30;
 		}),
 	// Contact person — display only, not submitted
 	/*
@@ -70,7 +77,7 @@ const schema = yup.object({
 	contactLName: nameRule.optional(),
 	contactPhone: phoneRule.optional(),
 	*/
-	shiftNotes: shortTextRule.optional(),
+	shiftNotes: longTextRule.optional(),
 
 	// Address fields for geofence
 	geofenceStreet: longTextRule.required("Please search and select a service address"),
@@ -128,15 +135,15 @@ export default function AddNewShiftPage() {
 
 	function handleTargetChange(type) {
 		setTargetType(type);
-		// Clear the other target when switching
+		// Clear the other target when switching.
+		// handleClearHome also resets the auto-filled service location.
 		if (type === "client") {
-			setSelectedHome(null);
-			setHomeInput("");
-			setValue("homeId", "");
+			handleClearHome();
 		} else {
 			setSelectedClient(null);
 			setClientInput("");
 			setClientSearch("");
+			setShowClientDropdown(false);
 			setValue("clientId", "");
 		}
 	}
@@ -222,6 +229,38 @@ export default function AddNewShiftPage() {
 		setHomeInput(home.name || home.homeName || `Home ${home.id}`);
 		setShowHomeDropdown(false);
 		setValue("homeId", home.id || home._id);
+
+		// Auto-fill the service location from the home's saved address.
+		// This also disables the address search bar (see AddressAutocomplete below).
+		if (home.address) {
+			const street = home.address.street || "";
+			const city = home.address.city || "";
+			const state = home.address.province || home.address.state || "";
+			const postalCode = home.address.postalCode || home.address.pinCode || "";
+			const country = home.address.country || "Canada";
+
+			setValue("geofenceStreet", street, { shouldValidate: false });
+			setValue("geofenceCity", city, { shouldValidate: false });
+			setValue("geofenceProvince", state, { shouldValidate: false });
+			setValue("geofencePostalCode", postalCode, { shouldValidate: false });
+
+			const fullAddress = [street, city, state, postalCode, country].filter(Boolean).join(", ");
+			setGeofenceAddress(fullAddress);
+			setHasAddressSelected(true);
+
+			// Pan the map to the home's GPS coordinates if available
+			if (home.gpsCoordinates?.latitude && home.gpsCoordinates?.longitude) {
+				const newCenter = { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude };
+				setMapCenter(newCenter);
+				if (mapRefsRef.current) {
+					const { mapInstance, marker, circle } = mapRefsRef.current;
+					mapInstance?.panTo(newCenter);
+					mapInstance?.setZoom(15);
+					marker?.setPosition(newCenter);
+					circle?.setCenter(newCenter);
+				}
+			}
+		}
 	}
 
 	function handleClearHome() {
@@ -230,6 +269,15 @@ export default function AddNewShiftPage() {
 		setHomeSearch("");
 		setShowHomeDropdown(false);
 		setValue("homeId", "");
+
+		// Clear the auto-filled service location so the address search bar is usable again
+		setValue("geofenceStreet", "");
+		setValue("geofenceCity", "");
+		setValue("geofenceProvince", "");
+		setValue("geofencePostalCode", "");
+		setGeofenceAddress("");
+		setHasAddressSelected(false);
+		setMapCenter({ lat: 44.6488, lng: -63.5752 });
 	}
 
 	// ── Caregiver search ───────────────────────────────────────────────────────
@@ -294,10 +342,7 @@ export default function AddNewShiftPage() {
 
 	const { addShift, isShiftActionPending, actionShiftError } = useShifts();
 
-	async function onSubmit(data) {
-		const geofenceStreet = data.geofenceStreet;
-		const geofenceCity = data.geofenceCity;
-
+	function onSubmit(data) {
 		const shiftData = {
 			caregiverId: data.caregiverId,
 			startTime: data.startTime,
@@ -314,8 +359,8 @@ export default function AddNewShiftPage() {
 			shiftData.homeId = data.homeId;
 		}
 
-		// Geofence — only include if user selected an address
-		if (hasAddressSelected && (geofenceStreet || geofenceCity)) {
+		// Geofence — only include if an address was selected or auto-filled
+		if (hasAddressSelected && (data.geofenceStreet || data.geofenceCity)) {
 			shiftData.geofence = {
 				center: {
 					latitude: mapCenter.lat,
@@ -327,12 +372,11 @@ export default function AddNewShiftPage() {
 			};
 		}
 
-		try {
-			await addShift(shiftData);
-			router.push("/scheduling");
-		} catch {
-			// error stored in actionShiftError
-		}
+		addShift(shiftData, {
+			onSuccess: () => {
+				router.push("/scheduling");
+			}
+		});
 	}
 
 	// ── Min values for time pickers (recalculate each render) ─────────────────
@@ -366,7 +410,7 @@ export default function AddNewShiftPage() {
 							{/* Selector dropdown */}
 							<div className={styles.card_row_1}>
 								<label className={styles.label} style={{ display: 'block', marginBottom: '0.5rem' }}>
-									Shift Target
+									Shift Target <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span>
 								</label>
 								<select
 									className={styles.input}
@@ -383,7 +427,7 @@ export default function AddNewShiftPage() {
 							{targetType === "client" && (
 								<>
 									<div className={styles.searchContainer}>
-										<label className={styles.label}>Search Client</label>
+										<label className={styles.label}>Search Client <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
 											<input
@@ -438,7 +482,7 @@ export default function AddNewShiftPage() {
 							{targetType === "home" && (
 								<>
 									<div className={styles.searchContainer}>
-										<label className={styles.label}>Search Home</label>
+										<label className={styles.label}>Search Home <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
 											<input
@@ -546,6 +590,7 @@ export default function AddNewShiftPage() {
 										control={control}
 										error={errors.startTime}
 										min={nowLocal}
+										required
 									/>
 									<InputField
 										label="End Time"
@@ -555,9 +600,10 @@ export default function AddNewShiftPage() {
 										control={control}
 										error={errors.endTime}
 										min={selectedStartTime || nowLocal}
+										required
 									/>
 								</div>
-								<InputField label="Shift Notes" name="shiftNotes" register={register} />
+								<InputField label="Shift Notes" name="shiftNotes" type="textarea" rows={4} register={register} error={errors.shiftNotes} />
 							</CardContent>
 						</Card>
 
@@ -566,7 +612,7 @@ export default function AddNewShiftPage() {
 							<CardHeader>Caregiver Assignment</CardHeader>
 							<CardContent>
 								<div className={styles.searchContainer}>
-									<label className={styles.label}>Search Caregiver</label>
+									<label className={styles.label}>Search Caregiver <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 									<div className={styles.searchWrapper}>
 										<Search className={styles.searchIcon} />
 										<input
@@ -661,6 +707,9 @@ export default function AddNewShiftPage() {
 									postalCode: "geofencePostalCode",
 									country: null,
 								}}
+								// Disable manual search when a home is selected —
+								// the address is auto-filled from the home's saved address
+								disabled={targetType === "home" && !!selectedHome}
 							/>
 						</div>
 					</div>

@@ -2,31 +2,74 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tansta
 import { permissionService } from "@/services/api/services/permissionService";
 
 /**
- * Custom hook to manage all permission group operations (CRUD).
+ * Fetches the canonical ordered list of valid permission slugs from the backend.
  *
- * @param {Object} options
- * @param {string|number} options.permissionGroupId - Optional ID to fetch specific permission group details
- * @param {Object} options.params - Optional query parameters for the list (search, limit, page)
+ * Why use this instead of utils/permissions.js?
+ * The backend is the source of truth. When a new slug is added server-side,
+ * this hook picks it up automatically — no frontend code change needed.
+ *
+ * Cached for 10 minutes because the slug list almost never changes mid-session.
+ */
+export const usePermissionDefinitions = () => {
+	const query = useQuery({
+		queryKey: ["permissionDefinitions"],
+		queryFn: permissionService.getDefinitions,
+		staleTime: 10 * 60 * 1000, // 10 minutes — slug definitions rarely change
+	});
+
+	const getErrorMessage = (err) =>
+		err?.response?.data?.details?.[0]?.msg ||
+		err?.response?.data?.error ||
+		"Failed to load permission definitions";
+
+	return {
+		permissionSlugs: query.data ?? [],                                        // flat array of all valid slugs
+		isPermissionDefinitionsLoading: query.isLoading,
+		permissionDefinitionsError: query.error ? getErrorMessage(query.error) : null,
+		refetchDefinitions: query.refetch,
+	};
+};
+
+/**
+ * Manages all permission group operations: list, detail, create, update, delete.
+ *
+ * Supports three calling patterns:
+ *   usePermissionGroups()                              → fetch list with no filters
+ *   usePermissionGroups({ params: { page, limit } })  → fetch paginated list
+ *   usePermissionGroups({ permissionGroupId: "abc" }) → fetch single group detail
+ *
+ * Only one query runs at a time — if permissionGroupId is provided the list
+ * query is disabled, and vice versa.
  */
 export const usePermissionGroups = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	const permissionGroupId = typeof options === 'string' || typeof options === 'number' ? options : options.permissionGroupId;
+	// --- Resolve calling pattern ---
+	// Supports passing the ID directly as a string/number (legacy) or as an object key.
+	const permissionGroupId =
+		typeof options === 'string' || typeof options === 'number'
+			? options
+			: options.permissionGroupId;
+
+	// Resolve query params for the list view.
+	// Priority: options.params → options object itself (if no ID present).
 	let params = {};
 	if (typeof options === 'object') {
 		if (options.params) {
 			params = options.params;
 		} else if (!options.permissionGroupId) {
+			// Caller passed params directly: usePermissionGroups({ page: 1, limit: 8 })
 			params = options;
 		}
 	}
 
-	/**
-	 * Extracts the most relevant error message from an Axios error object.
-	 */
+	// --- Shared error extractor ---
+	// Axios wraps HTTP errors; this digs out the most useful message.
+	// details[0].msg comes from express-validator field errors.
+	// error comes from our standard API error shape { success: false, error: "..." }.
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.details[0]?.msg ||
+			err?.response?.data?.details?.[0]?.msg ||
 			err?.response?.data?.error ||
 			"An unexpected error occurred"
 		);
@@ -34,15 +77,17 @@ export const usePermissionGroups = (options = {}) => {
 
 	// --- Queries ---
 
-	// 1. Fetch all clients for the list view
+	// List query — runs only when NO specific group ID is requested.
+	// keepPreviousData: the old page stays visible while the next page loads,
+	// preventing a blank flash between page changes.
 	const permissionGroupsQuery = useQuery({
 		queryKey: ["permissionGroups", params],
 		queryFn: () => permissionService.getAll(params),
 		enabled: !permissionGroupId,
-		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
+		placeholderData: keepPreviousData,
 	});
 
-	// 2. Fetch a single client's details
+	// Detail query — runs only when a specific group ID is provided.
 	const permissionGroupDetailQuery = useQuery({
 		queryKey: ["permissionGroup", permissionGroupId],
 		queryFn: () => permissionService.getPermissionGroup(permissionGroupId),
@@ -51,60 +96,53 @@ export const usePermissionGroups = (options = {}) => {
 
 	// --- Mutations ---
 
-	// 3. Delete a permission group record
 	const deleteMutation = useMutation({
 		mutationFn: permissionService.delete,
+		// After deleting, re-fetch the list so the deleted row disappears immediately.
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["permissionGroups"] }),
 	});
 
-	// 4. Create a new permission group record
 	const createMutation = useMutation({
 		mutationFn: permissionService.create,
+		// After creating, re-fetch the list so the new group appears immediately.
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["permissionGroups"] }),
 	});
 
-	// 5. Update an existing permission group record
 	const updateMutation = useMutation({
 		mutationFn: ({ id, data }) => permissionService.update(id, data),
-		onSuccess: (data, variables) => {
+		// Invalidate both the list (so the updated name/description shows there)
+		// and the specific detail cache (so the edit form shows fresh data).
+		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["permissionGroups"] });
 			queryClient.invalidateQueries({ queryKey: ["permissionGroup", variables.id] });
 		},
 	});
 
-	// --- Error Separation ---
-
-	// Fetch errors: from initial data loading (shown via ErrorState component)
-	const fetchError =
-		permissionGroupsQuery.error ||
-		permissionGroupDetailQuery.error;
-
-	// Action errors: from mutations (shown via toast or inline message)
-	const actionError =
-		deleteMutation.error ||
-		createMutation.error ||
-		updateMutation.error;
+	// --- Error separation ---
+	// "Fetch errors" come from the initial data load → shown via <ErrorState> (full-page error UI).
+	// "Action errors" come from create/update/delete → shown inline near the form or button.
+	const fetchError = permissionGroupsQuery.error || permissionGroupDetailQuery.error;
+	const actionError = deleteMutation.error || createMutation.error || updateMutation.error;
 
 	return {
 		// Data
-		permissionGroups: permissionGroupsQuery?.data ?? [],
+		// getAll returns { permissionGroups, pagination } — extract each separately.
+		permissionGroups: permissionGroupsQuery?.data?.permissionGroups ?? [],
 		permissionGroupDetail: permissionGroupDetailQuery?.data,
-		totalPages: permissionGroupsQuery?.data?.pagination?.totalPages ?? permissionGroupsQuery?.data?.totalPages ?? 0,
-		currentPage: permissionGroupsQuery?.data?.pagination?.currentPage ?? permissionGroupsQuery?.data?.currentPage ?? 1,
-		totalCount: permissionGroupsQuery?.data?.pagination?.totalCount ?? permissionGroupsQuery?.data?.totalCount ?? 0,
+		totalPages: permissionGroupsQuery?.data?.pagination?.totalPages ?? 0,
+		currentPage: permissionGroupsQuery?.data?.pagination?.currentPage ?? 1,
+		totalCount: permissionGroupsQuery?.data?.pagination?.totalCount ?? 0,
 
-		// Status
+		// Loading states
 		isPermissionGroupsLoading: permissionGroupsQuery.isLoading || permissionGroupDetailQuery.isLoading,
 		isPermissionGroupsActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
 			deleteMutation.isPending,
 
-		// Fetch error → use with <ErrorState> component
-		permissionGroupsFetchError: fetchError ? getErrorMessage(fetchError) : null,
-
-		// Action error → use with toast or inline message
-		permissionGroupsActionError: actionError ? getErrorMessage(actionError) : null,
+		// Errors
+		permissionGroupsFetchError: fetchError ? getErrorMessage(fetchError) : null,   // use with <ErrorState>
+		permissionGroupsActionError: actionError ? getErrorMessage(actionError) : null, // use inline
 
 		// Methods
 		addPermissionGroup: createMutation.mutate,

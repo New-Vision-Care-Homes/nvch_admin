@@ -23,12 +23,19 @@ export const useShifts = (options = {}) => {
 	}
 
 	/**
-	 * Helper to extract the most relevant error message.
+	 * Extracts the most relevant error message from an Axios error object.
+	 *
+	 * Priority:
+	 * 1. First express-validator field error (details[0].msg) — specific backend
+	 *    validation message, e.g. "Caregiver is not available at this time".
+	 * 2. Top-level error string — standard { success: false, error: "..." } shape.
+	 * 3. Generic fallback.
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.error || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
+			err?.response?.data?.details?.[0]?.msg ||
+			err?.response?.data?.error ||
+			"An unexpected error occurred"
 		);
 	};
 
@@ -118,7 +125,7 @@ export const useShifts = (options = {}) => {
 		actionShiftError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
-		addShift: createMutation.mutateAsync,
+		addShift: createMutation.mutate,
 		updateUpcommingShift: updateUpcommingShift.mutateAsync,
 		updateCompletedShift: updateCompletedShift.mutateAsync,
 		deleteShift: deleteMutation.mutateAsync,

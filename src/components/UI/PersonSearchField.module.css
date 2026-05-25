@@ -22,6 +22,15 @@
 	text-transform: uppercase;
 }
 
+.required_star {
+	color: #E53E3E;
+	margin-left: 3px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	text-transform: none;
+	line-height: 1;
+}
+
 /* ── Input wrapper — holds the search icon, input, and clear button ─────── */
 .inputWrapper {
 	position: relative;

@@ -18,16 +18,16 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
-import { HOME_TYPE_OPTIONS } from "@/utils/dropdown_list";
+import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
 	region: yup.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 
 	homeType: yup.string()
-		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"])
+		.oneOf(["SOH", "TEA", "TSA", "ILS", "IF", "DSLTC"], "Please select a valid home type")
 		.required("Home type is required"),
 
 	isActive: yup.boolean(),
@@ -208,7 +208,7 @@ export default function AddNewHomePage() {
 	};
 	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
 
-	const onSubmit = async (data) => {
+	const onSubmit = (data) => {
 		const homeData = {
 			name: data.name,
 			region: data.region,
@@ -240,12 +240,11 @@ export default function AddNewHomePage() {
 			notes: data.notes || "",
 		};
 
-		try {
-			await addHome(homeData);
-			router.push("/homes");
-		} catch (err) {
-			alert(err.message);
-		}
+		addHome(homeData, {
+			onSuccess: () => {
+				router.push("/homes");
+			}
+		});
 	};
 
 	function handleCancel() {
@@ -275,31 +274,26 @@ export default function AddNewHomePage() {
 							<CardContent>
 
 								<div className={styles.row2}>
-									<InputField label="Home Name" name="name" register={register} error={errors.name} />
+									<InputField label="Home Name" name="name" register={register} error={errors.name} required />
 									<InputField
 										label="Region"
 										name="region"
 										type="select"
 										register={register}
 										error={errors.region}
-										options={[
-											{ label: "Central", value: "Central" },
-											{ label: "Windsor", value: "Windsor" },
-											{ label: "HRM", value: "HRM" },
-											{ label: "Yarmouth", value: "Yarmouth" },
-											{ label: "Shelburne", value: "Shelburne" },
-											{ label: "South Shore", value: "South Shore" }
-										]}
+										required
+										options={REGION_OPTIONS}
 									/>
 								</div>
 
 								<div className={styles.row2}>
 									<InputField
-										label="Home Type *"
+										label="Home Type"
 										name="homeType"
 										type="select"
 										register={register}
 										error={errors.homeType}
+										required
 										options={HOME_TYPE_OPTIONS}
 									/>
 								</div>

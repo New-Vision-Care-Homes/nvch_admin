@@ -15,18 +15,18 @@ import { usePermissionGroups } from "@/hooks/usePermissions";
 import { format } from "date-fns";
 
 export default function Permissions() {
-	// --- State ---
+	// Track which group the user clicked "delete" on before the confirmation modal opens.
 	const [showModal, setShowModal] = useState(false);
 	const [deletedGroupId, setDeletedGroupId] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 8; // Adjust based on your table height preferences
+	const itemsPerPage = 8;
 
 	const {
 		permissionGroups,
 		totalPages,
 		isPermissionGroupsLoading,
-		fetchError,
-		actionError,
+		permissionGroupsFetchError,   // shown via <ErrorState> (full-page error UI)
+		permissionGroupsActionError,  // shown inline above the table (delete errors)
 		isPermissionGroupsActionPending,
 		deletePermissionGroup,
 		refetch,
@@ -37,7 +37,7 @@ export default function Permissions() {
 		}
 	});
 
-	// --- Handlers ---
+	// Open the confirmation modal and remember which group was targeted.
 	const deleteHandler = (id) => {
 		setDeletedGroupId(id);
 		setShowModal(true);
@@ -52,7 +52,8 @@ export default function Permissions() {
 			onSettled: () => {
 				setShowModal(false);
 				setDeletedGroupId(null);
-				// Navigate back a page if deleting the last item on current page
+				// If the user deleted the last item on a non-first page,
+				// step back one page so they don't land on an empty page.
 				if (permissionGroups.length === 1 && currentPage > 1) {
 					setCurrentPage(prev => prev - 1);
 				}
@@ -60,6 +61,7 @@ export default function Permissions() {
 		});
 	};
 
+	// ReactPaginate uses 0-based page index; our API uses 1-based pages.
 	const handlePageClick = (event) => {
 		setCurrentPage(event.selected + 1);
 	};
@@ -77,20 +79,24 @@ export default function Permissions() {
 						</Link>
 					</div>
 
-					{actionError && <p className={styles.actionError}>{actionError}</p>}
+					{/* Inline error for delete failures */}
+					{permissionGroupsActionError && (
+						<p className={styles.actionError}>{permissionGroupsActionError}</p>
+					)}
 
+					{/* Full-page loading / error state */}
 					<ErrorState
 						isLoading={isPermissionGroupsLoading}
-						errorMessage={fetchError}
+						errorMessage={permissionGroupsFetchError}
 						onRetry={refetch}
 					/>
 
-					{!isPermissionGroupsLoading && !fetchError && (
+					{!isPermissionGroupsLoading && !permissionGroupsFetchError && (
 						<>
 							{permissionGroups?.length === 0 ? (
-								<EmptyState 
-									title="No permission groups found" 
-									message="There are no permission groups matching your criteria." 
+								<EmptyState
+									title="No permission groups found"
+									message="There are no permission groups matching your criteria."
 								/>
 							) : (
 								<div className={styles.tableWrapper}>
@@ -138,11 +144,11 @@ export default function Permissions() {
 										))}
 									</Table>
 
-									{/* Pagination */}
+									{/* Only render pagination when there is more than one page */}
 									{totalPages > 1 && (
 										<ReactPaginate
 											pageCount={Math.max(totalPages, 1)}
-											forcePage={currentPage - 1}
+											forcePage={currentPage - 1} // convert 1-based → 0-based for ReactPaginate
 											onPageChange={handlePageClick}
 											pageRangeDisplayed={5}
 											marginPagesDisplayed={1}

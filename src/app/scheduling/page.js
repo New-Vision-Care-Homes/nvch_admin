@@ -287,28 +287,66 @@ export default function SchedulingPage() {
 			const start = utcToZonedDateObject(shift.startTime, "America/Halifax");
 			const end = utcToZonedDateObject(shift.endTime, "America/Halifax");
 
-			// Build the grouping key: full date+start_time combined with end time
-			const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
+			const isOvernight = format(start, "yyyy-MM-dd") !== format(end, "yyyy-MM-dd");
 
-			if (!groups[key]) {
-				// First shift at this time slot — create a new group
-				groups[key] = { id: shift.id || shift._id, start, end, shifts: [shift] };
+			if (isOvernight) {
+				// Overnight shift: split at midnight so react-big-calendar places each
+				// segment in the correct day column instead of the all-day row.
+				// Part 1 runs from the original start to 23:59:59 of the start day.
+				// Part 2 runs from 00:00:00 of the end day to the original end.
+				const baseKey = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "yyyy-MM-dd HH:mm")}`;
+				const day1End = endOfDay(start);
+				const day2Start = startOfDay(end);
+
+				const key1 = `${baseKey}_p1`;
+				if (!groups[key1]) {
+					groups[key1] = {
+						id: `${shift.id || shift._id}_p1`,
+						start,
+						end: day1End,
+						shifts: [shift],
+						_isOvernightStart: true,
+						_originalStart: start,
+						_originalEnd: end,
+					};
+				} else {
+					groups[key1].shifts.push(shift);
+				}
+
+				const key2 = `${baseKey}_p2`;
+				if (!groups[key2]) {
+					groups[key2] = {
+						id: `${shift.id || shift._id}_p2`,
+						start: day2Start,
+						end,
+						shifts: [shift],
+						_isOvernightEnd: true,
+						_originalStart: start,
+						_originalEnd: end,
+					};
+				} else {
+					groups[key2].shifts.push(shift);
+				}
 			} else {
-				// Another shift at the same slot — add it to the existing group
-				groups[key].shifts.push(shift);
+				// Build the grouping key: full date+start_time combined with end time
+				const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
+				if (!groups[key]) {
+					groups[key] = { id: shift.id || shift._id, start, end, shifts: [shift] };
+				} else {
+					groups[key].shifts.push(shift);
+				}
 			}
 		});
 
 		// Convert each group into a calendar event object
 		return Object.values(groups).map((g) => {
 			const first = g.shifts[0];
-			const cgId = first?.caregiver?.id || first?.caregiver?._id; // caregiver ID for color lookup
+			const cgId = first?.caregiver?.id || first?.caregiver?._id;
 			return {
 				...g,
-				// Title: the first caregiver's name ("+N" badge is handled in the component)
 				title: `${first?.caregiver?.firstName ?? ""} ${first?.caregiver?.lastName ?? ""}`.trim(),
-				count: g.shifts.length,   // total shifts in this slot (used to show "+N")
-				_caregiverId: cgId,        // used by getCaregiverColor() for consistent coloring
+				count: g.shifts.length,
+				_caregiverId: cgId,
 			};
 		});
 	}, [shifts]);
@@ -426,23 +464,34 @@ export default function SchedulingPage() {
 	// can use it for text color without needing to know the hex value at build time.
 	const WeekDayEventComponent = ({ event }) => {
 		const color = getCaregiverColor(event._caregiverId);
-		const multi = event.count > 1; // true if multiple shifts share this time slot
+		const multi = event.count > 1;
+		const isOvernight = event._isOvernightStart || event._isOvernightEnd;
+		// For overnight splits, show the original full shift time range so the user
+		// can see the actual shift hours rather than the midnight boundary times.
+		const displayStart = isOvernight ? event._originalStart : event.start;
+		const displayEnd = isOvernight ? event._originalEnd : event.end;
+		const tooltip = `${event.title ? event.title + "\n" : ""}${format(displayStart, "HH:mm")} – ${format(displayEnd, "HH:mm")}`;
+
+		// For shifts under 1 hour the block is too small to fit more than one line —
+		// show only the caregiver name with reduced padding to avoid overflow.
+		const durationMins = (event.end - event.start) / 60_000;
+		const isShort = durationMins < 60;
+
 		return (
-			<div className={styles.weekEvent} style={{ "--ev-text": color.text }}>
-				<div className={styles.weekEventBody}>
+			<div className={styles.weekEvent} style={{ "--ev-text": color.text }} title={tooltip}>
+				<div className={`${styles.weekEventBody} ${isShort ? styles.weekEventBodyCompact : ""}`}>
 					<div className={styles.weekEventName}>
-						{/* Show a "group" icon when multiple caregivers share the slot */}
 						{multi ? <Users size={11} /> : <User size={11} />}
 						<span>{event.title}</span>
-						{/* Badge showing how many additional shifts exist (e.g. "+2") */}
 						{multi && <span className={styles.weekEventBadge}>+{event.count - 1}</span>}
 					</div>
-					<div className={styles.weekEventTime}>
-						<Clock size={9} />
-						<span>{format(event.start, "HH:mm")} – {format(event.end, "HH:mm")}</span>
-					</div>
-					{/* Only show address when there's exactly one shift (multi slots would show conflicting addresses) */}
-					{!multi && event.shifts?.[0]?.clientAddress && (
+					{!isShort && (
+						<div className={styles.weekEventTime}>
+							<Clock size={9} />
+							<span>{format(displayStart, "HH:mm")} – {format(displayEnd, "HH:mm")}</span>
+						</div>
+					)}
+					{!isShort && !multi && event.shifts?.[0]?.clientAddress && (
 						<div className={styles.weekEventAddr}>
 							<MapPin size={9} />
 							<span>{event.shifts[0].clientAddress}</span>
@@ -512,14 +561,19 @@ export default function SchedulingPage() {
 		}
 		// Week/Day: pastel card, colored per caregiver
 		const color = getCaregiverColor(event._caregiverId);
+		// Overnight splits share the same color but get flat edges where they meet
+		// so the two segments look like one continuous block across the day boundary.
+		let borderRadius = "10px";
+		if (event._isOvernightStart) borderRadius = "10px 10px 0 0"; // flat bottom
+		if (event._isOvernightEnd) borderRadius = "0 0 10px 10px";   // flat top
 		return {
 			style: {
 				backgroundColor: color.bg,
 				border: `1.5px solid ${color.border}`,
-				borderLeft: `4px solid ${color.border}`, // thicker left accent stripe
-				borderRadius: "10px",
+				borderLeft: `4px solid ${color.border}`,
+				borderRadius,
 				color: color.text,
-				padding: 0, // inner padding is handled by WeekDayEventComponent
+				padding: 0,
 			},
 		};
 	};

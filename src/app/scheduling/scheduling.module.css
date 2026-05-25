@@ -141,6 +141,12 @@
 	overflow: hidden;
 }
 
+/* Reduced padding for short shifts (< 30 min) so the name line fits */
+.weekEventBodyCompact {
+	padding: 2px 6px;
+	gap: 1px;
+}
+
 .weekEventName {
 	display: flex;
 	align-items: center;
@@ -180,6 +186,13 @@
 	opacity: 0.75;
 	line-height: 1.1;
 	overflow: hidden;
+	white-space: nowrap;
+}
+
+.weekEventTime span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .weekEventAddr span {

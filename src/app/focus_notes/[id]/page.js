@@ -17,29 +17,6 @@ import {
 } from "lucide-react";
 import styles from "./focus_note_detail.module.css";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock — shown when the API has no data (layout preview)
-// ─────────────────────────────────────────────────────────────────────────────
-const MOCK_NOTE = {
-	_id: "fn_001",
-	createdAt: "2026-10-25T16:30:00.000Z",
-	updatedAt: "2026-10-25T18:00:00.000Z",
-	createdByRole: "caregiver",
-	updatedByRole: null,
-	createdBy: { firstName: "Alex", lastName: "Stone", email: "alex@example.com" },
-	updatedBy: null,
-	client: { firstName: "Jane", lastName: "Doe", clientId: "CL-001" },
-	shift: {
-		_id: "shift_001",
-		startTime: "2026-10-25T12:00:00.000Z",
-		endTime: "2026-10-25T20:00:00.000Z",
-		status: "completed",
-	},
-	home: null,
-	opportunitiesConcerns: "Family asked about weekend coverage options.",
-	successes: "Completed medication pass and evening routine on time.",
-	generalNotes: "Handoff to night staff completed verbally.",
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -82,9 +59,7 @@ export default function FocusNoteDetailPage() {
 		enabled: !!focusNoteId,
 	});
 
-	// Fall back to mock when there is no real data (no fetch, or fetch failed)
-	const note = fetchedNote ?? MOCK_NOTE;
-	const isMock = !fetchedNote;
+	const note = fetchedNote;
 
 	// ── Edit state
 	const [editing, setEditing] = useState(false);
@@ -132,11 +107,10 @@ export default function FocusNoteDetailPage() {
 		updateMutation.mutate(form);
 	};
 
-	// ── Loading guard only (not error — we fall back to mock on errors)
-	if (isLoading) {
+	if (isLoading || fetchError || !note) {
 		return (
 			<PageLayout>
-				<ErrorState isLoading={true} />
+				<ErrorState isLoading={isLoading} errorMessage={fetchError ? (fetchError?.response?.data?.message || "Failed to load focus note.") : (!note && !isLoading ? "Focus note not found." : null)} />
 			</PageLayout>
 		);
 	}
@@ -154,7 +128,6 @@ export default function FocusNoteDetailPage() {
 					<div className={styles.headerMeta}>
 						<FileText size={15} className={styles.headerIcon} />
 						<span className={styles.headerLabel}>Focus Note</span>
-						{isMock && <span className={styles.mockBadge}>Preview</span>}
 					</div>
 					<h1>Focus Note Detail</h1>
 					<p className={styles.noteId}>ID: {note._id}</p>

@@ -52,7 +52,7 @@ function useDebounce(value, delay) {
 // ── Inner display component ────────────────────────────────────────────────────
 function PersonSearchInput({
 	label, error, placeholder, people, isFetching,
-	value, onChange, type, searchQuery, onSearchChange, initialDisplayName
+	value, onChange, type, searchQuery, onSearchChange, initialDisplayName, required
 }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [displayName, setDisplayName] = useState("");
@@ -108,7 +108,10 @@ function PersonSearchInput({
 
 	return (
 		<div className={styles.field} ref={wrapperRef}>
-			<label className={styles.label}>{label}</label>
+			<label className={styles.label}>
+				{label}
+				{required && <span className={styles.required_star}>*</span>}
+			</label>
 
 			{/* ── Input row ── */}
 			<div className={`${styles.inputWrapper} ${error ? styles.inputWrapper_error : ""}`}>
@@ -181,7 +184,7 @@ function PersonSearchInput({
 
 // ── Public export ──────────────────────────────────────────────────────────────
 export default function PersonSearchField({
-	label, name, control, error, type = "caregiver", placeholder,
+	label, name, control, error, type = "caregiver", placeholder, required,
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const debouncedSearch = useDebounce(searchQuery, 350);
@@ -241,6 +244,7 @@ export default function PersonSearchField({
 					searchQuery={searchQuery}
 					onSearchChange={setSearchQuery}
 					initialDisplayName={initialDisplayName}
+					required={required}
 				/>
 			)}
 		/>

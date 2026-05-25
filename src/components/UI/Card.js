@@ -107,14 +107,17 @@ function DatePickerField({ control, name, error, placeholder, showTime }) {
 	);
 }
 
-export function InputField({ label, name, register, control, type = "text", rows = 1, error, options = [], placeholder, ...rest }) {
+export function InputField({ label, name, register, control, type = "text", rows = 1, error, options = [], placeholder, required, ...rest }) {
 	const [showPassword, setShowPassword] = useState(false);
 	const isPasswordType = type === "password";
 	const currentType = isPasswordType && showPassword ? "text" : type;
 
 	return (
 		<div className={styles.field}>
-			<label className={styles.label}>{label}</label>
+			<label className={styles.label}>
+				{label}
+				{required && <span className={styles.required_star}>*</span>}
+			</label>
 
 			{type === "textarea" ? (
 				<textarea {...register(name)} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} />
@@ -127,7 +130,7 @@ export function InputField({ label, name, register, control, type = "text", rows
 						</option>
 					))}
 				</select>
-	) : (type === "date" || type === "datetime-local") && control ? (
+			) : (type === "date" || type === "datetime-local") && control ? (
 				<DatePickerField
 					control={control}
 					name={name}
@@ -195,12 +198,15 @@ export function InputField({ label, name, register, control, type = "text", rows
 
 
 // left label, right input
-export function InputFieldLR({ label, name, register, type = "text", rows = 1, error, options = [], value, onChange, placeholder, ...rest }) {
+export function InputFieldLR({ label, name, register, type = "text", rows = 1, error, options = [], value, onChange, placeholder, required, ...rest }) {
 	const inputProps = register ? register(name) : { value, onChange };
 
 	return (
 		<div className={styles.field} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-			<label className={styles.label} style={{ marginBottom: 0, minWidth: "120px" }}>{label}</label>
+			<label className={styles.label} style={{ marginBottom: 0, minWidth: "120px" }}>
+				{label}
+				{required && <span className={styles.required_star}>*</span>}
+			</label>
 
 			{type === "textarea" ? (
 				<textarea {...inputProps} {...rest} className={`${styles.input} ${error ? styles.input_error : ""}`} rows={rows} placeholder={placeholder} />

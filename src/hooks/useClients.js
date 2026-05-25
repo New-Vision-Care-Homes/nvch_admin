@@ -23,14 +23,28 @@ export const useClients = (options = {}) => {
 
 	/**
 	 * Extracts the most relevant error message from an Axios error object.
+	 *
+	 * Priority:
+	 * 1. Statutory Decision Maker special case — the backend sends a nested details
+	 *    entry when SDM is missing both phone and email, so we surface a clear message.
+	 * 2. First express-validator field error (details[0].msg) — catches most backend
+	 *    validation failures with a specific, field-level message.
+	 * 3. Top-level error string — the standard { success: false, error: "..." } shape.
+	 * 4. Generic fallback.
 	 */
 	const getErrorMessage = (err) => {
 		const data = err?.response?.data;
+
 		const sdmDetail = data?.details?.find((d) => d.path === "statutoryDecisionMaker");
 		if (sdmDetail) {
-			return "Statutory Decision Maker: phone or email is required (at least one)";
+			return "Statutory Decision Maker requires at least a phone number or email address";
 		}
-		return data?.error || "An unexpected error occurred";
+
+		return (
+			data?.details?.[0]?.msg ||
+			data?.error ||
+			"An unexpected error occurred"
+		);
 	};
 
 	// --- Queries ---

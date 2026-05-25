@@ -41,6 +41,15 @@
 	text-transform: uppercase;
 }
 
+.required_star {
+	color: #E53E3E;
+	margin-left: 3px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	text-transform: none;
+	line-height: 1;
+}
+
 .input {
     width: 100%;
     font-family: var(--font-family-inter);

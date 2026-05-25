@@ -12,8 +12,8 @@ import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-
-import { IdRule, nameRule, emailRule, phoneRule, passwordRule } from "@/utils/validation";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -43,7 +43,7 @@ const TIMEZONE_OPTIONS = [
 ];
 
 const schema = yup.object({
-	adminId: IdRule,
+	adminId: IdRule.required("Admin ID is required"),
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
@@ -57,9 +57,10 @@ const schema = yup.object({
 	department: yup.string().required("Department is required"),
 	region: yup
 		.string()
-		.oneOf(["Central", "Windsor", "HRM", "Yarmouth", "Shelburne", "South Shore"], "Please select a valid region")
+		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
+	employeeStartDate: dateRule,
 	permissionsGroup: yup
 		.array()
 		.min(1, "Please select at least one permission group")
@@ -117,6 +118,7 @@ export default function Page() {
 			adminLevel: data.adminLevel,
 			department: data.department,
 			timezone: data.timezone,
+			employeeStartDate: data.employeeStartDate,
 			permissionsGroup,
 		};
 
@@ -154,22 +156,22 @@ export default function Page() {
 							<CardHeader>Basic Information</CardHeader>
 							<CardContent>
 								<div className={styles.row2}>
-									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region}
-										options={[{ label: "Central", value: "Central" }, { label: "Windsor", value: "Windsor" }, { label: "HRM", value: "HRM" }, { label: "Yarmouth", value: "Yarmouth" }, { label: "Shelburne", value: "Shelburne" }, { label: "South Shore", value: "South Shore" }]}
+									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} required />
+									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
+										options={REGION_OPTIONS}
 									/>
 								</div>
 								<div className={styles.row2}>
-									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
-									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
+									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
+									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} required />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Email" name="email" register={register} error={errors.email} />
+									<InputField label="Email" name="email" register={register} error={errors.email} required />
 									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="Password" name="password" register={register} error={errors.password} type="password" />
-									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" />
+									<InputField label="Password" name="password" register={register} error={errors.password} type="password" required />
+									<InputField label="Confirm Password" name="confirmPassword" register={register} error={errors.confirmPassword} type="password" required />
 								</div>
 							</CardContent>
 						</Card>
@@ -186,6 +188,7 @@ export default function Page() {
 										register={register}
 										error={errors.adminLevel}
 										options={ADMIN_LEVEL_OPTIONS}
+										required
 									/>
 									<InputField
 										label="Department"
@@ -194,12 +197,18 @@ export default function Page() {
 										register={register}
 										error={errors.department}
 										options={DEPARTMENT_OPTIONS}
+										required
 									/>
 								</div>
-								<div style={{ marginBottom: "1rem" }}>
-									<p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem', marginBottom: '1rem' }}>
-										Please select the correct timezone for the admin, as this will determine how time is displayed across the website.
-									</p>
+								<div className={styles.row2}>
+									<InputField
+										label="Employee Start Date"
+										name="employeeStartDate"
+										type="date"
+										register={register}
+										error={errors.employeeStartDate}
+										required
+									/>
 									<InputField
 										label="Timezone"
 										name="timezone"
@@ -207,6 +216,7 @@ export default function Page() {
 										register={register}
 										error={errors.timezone}
 										options={TIMEZONE_OPTIONS}
+										required
 									/>
 								</div>
 							</CardContent>
@@ -216,6 +226,9 @@ export default function Page() {
 						<Card>
 							<CardHeader>Permission Groups</CardHeader>
 							<CardContent>
+								<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+									Select Group <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
+								</p>
 								{permissionGroups.length === 0 ? (
 									<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
 										No permission groups found.
