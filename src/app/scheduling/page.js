@@ -27,7 +27,19 @@ import { useRouter } from "next/navigation";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 
 // date-fns helpers used by the localizer and our own date formatting
-import { format, parse, startOfWeek, getDay, startOfDay, endOfDay } from "date-fns";
+import {
+	format,
+	parse,
+	startOfWeek,
+	endOfWeek,
+	startOfMonth,
+	endOfMonth,
+	startOfDay,
+	endOfDay,
+	addDays,
+	subDays,
+	getDay,
+} from "date-fns";
 
 // Canadian English locale — ensures weeks start on Sunday (en-CA convention)
 import enCA from "date-fns/locale/en-CA";
@@ -50,7 +62,6 @@ import Link from "next/link";
 
 // Custom hook — fetches all shifts from the API via React Query
 import { useShifts } from "@/hooks//useShifts";
-import { useProfile } from "@/hooks/useProfile";
 
 // ErrorState: shows a loading spinner OR an error message with a retry button
 import ErrorState from "@components/UI/ErrorState";
@@ -171,15 +182,6 @@ export default function SchedulingPage() {
 		};
 	}, []);
 
-	// Fetch all shifts from the API.
-	// useShifts() returns:
-	//   shifts          → array of shift objects from the server
-	//   isShiftLoading  → true while the first fetch is in-flight
-	//   fetchShiftError → error message string if the fetch failed, else null
-	//   refetch         → function to manually re-trigger the fetch (used by ErrorState retry button)
-	const { shifts, isShiftLoading, fetchShiftError, refetch } = useShifts();
-	const { profile } = useProfile();
-
 	// view: which calendar view is currently active ("month" | "week" | "day" | "agenda")
 	// setView is passed to the Calendar so the built-in toolbar can change it.
 	const [view, setView] = useState("week");
@@ -190,6 +192,48 @@ export default function SchedulingPage() {
 		const dt = DateTime.now().setZone(HALIFAX_TZ);
 		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
 	});
+
+	// Compute the visible calendar window. The backend skips pagination and
+	// returns every shift in the window when these are passed — without them,
+	// the response is silently capped at 10. A 1-day buffer on each side
+	// absorbs any drift between the user's local TZ (what react-big-calendar
+	// hands us in `date`) and Halifax time (how the backend interprets the
+	// date strings).
+	const visibleWindow = useMemo(() => {
+		let start;
+		let end;
+		switch (view) {
+			case "month":
+				start = startOfWeek(startOfMonth(date));
+				end = endOfWeek(endOfMonth(date));
+				break;
+			case "day":
+				start = startOfDay(date);
+				end = endOfDay(date);
+				break;
+			case "agenda":
+				start = startOfDay(date);
+				end = addDays(start, 30);
+				break;
+			case "week":
+			default:
+				start = startOfWeek(date);
+				end = endOfWeek(date);
+				break;
+		}
+		return {
+			startDate: format(subDays(start, 1), "yyyy-MM-dd"),
+			endDate: format(addDays(end, 1), "yyyy-MM-dd"),
+		};
+	}, [view, date]);
+
+	// Fetch shifts in the visible calendar window.
+	// useShifts({startDate, endDate}) returns:
+	//   shifts          → array of shift objects from the server
+	//   isShiftLoading  → true while the first fetch is in-flight
+	//   fetchShiftError → error message string if the fetch failed, else null
+	//   refetch         → function to manually re-trigger the fetch (used by ErrorState retry button)
+	const { shifts, isShiftLoading, fetchShiftError, refetch } = useShifts(visibleWindow);
 
 	// react-big-calendar draws the "current time" indicator using `getNow()`.
 	// Override it so the red line always reflects Halifax wall-clock time.
