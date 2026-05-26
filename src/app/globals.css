@@ -197,3 +197,55 @@ h6 {
 .react-datepicker-popper {
 	z-index: 9999 !important;
 }
+
+/* ── Mobile block ────────────────────────────────────────────────────────── */
+/* Desktop-only app — block access on screens narrower than 1024px */
+
+.mobileBlock {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	background: #f8fafc;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	text-align: center;
+	gap: 1.25rem;
+}
+
+.mobileBlockIcon {
+	width: 72px;
+	height: 72px;
+	background: #e0f2fe;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #0369a1;
+	flex-shrink: 0;
+}
+
+.mobileBlockTitle {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0;
+	font-family: var(--font-family-primary);
+}
+
+.mobileBlockText {
+	font-size: 0.9rem;
+	color: #6b7280;
+	max-width: 300px;
+	line-height: 1.6;
+	margin: 0;
+	font-family: var(--font-family-primary);
+}
+
+@media (max-width: 1023px) {
+	.mobileBlock {
+		display: flex;
+	}
+}

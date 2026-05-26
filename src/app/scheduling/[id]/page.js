@@ -125,6 +125,14 @@ export default function ShiftDetailPage() {
 									</InfoField>
 								</div>
 							)}
+
+							{shift.hoursWorked != null && (
+								<div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+									<InfoField label="Hours Worked">
+										<p className={styles.boldVal}>{shift.hoursWorked} hrs</p>
+									</InfoField>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 
