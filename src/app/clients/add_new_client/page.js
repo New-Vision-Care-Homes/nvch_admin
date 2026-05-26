@@ -75,6 +75,7 @@ const schema = yup.object({
 	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule.required("Postal code is required"),
 	country: addressComponentRule.required("Country is required"),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 
 	// Health Card
 	healthCardNumber: yup
@@ -231,13 +232,14 @@ export default function Page() {
 
 			address: {
 				street: data.street,
+				unit: data.unit || undefined,
 				city: data.city,
 				state: data.state,
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: data.latitude || 44.6488, // fallback to Halifax
-					longitude: data.longitude || -63.5752, // fallback to Halifax
+					latitude: data.latitude || 44.6476, // fallback to Halifax
+					longitude: data.longitude || -63.5728, // fallback to Halifax
 				},
 			},
 
@@ -441,6 +443,8 @@ export default function Page() {
 								id="client-address-autocomplete"
 								register={register}
 								fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+								unitName="unit"
+								unitError={errors.unit}
 								disabled={!watchNoHomeSelected}
 							/>
 

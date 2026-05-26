@@ -38,6 +38,7 @@ const cleanFetchedData = (apiData) => {
 		state: apiData.address?.state || "",
 		country: apiData.address?.country || "",
 		pincode: apiData.address?.pinCode || "",
+		unit: apiData.address?.unit || "",
 		region: apiData.region || "",
 		supervisor: apiData.supervisor || "",
 		teamLead: apiData.teamLead || "",
@@ -84,6 +85,7 @@ const schema = yup.object({
 	state: addressComponentRule.required("Province is required"),
 	pincode: pinRule.optional(),
 	country: addressComponentRule.required("Country is required"),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 
 	// Supervisor / Team Lead
 	supervisor: yup.string().required("Supervisor is required"),
@@ -163,11 +165,12 @@ export default function Info() {
 
 			address: {
 				street: data.street,
+				unit: data.unit || undefined,
 				city: data.city,
 				state: data.state,
 				pinCode: data.pincode,
 				country: data.country,
-				gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
+				gpsCoordinates: { latitude: 44.6476, longitude: -63.5728 },
 			},
 
 			biWeeklyWorkCapacity: {
@@ -247,6 +250,8 @@ export default function Info() {
 							onAddressSelect={handleAddressSelect}
 							register={register}
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
+							unitName="unit"
+							unitError={errors.unit}
 							error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
 							isEditing={true}
 							currentAddress={[watchStreet, watchCity, watchState, watchPincode, watchCountry].filter(Boolean).join(", ")}

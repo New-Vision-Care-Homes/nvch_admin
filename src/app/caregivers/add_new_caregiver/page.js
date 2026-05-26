@@ -82,6 +82,7 @@ const schema = yup.object({
 	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule,
 	country: addressComponentRule.required("Country is required"),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 
 	availability: yup.array().of(availabilitySchema)
 		.nullable()
@@ -187,13 +188,14 @@ export default function Page() {
 
 			address: {
 				street: data.street,
+				unit: data.unit || undefined,
 				city: data.city,
 				state: data.state,
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: data.latitude || 44.6488, // fallback to Halifax
-					longitude: data.longitude || -63.5752, // fallback to Halifax
+					latitude: data.latitude || 44.6476, // fallback to Halifax
+					longitude: data.longitude || -63.5728, // fallback to Halifax
 				},
 			},
 
@@ -313,6 +315,8 @@ export default function Page() {
 									register={register}
 									errors={errors}
 									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+									unitName="unit"
+									unitError={errors.unit}
 									error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
 								/>
 							</CardContent>

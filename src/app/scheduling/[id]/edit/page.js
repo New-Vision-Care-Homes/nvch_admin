@@ -97,7 +97,7 @@ export default function EditShiftPage() {
 
 	// ── Scheduled mode state ──────────────────────────────────────────────
 	const [tasks, setTasks] = useState([]);
-	const [mapCenter, setMapCenter] = useState({ lat: 44.6488, lng: -63.5752 });
+	const [mapCenter, setMapCenter] = useState({ lat: 44.6476, lng: -63.5728 });
 	const [geofenceAddress, setGeofenceAddress] = useState("");
 	const [geofenceCoords, setGeofenceCoords] = useState(null);
 	const mapRefsRef = useRef(null);

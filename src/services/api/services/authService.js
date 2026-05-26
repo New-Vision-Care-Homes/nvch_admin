@@ -33,4 +33,17 @@ export const authService = {
 		const response = await axiosClient.put(API_ENDPOINTS.PROFILE.BASE, updateData);
 		return response.data.data.user;
 	},
+
+	// Temporarily disabled — re-enable when forgot password feature is ready for production
+	/*
+	forgotPassword: async (email) => {
+		const response = await axiosClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+		return response.data;
+	},
+
+	resetPassword: async ({ email, otp, password }) => {
+		const response = await axiosClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, otp, password });
+		return response.data;
+	},
+	*/
 };
