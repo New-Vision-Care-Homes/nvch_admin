@@ -34,6 +34,7 @@ const schema = yup.object({
 
 	openedAt: yup.date().nullable(),
 	notes: yup.string().nullable(),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 });
 
 
@@ -215,6 +216,7 @@ export default function AddNewHomePage() {
 			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
+				unit: data.unit || undefined,
 				city: data.city || "",
 				province: data.province || "",
 				postalCode: data.postalCode || "",
@@ -465,6 +467,8 @@ export default function AddNewHomePage() {
 										placeholder="Start typing to search for an address..."
 										id="home-address-autocomplete"
 										register={register}
+										unitName="unit"
+										unitError={errors.unit}
 									/>
 								</div>
 

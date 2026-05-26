@@ -33,6 +33,7 @@ function joinAddress(addressObj) {
 	if (!addressObj) return "";
 	if (typeof addressObj === "string") return addressObj;
 	return [
+		addressObj.unit,
 		addressObj.street,
 		addressObj.city,
 		addressObj.state || addressObj.province,

@@ -179,7 +179,7 @@ export default function HomeDetailPage() {
 							<div className={styles.infoItem} style={{ marginBottom: '1rem' }}>
 								<span className={styles.infoLabel}>Address</span>
 								<span className={styles.infoValue}>
-									{[home.address.street, home.address.city, home.address.province, home.address.postalCode, home.address.country]
+									{[home.address.unit, home.address.street, home.address.city, home.address.province, home.address.postalCode, home.address.country]
 										.filter(Boolean).join(", ")}
 								</span>
 							</div>

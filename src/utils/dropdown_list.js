@@ -1,3 +1,12 @@
+export const ADMIN_LEVEL_OPTIONS = [
+	//{ label: "Super Admin", value: "super" },
+	{ label: "Manager", value: "manager" },
+	{ label: "Supervisor", value: "supervisor" },
+	{ label: "Office Admin", value: "office_admin" },
+	{ label: "Team Lead", value: "team_lead" },
+	{ label: "Payroll Admin", value: "payroll" },
+];
+
 export const CERTIFICATE_OPTIONS = [
 	{ value: "child-abuse-registry-check", label: "Child Abuse Registry Check" },
 	{ value: "criminal-vulnerable-sector-record-check", label: "Criminal & Vulnerable Sector Record Check" },

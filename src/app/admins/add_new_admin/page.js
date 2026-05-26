@@ -12,17 +12,8 @@ import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
-
-const ADMIN_LEVEL_OPTIONS = [
-	{ label: "Super Admin", value: "super" },
-	{ label: "Manager", value: "manager" },
-	{ label: "Supervisor", value: "supervisor" },
-	{ label: "Office Admin", value: "office_admin" },
-	{ label: "Team Lead", value: "team_lead" },
-	{ label: "Payroll Admin", value: "payroll" },
-];
 
 const DEPARTMENT_OPTIONS = [
 	{ label: "Operations", value: "Operations" },

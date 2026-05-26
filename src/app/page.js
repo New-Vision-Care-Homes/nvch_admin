@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import Image from "next/image";
 import styles from "./login_page.module.css";
 import { useLogin } from "@/hooks/useLogin";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -116,12 +115,12 @@ export default function LoginPage() {
 					</div>
 
 
-					{/* Forgot Password 
-					<div className={styles.forgotRow}>
+					{/* Forgot Password — hidden until feature is ready */}
+					{/* <div className={styles.forgotRow}>
 						<Link href="/forget_password" className={styles.forgotLink}>
 							Forgot password?
 						</Link>
-					</div>*/}
+					</div> */}
 
 					{/* Submit */}
 					<button

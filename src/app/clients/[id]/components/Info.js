@@ -81,6 +81,7 @@ const cleanFetchedData = (apiData) => {
 		state: apiData.address?.state || "",
 		country: apiData.address?.country || "",
 		pinCode: apiData.address?.pinCode || "",
+		unit: apiData.address?.unit || "",
 
 		// Health Card
 		healthCardNumber: apiData.healthCard?.number || "",
@@ -175,6 +176,7 @@ const schema = yup.object({
 	state: addressComponentRule.required("Province is required"),
 	pinCode: pinRule,
 	country: addressComponentRule.required("Country is required"),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 
 	// Health Card
 	healthCardNumber: yup.string().max(50).nullable().optional(),
@@ -331,6 +333,7 @@ export default function Info() {
 
 			address: {
 				street: data.street,
+				unit: data.unit || undefined,
 				city: data.city,
 				state: data.state,
 				pinCode: data.pinCode,
@@ -508,6 +511,8 @@ export default function Info() {
 							id="client-edit-address-autocomplete"
 							register={register}
 							fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
+							unitName="unit"
+							unitError={errors.unit}
 							isEditing={true}
 							currentAddress={[watchStreet, watchCity, watchState, watchPinCode, watchCountry].filter(Boolean).join(", ")}
 							disabled={!watchNoHomeSelected}

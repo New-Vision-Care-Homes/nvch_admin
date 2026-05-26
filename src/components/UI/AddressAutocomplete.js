@@ -89,6 +89,8 @@ export default function AddressAutocomplete({
   mode = "split", // "split" or "single"
   singleAddressName = "clientAddress",
   fieldNames = { street: "street", city: "city", state: "province", postalCode: "postalCode", country: "country" },
+  unitName = null,
+  unitError = null,
   currentAddress,
   isEditing = false,
   disabled = false,
@@ -391,7 +393,12 @@ export default function AddressAutocomplete({
           {mode === "split" ? (
             <>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
+                {unitName && (
+                  <div style={{ flex: '0 0 140px' }}>
+                    <InputField label="Unit / Suite" name={unitName} register={register} error={unitError} placeholder="e.g. 4B" />
+                  </div>
+                )}
+                <div style={{ flex: 2 }}>
                   <InputField label="Street" name={fieldNames.street} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 <div style={{ flex: 1 }}>

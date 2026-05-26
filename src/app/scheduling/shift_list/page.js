@@ -18,10 +18,19 @@ export default function ShiftListPage() {
 	const startParam = searchParams.get("startDate");
 	const endParam = searchParams.get("endDate");
 
-	// Fetch all shifts within the time slot
-	const { shifts = [], isShiftLoading } = useShifts({
+	// Fetch all shifts within the time slot, then narrow to exact start+end match
+	// to prevent boundary-inclusive range queries from leaking adjacent shifts in
+	// (e.g. a 19:00→07:00 overnight shift appearing in the 07:00→19:00 list).
+	const { shifts: rawShifts = [], isShiftLoading } = useShifts({
 		startDateTime: startParam,
 		endDateTime: endParam,
+	});
+	const shifts = rawShifts.filter((s) => {
+		if (!startParam || !endParam) return true;
+		return (
+			new Date(s.startTime).getTime() === new Date(startParam).getTime() &&
+			new Date(s.endTime).getTime() === new Date(endParam).getTime()
+		);
 	});
 	const { profile } = useProfile();
 

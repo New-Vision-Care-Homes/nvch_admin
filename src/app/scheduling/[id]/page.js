@@ -28,7 +28,7 @@ function personName(obj) {
 function joinAddress(addr) {
 	if (!addr) return null;
 	if (typeof addr === "string") return addr;
-	return [addr.street, addr.city, addr.state || addr.province, addr.pinCode || addr.postalCode, addr.country]
+	return [addr.unit, addr.street, addr.city, addr.state || addr.province, addr.pinCode || addr.postalCode, addr.country]
 		.filter(Boolean).join(", ") || null;
 }
 

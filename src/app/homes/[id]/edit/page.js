@@ -40,6 +40,7 @@ const schema = yup.object({
 
 	openedAt: yup.date().nullable(),
 	notes: yup.string().nullable(),
+	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 });
 
 
@@ -82,6 +83,7 @@ export default function EditHomePage() {
 				openedAt: home.openedAt ? new Date(home.openedAt).toISOString().split('T')[0] : null,
 				notes: home.notes,
 				street: home.address?.street || "",
+				unit: home.address?.unit || "",
 				city: home.address?.city || "",
 				province: home.address?.province || "",
 				postalCode: home.address?.postalCode || "",
@@ -269,6 +271,7 @@ export default function EditHomePage() {
 			homeType: data.homeType,
 			address: {
 				street: data.street || mapAddress,
+				unit: data.unit || undefined,
 				city: data.city || "",
 				province: data.province || "",
 				postalCode: data.postalCode || "",
@@ -525,6 +528,8 @@ export default function EditHomePage() {
 										placeholder="Start typing an address..."
 										id="home-address-autocomplete"
 										register={register}
+										unitName="unit"
+										unitError={errors.unit}
 										isEditing={true}
 										currentAddress={mapAddress}
 									/>
