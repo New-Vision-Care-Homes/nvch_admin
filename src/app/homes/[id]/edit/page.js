@@ -278,8 +278,8 @@ export default function EditHomePage() {
 				country: data.country || "Canada",
 			},
 			gpsCoordinates: {
-				latitude: mapCenter.lat,
-				longitude: mapCenter.lng,
+				latitude: mapCenter?.lat ?? 44.6476,
+				longitude: mapCenter?.lng ?? -63.5728,
 			},
 			defaultGeofence: {
 				radius: 100,

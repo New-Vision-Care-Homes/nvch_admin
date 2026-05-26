@@ -151,7 +151,7 @@ export default function AddNewShiftPage() {
 
 	// ── Map & address state ────────────────────────────────────────────────────
 
-	const [mapCenter, setMapCenter] = useState({ lat: 44.6488, lng: -63.5752 });
+	const [mapCenter, setMapCenter] = useState({ lat: 44.6476, lng: -63.5728 });
 	const [hasAddressSelected, setHasAddressSelected] = useState(false);
 	const [geofenceAddress, setGeofenceAddress] = useState("");
 	const mapRefsRef = useRef(null);
@@ -278,7 +278,7 @@ export default function AddNewShiftPage() {
 		setValue("geofencePostalCode", "");
 		setGeofenceAddress("");
 		setHasAddressSelected(false);
-		setMapCenter({ lat: 44.6488, lng: -63.5752 });
+		setMapCenter({ lat: 44.6476, lng: -63.5728 });
 	}
 
 	// ── Caregiver search ───────────────────────────────────────────────────────

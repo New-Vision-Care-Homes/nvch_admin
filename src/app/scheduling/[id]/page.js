@@ -55,7 +55,7 @@ export default function ShiftDetailPage() {
 
 	const mapCenter = shift.geofence?.center
 		? { lat: shift.geofence.center.latitude, lng: shift.geofence.center.longitude }
-		: { lat: 44.6488, lng: -63.5752 };
+		: { lat: 44.6476, lng: -63.5728 };
 
 	// Build address display string from geofence address or home/client address
 	const geofenceAddressStr = shift.geofence?.address || null;

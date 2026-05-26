@@ -38,8 +38,8 @@ export default function GeofenceMap({
 	useEffect(() => {
 		if (!isLoaded || !divRef.current || mapInstanceRef.current) return;
 
-		const lat = center?.latitude ?? center?.lat ?? 44.6488;
-		const lng = center?.longitude ?? center?.lng ?? -63.5752;
+		const lat = center?.latitude ?? center?.lat ?? 44.6476;
+		const lng = center?.longitude ?? center?.lng ?? -63.5728;
 		const mapCenter = { lat, lng };
 		const mapRadius = Number(radius) || 100;
 

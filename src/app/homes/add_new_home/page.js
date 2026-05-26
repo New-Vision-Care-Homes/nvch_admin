@@ -55,7 +55,7 @@ export default function AddNewHomePage() {
 	});
 
 	// Map and Location States
-	const [mapCenter, setMapCenter] = useState({ lat: 44.6488, lng: -63.5752 }); // Default Halifax
+	const [mapCenter, setMapCenter] = useState({ lat: 44.6476, lng: -63.5728 }); // Default Halifax
 	const [mapAddress, setMapAddress] = useState("");
 	const mapRefsRef = useRef(null);
 

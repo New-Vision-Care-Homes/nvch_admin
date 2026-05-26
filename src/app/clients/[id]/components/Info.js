@@ -339,8 +339,8 @@ export default function Info() {
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6488,
-					longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5752,
+					latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6476,
+					longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5728,
 				},
 			},
 

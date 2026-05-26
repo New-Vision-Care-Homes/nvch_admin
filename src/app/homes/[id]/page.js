@@ -187,7 +187,7 @@ export default function HomeDetailPage() {
 						{/* Google Map */}
 						<div style={{ width: '100%', height: '380px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #DEE1E6FF' }}>
 							<GeofenceMap
-								center={{ latitude: gpsCenter?.lat || 44.6488, longitude: gpsCenter?.lng || -63.5752 }}
+								center={{ latitude: gpsCenter?.lat || 44.6476, longitude: gpsCenter?.lng || -63.5728 }}
 								radius={100}
 								height="100%"
 							/>

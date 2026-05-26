@@ -194,8 +194,8 @@ export default function Page() {
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: data.latitude || 44.6488, // fallback to Halifax
-					longitude: data.longitude || -63.5752, // fallback to Halifax
+					latitude: data.latitude || 44.6476, // fallback to Halifax
+					longitude: data.longitude || -63.5728, // fallback to Halifax
 				},
 			},
 

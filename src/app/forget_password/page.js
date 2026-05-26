@@ -1,4 +1,11 @@
 "use client";
+
+// Temporarily disabled — re-enable when forgot password feature is ready for production
+export default function ForgetPasswordPage() {
+	return null;
+}
+
+/*
 import React, { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -136,7 +143,6 @@ export default function ForgetPasswordPage() {
 
 	const otpInvalid = otpTouched && otpValue.length !== 6;
 
-	/* ── Step 3: Success ─────────────────────────────────────── */
 	if (step === 3) {
 		return (
 			<div className={styles.page}>
@@ -162,12 +168,10 @@ export default function ForgetPasswordPage() {
 	return (
 		<div className={styles.page}>
 			<div className={styles.card}>
-				{/* Logo */}
 				<div className={styles.logoArea}>
 					<Image src={logoImg} alt="CareConnect Logo" width={140} height={48} priority />
 				</div>
 
-				{/* ── Step 1: Email ─────────────────────────────────── */}
 				{step === 1 && (
 					<>
 						<div className={styles.titleArea}>
@@ -218,7 +222,6 @@ export default function ForgetPasswordPage() {
 					</>
 				)}
 
-				{/* ── Step 2: OTP + New Password ────────────────────── */}
 				{step === 2 && (
 					<>
 						<div className={styles.titleArea}>
@@ -246,7 +249,6 @@ export default function ForgetPasswordPage() {
 						)}
 
 						<form className={styles.form} onSubmit={resetForm.handleSubmit(onResetSubmit)} noValidate>
-							{/* OTP */}
 							<div className={styles.field}>
 								<label className={styles.label}>Verification Code</label>
 								<OtpInput value={otpValue} onChange={setOtpValue} hasError={otpInvalid} />
@@ -255,7 +257,6 @@ export default function ForgetPasswordPage() {
 								)}
 							</div>
 
-							{/* New Password */}
 							<div className={styles.field}>
 								<label className={styles.label} htmlFor="fp_password">New Password</label>
 								<div className={styles.passwordWrapper}>
@@ -281,7 +282,6 @@ export default function ForgetPasswordPage() {
 								)}
 							</div>
 
-							{/* Confirm Password */}
 							<div className={styles.field}>
 								<label className={styles.label} htmlFor="fp_confirm">Confirm Password</label>
 								<div className={styles.passwordWrapper}>
@@ -336,3 +336,4 @@ export default function ForgetPasswordPage() {
 		</div>
 	);
 }
+*/

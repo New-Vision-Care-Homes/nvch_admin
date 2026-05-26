@@ -170,7 +170,7 @@ export default function Info() {
 				state: data.state,
 				pinCode: data.pincode,
 				country: data.country,
-				gpsCoordinates: { latitude: 44.6488, longitude: -63.5752 },
+				gpsCoordinates: { latitude: 44.6476, longitude: -63.5728 },
 			},
 
 			biWeeklyWorkCapacity: {
