@@ -42,6 +42,7 @@ const cleanFetchedData = (apiData) => {
 		region: apiData.region || "",
 		supervisor: apiData.supervisor || "",
 		teamLead: apiData.teamLead || "",
+		employmentStatus: apiData.employmentStatus || "",
 	};
 
 	// Emergency Contact
@@ -86,6 +87,10 @@ const schema = yup.object({
 	pincode: pinRule.optional(),
 	country: addressComponentRule.required("Country is required"),
 	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
+
+	employmentStatus: yup.string()
+		.oneOf(["full_time", "casual", "term", ""], "Please select a valid employment status")
+		.required(),
 
 	// Supervisor / Team Lead
 	supervisor: yup.string().required("Supervisor is required"),
@@ -169,6 +174,7 @@ export default function Info() {
 			dateOfBirth: data.birth || null,
 			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
 			region: data.region,
+			employmentStatus: data.employmentStatus || null,
 			notes: data.notes ? data.notes : null,
 
 			address: {
@@ -242,6 +248,22 @@ export default function Info() {
 							<InputField label="Region" name="region" type="select" register={register} error={errors.region}
 								options={REGION_OPTIONS}
 							/>
+						</div>
+
+						<div className={styles.card_row_2}>
+							<InputField
+								label="Employment Status"
+								name="employmentStatus"
+								type="select"
+								register={register}
+								error={errors.employmentStatus}
+								options={[
+									{ label: "Full Time", value: "full_time" },
+									{ label: "Casual", value: "casual" },
+									{ label: "Term", value: "term" },
+								]}
+							/>
+							<div />
 						</div>
 
 						<div className={styles.card_row_2}>

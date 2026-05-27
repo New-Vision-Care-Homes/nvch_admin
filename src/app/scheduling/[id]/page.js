@@ -9,6 +9,7 @@ import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
+import ActionMessage from "@components/UI/ActionMessage";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
@@ -45,6 +46,7 @@ export default function ShiftDetailPage() {
 	const [showCancelModal, setShowCancelModal] = useState(false);
 	const [cancelReason, setCancelReason] = useState("");
 	const [cancelReasonError, setCancelReasonError] = useState("");
+	const [cancelSuccess, setCancelSuccess] = useState(false);
 
 	const { shiftDetail, fetchShiftError, isShiftLoading, cancelShift, isCancelPending, cancelShiftError } = useShifts(id);
 
@@ -96,6 +98,9 @@ export default function ShiftDetailPage() {
 					)}
 				</div>
 			</div>
+
+			{/* ═══════════════════════════════════ ACTION FEEDBACK */}
+			<ActionMessage variant="success" message={cancelSuccess ? "Shift cancelled successfully." : null} onClose={() => setCancelSuccess(false)} />
 
 			{/* ═══════════════════════════════════ CANCELLED BANNER */}
 			{shift.status === "cancelled" && (
@@ -387,12 +392,7 @@ export default function ShiftDetailPage() {
 						Are you sure you want to cancel this shift? This action cannot be undone.
 					</p>
 
-					{cancelShiftError && (
-						<div className={styles.cancelErrorBanner} role="alert">
-							<AlertTriangle size={14} />
-							<span>{cancelShiftError}</span>
-						</div>
-					)}
+					<ActionMessage variant="error" message={cancelShiftError} />
 
 					<div className={styles.cancelReasonField}>
 						<label className={styles.cancelReasonLabel} htmlFor="cancel_reason">
@@ -433,6 +433,7 @@ export default function ShiftDetailPage() {
 									setShowCancelModal(false);
 									setCancelReason("");
 									setCancelReasonError("");
+									setCancelSuccess(true);
 								} catch (_) {
 									// cancelShiftError is populated by React Query and shown in the modal
 								}

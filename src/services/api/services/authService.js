@@ -34,6 +34,15 @@ export const authService = {
 		return response.data.data.user;
 	},
 
+	/**
+	 * Change the current user's password
+	 * PUT /api/auth/change-password
+	 */
+	changePassword: async ({ password, newPassword }) => {
+		const response = await axiosClient.put(API_ENDPOINTS.PROFILE.CHANGE_PASSWORD, { password, newPassword });
+		return response.data;
+	},
+
 	// Temporarily disabled — re-enable when forgot password feature is ready for production
 	/*
 	forgotPassword: async (email) => {

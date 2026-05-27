@@ -93,9 +93,7 @@ export default function Page() {
 	});
 
 	const onSubmit = (data) => {
-		// If 1 group: send string. If >1: send array of strings. 
-		// We'll pass the array for multiple, and single string for one, as the backend requested.
-		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
+		const permissionsGroup = data.permissionsGroup;
 
 		const body = {
 			employeeId: data.adminId,

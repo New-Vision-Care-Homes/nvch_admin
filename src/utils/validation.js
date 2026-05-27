@@ -18,10 +18,11 @@ export const passwordRule = yup
 	.trim()
 	.min(8, "Password must be at least 8 characters")
 	.max(100, "Password cannot exceed 100 characters")
-	.matches(/[A-Z]/, "Password must contain at least one uppercase letter")
-	.matches(/[a-z]/, "Password must contain at least one lowercase letter")
-	.matches(/[0-9]/, "Password must contain at least one number")
-	.matches(/[^A-Za-z0-9]/, "Password must contain at least one special character")
+	.matches(/[A-Z]/, "Password must contain at least one uppercase letter (A–Z)")
+	.matches(/[a-z]/, "Password must contain at least one lowercase letter (a–z)")
+	.matches(/[0-9]/, "Password must contain at least one number (0–9)")
+	.matches(/[@$!%*?&]/, "Password must contain at least one special character (@ $ ! % * ? &)")
+	.matches(/^[A-Za-z0-9@$!%*?&]+$/, "Only letters, numbers, and @ $ ! % * ? & are allowed")
 	.required("Password is required");
 
 export const IdRule = yup

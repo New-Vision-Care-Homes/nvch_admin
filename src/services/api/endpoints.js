@@ -48,6 +48,7 @@ export const API_ENDPOINTS = {
 	/* All related endpoints for personal profile page */
 	PROFILE: {
 		BASE: '/api/auth/profile',
+		CHANGE_PASSWORD: '/api/auth/change-password',
 	},
 
 	/* All related endpoints for caregiver hours */
