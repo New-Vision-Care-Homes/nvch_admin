@@ -8,7 +8,7 @@ import { utcToDate, utcToWeekday, utcToDisplayTime, utcToInputDateTime } from "@
 import { DateTime } from "luxon";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
-import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays, Globe } from "lucide-react";
+import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays, Globe, AlertTriangle } from "lucide-react";
 import styles from "./shift_day.module.css";
 import Link from "next/link";
 
@@ -144,6 +144,18 @@ export default function ShiftDayPage() {
 										<div className={styles.infoRow}>
 											<MapPin size={16} className={styles.icon} />
 											<span className={styles.secondaryText}>{shift.clientAddress}</span>
+										</div>
+									)}
+
+									{/* Flags */}
+									{shift.flags?.length > 0 && (
+										<div className={styles.flagsRow}>
+											{shift.flags.map((flag) => (
+												<span key={flag} className={styles.flagPill}>
+													<AlertTriangle size={12} className={styles.flagPillIcon} />
+													{flag.replace(/_/g, " ")}
+												</span>
+											))}
 										</div>
 									)}
 								</div>
