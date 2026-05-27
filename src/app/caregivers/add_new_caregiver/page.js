@@ -66,6 +66,9 @@ const schema = yup.object({
 		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
 	timezone: yup.string().required("Timezone is required"),
+	employmentStatus: yup.string()
+		.oneOf(["full_time", "casual", "term"], "Please select a valid employment status")
+		.required("Employment status is required"),
 
 	maxHours: yup
 		.number()
@@ -126,6 +129,7 @@ export default function Page() {
 			// Arrays are initialized as empty, allowing the user to add slots
 			availability: [],
 			timezone: "America/Halifax",
+			employmentStatus: "full_time",
 		}
 	});
 
@@ -181,6 +185,7 @@ export default function Page() {
 			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
 			region: data.region,
 			timezone: data.timezone,
+			employmentStatus: data.employmentStatus,
 
 			biWeeklyWorkCapacity: {
 				maxHours: data.maxHours
@@ -274,6 +279,22 @@ export default function Page() {
 										options={TIMEZONE_OPTIONS}
 										required
 									/>
+								</div>
+								<div className={styles.row2}>
+									<InputField
+										label="Employment Status"
+										name="employmentStatus"
+										type="select"
+										register={register}
+										error={errors.employmentStatus}
+										required
+										options={[
+											{ label: "Full Time", value: "full_time" },
+											{ label: "Casual", value: "casual" },
+											{ label: "Term", value: "term" },
+										]}
+									/>
+									<div />
 								</div>
 								<div className={styles.row2}>
 									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
