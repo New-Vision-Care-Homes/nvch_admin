@@ -138,7 +138,13 @@ const schema = yup.object({
 	ctoNotes: longTextRule,
 
 	// Care Plan
-	levelOfSupport: yup.string().required("Level of support is required"),
+	levelOfSupport: yup.number()
+		.transform((v, o) => (o === "" ? null : v))
+		.nullable()
+		.integer()
+		.min(1)
+		.max(5)
+		.required("Level of support is required"),
 
 	chronicConditions: longTextRule,
 	allergies: longTextRule,

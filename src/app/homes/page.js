@@ -28,6 +28,7 @@ export default function Homes() {
 		isLoading,
 		fetchError,
 		actionError,
+		isActionPending,
 		deleteHome,
 		refetch
 	} = useHomes({
@@ -44,9 +45,18 @@ export default function Homes() {
 		setShowModal(true);
 	};
 
+	const closeModal = () => {
+		if (isActionPending) return; // don't dismiss mid-request
+		setShowModal(false);
+	};
+
 	const confirmDelete = async () => {
-		if (deletedHomeId) {
+		if (!deletedHomeId) return;
+		try {
 			await deleteHome(deletedHomeId);
+		} catch {
+			// Error surfaced via `actionError`; keep going to reset the modal state.
+		} finally {
 			setShowModal(false);
 			setDeletedHomeId(null);
 		}
@@ -192,12 +202,14 @@ export default function Homes() {
 			</PageLayout>
 
 			{/* Delete Confirmation Modal */}
-			<Modal isOpen={showModal} onClose={() => setShowModal(false)}>
+			<Modal isOpen={showModal} onClose={closeModal}>
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this home?</h2>
 					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete}>Yes</Button>
-						<Button variant="secondary" onClick={() => setShowModal(false)}>No</Button>
+						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
+							{isActionPending ? "Deleting..." : "Yes"}
+						</Button>
+						<Button variant="secondary" onClick={closeModal} disabled={isActionPending}>No</Button>
 					</div>
 				</div>
 			</Modal>

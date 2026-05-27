@@ -5,7 +5,14 @@ import styles from "./Table.module.css";
 // ─── Original flex-based Table ────────────────────────────────────────────────
 
 export function Table({ children, className }) {
-	return <div className={`${styles.table} ${className || ""}`}>{children}</div>;
+	// Wrap in a horizontal scroll container so wide tables (e.g. Homes, with many
+	// columns) scroll sideways on narrow screens instead of squashing each column
+	// down to a few pixels and wrapping text character-by-character.
+	return (
+		<div className={styles.scrollX}>
+			<div className={`${styles.table} ${className || ""}`}>{children}</div>
+		</div>
+	);
 }
 
 export function TableHeader({ children, className }) {

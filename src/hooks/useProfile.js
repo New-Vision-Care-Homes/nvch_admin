@@ -12,8 +12,11 @@ export const useProfile = () => {
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.details || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
+			err?.response?.data?.details?.[0]?.msg ||
+			err?.response?.data?.message ||
+			err?.response?.data?.error ||
+			err?.message ||
+			"An unexpected error occurred"
 		);
 	};
 

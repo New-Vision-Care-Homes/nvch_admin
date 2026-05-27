@@ -6,6 +6,9 @@ import { Controller } from "react-hook-form";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import styles from "./Card.module.css";
+import { formatPhoneNumber } from "@/utils/formatting";
+
+const PHONE_PLACEHOLDER = "(XXX) XXX-XXXX";
 
 const parseDateString = (str, isDateTime) => {
 	if (!str) return null;
@@ -163,22 +166,11 @@ export function InputField({ label, name, register, control, type = "text", rows
 					{...register(name)}
 					{...rest}
 					className={`${styles.input} ${error ? styles.input_error : ""}`}
-					placeholder={placeholder || "(XXX) XXX-XXXX"}
+					placeholder={placeholder || PHONE_PLACEHOLDER}
 					maxLength={14}
 					autoComplete="off"
 					onInput={(e) => {
-						let val = e.target.value.replace(/\D/g, '');
-						if (val.length > 10) val = val.substring(0, 10);
-						
-						let formatted = val;
-						if (val.length > 6) {
-							formatted = `(${val.slice(0, 3)}) ${val.slice(3, 6)}-${val.slice(6)}`;
-						} else if (val.length > 3) {
-							formatted = `(${val.slice(0, 3)}) ${val.slice(3)}`;
-						} else if (val.length > 0) {
-							formatted = `(${val}`;
-						}
-						e.target.value = formatted;
+						e.target.value = formatPhoneNumber(e.target.value);
 					}}
 				/>
 			) : (
@@ -202,8 +194,8 @@ export function InputFieldLR({ label, name, register, type = "text", rows = 1, e
 	const inputProps = register ? register(name) : { value, onChange };
 
 	return (
-		<div className={styles.field} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-			<label className={styles.label} style={{ marginBottom: 0, minWidth: "120px" }}>
+		<div className={`${styles.field} ${styles.fieldRow}`}>
+			<label className={`${styles.label} ${styles.fieldRowLabel}`}>
 				{label}
 				{required && <span className={styles.required_star}>*</span>}
 			</label>
@@ -224,23 +216,12 @@ export function InputFieldLR({ label, name, register, type = "text", rows = 1, e
 					type="text" 
 					{...inputProps} 
 					{...rest} 
-					className={`${styles.input} ${error ? styles.input_error : ""}`} 
-					placeholder={placeholder || "(XXX) XXX-XXXX"} 
+					className={`${styles.input} ${error ? styles.input_error : ""}`}
+					placeholder={placeholder || PHONE_PLACEHOLDER}
 					maxLength={14}
 					autoComplete="off"
 					onInput={(e) => {
-						let val = e.target.value.replace(/\D/g, '');
-						if (val.length > 10) val = val.substring(0, 10);
-						
-						let formatted = val;
-						if (val.length > 6) {
-							formatted = `(${val.slice(0, 3)}) ${val.slice(3, 6)}-${val.slice(6)}`;
-						} else if (val.length > 3) {
-							formatted = `(${val.slice(0, 3)}) ${val.slice(3)}`;
-						} else if (val.length > 0) {
-							formatted = `(${val}`;
-						}
-						e.target.value = formatted;
+						e.target.value = formatPhoneNumber(e.target.value);
 					}}
 				/>
 			) : (

@@ -15,10 +15,19 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
+
+const ADMIN_LEVEL_OPTIONS = [
+	{ label: "Super Admin", value: "super" },
+	{ label: "Manager", value: "manager" },
+	{ label: "Supervisor", value: "supervisor" },
+	{ label: "Office Admin", value: "office_admin" },
+	{ label: "Team Lead", value: "team_lead" },
+	{ label: "Payroll Admin", value: "payroll" },
+];
 
 const DEPARTMENT_OPTIONS = [
 	{ label: "Operations", value: "Operations" },
@@ -150,8 +159,14 @@ export default function Page() {
 		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
 
 		const body = {
-			...data,
 			employeeId: data.adminId,
+			firstName: data.firstName,
+			lastName: data.lastName,
+			email: data.email,
+			phone: data.phone,
+			adminLevel: data.adminLevel,
+			department: data.department,
+			region: data.region,
 			employeeStartDate: data.employeeStartDate,
 			permissionsGroup,
 		};

@@ -21,9 +21,8 @@ export const useLogin = () => {
 			const token = data?.token;
 			if (token) {
 				sessionStorage.setItem("token", token);
+				router.push("/dashboard");
 			}
-			console.log(token);
-			router.push("/dashboard");
 		},
 		onError: (error) => {
 			console.error("Login failed:", error);

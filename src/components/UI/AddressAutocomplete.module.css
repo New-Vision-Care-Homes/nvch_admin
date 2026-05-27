@@ -161,3 +161,25 @@
   background: #c1ccd6;
   border-radius: 4px;
 }
+
+/* Auto-filled address field rows (split mode) */
+.addrRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.addrRowGap {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .addrRow {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  /* Let the fixed-width unit field grow to full width when stacked */
+  .addrUnit {
+    flex: 1 1 auto !important;
+  }
+}

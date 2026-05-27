@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -70,15 +71,19 @@ export default function Caregivers() {
 	};
 
 	const handleModalCancel = () => {
+		if (isCaregiverActionPending) return; // don't dismiss mid-request
 		setShowModal(false);
 	};
 
 	// --- Confirm delete ---
-	const confirmDelete = async () => {
+	const confirmDelete = () => {
 		if (!deletedCaregiverId) return;
-		deleteCaregiver(deletedCaregiverId);
-		setShowModal(false);
-		setDeletedCaregiverId(null);
+		deleteCaregiver(deletedCaregiverId, {
+			onSettled: () => {
+				setShowModal(false);
+				setDeletedCaregiverId(null);
+			},
+		});
 	};
 
 	const handlePageClick = (event) => {
@@ -172,7 +177,7 @@ export default function Caregivers() {
 														style={{ borderRadius: "50%", objectFit: "cover" }}
 														unoptimized
 													/>
-													<span>{caregiver.firstName} {caregiver.lastName}</span>
+													<span>{fullName(caregiver)}</span>
 												</TableCell>
 
 												{/* Employee ID */}
@@ -233,8 +238,10 @@ export default function Caregivers() {
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this caregiver?</h2>
 					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete}>Yes</Button>
-						<Button variant="secondary" onClick={handleModalCancel}>No</Button>
+						<Button variant="primary" onClick={confirmDelete} disabled={isCaregiverActionPending}>
+							{isCaregiverActionPending ? "Deleting..." : "Yes"}
+						</Button>
+						<Button variant="secondary" onClick={handleModalCancel} disabled={isCaregiverActionPending}>No</Button>
 					</div>
 				</div>
 			</Modal>

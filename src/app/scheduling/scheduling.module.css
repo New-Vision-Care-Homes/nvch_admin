@@ -228,5 +228,28 @@
 	font-size: 0.83rem;
 	color: #1e40af;
 	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.body {
+		padding: 16px 12px;
+		gap: 12px;
+	}
+
+	.titleRow {
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+
+	.heading {
+		font-size: 1.4rem !important;
+	}
+
+	/* Let week/day grids scroll sideways instead of squashing columns. */
+	.calendarCard {
+		overflow-x: auto;
+	}
 }
 

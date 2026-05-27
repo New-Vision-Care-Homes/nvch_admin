@@ -57,5 +57,11 @@ export const shiftService = {
 	updateCompletedShift: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.UPDATE_COMPLETED_SHIFT(id), updateData);
 		return data.data.shift;
-	}
+	},
+
+	cancel: async (id, reason) => {
+		const body = reason?.trim() ? { reason: reason.trim() } : {};
+		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.CANCEL(id), body);
+		return data.data.shift;
+	},
 };

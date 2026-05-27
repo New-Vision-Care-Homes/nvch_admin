@@ -21,3 +21,21 @@
 	overflow-y: auto;
 	background: #F9FAFB;
 }
+
+@media (max-width: 768px) {
+	.page {
+		height: auto;
+		min-height: 100vh;
+		overflow: visible;
+	}
+
+	.container {
+		flex-direction: column;
+		overflow: visible;
+	}
+
+	.body {
+		height: auto;
+		padding: 1rem;
+	}
+}

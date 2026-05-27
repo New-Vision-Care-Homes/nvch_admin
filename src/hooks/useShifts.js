@@ -88,6 +88,15 @@ export const useShifts = (options = {}) => {
 		},
 	});
 
+	// 6. Cancel a shift
+	const cancelMutation = useMutation({
+		mutationFn: ({ id, reason }) => shiftService.cancel(id, reason),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["shift", shiftId] });
+			queryClient.invalidateQueries({ queryKey: ["shifts"] });
+		},
+	});
+
 	// Fetch errors: from initial data loading (shown via ErrorState component)
 	const fetchError =
 		shiftsQuery.error ||
@@ -98,7 +107,8 @@ export const useShifts = (options = {}) => {
 		deleteMutation.error ||
 		createMutation.error ||
 		updateUpcommingShift.error ||
-		updateCompletedShift.error;
+		updateCompletedShift.error ||
+		cancelMutation.error;
 
 
 	return {
@@ -116,7 +126,8 @@ export const useShifts = (options = {}) => {
 			createMutation.isPending ||
 			updateUpcommingShift.isPending ||
 			updateCompletedShift.isPending ||
-			deleteMutation.isPending,
+			deleteMutation.isPending ||
+			cancelMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
 		fetchShiftError: fetchError ? getErrorMessage(fetchError) : null,
@@ -129,6 +140,9 @@ export const useShifts = (options = {}) => {
 		updateUpcommingShift: updateUpcommingShift.mutateAsync,
 		updateCompletedShift: updateCompletedShift.mutateAsync,
 		deleteShift: deleteMutation.mutateAsync,
+		cancelShift: cancelMutation.mutateAsync,
+		isCancelPending: cancelMutation.isPending,
+		cancelShiftError: cancelMutation.error ? getErrorMessage(cancelMutation.error) : null,
 		refetch: shiftsQuery.refetch,
 	};
 };

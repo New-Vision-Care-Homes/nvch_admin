@@ -1,3 +1,10 @@
+/* Horizontal scroll container — keeps wide tables usable on narrow screens. */
+.scrollX {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
 .table {
 	display: flex;
 	flex-direction: column;
@@ -23,12 +30,38 @@
 .content {
 	display: flex;
 	flex-direction: row;
-	padding: 3rem 8px;
+	padding: 1.5rem 8px;
 	border-bottom: 1px solid #ddd;
+	transition: background 0.12s ease;
+}
+
+.content:hover {
+	background: #f8fafc;
 }
 
 .column:last-child {
 	border-bottom: none;
+}
+
+/* On small screens, stop squashing columns to a few pixels (which wraps text
+   character-by-character). Give each cell a readable minimum and let the table
+   grow past the viewport so it scrolls horizontally inside .scrollX instead. */
+@media (max-width: 768px) {
+	.table {
+		min-width: max-content;
+	}
+
+	.header,
+	.content {
+		padding: 1rem 8px;
+	}
+
+	.cell {
+		flex: 1 0 110px;
+		min-width: 110px;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+	}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

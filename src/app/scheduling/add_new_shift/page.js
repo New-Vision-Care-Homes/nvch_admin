@@ -683,7 +683,7 @@ export default function AddNewShiftPage() {
 					<CardHeader>Service Location</CardHeader>
 					<div className={styles.gps}>
 						<div className={styles.left}>
-							<div style={{ position: "relative", width: "100%", height: "350px", border: "1px solid #DEE1E6FF", borderRadius: "8px", overflow: "hidden" }}>
+							<div style={{ position: "relative", width: "100%", height: "clamp(240px, 42vh, 350px)", border: "1px solid #DEE1E6FF", borderRadius: "8px", overflow: "hidden" }}>
 								<GeofenceMap
 									center={mapCenter}
 									radius={100}

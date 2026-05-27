@@ -21,6 +21,28 @@
 	width: 95%;
 	align-items: center;
 	justify-content: space-between;
+	gap: 10px;
+}
+
+/* Hamburger — hidden on desktop, shown in the mobile drawer breakpoint */
+.menuButton {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	background: none;
+	border: none;
+	border-radius: 6px;
+	color: #171A1FFF;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.menuButton:hover {
+	background: #EEF5FBFF;
+	color: #1C4A6EFF;
 }
 
 .element {
@@ -144,4 +166,29 @@
 	opacity: 1;
 	overflow: hidden;
 	border-radius: 30px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+	.menuButton {
+		display: flex;
+	}
+
+	.container {
+		width: 100%;
+	}
+}
+
+@media (max-width: 480px) {
+	.navbar {
+		padding: 12px 16px;
+	}
+
+	.logout span {
+		display: none; /* icon-only logout to save space */
+	}
+
+	.logout {
+		padding: 0 10px;
+	}
 }
