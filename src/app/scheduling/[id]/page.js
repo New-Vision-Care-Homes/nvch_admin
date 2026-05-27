@@ -1,17 +1,19 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
+import Modal from "@components/UI/Modal";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
-	CheckCircle2, Loader, History,
+	CheckCircle2, Loader, History, XCircle,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 
@@ -40,12 +42,16 @@ export default function ShiftDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 
-	const { shiftDetail, fetchShiftError, isLoading } = useShifts(id);
+	const [showCancelModal, setShowCancelModal] = useState(false);
+	const [cancelReason, setCancelReason] = useState("");
+	const [cancelReasonError, setCancelReasonError] = useState("");
+
+	const { shiftDetail, fetchShiftError, isShiftLoading, cancelShift, isCancelPending, cancelShiftError } = useShifts(id);
 
 	// ── Loading & Error states ─────────────────────────────────────────────
-	if (isLoading || fetchShiftError || !shiftDetail) return (
+	if (isShiftLoading || fetchShiftError || !shiftDetail) return (
 		<PageLayout>
-			<ErrorState isLoading={isLoading || (!shiftDetail && !fetchShiftError)} errorMessage={fetchShiftError} />
+			<ErrorState isLoading={isShiftLoading || (!shiftDetail && !fetchShiftError)} errorMessage={fetchShiftError} />
 		</PageLayout>
 	);
 
@@ -82,9 +88,31 @@ export default function ShiftDetailPage() {
 				</div>
 				<div className={styles.headerActions}>
 					<Button icon={<Undo2 size={16} />} onClick={() => router.push("/scheduling")} variant="secondary">Back</Button>
-					<Button icon={<Edit size={16} />} onClick={() => router.push(`/scheduling/${id}/edit`)} variant="primary">Edit</Button>
+					{!["cancelled", "completed", "in_progress", "missed"].includes(shift.status) && (
+						<Button icon={<XCircle size={16} />} onClick={() => setShowCancelModal(true)} variant="danger">Cancel Shift</Button>
+					)}
+					{shift.status !== "cancelled" && (
+						<Button icon={<Edit size={16} />} onClick={() => router.push(`/scheduling/${id}/edit`)} variant="primary">Edit</Button>
+					)}
 				</div>
 			</div>
+
+			{/* ═══════════════════════════════════ CANCELLED BANNER */}
+			{shift.status === "cancelled" && (
+				<div className={styles.cancelledBanner} role="alert">
+					<XCircle size={18} className={styles.cancelledBannerIcon} />
+					<div className={styles.cancelledBannerBody}>
+						<span className={styles.cancelledBannerTitle}>Shift Cancelled</span>
+						<span className={styles.cancelledBannerMsg}>No further changes can be made to this shift.</span>
+						{shift.cancelReason && (
+							<span className={styles.cancelledBannerReason}>
+								<span className={styles.cancelledBannerReasonLabel}>Reason:</span>
+								{shift.cancelReason}
+							</span>
+						)}
+					</div>
+				</div>
+			)}
 
 			{/* ═══════════════════════════════════ MAIN 2-COLUMN */}
 			<div className={styles.mainRow}>
@@ -347,6 +375,74 @@ export default function ShiftDetailPage() {
 					</Card>
 				</div>
 			)}
+
+			{/* ═══════════════════════════════════ CANCEL MODAL */}
+			<Modal isOpen={showCancelModal} onClose={() => { setShowCancelModal(false); setCancelReason(""); }}>
+				<div className={styles.cancelModal}>
+					<div className={styles.cancelModalIcon}>
+						<XCircle size={32} strokeWidth={1.5} />
+					</div>
+					<h2 className={styles.cancelModalTitle}>Cancel Shift</h2>
+					<p className={styles.cancelModalDesc}>
+						Are you sure you want to cancel this shift? This action cannot be undone.
+					</p>
+
+					{cancelShiftError && (
+						<div className={styles.cancelErrorBanner} role="alert">
+							<AlertTriangle size={14} />
+							<span>{cancelShiftError}</span>
+						</div>
+					)}
+
+					<div className={styles.cancelReasonField}>
+						<label className={styles.cancelReasonLabel} htmlFor="cancel_reason">
+							Reason <span style={{ color: "#dc2626" }}>*</span>
+						</label>
+						<textarea
+							id="cancel_reason"
+							className={`${styles.cancelReasonTextarea} ${cancelReasonError ? styles.cancelReasonTextareaError : ""}`}
+							rows={3}
+							placeholder="Enter a reason for cancellation…"
+							value={cancelReason}
+							onChange={(e) => { setCancelReason(e.target.value); if (e.target.value.trim()) setCancelReasonError(""); }}
+						/>
+						{cancelReasonError && (
+							<span className={styles.cancelReasonErrorMsg}>{cancelReasonError}</span>
+						)}
+					</div>
+
+					<div className={styles.cancelModalActions}>
+						<Button
+							variant="secondary"
+							onClick={() => { setShowCancelModal(false); setCancelReason(""); setCancelReasonError(""); }}
+							disabled={isCancelPending}
+						>
+							Keep Shift
+						</Button>
+						<Button
+							variant="danger"
+							icon={isCancelPending ? <Loader size={15} className={styles.spinnerIcon} /> : <XCircle size={15} />}
+							disabled={isCancelPending}
+							onClick={async () => {
+								if (!cancelReason.trim()) {
+									setCancelReasonError("Please provide a reason for cancellation.");
+									return;
+								}
+								try {
+									await cancelShift({ id, reason: cancelReason });
+									setShowCancelModal(false);
+									setCancelReason("");
+									setCancelReasonError("");
+								} catch (_) {
+									// cancelShiftError is populated by React Query and shown in the modal
+								}
+							}}
+						>
+							{isCancelPending ? "Cancelling…" : "Cancel Shift"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
 
 		</PageLayout>
 	);

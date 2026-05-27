@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
 	SHIFTS: {
 		BASE: '/api/shifts',
 		BY_ID: (id) => `/api/shifts/${id}`,
+		CANCEL: (id) => `/api/shifts/${id}/cancel`,
 		UPDATE_COMPLETED_SHIFT: (id) => `/api/hours/shifts/${id}`,
 	},
 

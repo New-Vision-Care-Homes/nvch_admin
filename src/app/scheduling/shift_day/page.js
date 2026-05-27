@@ -19,8 +19,11 @@ export default function ShiftDayPage() {
 	// ?date=yyyy-MM-dd — from month view click
 	const dateParam = searchParams.get("date");
 
-	// Fetch all shifts (uses cached data from previous pages)
-	const { shifts: rawShifts = [], isShiftLoading } = useShifts();
+	// Fetch shifts for this specific day using the date param as the range filter
+	const { shifts: rawShifts = [], isShiftLoading } = useShifts({
+		startDate: dateParam,
+		endDate: dateParam,
+	});
 	const { profile } = useProfile();
 
 	// Client-side filter to strictly only show shifts on this specific day

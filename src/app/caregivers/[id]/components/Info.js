@@ -102,6 +102,7 @@ const schema = yup.object({
 export default function Info() {
 	const [status, setStatus] = useState(null); // { variant, text }
 	const [isInitialized, setIsInitialized] = useState(false);
+	const [gpsCoordinates, setGpsCoordinates] = useState({ latitude: 44.6476, longitude: -63.5728 });
 	const { id } = useParams();
 
 	const {
@@ -133,18 +134,25 @@ export default function Info() {
 	const watchCountry = watch("country");
 
 	// --- Address Autocomplete Handler ---
-	function handleAddressSelect({ street, city, state, country, postalCode }) {
+	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
 		if (city) setValue("city", city, { shouldValidate: true });
 		if (state) setValue("state", state, { shouldValidate: true });
 		if (country) setValue("country", country, { shouldValidate: true });
 		if (postalCode) setValue("pincode", postalCode, { shouldValidate: true });
+		if (latitude != null && longitude != null) setGpsCoordinates({ latitude, longitude });
 	}
 
 	// --- 3. Data Loading ---
 	useEffect(() => {
 		if (caregiverDetail && !isInitialized) {
 			reset(cleanFetchedData(caregiverDetail));
+			if (caregiverDetail.address?.gpsCoordinates?.latitude != null) {
+				setGpsCoordinates({
+					latitude: caregiverDetail.address.gpsCoordinates.latitude,
+					longitude: caregiverDetail.address.gpsCoordinates.longitude,
+				});
+			}
 			setIsInitialized(true);
 		}
 	}, [caregiverDetail, reset, isInitialized]);
@@ -170,7 +178,7 @@ export default function Info() {
 				state: data.state,
 				pinCode: data.pincode,
 				country: data.country,
-				gpsCoordinates: { latitude: 44.6476, longitude: -63.5728 },
+				gpsCoordinates: { latitude: gpsCoordinates.latitude, longitude: gpsCoordinates.longitude },
 			},
 
 			biWeeklyWorkCapacity: {

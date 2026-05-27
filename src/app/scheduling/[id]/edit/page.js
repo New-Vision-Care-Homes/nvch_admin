@@ -46,7 +46,7 @@ const scheduledSchema = yup.object({
 			const start = DateTime.fromISO(this.parent.startTime, { zone: HALIFAX_TZ });
 			return end.isValid && start.isValid && end > start;
 		}),
-	notes: shortTextRule.optional(),
+	notes: longTextRule.optional(),
 	geofenceStreet: longTextRule.optional(),
 	geofenceCity: shortTextRule.optional(),
 	geofenceProvince: shortTextRule.optional(),
