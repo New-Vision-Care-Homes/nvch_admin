@@ -89,4 +89,20 @@
 	color: #6b7280;
 	white-space: nowrap;
 }
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.wrapper {
+		width: 100%;
+	}
+
+	.item {
+		align-items: flex-start;
+		gap: 0.25rem;
+	}
+
+	.time {
+		white-space: normal;
+	}
+}
   

@@ -22,7 +22,6 @@ export const useLogin = () => {
 			if (token) {
 				sessionStorage.setItem("token", token);
 			}
-			console.log(token);
 			router.push("/dashboard");
 		},
 		onError: (error) => {

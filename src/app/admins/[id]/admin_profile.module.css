@@ -198,3 +198,28 @@
 	border-radius: 4px;
 	cursor: pointer;
 }
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.header {
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.content {
+		flex-direction: column;
+	}
+
+	.rightPanel {
+		width: 100%;
+	}
+
+	.row2 {
+		grid-template-columns: 1fr;
+	}
+
+	.text {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+}

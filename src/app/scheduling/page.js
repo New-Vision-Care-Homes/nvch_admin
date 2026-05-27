@@ -20,7 +20,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 // react-big-calendar: the core calendar component + its date-fns adapter
@@ -102,52 +102,28 @@ const PALETTE = [
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. COLOR ASSIGNMENT HELPERS  (module-level, so they persist across renders)
+// 3. COLOR ASSIGNMENT HELPER FACTORY
 // ─────────────────────────────────────────────────────────────────────────────
-
-// caregiverColorMap: maps caregiver ID → a PALETTE entry.
-// Once a caregiver gets a color, it stays the same for the entire session.
-// This means if Jane always appears in blue, she will always be blue in week/day view.
-const caregiverColorMap = {};
-let caregiverColorIdx = 0; // increments each time a NEW caregiver is first seen
-
-/**
- * getCaregiverColor(id)
- * Returns a PALETTE color for the given caregiver ID.
- * - If no ID is supplied (unassigned shift), defaults to PALETTE[0] (blue).
- * - If this caregiver already has a color assigned, returns the same one.
- * - Otherwise, picks the next available palette color (wraps around after 8).
+/*
+ * Creates a stable color-assigner backed by a caller-owned map. The map is held
+ * in a component ref (see below) rather than a module-level object so it resets
+ * when the page unmounts — previously the maps grew unbounded across navigations.
  *
- * Used in: week/day event cards
+ * Within a single page session the assignment is stable: the first time a key
+ * (caregiver ID or date string) is seen it claims the next palette color, and
+ * the same key always returns that color thereafter. `allowEmptyKey` controls
+ * whether a falsy key (e.g. an unassigned shift) gets the default blue.
  */
-function getCaregiverColor(id) {
-	if (!id) return PALETTE[0];
-	if (!caregiverColorMap[id]) {
-		// Assign the next color. The % operator wraps around when we exceed 8 caregivers.
-		caregiverColorMap[id] = PALETTE[caregiverColorIdx % PALETTE.length];
-		caregiverColorIdx++;
-	}
-	return caregiverColorMap[id];
-}
-
-// dayColorMap: maps a "yyyy-MM-dd" date string → a PALETTE entry.
-// Each unique calendar date gets its own color in agenda view.
-const dayColorMap = {};
-let dayColorIdx = 0;
-
-/**
- * getDayColor(dateStr)
- * Returns a PALETTE color for the given date string (e.g. "2025-04-24").
- * Same logic as getCaregiverColor but keyed by date instead of caregiver ID.
- *
- * Used in: agenda event cards (all shifts on the same day share one color)
- */
-function getDayColor(dateStr) {
-	if (!dayColorMap[dateStr]) {
-		dayColorMap[dateStr] = PALETTE[dayColorIdx % PALETTE.length];
-		dayColorIdx++;
-	}
-	return dayColorMap[dateStr];
+function makeColorAssigner(state, { allowEmptyKey = false } = {}) {
+	return (key) => {
+		if (!key && !allowEmptyKey) return PALETTE[0];
+		if (!state.map[key]) {
+			// The % operator wraps around once we exceed the palette length.
+			state.map[key] = PALETTE[state.idx % PALETTE.length];
+			state.idx++;
+		}
+		return state.map[key];
+	};
 }
 
 
@@ -156,8 +132,34 @@ function getDayColor(dateStr) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
+	const [sidebarOpen, setSidebarOpen] = useState(false);
 	const [deviceTimeZone, setDeviceTimeZone] = useState(null);
 	const [halifaxNowLabel, setHalifaxNowLabel] = useState("");
+
+	// Color maps live in refs (per page instance) so they reset on navigation
+	// instead of growing unbounded for the lifetime of the JS module.
+	const caregiverColorState = useRef({ map: {}, idx: 0 });
+	const dayColorState = useRef({ map: {}, idx: 0 });
+	const getCaregiverColor = useMemo(
+		() => makeColorAssigner(caregiverColorState.current),
+		[],
+	);
+	const getDayColor = useMemo(
+		() => makeColorAssigner(dayColorState.current),
+		[],
+	);
+
+	// view: which calendar view is currently active ("month" | "week" | "day" | "agenda")
+	// setView is passed to the Calendar so the built-in toolbar can change it.
+	const [view, setView] = useState("week");
+
+	// On small screens the month/week grids are unusable, so default to the
+	// agenda (list) view. Runs once on mount; the user can still switch views.
+	useEffect(() => {
+		if (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches) {
+			setView("agenda");
+		}
+	}, []);
 
 	useEffect(() => {
 		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -181,10 +183,6 @@ export default function SchedulingPage() {
 			if (intervalId) clearInterval(intervalId);
 		};
 	}, []);
-
-	// view: which calendar view is currently active ("month" | "week" | "day" | "agenda")
-	// setView is passed to the Calendar so the built-in toolbar can change it.
-	const [view, setView] = useState("week");
 
 	// date: the "anchor" date the calendar is currently centered on.
 	// Changing this moves the calendar forward/backward (next week, prev month, etc.)
@@ -628,9 +626,9 @@ export default function SchedulingPage() {
 	// ───────────────────────────────────────────────────────────────────────
 	return (
 		<div className={styles.page}>
-			<Navbar />
+			<Navbar onMenuToggle={() => setSidebarOpen((open) => !open)} />
 			<div className={styles.container}>
-				<Sidebar />
+				<Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 				<div className={styles.body}>
 
 					{/* Page heading row: title, hint text, and "Create Shift" button */}

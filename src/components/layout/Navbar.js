@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Bell, LogOut } from "lucide-react";
+import { Search, Bell, LogOut, Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
@@ -11,7 +11,7 @@ import avatarImg from "@/assets/img/navbar/avatar.jpg";
 
 import { useProfile } from "@/hooks/useProfile";
 
-export default function Navbar() {
+export default function Navbar({ onMenuToggle = () => {} }) {
 	const [search, setSearch] = useState("");
 	const router = useRouter();
 
@@ -34,6 +34,16 @@ export default function Navbar() {
 	return (
 		<nav className={styles.navbar}>
 			<div className={styles.container}>
+				{/* Hamburger — only visible on mobile (≤ 900px via CSS) */}
+				<button
+					type="button"
+					className={styles.menuButton}
+					onClick={onMenuToggle}
+					aria-label="Toggle navigation menu"
+				>
+					<Menu size={24} />
+				</button>
+
 				{/* Logo */}
 				<Image src={logoImg} alt="App Icon" width={80} height={39} />
 

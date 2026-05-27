@@ -25,3 +25,15 @@
 	border-radius: 0px 0px 0px 0px;
 	overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+	.main {
+		padding: 1rem 1.25rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.main {
+		padding: 1rem 0.75rem;
+	}
+}

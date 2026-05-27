@@ -15,6 +15,7 @@ import Link from "next/link";
 import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
+import { fullName } from "@/utils/formatting";
 
 export default function Admins() {
 	// --- State ---
@@ -67,15 +68,19 @@ export default function Admins() {
 	};
 
 	const handleModalCancel = () => {
+		if (isActionPending) return; // don't dismiss mid-request
 		setShowModal(false);
 	};
 
 	// --- Confirm delete ---
-	const confirmDelete = async () => {
+	const confirmDelete = () => {
 		if (!deletedAdminId) return;
-		deleteAdmin(deletedAdminId);
-		setShowModal(false);
-		setDeletedAdminId(null);
+		deleteAdmin(deletedAdminId, {
+			onSettled: () => {
+				setShowModal(false);
+				setDeletedAdminId(null);
+			},
+		});
 	};
 
 	const handlePageClick = (event) => {
@@ -172,7 +177,7 @@ export default function Admins() {
 														style={{ borderRadius: "50%", objectFit: "cover" }}
 														unoptimized
 													/>
-													<span>{admin.firstName} {admin.lastName}</span>
+													<span>{fullName(admin)}</span>
 												</TableCell>
 
 												{/* Employee ID */}
@@ -233,8 +238,10 @@ export default function Admins() {
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this admin?</h2>
 					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete}>Yes</Button>
-						<Button variant="secondary" onClick={handleModalCancel}>No</Button>
+						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
+							{isActionPending ? "Deleting..." : "Yes"}
+						</Button>
+						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
 					</div>
 				</div>
 			</Modal>

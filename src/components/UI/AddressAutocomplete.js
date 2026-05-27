@@ -392,9 +392,9 @@ export default function AddressAutocomplete({
         <div style={{ marginTop: '1rem' }}>
           {mode === "split" ? (
             <>
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <div className={`${styles.addrRow} ${styles.addrRowGap}`}>
                 {unitName && (
-                  <div style={{ flex: '0 0 140px' }}>
+                  <div className={styles.addrUnit} style={{ flex: '0 0 140px' }}>
                     <InputField label="Unit / Suite" name={unitName} register={register} error={unitError} placeholder="e.g. 4B" />
                   </div>
                 )}
@@ -405,7 +405,7 @@ export default function AddressAutocomplete({
                   <InputField label="City" name={fieldNames.city} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div className={styles.addrRow}>
                 <div style={{ flex: 1 }}>
                   <InputField label="Province/State" name={fieldNames.state} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
