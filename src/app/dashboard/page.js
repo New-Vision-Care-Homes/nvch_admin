@@ -80,11 +80,11 @@ const quickActions = [
 
 export default function Dashboard() {
 	const { clients, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
-	const { totalCount: inProgressCount, isShiftLoading } = useShifts({ status: "in_progress" });
+	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
 
 	const getStatValue = (stat) => {
 		if (stat.id === "active-clients") return clients?.length ?? "—";
-		if (stat.id === "in-progress-shifts") return inProgressCount ?? "—";
+		if (stat.id === "in-progress-shifts") return inProgressShifts?.length ?? "—";
 		return stat.value ?? "N/A";
 	};
 
