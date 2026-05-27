@@ -70,6 +70,15 @@ export default function Clients() {
 		setCurrentPage(1);
 	}, [debouncedSearch, statusFilter]);
 
+	// If a page becomes empty (e.g. after deleting its last row), step back to
+	// the previous page. This reacts to the freshly-fetched `clients` data rather
+	// than reading a stale length at delete time.
+	useEffect(() => {
+		if (!isLoading && clients.length === 0 && currentPage > 1) {
+			setCurrentPage(prev => prev - 1);
+		}
+	}, [clients, isLoading, currentPage]);
+
 	// --- Handlers ---
 	const deleteHandler = (id) => {
 		setDeletedClientId(id);
@@ -77,17 +86,17 @@ export default function Clients() {
 	};
 
 	const handleModalCancel = () => {
+		if (isActionPending) return; // don't dismiss mid-request
 		setShowModal(false);
 	};
 
 	const confirmDelete = () => {
-		deleteClient(deletedClientId);
-		setShowModal(false);
-		setDeletedClientId(null);
-
-		if (clients.length === 1 && currentPage > 1) {
-			setCurrentPage(prev => prev - 1);
-		}
+		deleteClient(deletedClientId, {
+			onSettled: () => {
+				setShowModal(false);
+				setDeletedClientId(null);
+			},
+		});
 	};
 
 	const handlePageClick = (event) => {
@@ -239,7 +248,7 @@ export default function Clients() {
 						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
 							{isActionPending ? "Deleting..." : "Yes"}
 						</Button>
-						<Button variant="secondary" onClick={handleModalCancel}>No</Button>
+						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
 					</div>
 				</div>
 			</Modal>

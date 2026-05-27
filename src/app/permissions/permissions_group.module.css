@@ -70,7 +70,7 @@
 
 .slugGrid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
 	gap: 16px;
 	padding: 0 8px;
 }
@@ -129,4 +129,17 @@
 	border-radius: 8px;
 	margin-bottom: 24px;
 	font-size: 0.95rem;
+}
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.header,
+	.btnGroup {
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.permissionsContainer {
+		padding: 16px;
+	}
 }

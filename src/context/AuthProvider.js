@@ -105,7 +105,10 @@ export default function AuthProvider({ children }) {
             cleanupListeners();
             window.removeEventListener("storage", handleStorageChange);
         };
-    }, [pathname, router]);
+        // Intentionally NOT depending on `pathname`: this effect sets up a single
+        // inactivity interval + activity listeners for the whole session. Re-running
+        // it on every navigation would needlessly tear them down and recreate them.
+    }, [router]);
 
     // Show nothing while evaluating authorization to prevent flickering of protected pages
     const isPublicPath = publicPaths.includes(pathname) || pathname === "/";

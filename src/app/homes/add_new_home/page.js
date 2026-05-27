@@ -475,7 +475,7 @@ export default function AddNewHomePage() {
 								{/* Map Container */}
 								<div style={{
 									width: '100%',
-									height: '400px',
+									height: 'clamp(240px, 45vh, 400px)',
 									marginBottom: '1.5rem',
 									borderRadius: '8px',
 									overflow: 'hidden',

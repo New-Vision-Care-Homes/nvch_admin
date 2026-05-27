@@ -36,7 +36,7 @@ const keywordToTabMap = {
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose = () => {} }) {
 	const pathname = usePathname();
 
 	// Determine initial active tab
@@ -72,27 +72,51 @@ export default function Sidebar() {
 		setActiveTab(1); // fallback
 	}, [pathname]);
 
-	return (
-		<div className={styles.sidebar}>
-			{tabs.map(tab => {
-				const Icon = tab.icon;
-				const isActive = tab.id === activeTab;
+	// Close the mobile drawer on Escape
+	useEffect(() => {
+		if (!open) return;
+		const handleKeyDown = (e) => {
+			if (e.key === "Escape") onClose();
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [open, onClose]);
 
-				return (
-					<Link
-						key={tab.id}
-						href={tab.href}
-						className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
-						onClick={() => setActiveTab(tab.id)}
-					>
-						<div className={styles.iconWrapper}>
-							<Icon size={24} />
-						</div>
-						<div>{tab.label}</div>
-					</Link>
-				);
-			})}
-		</div>
+	const handleTabClick = (id) => {
+		setActiveTab(id);
+		onClose(); // close the drawer after navigating on mobile
+	};
+
+	return (
+		<>
+			{/* Backdrop — only visible when the mobile drawer is open */}
+			<div
+				className={`${styles.backdrop} ${open ? styles.backdropVisible : ""}`}
+				onClick={onClose}
+				aria-hidden="true"
+			/>
+
+			<aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ""}`}>
+				{tabs.map(tab => {
+					const Icon = tab.icon;
+					const isActive = tab.id === activeTab;
+
+					return (
+						<Link
+							key={tab.id}
+							href={tab.href}
+							className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
+							onClick={() => handleTabClick(tab.id)}
+						>
+							<div className={styles.iconWrapper}>
+								<Icon size={24} />
+							</div>
+							<div>{tab.label}</div>
+						</Link>
+					);
+				})}
+			</aside>
+		</>
 	);
 }
 

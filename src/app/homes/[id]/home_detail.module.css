@@ -91,3 +91,19 @@
 	padding: 0.2rem 0.7rem;
 	border-radius: 9999px;
 }
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.header {
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.content {
+		width: 100%;
+	}
+
+	.infoGrid {
+		grid-template-columns: 1fr;
+	}
+}
