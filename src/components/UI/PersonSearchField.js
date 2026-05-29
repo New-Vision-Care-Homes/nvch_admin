@@ -6,6 +6,7 @@ import { Search, X, User, Loader2 } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useClients } from "@/hooks/useClients";
 import { useAdmins } from "@/hooks/useAdmins";
+import { InfoField } from "@/components/UI/Card";
 import styles from "./PersonSearchField.module.css";
 
 /*
@@ -184,7 +185,7 @@ function PersonSearchInput({
 
 // ── Public export ──────────────────────────────────────────────────────────────
 export default function PersonSearchField({
-	label, name, control, error, type = "caregiver", placeholder, required,
+	label, name, control, error, type = "caregiver", placeholder, required, readOnly = false,
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const debouncedSearch = useDebounce(searchQuery, 350);
@@ -226,6 +227,10 @@ export default function PersonSearchField({
 	const initialDisplayName = initialPerson
 		? `${initialPerson.firstName || ""} ${initialPerson.lastName || ""}`.trim()
 		: "";
+
+	if (readOnly) {
+		return <InfoField label={label}>{initialDisplayName || "—"}</InfoField>;
+	}
 
 	return (
 		<Controller

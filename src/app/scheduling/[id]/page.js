@@ -15,6 +15,7 @@ import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History, XCircle,
+	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 
@@ -49,6 +50,7 @@ export default function ShiftDetailPage() {
 	const [cancelSuccess, setCancelSuccess] = useState(false);
 
 	const { shiftDetail, fetchShiftError, isShiftLoading, cancelShift, isCancelPending, cancelShiftError } = useShifts(id);
+	console.log(shiftDetail);
 
 	// ── Loading & Error states ─────────────────────────────────────────────
 	if (isShiftLoading || fetchShiftError || !shiftDetail) return (
@@ -119,6 +121,17 @@ export default function ShiftDetailPage() {
 				</div>
 			)}
 
+			{/* ═══════════════════════════════════ END EARLY BANNER */}
+			{shift.endEarlyReason && (
+				<div className={styles.endEarlyBanner} role="alert">
+					<Timer size={18} className={styles.endEarlyBannerIcon} />
+					<div className={styles.endEarlyBannerBody}>
+						<span className={styles.endEarlyBannerTitle}>Shift Ended Early</span>
+						<span className={styles.endEarlyBannerReason}>{shift.endEarlyReason}</span>
+					</div>
+				</div>
+			)}
+
 			{/* ═══════════════════════════════════ MAIN 2-COLUMN */}
 			<div className={styles.mainRow}>
 
@@ -131,41 +144,68 @@ export default function ShiftDetailPage() {
 							<span className={styles.cardTitleInner}><Clock size={15} /> Time &amp; Schedule</span>
 						</CardHeader>
 						<CardContent>
-							<div className={styles.twoCol}>
-								<InfoField label="Scheduled Start">
-									<p className={styles.boldVal}>{utcToFullDisplay(shift.startTime, "America/Halifax")}</p>
-									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
-								</InfoField>
-								<InfoField label="Scheduled End">
-									<p className={styles.boldVal}>{utcToFullDisplay(shift.endTime, "America/Halifax")}</p>
-									<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
-								</InfoField>
+							<div className={styles.timeSlotStack}>
+							<div className={styles.timeGrid}>
+								<div className={`${styles.timeSlot} ${styles.tsBlue}`}>
+									<div className={`${styles.timeSlotIcon} ${styles.tsBlueIcon}`}><CalendarDays size={14} /></div>
+									<div className={styles.timeSlotBody}>
+										<p className={`${styles.timeSlotLabel} ${styles.tsBlueLabel}`}>Scheduled Start</p>
+										<p className={`${styles.timeSlotVal} ${styles.tsBlueVal}`}>{utcToFullDisplay(shift.startTime, "America/Halifax")}</p>
+										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+									</div>
+								</div>
+								<div className={`${styles.timeSlot} ${styles.tsBlue}`}>
+									<div className={`${styles.timeSlotIcon} ${styles.tsBlueIcon}`}><CalendarDays size={14} /></div>
+									<div className={styles.timeSlotBody}>
+										<p className={`${styles.timeSlotLabel} ${styles.tsBlueLabel}`}>Scheduled End</p>
+										<p className={`${styles.timeSlotVal} ${styles.tsBlueVal}`}>{utcToFullDisplay(shift.endTime, "America/Halifax")}</p>
+										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+									</div>
+								</div>
 							</div>
 
 							{(shift.actualStartTime || shift.actualEndTime) && (
-								<div className={styles.twoCol} style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
-									<InfoField label="Actual Start (Clock-in)">
-										<p className={styles.boldVal} style={{ color: "var(--primary)" }}>
-											{shift.actualStartTime ? utcToFullDisplay(shift.actualStartTime, "America/Halifax") : "—"}
-										</p>
-										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
-									</InfoField>
-									<InfoField label="Actual End (Clock-out)">
-										<p className={styles.boldVal} style={{ color: "var(--primary)" }}>
-											{shift.actualEndTime ? utcToFullDisplay(shift.actualEndTime, "America/Halifax") : "—"}
-										</p>
-										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
-									</InfoField>
+								<div className={styles.timeGrid}>
+									<div className={`${styles.timeSlot} ${styles.tsGreen}`}>
+										<div className={`${styles.timeSlotIcon} ${styles.tsGreenIcon}`}><LogIn size={14} /></div>
+										<div className={styles.timeSlotBody}>
+											<p className={`${styles.timeSlotLabel} ${styles.tsGreenLabel}`}>Actual Start Time</p>
+											<p className={`${styles.timeSlotVal} ${styles.tsGreenVal}`}>{shift.actualStartTime ? utcToFullDisplay(shift.actualStartTime, "America/Halifax") : "—"}</p>
+											<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+										</div>
+									</div>
+									<div className={`${styles.timeSlot} ${styles.tsGreen}`}>
+										<div className={`${styles.timeSlotIcon} ${styles.tsGreenIcon}`}><LogOut size={14} /></div>
+										<div className={styles.timeSlotBody}>
+											<p className={`${styles.timeSlotLabel} ${styles.tsGreenLabel}`}>Actual End Time</p>
+											<p className={`${styles.timeSlotVal} ${styles.tsGreenVal}`}>{shift.actualEndTime ? utcToFullDisplay(shift.actualEndTime, "America/Halifax") : "—"}</p>
+											<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+										</div>
+									</div>
 								</div>
 							)}
 
 							{shift.hoursWorked != null && (
-								<div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
-									<InfoField label="Hours Worked">
-										<p className={styles.boldVal}>{shift.hoursWorked} hrs</p>
-									</InfoField>
+								<div className={`${styles.timeSlot} ${styles.tsRose}`}>
+									<div className={`${styles.timeSlotIcon} ${styles.tsRoseIcon}`}><Hourglass size={14} /></div>
+									<div className={styles.timeSlotBody}>
+										<p className={`${styles.timeSlotLabel} ${styles.tsRoseLabel}`}>Hours Worked</p>
+										<p className={`${styles.timeSlotVal} ${styles.tsRoseVal}`}>{shift.hoursWorked} hrs</p>
+									</div>
 								</div>
 							)}
+
+							{shift.reportingTime && (
+								<div className={`${styles.timeSlot} ${styles.tsPurple}`}>
+									<div className={`${styles.timeSlotIcon} ${styles.tsPurpleIcon}`}><ClipboardList size={14} /></div>
+									<div className={styles.timeSlotBody}>
+										<p className={`${styles.timeSlotLabel} ${styles.tsPurpleLabel}`}>Reporting Time</p>
+										<p className={`${styles.timeSlotVal} ${styles.tsPurpleVal}`}>{utcToFullDisplay(shift.reportingTime, "America/Halifax")}</p>
+										<p className={styles.tzNote}>Atlantic Time (Halifax)</p>
+									</div>
+								</div>
+							)}
+							</div>
 						</CardContent>
 					</Card>
 
@@ -207,18 +247,10 @@ export default function ShiftDetailPage() {
 							<CardContent>
 								<div className={styles.personGrid}>
 									<InfoField label="Home Name" value={shift.home.name || "—"} />
-									<InfoField label="Home ID" value={shift.home._id || "—"} />
 									{shift.home.region && <InfoField label="Region" value={shift.home.region} />}
 									<InfoField label="Status" value={shift.home.isActive ? "Active" : "Inactive"} />
+									{shift.home.homeType && <InfoField label="Home Type" value={shift.home.homeType} />}
 								</div>
-								{shift.home.homeType && (
-									<div style={{ marginTop: "1rem" }}>
-										<p className={styles.miniLabel}>Home Type</p>
-										<div className={styles.pillRow}>
-											<span className={styles.pill}>{shift.home.homeType}</span>
-										</div>
-									</div>
-								)}
 							</CardContent>
 						</Card>
 					)}

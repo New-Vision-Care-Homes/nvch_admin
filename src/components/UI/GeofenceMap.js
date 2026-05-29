@@ -3,7 +3,7 @@
 /* ==========================================================================
 	SCOPE: Imports & Dependencies
 ========================================================================== */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import styles from "./GeofenceMap.module.css";
@@ -47,6 +47,7 @@ export default function GeofenceMap({
 	const circleRef = useRef(null);
 	const clockInMarkerRef = useRef(null);
 	const clockOutMarkerRef = useRef(null);
+	const [pinsOverlap, setPinsOverlap] = useState(false);
 
 	/* ==========================================================================
 		SCOPE: Map Initialization
@@ -97,41 +98,47 @@ export default function GeofenceMap({
 		markerRef.current = marker;
 		circleRef.current = circle;
 
-		// Clock In marker — green pin
 		const ciLat = clockInLocation?.latitude ?? clockInLocation?.lat;
 		const ciLng = clockInLocation?.longitude ?? clockInLocation?.lng;
-		if (ciLat != null && ciLng != null) {
+		const coLat = clockOutLocation?.latitude ?? clockOutLocation?.lat;
+		const coLng = clockOutLocation?.longitude ?? clockOutLocation?.lng;
+		const hasCi = ciLat != null && ciLng != null;
+		const hasCo = coLat != null && coLng != null;
+
+		// Detect overlapping pins — offset clock-in slightly north so both are visible
+		const overlapping = hasCi && hasCo && ciLat === coLat && ciLng === coLng;
+		if (overlapping) setPinsOverlap(true);
+		const ciRenderLat = overlapping ? ciLat + 0.00015 : ciLat;
+
+		// Clock In marker — green pin
+		if (hasCi) {
 			const ciMarker = new window.google.maps.Marker({
-				position: { lat: ciLat, lng: ciLng },
+				position: { lat: ciRenderLat, lng: ciLng },
 				map: mapInstance,
 				draggable: false,
 				icon: pinIcon("#22c55e"),
-				title: "Clock In",
+				title: overlapping ? "Clock In (same location as Clock Out)" : "Clock In",
 			});
 			clockInMarkerRef.current = ciMarker;
 		}
 
 		// Clock Out marker — red pin
-		const coLat = clockOutLocation?.latitude ?? clockOutLocation?.lat;
-		const coLng = clockOutLocation?.longitude ?? clockOutLocation?.lng;
-		if (coLat != null && coLng != null) {
+		if (hasCo) {
 			const coMarker = new window.google.maps.Marker({
 				position: { lat: coLat, lng: coLng },
 				map: mapInstance,
 				draggable: false,
 				icon: pinIcon("#ef4444"),
-				title: "Clock Out",
+				title: overlapping ? "Clock Out (same location as Clock In)" : "Clock Out",
 			});
 			clockOutMarkerRef.current = coMarker;
 		}
 
 		// Auto-fit bounds when clock pins are present so all markers are visible
-		const hasCi = ciLat != null && ciLng != null;
-		const hasCo = coLat != null && coLng != null;
 		if (hasCi || hasCo) {
 			const bounds = new window.google.maps.LatLngBounds();
 			bounds.extend(mapCenter);
-			if (hasCi) bounds.extend({ lat: ciLat, lng: ciLng });
+			if (hasCi) bounds.extend({ lat: ciRenderLat, lng: ciLng });
 			if (hasCo) bounds.extend({ lat: coLat, lng: coLng });
 			mapInstance.fitBounds(bounds, 80);
 		}
@@ -199,13 +206,19 @@ export default function GeofenceMap({
 					{clockInLocation && (
 						<div className={styles.legendItem}>
 							<span className={styles.legendDot} style={{ background: "#22c55e" }} />
-							<span>Clock In</span>
+							<span>Clock In{pinsOverlap ? " (offset)" : ""}</span>
 						</div>
 					)}
 					{clockOutLocation && (
 						<div className={styles.legendItem}>
 							<span className={styles.legendDot} style={{ background: "#ef4444" }} />
 							<span>Clock Out</span>
+						</div>
+					)}
+					{pinsOverlap && (
+						<div className={styles.legendOverlapNotice}>
+							<AlertTriangle size={11} />
+							<span>Clock In &amp; Out at same location</span>
 						</div>
 					)}
 				</div>
