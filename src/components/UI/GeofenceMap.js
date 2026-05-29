@@ -9,12 +9,24 @@ import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import styles from "./GeofenceMap.module.css";
 
 /* ==========================================================================
+	SCOPE: Helpers
+========================================================================== */
+function pinIcon(color) {
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36"><path d="M14 0C6.268 0 0 6.268 0 14c0 9.941 14 22 14 22s14-12.059 14-22C28 6.268 21.732 0 14 0z" fill="${color}"/><circle cx="14" cy="14" r="6" fill="white" opacity="0.9"/></svg>`;
+	return {
+		url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+		scaledSize: new window.google.maps.Size(28, 36),
+		anchor: new window.google.maps.Point(14, 36),
+	};
+}
+
+/* ==========================================================================
 	SCOPE: Main Component
 ========================================================================== */
 /**
  * GeofenceMap
  * A reusable Google Map component that shows a location pin + geofence circle.
- * Supports both read-only (view) and interactive (edit) modes.
+ * Optionally renders clock-in (green) and clock-out (red) pins when provided.
  */
 export default function GeofenceMap({
 	center,
@@ -22,6 +34,8 @@ export default function GeofenceMap({
 	onMapReady,
 	height = "360px",
 	className = "",
+	clockInLocation = null,
+	clockOutLocation = null,
 }) {
 	/* ==========================================================================
 		SCOPE: State & References
@@ -31,6 +45,8 @@ export default function GeofenceMap({
 	const mapInstanceRef = useRef(null);
 	const markerRef = useRef(null);
 	const circleRef = useRef(null);
+	const clockInMarkerRef = useRef(null);
+	const clockOutMarkerRef = useRef(null);
 
 	/* ==========================================================================
 		SCOPE: Map Initialization
@@ -54,10 +70,13 @@ export default function GeofenceMap({
 			},
 		});
 
+		// Scheduled location — blue pin
 		const marker = new window.google.maps.Marker({
 			position: mapCenter,
 			map: mapInstance,
 			draggable: false,
+			icon: pinIcon("#3b82f6"),
+			title: "Scheduled Location",
 		});
 
 		const circle = new window.google.maps.Circle({
@@ -77,6 +96,45 @@ export default function GeofenceMap({
 		mapInstanceRef.current = mapInstance;
 		markerRef.current = marker;
 		circleRef.current = circle;
+
+		// Clock In marker — green pin
+		const ciLat = clockInLocation?.latitude ?? clockInLocation?.lat;
+		const ciLng = clockInLocation?.longitude ?? clockInLocation?.lng;
+		if (ciLat != null && ciLng != null) {
+			const ciMarker = new window.google.maps.Marker({
+				position: { lat: ciLat, lng: ciLng },
+				map: mapInstance,
+				draggable: false,
+				icon: pinIcon("#22c55e"),
+				title: "Clock In",
+			});
+			clockInMarkerRef.current = ciMarker;
+		}
+
+		// Clock Out marker — red pin
+		const coLat = clockOutLocation?.latitude ?? clockOutLocation?.lat;
+		const coLng = clockOutLocation?.longitude ?? clockOutLocation?.lng;
+		if (coLat != null && coLng != null) {
+			const coMarker = new window.google.maps.Marker({
+				position: { lat: coLat, lng: coLng },
+				map: mapInstance,
+				draggable: false,
+				icon: pinIcon("#ef4444"),
+				title: "Clock Out",
+			});
+			clockOutMarkerRef.current = coMarker;
+		}
+
+		// Auto-fit bounds when clock pins are present so all markers are visible
+		const hasCi = ciLat != null && ciLng != null;
+		const hasCo = coLat != null && coLng != null;
+		if (hasCi || hasCo) {
+			const bounds = new window.google.maps.LatLngBounds();
+			bounds.extend(mapCenter);
+			if (hasCi) bounds.extend({ lat: ciLat, lng: ciLng });
+			if (hasCo) bounds.extend({ lat: coLat, lng: coLng });
+			mapInstance.fitBounds(bounds, 80);
+		}
 
 		if (onMapReady) {
 			onMapReady({ mapInstance, marker, circle });
@@ -106,13 +164,11 @@ export default function GeofenceMap({
 	}, [center?.latitude, center?.longitude, center?.lat, center?.lng]);
 
 	/* ==========================================================================
-		SCOPE: Render Helpers
-	========================================================================== */
-	const wrapperStyle = { height };
-
-	/* ==========================================================================
 		SCOPE: Render
 	========================================================================== */
+	const wrapperStyle = { height };
+	const showLegend = clockInLocation || clockOutLocation;
+
 	if (loadError) {
 		return (
 			<div className={`${styles.wrapper} ${styles.stateBox} ${className}`} style={wrapperStyle}>
@@ -134,6 +190,26 @@ export default function GeofenceMap({
 	return (
 		<div className={`${styles.wrapper} ${className}`} style={wrapperStyle}>
 			<div ref={divRef} className={styles.mapContainer} />
+			{showLegend && (
+				<div className={styles.legend}>
+					<div className={styles.legendItem}>
+						<span className={styles.legendDot} style={{ background: "#3b82f6" }} />
+						<span>Scheduled</span>
+					</div>
+					{clockInLocation && (
+						<div className={styles.legendItem}>
+							<span className={styles.legendDot} style={{ background: "#22c55e" }} />
+							<span>Clock In</span>
+						</div>
+					)}
+					{clockOutLocation && (
+						<div className={styles.legendItem}>
+							<span className={styles.legendDot} style={{ background: "#ef4444" }} />
+							<span>Clock Out</span>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

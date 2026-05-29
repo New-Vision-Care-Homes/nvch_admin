@@ -326,6 +326,8 @@ export default function ShiftDetailPage() {
 										center={mapCenter}
 										radius={shift.geofence.radius || 100}
 										height="100%"
+										clockInLocation={shift.startLocation ?? null}
+										clockOutLocation={shift.endLocation ?? null}
 									/>
 								</div>
 							</div>
