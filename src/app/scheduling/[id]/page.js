@@ -50,7 +50,6 @@ export default function ShiftDetailPage() {
 	const [cancelSuccess, setCancelSuccess] = useState(false);
 
 	const { shiftDetail, fetchShiftError, isShiftLoading, cancelShift, isCancelPending, cancelShiftError } = useShifts(id);
-	console.log(shiftDetail);
 
 	// ── Loading & Error states ─────────────────────────────────────────────
 	if (isShiftLoading || fetchShiftError || !shiftDetail) return (
