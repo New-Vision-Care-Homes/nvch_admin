@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import styles from "./Shifts.module.css";
-import { ChevronRight, History, ExternalLink } from "lucide-react";
+import { ExternalLink, Filter, Calendar, AlertCircle } from "lucide-react";
 import { Table, TableHeader, TableCell, TableContent } from "@components/UI/Table";
 import Button from "@components/UI/Button";
 import { useShifts } from "@/hooks/useShifts";
-import { useHours } from "@/hooks/useHours";
 import { useParams, useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import ReactPaginate from "react-paginate";
@@ -15,23 +14,33 @@ import ReactPaginate from "react-paginate";
 // CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 const HALIFAX_TZ = "America/Halifax";
 
-// Color mapping for the approval status pill
-const APPROVAL_STATUS_COLORS = {
-	pending: { bg: "#FEF3C7", color: "#92400E", border: "#FDE68A" },
-	approved: { bg: "#D1FAE5", color: "#065F46", border: "#A7F3D0" },
-	rejected: { bg: "#FEE2E2", color: "#991B1B", border: "#FECACA" },
+const STATUS_COLORS = {
+	scheduled:   { bg: "#E0E7FF", color: "#4338CA", border: "#A5B4FC" },
+	in_progress: { bg: "#FEF3C7", color: "#92400E", border: "#FDE68A" },
+	completed:   { bg: "#D1FAE5", color: "#065F46", border: "#A7F3D0" },
+	cancelled:   { bg: "#FEE2E2", color: "#991B1B", border: "#FECACA" },
+	missed:      { bg: "#F3F4F6", color: "#6B7280", border: "#D1D5DB" },
 };
 
-// Color mapping for shift status pill
-const STATUS_COLORS = {
-	scheduled: { bg: "#E0E7FF", color: "#4338CA", border: "#A5B4FC" },
-	in_progress: { bg: "#FEF3C7", color: "#92400E", border: "#FDE68A" },
-	completed: { bg: "#D1FAE5", color: "#065F46", border: "#A7F3D0" },
-	cancelled: { bg: "#FEE2E2", color: "#991B1B", border: "#FECACA" },
-};
+const STATUS_OPTIONS = [
+	{ value: "",            label: "All" },
+	{ value: "scheduled",   label: "Scheduled" },
+	{ value: "in_progress", label: "In Progress" },
+	{ value: "completed",   label: "Completed" },
+	{ value: "cancelled",   label: "Cancelled" },
+	{ value: "missed",      label: "Missed" },
+];
+
+const DATE_PRESETS = [
+	{ value: "all",    label: "All Time" },
+	{ value: "today",  label: "Today" },
+	{ value: "week",   label: "This Week" },
+	{ value: "month",  label: "This Month" },
+	{ value: "custom", label: "Custom" },
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -50,7 +59,6 @@ const formatTimeOnly = (iso) => {
 const formatStatusLabel = (status = "") =>
 	status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,46 +67,72 @@ export default function Shifts() {
 	const { id } = useParams();
 	const router = useRouter();
 
-	const [activeTab, setActiveTab] = useState("upcoming");
-	const [currentPage, setCurrentPage] = useState(1);
-	const [pastPage, setPastPage] = useState(1);
+	const [statusFilter, setStatusFilter] = useState("");
+	const [datePreset, setDatePreset]     = useState("all");
+	const [customStart, setCustomStart]   = useState("");
+	const [customEnd, setCustomEnd]       = useState("");
+	const [currentPage, setCurrentPage]   = useState(1);
 
-	// Build startDateTime as a Halifax local datetime string (YYYY-MM-DDTHH:mm:ss)
-	// without the trailing Z — backend expects a Halifax wall-clock time string.
-	const nowIsoRef = useRef(
-		DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm:ss")
-	);
+	// Derive date params from the selected preset
+	const dateParams = useMemo(() => {
+		const now = DateTime.now().setZone(HALIFAX_TZ);
+		switch (datePreset) {
+			case "today": {
+				const date = now.toFormat("yyyy-MM-dd");
+				return { startDate: date, endDate: date };
+			}
+			case "week":
+				return {
+					startDate: now.startOf("week").toFormat("yyyy-MM-dd"),
+					endDate:   now.endOf("week").toFormat("yyyy-MM-dd"),
+				};
+			case "month":
+				return {
+					startDate: now.startOf("month").toFormat("yyyy-MM-dd"),
+					endDate:   now.endOf("month").toFormat("yyyy-MM-dd"),
+				};
+			case "custom":
+				if (!customStart) return {};
+				return {
+					startDate: customStart,
+					...(customEnd ? { endDate: customEnd } : {}),
+				};
+			default:
+				return {};
+		}
+	}, [datePreset, customStart, customEnd]);
 
-	// --- Upcoming shifts: use startFrom filter so the backend returns only future shifts ---
-	const {
-		shifts,
-		totalPages,
-		isShiftLoading,
-	} = useShifts({
-		params: {
-			caregiverId: id,
-			page: currentPage,
-			limit: ITEMS_PER_PAGE,
-			startDateTime: nowIsoRef.current,
-		},
-	});
+	// When a date range is active, backend ignores page/limit and returns all in range
+	const hasDateFilter = Object.keys(dateParams).length > 0;
 
+	const queryParams = {
+		caregiverId: id,
+		...(statusFilter ? { status: statusFilter } : {}),
+		...dateParams,
+		...(!hasDateFilter ? { page: currentPage, limit: ITEMS_PER_PAGE } : {}),
+	};
 
-	// --- Past shifts: use hourHistory ---
-	const { hourHistory, isLoading: isHistoryLoading } = useHours(id);
+	const { shifts, totalPages, isShiftLoading } = useShifts({ params: queryParams });
 
-	// Client-side pagination for history (the hook returns all records)
-	const historyList = hourHistory?.history ?? [];
-	const historyTotal = hourHistory?.pagination?.total ?? historyList.length;
-	const historyPages = hourHistory?.pagination?.pages ?? Math.ceil(historyList.length / ITEMS_PER_PAGE);
-	const pagedHistory = historyList.slice(
-		(pastPage - 1) * ITEMS_PER_PAGE,
-		pastPage * ITEMS_PER_PAGE
-	);
+	const showPagination = !hasDateFilter && totalPages > 1;
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// RENDER
-	// ─────────────────────────────────────────────────────────────────────────
+	// ── Handlers ──────────────────────────────────────────────────────────────
+
+	const handleStatusChange = (value) => {
+		setStatusFilter(value);
+		setCurrentPage(1);
+	};
+
+	const handleDatePreset = (value) => {
+		setDatePreset(value);
+		setCurrentPage(1);
+		if (value !== "custom") {
+			setCustomStart("");
+			setCustomEnd("");
+		}
+	};
+
+	// ── Render ────────────────────────────────────────────────────────────────
 
 	return (
 		<div className={styles.container}>
@@ -106,222 +140,174 @@ export default function Shifts() {
 			{/* ── Header ──────────────────────────────────────────────────── */}
 			<div className={styles.header}>
 				<h2>Shifts & Schedule</h2>
+				{!isShiftLoading && (
+					<span className={styles.resultCount}>
+						{shifts?.length ?? 0} shift{shifts?.length !== 1 ? "s" : ""}
+						{hasDateFilter ? " in range" : " on this page"}
+					</span>
+				)}
 			</div>
 
-			{/* ── Tab Header ──────────────────────────────────────────────── */}
-			<div className={styles.tabsHeader}>
-				<button
-					className={`${styles.tabBtn} ${activeTab === "upcoming" ? styles.tabBtnActive : ""}`}
-					onClick={() => setActiveTab("upcoming")}
-				>
-					<ChevronRight size={15} />
-					Upcoming Shifts
-					{shifts?.length > 0 && (
-						<span className={styles.tabBadge}>{shifts.length}</span>
-					)}
-				</button>
-				<button
-					className={`${styles.tabBtn} ${activeTab === "past" ? styles.tabBtnActive : ""}`}
-					onClick={() => setActiveTab("past")}
-				>
-					<History size={15} />
-					Past Shifts
-					{historyTotal > 0 && (
-						<span className={styles.tabBadge}>{historyTotal}</span>
-					)}
-				</button>
+			{/* ── Filter Bar ──────────────────────────────────────────────── */}
+			<div className={styles.filterBar}>
+
+				{/* Status pills */}
+				<div className={styles.filterSection}>
+					<div className={styles.filterLabel}>
+						<Filter size={12} />
+						Status
+					</div>
+					<div className={styles.pillGroup}>
+						{STATUS_OPTIONS.map((opt) => (
+							<button
+								key={opt.value}
+								className={`${styles.pill} ${statusFilter === opt.value ? styles.pillActive : ""}`}
+								onClick={() => handleStatusChange(opt.value)}
+							>
+								{opt.label}
+							</button>
+						))}
+					</div>
+				</div>
+
+				{/* Date preset pills */}
+				<div className={styles.filterSection}>
+					<div className={styles.filterLabel}>
+						<Calendar size={12} />
+						Date Range
+					</div>
+					<div className={styles.pillGroup}>
+						{DATE_PRESETS.map((opt) => (
+							<button
+								key={opt.value}
+								className={`${styles.pill} ${datePreset === opt.value ? styles.pillActive : ""}`}
+								onClick={() => handleDatePreset(opt.value)}
+							>
+								{opt.label}
+							</button>
+						))}
+					</div>
+				</div>
+
+				{/* Custom date inputs */}
+				{datePreset === "custom" && (
+					<div className={styles.customDateRow}>
+						<div className={styles.dateField}>
+							<label className={styles.dateLabel}>From</label>
+							<input
+								type="date"
+								className={styles.dateInput}
+								value={customStart}
+								onChange={(e) => { setCustomStart(e.target.value); setCurrentPage(1); }}
+							/>
+						</div>
+						<span className={styles.dateDash}>—</span>
+						<div className={styles.dateField}>
+							<label className={styles.dateLabel}>To</label>
+							<input
+								type="date"
+								className={styles.dateInput}
+								value={customEnd}
+								min={customStart || undefined}
+								onChange={(e) => { setCustomEnd(e.target.value); setCurrentPage(1); }}
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 
-			{/* ── Upcoming Shifts Tab ──────────────────────────────────────── */}
-			{activeTab === "upcoming" && (
-				<>
-					<Table>
-						<TableHeader>
-							<TableCell>Status</TableCell>
-							<TableCell>Date</TableCell>
-							<TableCell>Shift Times</TableCell>
-							<TableCell>Client</TableCell>
-							<TableCell>Edit</TableCell>
-						</TableHeader>
+			{/* ── Table ───────────────────────────────────────────────────── */}
+			<Table>
+				<TableHeader>
+					<TableCell>Status</TableCell>
+					<TableCell>Date</TableCell>
+					<TableCell>Shift Times</TableCell>
+					<TableCell>Client / Home</TableCell>
+					<TableCell>Details</TableCell>
+				</TableHeader>
 
-						{isShiftLoading ? (
-							<TableContent>
-								<TableCell colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>
-									Loading…
+				{isShiftLoading ? (
+					<TableContent>
+						<TableCell colSpan={5}>
+							<div className={styles.stateCell}>
+								<div className={styles.spinner} />
+								Loading shifts…
+							</div>
+						</TableCell>
+					</TableContent>
+				) : shifts && shifts.length > 0 ? (
+					shifts.map((shift) => {
+						const shiftId = shift._id;
+						const normalizedStatus = (shift.status || "scheduled")
+							.toLowerCase().replace(/\s+/g, "_");
+						const statusStyle = STATUS_COLORS[normalizedStatus] ?? STATUS_COLORS.scheduled;
+						const clientOrHome = shift.client
+							? `${shift.client.firstName} ${shift.client.lastName}`
+							: (shift.home?.name ?? <span className={styles.muted}>—</span>);
+
+						return (
+							<TableContent key={shiftId}>
+								<TableCell>
+									<span className={styles.statusPill} style={{
+										background: statusStyle.bg,
+										color: statusStyle.color,
+										border: `1px solid ${statusStyle.border}`,
+									}}>
+										{formatStatusLabel(normalizedStatus)}
+									</span>
+								</TableCell>
+								<TableCell>{formatDateOnly(shift.startTime)}</TableCell>
+								<TableCell className={styles.timeCell}>
+									<span>{formatTimeOnly(shift.startTime)}</span>
+									<span className={styles.timeSep}>–</span>
+									<span>{formatTimeOnly(shift.endTime)}</span>
+								</TableCell>
+								<TableCell>{clientOrHome}</TableCell>
+								<TableCell>
+									<Button
+										variant="ghost"
+										size="sm"
+										style={{ padding: "0.25rem 0.5rem" }}
+										onClick={() => router.push(`/scheduling/${shiftId}`)}
+										title="View Shift Details"
+									>
+										<ExternalLink size={16} color="var(--color-secondary)" />
+									</Button>
 								</TableCell>
 							</TableContent>
-						) : shifts && shifts.length > 0 ? (
-							shifts.map((shift) => {
-								const shiftId = shift._id;
-								const normalizedStatus = (shift.status || "scheduled")
-									.toLowerCase().replace(/\s+/g, "_");
-								const statusStyle = STATUS_COLORS[normalizedStatus] || STATUS_COLORS.scheduled;
+						);
+					})
+				) : (
+					<TableContent>
+						<TableCell colSpan={5}>
+							<div className={styles.stateCell}>
+								<AlertCircle size={20} color="#9ca3af" />
+								No shifts found for the selected filters.
+							</div>
+						</TableCell>
+					</TableContent>
+				)}
+			</Table>
 
-								return (
-									<TableContent key={shiftId}>
-										<TableCell>
-											<span style={{
-												display: "inline-block",
-												padding: "2px 10px",
-												borderRadius: "9999px",
-												fontSize: "0.78rem",
-												fontWeight: 600,
-												background: statusStyle.bg,
-												color: statusStyle.color,
-												border: `1px solid ${statusStyle.border}`,
-											}}>
-												{formatStatusLabel(normalizedStatus)}
-											</span>
-										</TableCell>
-										<TableCell>{formatDateOnly(shift.startTime)}</TableCell>
-										<TableCell>
-											{formatTimeOnly(shift.startTime)} – {formatTimeOnly(shift.endTime)}
-										</TableCell>
-										<TableCell>
-											{shift.client?.firstName || ""} {shift.client?.lastName || ""}
-										</TableCell>
-										<TableCell>
-											<Button
-												variant="ghost"
-												size="sm"
-												style={{ padding: "0.25rem 0.5rem" }}
-												onClick={() => router.push(`/scheduling/${shiftId}`)}
-												title="View Shift Details"
-											>
-												<ExternalLink size={16} color="var(--color-secondary)" />
-											</Button>
-										</TableCell>
-									</TableContent>
-								);
-							})
-						) : (
-							<TableContent>
-								<TableCell colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>
-									No upcoming shifts found.
-								</TableCell>
-							</TableContent>
-						)}
-					</Table>
-
-					{totalPages > 1 && (
-						<ReactPaginate
-							pageCount={Math.max(totalPages, 1)}
-							forcePage={currentPage - 1}
-							onPageChange={(e) => setCurrentPage(e.selected + 1)}
-							pageRangeDisplayed={3}
-							marginPagesDisplayed={1}
-							previousLabel="Prev"
-							nextLabel="Next"
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.pageActive}
-						/>
-					)}
-				</>
-			)}
-
-			{/* ── Past Shifts Tab (hourHistory) ────────────────────────────── */}
-			{activeTab === "past" && (
-				<>
-					<Table>
-						<TableHeader>
-							<TableCell>Date</TableCell>
-							<TableCell>Shift Times</TableCell>
-							<TableCell>Actual Times</TableCell>
-							<TableCell>Client</TableCell>
-							<TableCell>Hours Worked</TableCell>
-							<TableCell>Overtime</TableCell>
-							<TableCell>Edit</TableCell>
-						</TableHeader>
-
-						{isHistoryLoading ? (
-							<TableContent>
-								<TableCell colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>
-									Loading…
-								</TableCell>
-							</TableContent>
-						) : pagedHistory.length > 0 ? (
-							pagedHistory.map((record) => {
-								const approvalKey = (record.approvalStatus || "pending").toLowerCase();
-								const approvalStyle = APPROVAL_STATUS_COLORS[approvalKey] || APPROVAL_STATUS_COLORS.pending;
-
-								return (
-									<TableContent key={record.id}>
-										<TableCell>{formatDateOnly(record.date)}</TableCell>
-										<TableCell>
-											{formatTimeOnly(record.shiftTimes?.start)} – {formatTimeOnly(record.shiftTimes?.end)}
-										</TableCell>
-										<TableCell>
-											{record.shiftTimes?.actualStart
-												? `${formatTimeOnly(record.shiftTimes.actualStart)} – ${formatTimeOnly(record.shiftTimes.actualEnd)}`
-												: <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Not recorded</span>
-											}
-										</TableCell>
-										<TableCell>
-											{record.client
-												? `${record.client.firstName} ${record.client.lastName}`
-												: <span style={{ color: "#9ca3af" }}>—</span>
-											}
-										</TableCell>
-										<TableCell>
-											<span style={{ fontWeight: 600, color: "var(--color-primary)" }}>
-												{record.hoursWorked ?? "—"}
-											</span>
-										</TableCell>
-										<TableCell>
-											{record.overtimeHours > 0
-												? <span style={{ color: "#f59e0b", fontWeight: 600 }}>{record.overtimeHours}h</span>
-												: <span style={{ color: "#9ca3af" }}>—</span>
-											}
-										</TableCell>
-										<TableCell>
-											<Button
-												variant="ghost"
-												size="sm"
-												style={{ padding: "0.25rem 0.5rem" }}
-												onClick={() => router.push(`/scheduling/${record.id}`)}
-												title="View Shift Details"
-											>
-												<ExternalLink size={16} color="var(--color-secondary)" />
-											</Button>
-										</TableCell>
-									</TableContent>
-								);
-							})
-						) : (
-							<TableContent>
-								<TableCell colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#6b7280" }}>
-									No past shift history found.
-								</TableCell>
-							</TableContent>
-						)}
-					</Table>
-
-					{historyPages > 1 && (
-						<ReactPaginate
-							pageCount={Math.max(historyPages, 1)}
-							forcePage={pastPage - 1}
-							onPageChange={(e) => setPastPage(e.selected + 1)}
-							pageRangeDisplayed={3}
-							marginPagesDisplayed={1}
-							previousLabel="Prev"
-							nextLabel="Next"
-							containerClassName={styles.pagination}
-							pageClassName={styles.pageItem}
-							pageLinkClassName={styles.pageLink}
-							previousClassName={styles.pageItem}
-							previousLinkClassName={styles.pageLink}
-							nextClassName={styles.pageItem}
-							nextLinkClassName={styles.pageLink}
-							activeClassName={styles.pageActive}
-						/>
-					)}
-				</>
+			{/* ── Pagination ──────────────────────────────────────────────── */}
+			{showPagination && (
+				<ReactPaginate
+					pageCount={Math.max(totalPages, 1)}
+					forcePage={currentPage - 1}
+					onPageChange={(e) => setCurrentPage(e.selected + 1)}
+					pageRangeDisplayed={3}
+					marginPagesDisplayed={1}
+					previousLabel="Prev"
+					nextLabel="Next"
+					containerClassName={styles.pagination}
+					pageClassName={styles.pageItem}
+					pageLinkClassName={styles.pageLink}
+					previousClassName={styles.pageItem}
+					previousLinkClassName={styles.pageLink}
+					nextClassName={styles.pageItem}
+					nextLinkClassName={styles.pageLink}
+					activeClassName={styles.pageActive}
+				/>
 			)}
 
 		</div>

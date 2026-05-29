@@ -116,9 +116,9 @@ export const useShifts = (options = {}) => {
 		shifts: shiftsQuery.data?.shifts ?? [],
 		shiftDetail: shiftDetailQuery.data,
 
-		totalPages: shiftsQuery.data?.pagination?.totalPages ?? shiftsQuery.data?.totalPages ?? 0,
-		currentPage: shiftsQuery.data?.pagination?.currentPage ?? shiftsQuery.data?.currentPage ?? 1,
-		totalCount: shiftsQuery.data?.pagination?.totalCount ?? shiftsQuery.data?.totalCount ?? 0,
+		totalPages: shiftsQuery.data?.pagination?.totalPages ?? shiftsQuery.data?.pagination?.pages ?? shiftsQuery.data?.totalPages ?? 0,
+		currentPage: shiftsQuery.data?.pagination?.currentPage ?? shiftsQuery.data?.pagination?.current ?? shiftsQuery.data?.currentPage ?? 1,
+		totalCount: shiftsQuery.data?.pagination?.totalCount ?? shiftsQuery.data?.pagination?.total ?? shiftsQuery.data?.totalCount ?? 0,
 
 		// Status Indicators
 		isShiftLoading: shiftsQuery.isLoading || shiftDetailQuery.isLoading,
