@@ -11,7 +11,7 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { fullName } from "@/utils/formatting";
@@ -196,7 +196,7 @@ export default function Caregivers() {
 												{/* Actions */}
 												<TableCell>
 													<Link href={`/caregivers/${caregiver.id}`}>
-														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+														<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 													</Link>
 													<Trash2
 														color="#ef4444"

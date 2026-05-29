@@ -12,7 +12,7 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
 import { fullName } from "@/utils/formatting";
@@ -196,7 +196,7 @@ export default function Admins() {
 												{/* Actions */}
 												<TableCell>
 													<Link href={`/admins/${admin.id}`}>
-														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+														<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 													</Link>
 													<Trash2
 														color="#ef4444"

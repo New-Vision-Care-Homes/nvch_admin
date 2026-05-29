@@ -20,7 +20,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 // react-big-calendar: the core calendar component + its date-fns adapter
@@ -48,7 +48,7 @@ import enCA from "date-fns/locale/en-CA";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 // Lucide icons used inside event cards
-import { CalendarPlus, Clock, MapPin, User, Users } from "lucide-react";
+import { CalendarPlus, Clock, MapPin, Search, User, Users } from "lucide-react";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
@@ -148,6 +148,42 @@ export default function SchedulingPage() {
 		() => makeColorAssigner(dayColorState.current),
 		[],
 	);
+
+	// ── Shift search ────────────────────────────────────────────────────────────
+	const [shiftInput, setShiftInput] = useState("");
+	const [shiftSearch, setShiftSearch] = useState("");
+	const [showShiftDropdown, setShowShiftDropdown] = useState(false);
+	const searchRef = useRef(null);
+
+	useEffect(() => {
+		const timer = setTimeout(() => setShiftSearch(shiftInput), 400);
+		return () => clearTimeout(timer);
+	}, [shiftInput]);
+
+	const {
+		shifts: searchResults,
+		isShiftLoading: isSearchLoading,
+		fetchShiftError: searchError,
+	} = useShifts({ params: { shiftId: shiftSearch.trim(), limit: 8 } });
+
+	useEffect(() => {
+		const handler = (e) => {
+			if (searchRef.current && !searchRef.current.contains(e.target)) {
+				setShowShiftDropdown(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, []);
+
+	const handleSearchSelect = useCallback((shift) => {
+		const id = shift._id || shift.id;
+		setShiftInput("");
+		setShiftSearch("");
+		setShowShiftDropdown(false);
+		router.push(`/scheduling/${id}`);
+	}, [router]);
+	// ────────────────────────────────────────────────────────────────────────────
 
 	// view: which calendar view is currently active ("month" | "week" | "day" | "agenda")
 	// setView is passed to the Calendar so the built-in toolbar can change it.
@@ -646,6 +682,67 @@ export default function SchedulingPage() {
 						<Link href="/scheduling/add_new_shift">
 							<Button icon={<CalendarPlus size={16} />}>Create New Shift</Button>
 						</Link>
+					</div>
+
+					{/* Shift search bar */}
+					<div className={styles.searchWrapper} ref={searchRef}>
+						<div className={styles.searchInputRow}>
+							<Search size={15} className={styles.searchIcon} />
+							<input
+								className={styles.searchInput}
+								type="text"
+								placeholder="Search shifts by ID…"
+								value={shiftInput}
+								onChange={(e) => {
+									setShiftInput(e.target.value);
+									setShowShiftDropdown(true);
+								}}
+								onFocus={() => setShowShiftDropdown(true)}
+							/>
+							{shiftInput && (
+								<button
+									className={styles.searchClear}
+									onClick={() => { setShiftInput(""); setShiftSearch(""); setShowShiftDropdown(false); }}
+									aria-label="Clear search"
+								>
+									×
+								</button>
+							)}
+						</div>
+
+						{showShiftDropdown && shiftInput.trim().length > 0 && (
+							<div className={styles.searchDropdown}>
+								{isSearchLoading ? (
+									<div className={styles.searchMeta}>Searching…</div>
+								) : searchError ? (
+									<div className={styles.searchMeta}>Invalid shift ID</div>
+								) : searchResults.length === 0 ? (
+									<div className={styles.searchMeta}>No shifts found</div>
+								) : (
+									searchResults.map((shift) => {
+										const id = shift._id || shift.id;
+										const caregiverName = [shift.caregiver?.firstName, shift.caregiver?.lastName].filter(Boolean).join(" ") || "Unassigned";
+										const start = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+										const end = utcToZonedDateObject(shift.endTime, HALIFAX_TZ);
+										const dateLabel = format(start, "EEE, MMM d, yyyy");
+										const timeLabel = `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`;
+										return (
+											<button
+												key={id}
+												className={styles.searchItem}
+												onClick={() => handleSearchSelect(shift)}
+											>
+												<User size={14} className={styles.searchItemIcon} />
+												<div className={styles.searchItemBody}>
+													<span className={styles.searchItemName}>{caregiverName}</span>
+													<span className={styles.searchItemMeta}>{dateLabel} · {timeLabel}</span>
+												</div>
+											</button>
+										);
+									})
+								)}
+							</div>
+						)}
 					</div>
 
 					{/* Halifax current time (only when device TZ differs) */}

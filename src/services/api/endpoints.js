@@ -2,9 +2,8 @@ export const API_ENDPOINTS = {
 	/* All related endpoints for auth */
 	AUTH: {
 		LOGIN: '/api/auth/login/portal',
-		// Temporarily disabled — re-enable when forgot password feature is ready for production
-		// FORGOT_PASSWORD: '/api/auth/forgot-password',
-		// RESET_PASSWORD: '/api/auth/reset-password',
+		FORGOT_PASSWORD: '/api/auth/forgot-password',
+		RESET_PASSWORD: '/api/auth/reset-password',
 	},
 
 	/* All related endpoints for admins */

@@ -819,6 +819,123 @@
 	flex-shrink: 0;
 }
 
+/* ── End early banner ────────────────────────────────────────────────────── */
+.endEarlyBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	background: #fff7ed;
+	border: 1px solid #fdba74;
+	border-left: 4px solid #f97316;
+	border-radius: 10px;
+	padding: 0.9rem 1.1rem;
+	margin-bottom: 1.5rem;
+}
+
+.endEarlyBannerIcon {
+	color: #f97316;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.endEarlyBannerBody {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.endEarlyBannerTitle {
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: #9a3412;
+}
+
+.endEarlyBannerReason {
+	font-size: 0.85rem;
+	color: #7c2d12;
+	font-weight: 400;
+	line-height: 1.5;
+}
+
+/* ── Time slot cards (Time & Schedule card) ──────────────────────────────── */
+.timeSlotStack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.timeGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.timeSlot {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 0.75rem 0.9rem;
+	border-radius: 10px;
+	border: 1px solid;
+}
+
+.timeSlotIcon {
+	width: 28px;
+	height: 28px;
+	border-radius: 7px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.timeSlotBody {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+.timeSlotLabel {
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin: 0 0 3px;
+}
+
+.timeSlotVal {
+	font-size: 0.9rem;
+	font-weight: 700;
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* Blue — scheduled */
+.tsBlue { background: #eff6ff; border-color: #bfdbfe; }
+.tsBlueIcon { background: #dbeafe; color: #2563eb; }
+.tsBlueLabel { color: #1d4ed8; }
+.tsBlueVal { color: #1e3a8a; }
+
+/* Green — clock-in */
+.tsGreen { background: #f0fdf4; border-color: #bbf7d0; }
+.tsGreenIcon { background: #dcfce7; color: #16a34a; }
+.tsGreenLabel { color: #15803d; }
+.tsGreenVal { color: #14532d; }
+
+/* Rose — hours worked */
+.tsRose { background: #fff1f2; border-color: #fecdd3; }
+.tsRoseIcon { background: #ffe4e6; color: #e11d48; }
+.tsRoseLabel { color: #be123c; }
+.tsRoseVal { color: #881337; }
+
+/* Purple — reporting time */
+.tsPurple { background: #faf5ff; border-color: #d8b4fe; }
+.tsPurpleIcon { background: #ede9fe; color: #7c3aed; }
+.tsPurpleLabel { color: #6d28d9; }
+.tsPurpleVal { color: #4c1d95; }
+
 /* ── Cancel modal ────────────────────────────────────────────────────────── */
 .cancelModal {
 	display: flex;
@@ -978,6 +1095,10 @@
 	}
 
 	.twoCol {
+		grid-template-columns: 1fr;
+	}
+
+	.timeGrid {
 		grid-template-columns: 1fr;
 	}
 
