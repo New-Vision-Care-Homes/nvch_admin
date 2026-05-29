@@ -172,7 +172,7 @@ export default function ForgetPasswordPage() {
 					<>
 						<div className={styles.titleArea}>
 							<h1>Forgot Password</h1>
-							<p>Enter your email and we'll send a 6-digit verification code</p>
+							<p>Enter your email and we&apos;ll send a 6-digit verification code</p>
 						</div>
 
 						{isSendError && (
