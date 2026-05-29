@@ -8,7 +8,7 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
@@ -132,7 +132,7 @@ export default function Permissions() {
 												</TableCell>
 												<TableCell>
 													<Link href={`/permissions/${group._id}`}>
-														<Edit color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
+														<Eye color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
 													</Link>
 													<Trash2
 														color="#ef4444"

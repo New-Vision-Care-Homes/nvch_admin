@@ -8,6 +8,7 @@ import Button from "@components/UI/Button";
 import { useShifts } from "@/hooks/useShifts";
 import { useHours } from "@/hooks/useHours";
 import { useParams, useRouter } from "next/navigation";
+import { DateTime } from "luxon";
 import ReactPaginate from "react-paginate";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,6 +16,7 @@ import ReactPaginate from "react-paginate";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ITEMS_PER_PAGE = 5;
+const HALIFAX_TZ = "America/Halifax";
 
 // Color mapping for the approval status pill
 const APPROVAL_STATUS_COLORS = {
@@ -37,16 +39,12 @@ const STATUS_COLORS = {
 
 const formatDateOnly = (iso) => {
 	if (!iso) return "—";
-	return new Date(iso).toLocaleDateString("en-US", {
-		month: "short", day: "numeric", year: "numeric",
-	});
+	return DateTime.fromISO(iso, { zone: "utc" }).setZone(HALIFAX_TZ).toFormat("MMM d, yyyy");
 };
 
 const formatTimeOnly = (iso) => {
 	if (!iso) return "—";
-	return new Date(iso).toLocaleTimeString("en-US", {
-		hour: "numeric", minute: "2-digit", hour12: true,
-	});
+	return DateTime.fromISO(iso, { zone: "utc" }).setZone(HALIFAX_TZ).toFormat("h:mm a");
 };
 
 const formatStatusLabel = (status = "") =>
@@ -66,13 +64,10 @@ export default function Shifts() {
 	const [pastPage, setPastPage] = useState(1);
 
 	// Build startDateTime as a Halifax local datetime string (YYYY-MM-DDTHH:mm:ss)
-	// without the trailing Z: toISOString() gives UTC, but the backend
-	// describes this param as a "Halifax datetime string" so we pass local time.
-	const nowIsoRef = useRef((() => {
-		const now = new Date();
-		const pad = (n) => String(n).padStart(2, "0");
-		return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-	})());
+	// without the trailing Z — backend expects a Halifax wall-clock time string.
+	const nowIsoRef = useRef(
+		DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm:ss")
+	);
 
 	// --- Upcoming shifts: use startFrom filter so the backend returns only future shifts ---
 	const {
