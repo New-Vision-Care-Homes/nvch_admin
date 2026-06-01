@@ -93,8 +93,6 @@ export default function Page() {
 	});
 
 	const onSubmit = (data) => {
-		const permissionsGroup = data.permissionsGroup;
-
 		const body = {
 			employeeId: data.adminId,
 			email: data.email,
@@ -108,7 +106,7 @@ export default function Page() {
 			department: data.department,
 			timezone: data.timezone,
 			employeeStartDate: data.employeeStartDate,
-			permissionsGroup,
+			permissionsGroup: Array.isArray(data.permissionsGroup) ? data.permissionsGroup : [data.permissionsGroup].filter(Boolean),
 		};
 
 		addAdmin(body, {

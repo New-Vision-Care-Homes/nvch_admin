@@ -41,7 +41,7 @@ const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
-	phone: phoneRule.required("Phone number is required"),
+	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
 	region: yup.string()
@@ -156,8 +156,6 @@ export default function Page() {
 	};
 
 	const onSubmit = (data) => {
-		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
-
 		const body = {
 			employeeId: data.adminId,
 			firstName: data.firstName,
@@ -168,7 +166,7 @@ export default function Page() {
 			department: data.department,
 			region: data.region,
 			employeeStartDate: data.employeeStartDate,
-			permissionsGroup,
+			permissionsGroup: Array.isArray(data.permissionsGroup) ? data.permissionsGroup : [data.permissionsGroup].filter(Boolean),
 		};
 
 		updateAdmin({ id, data: body }, {
@@ -179,7 +177,12 @@ export default function Page() {
 			},
 			onError: (err) => {
 				const data = err?.response?.data;
-				const msg = data?.error || data?.message || "An unexpected error occurred";
+				let msg;
+				if (Array.isArray(data?.details) && data.details.length > 0) {
+					msg = data.details.map(d => d.msg || d).filter(Boolean).join("; ");
+				} else {
+					msg = data?.error || data?.message || "An unexpected error occurred";
+				}
 				setMessage(msg);
 				setIsGeneralModalOpen(true);
 			}
