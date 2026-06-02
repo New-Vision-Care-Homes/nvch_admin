@@ -16,6 +16,7 @@ import {
 	Activity,
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
+import { useShifts } from "@/hooks/useShifts";
 
 const stats = [
 	{
@@ -24,23 +25,20 @@ const stats = [
 		icon: Users,
 		iconColor: "#16a34a",
 		bgColor: "#f0fdf4",
-		value: null, // filled dynamically
-		dynamic: true,
 	},
 	{
-		id: "caregivers-on-shift",
-		label: "Caregivers on Shift",
-		icon: Calendar,
-		iconColor: "#1C4A6E",
-		bgColor: "#eff6ff",
-		value: "N/A",
+		id: "in-progress-shifts",
+		label: "Shifts In Progress",
+		icon: Activity,
+		iconColor: "#d97706",
+		bgColor: "#fffbeb",
 	},
 	{
 		id: "pending-approvals",
 		label: "Pending Approvals",
 		icon: Clock,
 		iconColor: "#b45309",
-		bgColor: "#fffbeb",
+		bgColor: "#fef3c7",
 		value: "N/A",
 	},
 	{
@@ -81,7 +79,20 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
-	const { clients, isLoading } = useClients({ params: { isActive: true } });
+	const { clients, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
+	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
+
+	const getStatValue = (stat) => {
+		if (stat.id === "active-clients") return clients?.length ?? "—";
+		if (stat.id === "in-progress-shifts") return inProgressShifts?.length ?? "—";
+		return stat.value ?? "N/A";
+	};
+
+	const isStatLoading = (stat) => {
+		if (stat.id === "active-clients") return isClientsLoading;
+		if (stat.id === "in-progress-shifts") return isShiftLoading;
+		return false;
+	};
 
 	return (
 		<PageLayout>
@@ -99,7 +110,6 @@ export default function Dashboard() {
 				<div className={styles.statsGrid}>
 					{stats.map((stat) => {
 						const Icon = stat.icon;
-						const displayValue = stat.dynamic ? clients?.length ?? "—" : stat.value;
 						return (
 							<div key={stat.id} className={styles.statCard}>
 								<div className={styles.statTop}>
@@ -109,14 +119,14 @@ export default function Dashboard() {
 									</span>
 								</div>
 								<span className={styles.statValue}>
-									{isLoading ? (
+									{isStatLoading(stat) ? (
 										<span className={styles.loadingDots}>
 											<span className={styles.dot}></span>
 											<span className={styles.dot}></span>
 											<span className={styles.dot}></span>
 										</span>
 									) : (
-										displayValue
+										getStatValue(stat)
 									)}
 								</span>
 							</div>

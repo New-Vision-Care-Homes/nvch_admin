@@ -6,7 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { utcToDisplayTime, utcToWeekday, utcToDate } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
-import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe } from "lucide-react";
+import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe, AlertTriangle } from "lucide-react";
 import styles from "./shift_list.module.css";
 import Link from "next/link";
 
@@ -135,6 +135,18 @@ export default function ShiftListPage() {
 										<div className={styles.infoRow}>
 											<MapPin size={16} className={styles.icon} />
 											<span className={styles.secondaryText}>{shift.clientAddress}</span>
+										</div>
+									)}
+
+									{/* Flags */}
+									{shift.flags?.length > 0 && (
+										<div className={styles.flagsRow}>
+											{shift.flags.map((flag) => (
+												<span key={flag} className={styles.flagPill}>
+													<AlertTriangle size={12} className={styles.flagPillIcon} />
+													{flag.replace(/_/g, " ")}
+												</span>
+											))}
 										</div>
 									)}
 								</div>

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./login_page.module.css";
 import { useLogin } from "@/hooks/useLogin";
 import { useForm } from "react-hook-form";
@@ -115,12 +116,11 @@ export default function LoginPage() {
 					</div>
 
 
-					{/* Forgot Password — hidden until feature is ready */}
-					{/* <div className={styles.forgotRow}>
+					<div className={styles.forgotRow}>
 						<Link href="/forget_password" className={styles.forgotLink}>
 							Forgot password?
 						</Link>
-					</div> */}
+					</div>
 
 					{/* Submit */}
 					<button

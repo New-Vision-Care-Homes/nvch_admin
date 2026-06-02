@@ -21,8 +21,8 @@ export const useLogin = () => {
 			const token = data?.token;
 			if (token) {
 				sessionStorage.setItem("token", token);
+				router.push("/dashboard");
 			}
-			router.push("/dashboard");
 		},
 		onError: (error) => {
 			console.error("Login failed:", error);
@@ -37,8 +37,6 @@ export const useLogin = () => {
 	}
 };
 
-// Temporarily disabled — re-enable when forgot password feature is ready for production
-/*
 export const useForgotPassword = () => {
 	const requestMutation = useMutation({
 		mutationFn: (email) => authService.forgotPassword(email),
@@ -61,4 +59,3 @@ export const useForgotPassword = () => {
 		isResetSuccess: resetMutation.isSuccess,
 	};
 };
-*/

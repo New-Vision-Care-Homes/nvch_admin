@@ -12,8 +12,11 @@ export const useProfile = () => {
 	 */
 	const getErrorMessage = (err) => {
 		return (
-			err?.response?.data?.details || // Message from backend (e.g., "Email already exists")
-			"An unexpected error occurred"  // Fallback string
+			err?.response?.data?.details?.[0]?.msg ||
+			err?.response?.data?.message ||
+			err?.response?.data?.error ||
+			err?.message ||
+			"An unexpected error occurred"
 		);
 	};
 
@@ -28,20 +31,27 @@ export const useProfile = () => {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["profile"] }),
 	});
 
+	const changePasswordMutation = useMutation({
+		mutationFn: (data) => authService.changePassword(data),
+	});
+
 	return {
 		// Data
 		profile: profileQuery.data ?? null,
 		updateProfile: updateMutation.mutate,
+		changePassword: changePasswordMutation.mutate,
 
 		// Status Indicators
 		isLoading: profileQuery.isLoading,
 		isActionPending: updateMutation.isPending,
+		isChangePasswordPending: changePasswordMutation.isPending,
 
 		// Fetch error → use with <ErrorState> component
 		fetchError: profileQuery.error ? getErrorMessage(profileQuery.error) : null,
 
 		// Action error → use with toast or inline message
 		actionError: updateMutation.error ? getErrorMessage(updateMutation.error) : null,
+		changePasswordError: changePasswordMutation.error ? getErrorMessage(changePasswordMutation.error) : null,
 
 		refetch: profileQuery.refetch,
 	};

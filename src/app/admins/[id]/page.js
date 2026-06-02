@@ -15,10 +15,19 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
+
+const ADMIN_LEVEL_OPTIONS = [
+	{ label: "Super Admin", value: "super" },
+	{ label: "Manager", value: "manager" },
+	{ label: "Supervisor", value: "supervisor" },
+	{ label: "Office Admin", value: "office_admin" },
+	{ label: "Team Lead", value: "team_lead" },
+	{ label: "Payroll Admin", value: "payroll" },
+];
 
 const DEPARTMENT_OPTIONS = [
 	{ label: "Operations", value: "Operations" },
@@ -32,7 +41,7 @@ const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.required("Email is required"),
-	phone: phoneRule.required("Phone number is required"),
+	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
 	region: yup.string()
@@ -147,13 +156,17 @@ export default function Page() {
 	};
 
 	const onSubmit = (data) => {
-		const permissionsGroup = data.permissionsGroup.length === 1 ? data.permissionsGroup[0] : data.permissionsGroup;
-
 		const body = {
-			...data,
 			employeeId: data.adminId,
+			firstName: data.firstName,
+			lastName: data.lastName,
+			email: data.email,
+			phone: data.phone,
+			adminLevel: data.adminLevel,
+			department: data.department,
+			region: data.region,
 			employeeStartDate: data.employeeStartDate,
-			permissionsGroup,
+			permissionsGroup: Array.isArray(data.permissionsGroup) ? data.permissionsGroup : [data.permissionsGroup].filter(Boolean),
 		};
 
 		updateAdmin({ id, data: body }, {
@@ -164,7 +177,12 @@ export default function Page() {
 			},
 			onError: (err) => {
 				const data = err?.response?.data;
-				const msg = data?.error || data?.message || "An unexpected error occurred";
+				let msg;
+				if (Array.isArray(data?.details) && data.details.length > 0) {
+					msg = data.details.map(d => d.msg || d).filter(Boolean).join("; ");
+				} else {
+					msg = data?.error || data?.message || "An unexpected error occurred";
+				}
 				setMessage(msg);
 				setIsGeneralModalOpen(true);
 			}
