@@ -293,8 +293,9 @@ export default function SchedulingPage() {
 	const [payrollOffset, setPayrollOffset] = useState(0);
 	const [payrollPage, setPayrollPage]     = useState(1);
 
-	// Reset to page 1 whenever the period changes so the user isn't left mid-table.
-	useEffect(() => { setPayrollPage(1); }, [payrollOffset]);
+	// Reset to page 1 whenever the period or home filter changes, so the user
+	// isn't left on a page that doesn't exist for the new dataset.
+	useEffect(() => { setPayrollPage(1); }, [payrollOffset, selectedHomeId]);
 
 	// Calculate the start and end dates of the selected pay period.
 	// Formula: currentPeriodIndex = floor((today - anchor) / 14 days)
