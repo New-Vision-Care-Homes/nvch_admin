@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
+import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
 import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 
@@ -46,10 +47,11 @@ const schema = yup.object({
 	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
-	region: yup
-		.string()
-		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
-		.required("Region is required"),
+	regions: yup
+		.array()
+		.of(yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region"))
+		.min(1, "Please select at least one region")
+		.required("Please select at least one region"),
 	timezone: yup.string().required("Timezone is required"),
 	employeeStartDate: dateRule,
 	permissionsGroup: yup
@@ -83,21 +85,25 @@ export default function Page() {
 		register,
 		handleSubmit,
 		setValue,
+		watch,
 		formState: { errors },
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			permissionsGroup: [], // Initialize array so Yup can validate it properly
+			regions: [], // Initialize array so Yup can validate it properly
 			timezone: "America/Halifax",
 		}
 	});
+
+	const selectedRegions = watch("regions") || [];
 
 	const onSubmit = (data) => {
 		const body = {
 			employeeId: data.adminId,
 			email: data.email,
 			password: data.password,
-			region: data.region,
+			regions: data.regions,
 			firstName: data.firstName,
 			lastName: data.lastName,
 			role: "admin",
@@ -144,13 +150,19 @@ export default function Page() {
 							<CardContent>
 								<div className={styles.row2}>
 									<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} required />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
-										options={REGION_OPTIONS}
-									/>
+									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
 								</div>
 								<div className={styles.row2}>
-									<InputField label="First Name" name="firstName" register={register} error={errors.firstName} required />
 									<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} required />
+								</div>
+								<div style={{ marginBottom: "1rem" }}>
+									<RegionCheckboxGroup
+										label="Regions"
+										required
+										value={selectedRegions}
+										onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+										error={errors.regions}
+									/>
 								</div>
 								<div className={styles.row2}>
 									<InputField label="Email" name="email" register={register} error={errors.email} required />

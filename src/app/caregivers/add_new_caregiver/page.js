@@ -18,6 +18,7 @@ import PersonSearchField from "@/components/UI/PersonSearchField";
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -62,9 +63,11 @@ const schema = yup.object({
 	phone: phoneRule.required("Phone number is required"),
 	dateOfBirth: birthRule.required("Date of Birth is required"),
 	employeeStartDate: dateRule.required("Employee Start Date is required"),
-	region: yup.string()
-		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
-		.required("Region is required"),
+	regions: yup
+		.array()
+		.of(yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region"))
+		.min(1, "Please select at least one region")
+		.required("Please select at least one region"),
 	timezone: yup.string().required("Timezone is required"),
 	employmentStatus: yup.string()
 		.oneOf(["full_time", "casual", "term"], "Please select a valid employment status")
@@ -128,10 +131,13 @@ export default function Page() {
 		defaultValues: {
 			// Arrays are initialized as empty, allowing the user to add slots
 			availability: [],
+			regions: [],
 			timezone: "America/Halifax",
 			employmentStatus: "full_time",
 		}
 	});
+
+	const selectedRegions = watch("regions") || [];
 
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
@@ -183,7 +189,7 @@ export default function Page() {
 			employeeId: data.employeeId,
 			dateOfBirth: data.dateOfBirth,
 			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
-			region: data.region,
+			regions: data.regions,
 			timezone: data.timezone,
 			employmentStatus: data.employmentStatus,
 
@@ -307,8 +313,16 @@ export default function Page() {
 
 								<div className={styles.row2}>
 									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" required />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region} required
-										options={REGION_OPTIONS}
+									<div />
+								</div>
+
+								<div style={{ marginBottom: "1rem" }}>
+									<RegionCheckboxGroup
+										label="Regions"
+										required
+										value={selectedRegions}
+										onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+										error={errors.regions}
 									/>
 								</div>
 
