@@ -495,7 +495,11 @@ export default function SchedulingPage() {
 	// react-big-calendar calls this when an event is clicked.
 	// We route to different pages depending on which type of event was clicked,
 	// identified by the boolean flags we set during transformation above.
+	// When a home filter is active we forward it via URL param so the destination
+	// page fetches only shifts for that home, matching what the calendar showed.
 	const handleSelectEvent = (event) => {
+		const homeParam = selectedHomeId ? `&homeId=${encodeURIComponent(selectedHomeId)}` : "";
+
 		// Agenda click → go straight to the single shift detail page
 		if (event._isAgenda) {
 			const shiftId = event._shift?._id || event._shift?.id;
@@ -503,16 +507,16 @@ export default function SchedulingPage() {
 			return;
 		}
 
-		// Month click → show all shifts for that calendar day
+		// Month click → show all shifts for that calendar day (respecting home filter)
 		if (event._isMonthSummary) {
-			router.push(`/scheduling/shift_day?date=${encodeURIComponent(event._dateStr)}`);
+			router.push(`/scheduling/shift_day?date=${encodeURIComponent(event._dateStr)}${homeParam}`);
 			return;
 		}
 
-		// Week/Day click → show all shifts that share this exact start+end time
+		// Week/Day click → show all shifts in this exact time slot (respecting home filter)
 		const startStr = event.shifts[0].startTime;
 		const endStr   = event.shifts[0].endTime;
-		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`);
+		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}${homeParam}`);
 	};
 
 
