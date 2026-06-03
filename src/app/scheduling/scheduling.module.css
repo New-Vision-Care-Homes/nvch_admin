@@ -614,6 +614,29 @@
 	flex-shrink: 0;
 }
 
+.exportBtn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+	padding: 8px 14px;
+	border: 1.5px solid #d1d9e6;
+	border-radius: 10px;
+	background: #fff;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.exportBtn:hover {
+	border-color: var(--color-primary);
+	background: #f0f5fa;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.08);
+}
+
 .filterIcon {
 	color: var(--color-secondary);
 	flex-shrink: 0;
