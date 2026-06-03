@@ -114,7 +114,6 @@ export default function EditShiftPage() {
 		const t = setTimeout(() => setCaregiverSearch(caregiverInput), 400);
 		return () => clearTimeout(t);
 	}, [caregiverInput]);
-	const { caregivers } = useCaregivers({ params: { page: 1, limit: 10, search: caregiverSearch, isActive: true } });
 
 	// Client search
 	const [clientInput, setClientInput] = useState("");
@@ -137,6 +136,12 @@ export default function EditShiftPage() {
 		return () => clearTimeout(t);
 	}, [homeInput]);
 	const { homes } = useHomes({ page: 1, limit: 50, search: homeSearch });
+
+	// Caregiver list — region-fenced to the selected home's region when one is set
+	// (the server enforces the same rule on save).
+	const caregiverParams = { page: 1, limit: 10, search: caregiverSearch, isActive: true };
+	if (selectedHome?.region) caregiverParams.region = selectedHome.region;
+	const { caregivers } = useCaregivers({ params: caregiverParams });
 
 	// ── Forms ─────────────────────────────────────────────────────────────
 	const scheduledForm = useForm({ resolver: yupResolver(scheduledSchema) });

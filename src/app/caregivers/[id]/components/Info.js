@@ -11,6 +11,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { Edit, Save, X, MapPin, Phone, Mail, Users } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
@@ -42,7 +43,7 @@ const cleanFetchedData = (apiData) => {
 		country: apiData.address?.country || "",
 		pincode: apiData.address?.pinCode || "",
 		unit: apiData.address?.unit || "",
-		region: apiData.region || "",
+		regions: Array.isArray(apiData.regions) && apiData.regions.length > 0 ? apiData.regions : (apiData.region ? [apiData.region] : []),
 		supervisor: apiData.supervisor || "",
 		teamLead: apiData.teamLead || "",
 		employmentStatus: apiData.employmentStatus || "",
@@ -61,7 +62,11 @@ const schema = yup.object({
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule.optional(),
 	phone: phoneRule.optional(),
-	region: yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region").required("Region is required"),
+	regions: yup
+		.array()
+		.of(yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region"))
+		.min(1, "Please select at least one region")
+		.required("Please select at least one region"),
 	birth: birthRule.optional(),
 	employeeStartDate: dateRuleOptional.optional(),
 	maxHours: yup.number().transform((v, o) => o === "" ? undefined : v).nullable().notRequired(),
@@ -102,6 +107,7 @@ export default function Info() {
 	const watchCountry = watch("country");
 	const watchSupervisor = watch("supervisor");
 	const watchTeamLead = watch("teamLead");
+	const selectedRegions = watch("regions") || [];
 
 	const { adminDetail: supervisorDetail } = useAdmins(watchSupervisor || "");
 	const { adminDetail: teamLeadDetail } = useAdmins(watchTeamLead || "");
@@ -134,7 +140,7 @@ export default function Info() {
 			phone: data.phone || null,
 			dateOfBirth: data.birth || null,
 			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
-			region: data.region,
+			regions: data.regions,
 			employmentStatus: data.employmentStatus || null,
 			address: {
 				street: data.street, unit: data.unit || null,
@@ -206,8 +212,8 @@ export default function Info() {
 										</div>
 									</div>
 									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Region</div>
-										<div className={styles.vvalue}>{getLabel(REGION_OPTIONS, d.region)}</div>
+										<div className={styles.vlabel}>Regions</div>
+										<div className={styles.vvalue}>{(Array.isArray(d.regions) && d.regions.length > 0 ? d.regions : (d.region ? [d.region] : [])).map(r => getLabel(REGION_OPTIONS, r)).join(", ") || "—"}</div>
 									</div>
 									<div className={styles.vfield}>
 										<div className={styles.vlabel}>Employee Start Date</div>
@@ -259,11 +265,16 @@ export default function Info() {
 								</div>
 								<div className={styles.card_row_2}>
 									<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
-									<InputField label="Region" name="region" type="select" register={register} error={errors.region} options={REGION_OPTIONS} />
-								</div>
-								<div className={styles.card_row_2}>
 									<InputField label="Employment Status" name="employmentStatus" type="select" register={register} error={errors.employmentStatus} options={EMPLOYMENT_STATUS_OPTIONS} />
-									<div />
+								</div>
+								<div style={{ marginBottom: "1rem" }}>
+									<RegionCheckboxGroup
+										label="Regions"
+										required
+										value={selectedRegions}
+										onChange={(next) => setValue("regions", next, { shouldValidate: true, shouldDirty: true })}
+										error={errors.regions}
+									/>
 								</div>
 								<div className={styles.card_row_2}>
 									<InputField label="Employee Start Date" name="employeeStartDate" register={register} control={control} error={errors.employeeStartDate} type="date" />
