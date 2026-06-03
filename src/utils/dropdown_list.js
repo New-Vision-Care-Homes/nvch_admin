@@ -23,8 +23,6 @@ export const REGION_OPTIONS = [
 	{ value: "Central", label: "Central" },
 	{ value: "Windsor", label: "Windsor" },
 	{ value: "HRM", label: "HRM" },
-	{ value: "Yarmouth", label: "Yarmouth" },
-	{ value: "Shelburne", label: "Shelburne" },
 	{ value: "South Shore", label: "South Shore" },
 ];
 
