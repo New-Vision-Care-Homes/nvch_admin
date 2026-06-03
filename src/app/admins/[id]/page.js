@@ -16,6 +16,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
@@ -44,9 +45,11 @@ const schema = yup.object({
 	phone: phoneRule,
 	adminLevel: yup.string().required("Admin level is required"),
 	department: yup.string().required("Department is required"),
-	region: yup.string()
-		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
-		.required("Region is required"),
+	regions: yup
+		.array()
+		.of(yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region"))
+		.min(1, "Please select at least one region")
+		.required("Please select at least one region"),
 	adminId: IdRule.required("Admin ID is required"),
 	employeeStartDate: dateRule,
 	permissionsGroup: yup
@@ -73,12 +76,15 @@ export default function Page() {
 
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
 
-	const { register, handleSubmit, setValue, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
-			permissionsGroup: []
+			permissionsGroup: [],
+			regions: []
 		}
 	});
+
+	const selectedRegions = watch("regions") || [];
 
 	const toggleGroup = (groupId) => {
 		setSelectedGroupIds(prev => {
@@ -112,7 +118,7 @@ export default function Page() {
 				phone: user.phone,
 				adminLevel: user.adminLevel || "",
 				department: user.department || "",
-				region: user.region || "",
+				regions: Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []),
 				adminId: user.employeeId || "",
 				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
 			});
@@ -164,7 +170,7 @@ export default function Page() {
 			phone: data.phone,
 			adminLevel: data.adminLevel,
 			department: data.department,
-			region: data.region,
+			regions: data.regions,
 			employeeStartDate: data.employeeStartDate,
 			permissionsGroup: Array.isArray(data.permissionsGroup) ? data.permissionsGroup : [data.permissionsGroup].filter(Boolean),
 		};
@@ -198,7 +204,7 @@ export default function Page() {
 				phone: user.phone,
 				adminLevel: user.adminLevel || "",
 				department: user.department || "",
-				region: user.region || "",
+				regions: Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []),
 				adminId: user.employeeId || "",
 				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
 			});
@@ -358,7 +364,7 @@ export default function Page() {
 											</div>
 											<div className={styles.row2}>
 												<InfoField label="Department">{user.department || "—"}</InfoField>
-												<InfoField label="Region">{user.region || "—"}</InfoField>
+												<InfoField label="Regions">{(Array.isArray(user.regions) && user.regions.length > 0 ? user.regions.join(", ") : user.region) || "—"}</InfoField>
 											</div>
 											<div className={styles.row2}>
 												<InfoField label="Employee Start Date">{user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "—"}</InfoField>
@@ -390,17 +396,6 @@ export default function Page() {
 													required
 												/>
 												<InputField
-													label="Region"
-													name="region"
-													type="select"
-													register={register}
-													error={errors.region}
-													required
-													options={REGION_OPTIONS}
-												/>
-											</div>
-											<div className={styles.row2}>
-												<InputField
 													label="Employee Start Date"
 													name="employeeStartDate"
 													type="date"
@@ -408,7 +403,15 @@ export default function Page() {
 													error={errors.employeeStartDate}
 													required
 												/>
-												<div style={{ flex: 1 }} />
+											</div>
+											<div style={{ marginBottom: "1rem" }}>
+												<RegionCheckboxGroup
+													label="Regions"
+													required
+													value={selectedRegions}
+													onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+													error={errors.regions}
+												/>
 											</div>
 										</>
 									)}

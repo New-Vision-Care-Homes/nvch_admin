@@ -294,6 +294,9 @@ export default function AddNewShiftPage() {
 	}, [caregiverInput]);
 
 	const caregiverParams = { page: 1, limit: 10, search: caregiverSearch, isActive: true };
+	// Region fence: when a home is selected, only show caregivers assigned to the
+	// home's region (the server enforces the same rule on save).
+	if (selectedHome?.region) caregiverParams.region = selectedHome.region;
 	if (selectedStartTime) {
 		const startDate = DateTime.fromISO(selectedStartTime, { zone: HALIFAX_TZ });
 		if (startDate.isValid) {
