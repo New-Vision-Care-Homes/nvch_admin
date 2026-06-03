@@ -59,7 +59,7 @@ import {
 import enCA from "date-fns/locale/en-CA"; // weeks start on Sunday in Canada
 import { DateTime } from "luxon";
 
-import { Building2, CalendarPlus, Clock, MapPin, Search, User, Users } from "lucide-react";
+import { Building2, CalendarPlus, Clock, Download, MapPin, Search, User, Users } from "lucide-react";
 import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
@@ -71,6 +71,7 @@ import EmptyState from "@components/UI/EmptyState";
 import { useShifts } from "@/hooks//useShifts";
 import { useHomes } from "@/hooks/useHomes";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { exportScheduleToExcel } from "@/utils/exportSchedule";
 
 import styles from "./scheduling.module.css";
 
@@ -998,6 +999,26 @@ export default function SchedulingPage() {
 								);
 							})}
 						</select>
+						<button
+							type="button"
+							className={styles.exportBtn}
+							onClick={async () => {
+								const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
+								const homeName = selectedHome
+									? (selectedHome.name || selectedHome.homeName)
+									: "All Homes";
+								await exportScheduleToExcel({
+									homeName,
+									homeId:         selectedHomeId || null,
+									payPeriodStart: payrollPeriod.start,
+									payPeriodEnd:   payrollPeriod.end,
+									shifts:         payrollShifts,
+								});
+							}}
+						>
+							<Download size={14} />
+							Export Schedule
+						</button>
 					</div>
 
 					{/* Halifax time banner — only shown when the admin's device is in a
