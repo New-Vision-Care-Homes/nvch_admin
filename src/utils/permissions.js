@@ -9,7 +9,19 @@ export const PERMISSION_SCHEMAS = [
 			"create_admin",
 			"update_admin",
 			"delete_admin",
-			"view_admin"
+			"view_admin",
+			// Admin may sign in to the mobile app. Portal access does not require this.
+			"access_app"
+		]
+	},
+	{
+		module: "User management",
+		slugs: [
+			"list_users",
+			"view_user",
+			"update_user",
+			"toggle_user_status",
+			"delete_user"
 		]
 	},
 	{
@@ -73,11 +85,27 @@ export const PERMISSION_SCHEMAS = [
 	{
 		module: "Shifts",
 		slugs: [
+			"create_shifts",
 			"update_shifts",
 			"cancel_shifts",
 			"start_shifts",
 			"end_shifts",
 			"view_shifts"
+		]
+	},
+	{
+		module: "Focus notes",
+		slugs: [
+			"create_focus_notes",
+			"view_focus_notes",
+			"update_focus_notes",
+			"delete_focus_notes"
+		]
+	},
+	{
+		module: "Uploads",
+		slugs: [
+			"use_upload_urls"
 		]
 	},
 	{
