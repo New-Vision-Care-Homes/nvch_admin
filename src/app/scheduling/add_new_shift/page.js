@@ -19,6 +19,7 @@ import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
+import Modal from "@components/UI/Modal";
 import ActionMessage from "@components/UI/ActionMessage";
 import styles from "./add_new_shift.module.css";
 import cardStyles from "@components/UI/Card.module.css";
@@ -52,9 +53,13 @@ const schema = yup.object({
 	homeId: yup.string().test("exclusive", "Please select a home", function (value) {
 		return !!value || !!this.parent.clientId;
 	}),
+	// When "Add past shift" is enabled the shift is being backfilled, so the
+	// future-only rule is bypassed (the server records it as already completed).
+	addPastShift: yup.boolean().default(false),
 	startTime: yup.string().required("Start time is required")
-		.test("is-future", "Start time must be in the future", (v) => {
+		.test("is-future", "Start time must be in the future", function (v) {
 			if (!v) return true;
+			if (this.parent.addPastShift) return true;
 			const start = DateTime.fromISO(v, { zone: HALIFAX_TZ });
 			const now = DateTime.now().setZone(HALIFAX_TZ);
 			return start.isValid && start > now;
@@ -79,7 +84,13 @@ const schema = yup.object({
 	contactLName: nameRule.optional(),
 	contactPhone: phoneRule.optional(),
 	*/
-	shiftNotes: longTextRule.optional(),
+	// A note explaining the reason is mandatory when backfilling a past shift
+	// (mirrors the backend's BACKFILL_NOTES_REQUIRED rule).
+	shiftNotes: longTextRule.when("addPastShift", {
+		is: true,
+		then: (s) => s.required("A note describing the reason is required for a past shift"),
+		otherwise: (s) => s.optional(),
+	}),
 
 	// Address fields for geofence
 	geofenceStreet: longTextRule.required("Please search and select a service address"),
@@ -126,10 +137,14 @@ export default function AddNewShiftPage() {
 		setValue,
 		control,
 		formState: { errors },
-	} = useForm({ resolver: yupResolver(schema) });
+	} = useForm({ resolver: yupResolver(schema), defaultValues: { addPastShift: false } });
 
 	const selectedStartTime = watch("startTime");
 	const selectedEndTime = watch("endTime");
+
+	// ── "Add past shift" toggle + confirmation modal ───────────────────────────
+	const [showPastShiftModal, setShowPastShiftModal] = useState(false);
+	const addPastShift = watch("addPastShift");
 
 	// ── Target type (Client or Home) ───────────────────────────────────────────
 
@@ -596,6 +611,23 @@ export default function AddNewShiftPage() {
 									</div>
 								)}
 
+								{/* Add past shift — relaxes the future-only rule and requires a note */}
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0 0 1rem", fontSize: "0.9rem", color: "#4b5563", cursor: "pointer" }}>
+									<input
+										type="checkbox"
+										checked={!!addPastShift}
+										onChange={(e) => {
+											if (e.target.checked) {
+												// Confirm before enabling; don't toggle on until the user accepts.
+												setShowPastShiftModal(true);
+											} else {
+												setValue("addPastShift", false, { shouldValidate: true });
+											}
+										}}
+									/>
+									Add past shift
+								</label>
+
 								<div className={styles.card_row_2}>
 									<InputField
 										label="Start Time"
@@ -604,7 +636,7 @@ export default function AddNewShiftPage() {
 										register={register}
 										control={control}
 										error={errors.startTime}
-										min={nowLocal}
+										min={addPastShift ? undefined : nowLocal}
 										required
 									/>
 									<InputField
@@ -614,11 +646,11 @@ export default function AddNewShiftPage() {
 										register={register}
 										control={control}
 										error={errors.endTime}
-										min={selectedStartTime || nowLocal}
+										min={addPastShift ? undefined : (selectedStartTime || nowLocal)}
 										required
 									/>
 								</div>
-								<InputField label="Shift Notes" name="shiftNotes" type="textarea" rows={4} register={register} error={errors.shiftNotes} />
+								<InputField label="Shift Notes" name="shiftNotes" type="textarea" rows={4} register={register} error={errors.shiftNotes} required={!!addPastShift} />
 							</CardContent>
 						</Card>
 
@@ -743,6 +775,30 @@ export default function AddNewShiftPage() {
 				</Card>
 
 			</form>
+
+			{/* Confirmation before enabling "Add past shift" */}
+			<Modal isOpen={showPastShiftModal} onClose={() => setShowPastShiftModal(false)}>
+				<div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "1rem 0.5rem" }}>
+					<h2 style={{ margin: 0, fontSize: "1.2rem", color: "var(--color-primary)" }}>Add a past shift?</h2>
+					<p style={{ marginTop: "0.75rem", color: "#4b5563", lineHeight: 1.5 }}>
+						Are you sure you want to add a shift that has already taken place? This shift will be
+						recorded as completed, and its scheduled times will be used as the actual worked hours.
+						You must also provide a note describing the reason for adding it.
+					</p>
+					<div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.5rem" }}>
+						<Button
+							variant="primary"
+							onClick={() => {
+								setValue("addPastShift", true, { shouldValidate: true });
+								setShowPastShiftModal(false);
+							}}
+						>
+							Yes, add past shift
+						</Button>
+						<Button variant="secondary" onClick={() => setShowPastShiftModal(false)}>Cancel</Button>
+					</div>
+				</div>
+			</Modal>
 		</PageLayout>
 	);
 }
