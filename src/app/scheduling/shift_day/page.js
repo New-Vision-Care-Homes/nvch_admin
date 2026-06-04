@@ -17,12 +17,15 @@ export default function ShiftDayPage() {
 	const router = useRouter();
 
 	// ?date=yyyy-MM-dd — from month view click
+	// ?homeId=<id>    — forwarded from the calendar when a home filter is active
 	const dateParam = searchParams.get("date");
+	const homeId    = searchParams.get("homeId");
 
-	// Fetch shifts for this specific day using the date param as the range filter
+	// Fetch shifts for this day, optionally scoped to one home.
 	const { shifts: rawShifts = [], isShiftLoading } = useShifts({
 		startDate: dateParam,
-		endDate: dateParam,
+		endDate:   dateParam,
+		...(homeId ? { homeId } : {}),
 	});
 	const { profile } = useProfile();
 

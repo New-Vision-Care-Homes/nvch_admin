@@ -59,7 +59,7 @@ import {
 import enCA from "date-fns/locale/en-CA"; // weeks start on Sunday in Canada
 import { DateTime } from "luxon";
 
-import { Building2, CalendarPlus, Clock, MapPin, Search, User, Users } from "lucide-react";
+import { Building2, CalendarPlus, Clock, Download, MapPin, Search, User, Users } from "lucide-react";
 import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
@@ -71,6 +71,7 @@ import EmptyState from "@components/UI/EmptyState";
 import { useShifts } from "@/hooks//useShifts";
 import { useHomes } from "@/hooks/useHomes";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { exportScheduleToExcel } from "@/utils/exportSchedule";
 
 import styles from "./scheduling.module.css";
 
@@ -293,8 +294,9 @@ export default function SchedulingPage() {
 	const [payrollOffset, setPayrollOffset] = useState(0);
 	const [payrollPage, setPayrollPage]     = useState(1);
 
-	// Reset to page 1 whenever the period changes so the user isn't left mid-table.
-	useEffect(() => { setPayrollPage(1); }, [payrollOffset]);
+	// Reset to page 1 whenever the period or home filter changes, so the user
+	// isn't left on a page that doesn't exist for the new dataset.
+	useEffect(() => { setPayrollPage(1); }, [payrollOffset, selectedHomeId]);
 
 	// Calculate the start and end dates of the selected pay period.
 	// Formula: currentPeriodIndex = floor((today - anchor) / 14 days)
@@ -495,7 +497,11 @@ export default function SchedulingPage() {
 	// react-big-calendar calls this when an event is clicked.
 	// We route to different pages depending on which type of event was clicked,
 	// identified by the boolean flags we set during transformation above.
+	// When a home filter is active we forward it via URL param so the destination
+	// page fetches only shifts for that home, matching what the calendar showed.
 	const handleSelectEvent = (event) => {
+		const homeParam = selectedHomeId ? `&homeId=${encodeURIComponent(selectedHomeId)}` : "";
+
 		// Agenda click → go straight to the single shift detail page
 		if (event._isAgenda) {
 			const shiftId = event._shift?._id || event._shift?.id;
@@ -503,16 +509,16 @@ export default function SchedulingPage() {
 			return;
 		}
 
-		// Month click → show all shifts for that calendar day
+		// Month click → show all shifts for that calendar day (respecting home filter)
 		if (event._isMonthSummary) {
-			router.push(`/scheduling/shift_day?date=${encodeURIComponent(event._dateStr)}`);
+			router.push(`/scheduling/shift_day?date=${encodeURIComponent(event._dateStr)}${homeParam}`);
 			return;
 		}
 
-		// Week/Day click → show all shifts that share this exact start+end time
+		// Week/Day click → show all shifts in this exact time slot (respecting home filter)
 		const startStr = event.shifts[0].startTime;
 		const endStr   = event.shifts[0].endTime;
-		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}`);
+		router.push(`/scheduling/shift_list?startDate=${encodeURIComponent(startStr)}&endDate=${encodeURIComponent(endStr)}${homeParam}`);
 	};
 
 
@@ -993,6 +999,26 @@ export default function SchedulingPage() {
 								);
 							})}
 						</select>
+						<button
+							type="button"
+							className={styles.exportBtn}
+							onClick={async () => {
+								const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
+								const homeName = selectedHome
+									? (selectedHome.name || selectedHome.homeName)
+									: "All Homes";
+								await exportScheduleToExcel({
+									homeName,
+									homeId:         selectedHomeId || null,
+									payPeriodStart: payrollPeriod.start,
+									payPeriodEnd:   payrollPeriod.end,
+									shifts:         payrollShifts,
+								});
+							}}
+						>
+							<Download size={14} />
+							Export Schedule
+						</button>
 					</div>
 
 					{/* Halifax time banner — only shown when the admin's device is in a

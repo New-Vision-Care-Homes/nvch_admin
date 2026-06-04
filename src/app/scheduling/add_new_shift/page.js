@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import GeofenceMap from "@/components/UI/GeofenceMap";
@@ -310,6 +311,16 @@ export default function AddNewShiftPage() {
 	}
 
 	const { caregivers } = useCaregivers({ params: caregiverParams });
+
+	const adminParams = { page: 1, limit: 10, search: caregiverSearch, isActive: true, hasAccessApp: true };
+	if (selectedHome?.region) adminParams.region = selectedHome.region;
+
+	const { admins } = useAdmins({ params: adminParams });
+
+	const combinedAssignees = [
+		...(caregivers ?? []).map((cg) => ({ ...cg, _type: "caregiver" })),
+		...(admins ?? []).map((a) => ({ ...a, _type: "admin" })),
+	];
 
 	function handleSelectCaregiver(cg) {
 		setSelectedCaregiver(cg);
@@ -634,11 +645,23 @@ export default function AddNewShiftPage() {
 											<X size={16} style={{ position: "absolute", right: 10, cursor: "pointer", color: "#6b7280" }} onClick={handleClearCaregiver} />
 										)}
 									</div>
-									{showCaregiverDropdown && !selectedCaregiver && caregivers?.length > 0 && (
+									{showCaregiverDropdown && !selectedCaregiver && combinedAssignees.length > 0 && (
 										<div className={styles.searchResultsDropdown}>
-											{caregivers.map((cg) => (
-												<div key={cg.id} className={styles.searchResultItem} onMouseDown={() => handleSelectCaregiver(cg)}>
-													{cg.firstName} {cg.lastName}
+											{combinedAssignees.map((person) => (
+												<div key={`${person._type}-${person.id}`} className={styles.searchResultItem} onMouseDown={() => handleSelectCaregiver(person)}>
+													<span>{person.firstName} {person.lastName}</span>
+													<span style={{
+														fontSize: "0.68rem",
+														fontWeight: 600,
+														padding: "2px 7px",
+														borderRadius: "999px",
+														backgroundColor: person._type === "admin" ? "#dbeafe" : "#d1fae5",
+														color: person._type === "admin" ? "#1d4ed8" : "#065f46",
+														marginLeft: "8px",
+														flexShrink: 0,
+													}}>
+														{person._type === "admin" ? "Admin" : "Caregiver"}
+													</span>
 												</div>
 											))}
 										</div>
