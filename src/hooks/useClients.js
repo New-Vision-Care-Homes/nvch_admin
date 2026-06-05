@@ -64,6 +64,15 @@ export const useClients = (options = {}) => {
 		enabled: !!clientId,
 	});
 
+	// Imperative fetch for a single client — uses the React Query cache so
+	// repeated calls for the same ID are free within the stale window.
+	const fetchClient = (id) =>
+		queryClient.fetchQuery({
+			queryKey: ["client", id],
+			queryFn: () => clientService.getClient(id),
+			staleTime: 30_000,
+		});
+
 	// --- Mutations ---
 
 	// 3. Delete a client record
@@ -138,6 +147,7 @@ export const useClients = (options = {}) => {
 		updateClient: updateMutation.mutate,
 		deleteClient: deleteMutation.mutate,
 		toggleClientStatus: toggleStatusMutation.mutate,
+		fetchClient,
 		refetch: clientsQuery.refetch,
 	};
 };

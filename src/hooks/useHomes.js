@@ -48,6 +48,14 @@ export const useHomes = (arg = null) => {
 	const pagination = homesQuery.data?.pagination ?? {};
 	const homeDetail = homeDetailQuery.data?.home ?? homeDetailQuery.data;
 
+	// Imperative fetch for a single home — cache-backed via React Query.
+	const fetchHome = (id) =>
+		queryClient.fetchQuery({
+			queryKey: ["home", id],
+			queryFn: () => homeService.getHome(id),
+			staleTime: 30_000,
+		});
+
 	// 3. Mutations
 	const createMutation = useMutation({
 		mutationFn: homeService.create,
@@ -101,6 +109,7 @@ export const useHomes = (arg = null) => {
 		addHome: createMutation.mutate,
 		updateHome: updateMutation.mutate,
 		deleteHome: deleteMutation.mutateAsync,
+		fetchHome,
 
 		isActionPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
 		refetch: homesQuery.refetch
