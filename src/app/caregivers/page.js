@@ -181,10 +181,10 @@ export default function Caregivers() {
 												</TableCell>
 
 												{/* Employee ID */}
-												<TableCell>{caregiver.employeeId}</TableCell>
+												<TableCell><span>{caregiver.employeeId}</span></TableCell>
 
 												{/* Contact */}
-												<TableCell>{caregiver.email || "-"}</TableCell>
+												<TableCell><span>{caregiver.email || "-"}</span></TableCell>
 
 												{/* Status with pill */}
 												<TableCell>

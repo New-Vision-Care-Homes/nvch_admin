@@ -117,16 +117,14 @@ export default function Homes() {
 												</TableCell>
 
 												{/* Region */}
-												<TableCell>{home.region}</TableCell>
+												<TableCell><span>{home.region}</span></TableCell>
 
 												{/* Home Type */}
-												<TableCell>
-													{home.homeType || "-"}
-												</TableCell>
+												<TableCell><span>{home.homeType || "-"}</span></TableCell>
 
 												{/* Address */}
 												<TableCell>
-													{home.address ? `${home.address.street}, ${home.address.city}` : "-"}
+													<span>{home.address ? `${home.address.street}, ${home.address.city}` : "-"}</span>
 												</TableCell>
 
 												{/* Caregivers */}
@@ -153,7 +151,7 @@ export default function Homes() {
 
 												{/* Opened At */}
 												<TableCell>
-													{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}
+													<span>{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "-"}</span>
 												</TableCell>
 
 												{/* Actions */}

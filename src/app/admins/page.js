@@ -181,10 +181,10 @@ export default function Admins() {
 												</TableCell>
 
 												{/* Employee ID */}
-												<TableCell>{admin.employeeId}</TableCell>
+												<TableCell><span>{admin.employeeId}</span></TableCell>
 
 												{/* Contact */}
-												<TableCell>{admin.email || "-"}</TableCell>
+												<TableCell><span>{admin.email || "-"}</span></TableCell>
 
 												{/* Status with pill */}
 												<TableCell>

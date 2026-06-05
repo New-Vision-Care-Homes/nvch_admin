@@ -190,11 +190,10 @@ export default function Clients() {
 														style={{ borderRadius: "50%", objectFit: "cover" }}
 														unoptimized
 													/>
-													<span>{client.firstName}</span>
-													<span>{client.lastName}</span>
+													<span>{client.firstName} {client.lastName}</span>
 												</TableCell>
-												<TableCell>{client.clientId}</TableCell>
-												<TableCell>{client.email}</TableCell>
+												<TableCell><span>{client.clientId}</span></TableCell>
+												<TableCell><span>{client.email}</span></TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${client.isActive ? styles.statusActive : styles.statusInactive}`}>
 														{client.isActive ? "Active" : "Inactive"}

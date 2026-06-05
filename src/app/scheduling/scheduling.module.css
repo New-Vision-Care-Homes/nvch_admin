@@ -12,6 +12,7 @@
 	display: flex;
 	flex: 1;
 	min-height: 0;
+	min-width: 0;   /* prevent flex children from forcing layout wider than viewport */
 }
 
 .body {
@@ -23,6 +24,7 @@
 	overflow: hidden;
 	gap: 18px;
 	min-height: 0;
+	min-width: 0;   /* prevent intrinsic child widths from expanding this beyond viewport */
 }
 
 /* ── Header Row ── */
@@ -120,6 +122,7 @@
 	min-height: 0;
 	overflow: hidden;
 	position: relative;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* ═══════════════════════════════════════
@@ -318,6 +321,21 @@
 		order: -1;
 		text-align: center;
 		font-size: 0.95rem;
+	}
+
+	/* Allow view-tab button group to scroll horizontally if too wide */
+	.toolbarBtnGroup {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		flex-wrap: nowrap;
+		max-width: 100%;
+		gap: 4px;
+	}
+
+	.toolbarBtn {
+		flex-shrink: 0;
+		font-size: 0.72rem;
+		padding: 5px 10px;
 	}
 }
 
@@ -612,6 +630,7 @@
 	align-items: center;
 	gap: 10px;
 	flex-shrink: 0;
+	flex-wrap: wrap;   /* fallback: wrap items on very narrow screens before media query fires */
 }
 
 .exportBtn {
@@ -692,6 +711,8 @@
 	.body {
 		padding: 16px 12px;
 		gap: 12px;
+		overflow-y: auto;   /* allow the whole page body to scroll on mobile */
+		overflow-x: hidden;
 	}
 
 	.titleRow {
@@ -703,9 +724,51 @@
 		font-size: 1.4rem !important;
 	}
 
-	/* Let week/day grids scroll sideways instead of squashing columns. */
+	/* Calendar card: fixed height on mobile so it stays in the scrollable body */
 	.calendarCard {
-		overflow-x: auto;
+		flex: 0 0 auto;
+		width: 100%;                    /* cap at parent width — prevents 680px calendar min-width from expanding the card */
+		height: calc(100dvh - 290px);   /* dvh (dynamic viewport height) accounts for mobile browser chrome */
+		min-height: 420px;
+		overflow: hidden;
+	}
+
+	/* Calendar body: both axes scrollable on mobile */
+	.calendarBody {
+		overflow: auto;
+		-webkit-overflow-scrolling: touch;
+		width: 100%;   /* ensure it stays within the card boundary */
+	}
+
+	/* Filter row: stack vertically so nothing overflows the screen */
+	.filterRow {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	/* Hide the decorative icon and label — the select is self-explanatory */
+	.filterIcon {
+		display: none;
+	}
+
+	.filterLabel {
+		display: none;
+	}
+
+	/* Select stretches to full row width */
+	.homeSelect {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	/* Export button on its own full-width row */
+	.exportBtn {
+		margin-left: 0;
+		width: 100%;
+		justify-content: center;
+		box-sizing: border-box;
 	}
 }
 

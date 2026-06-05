@@ -35,7 +35,7 @@ export const useClients = (options = {}) => {
 	const getErrorMessage = (err) => {
 		const data = err?.response?.data;
 
-		const sdmDetail = data?.details?.find((d) => d.path === "statutoryDecisionMaker");
+		const sdmDetail = Array.isArray(data?.details) && data.details.find((d) => d.path === "statutoryDecisionMaker");
 		if (sdmDetail) {
 			return "Statutory Decision Maker requires at least a phone number or email address";
 		}

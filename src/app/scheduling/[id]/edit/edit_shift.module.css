@@ -226,3 +226,15 @@
 	.scheduledRow { flex-direction: column; }
 	.scheduledSide { max-width: 100%; min-width: 0; }
 }
+
+@media (max-width: 640px) {
+	.mapBlock { min-height: 220px; }
+	.addressBlock { min-width: 0; }
+}
+
+@media (max-width: 480px) {
+	.mapBlock { min-height: 200px; }
+
+	/* Dropdown stays in viewport on very small screens */
+	.dropdown { max-height: 160px; }
+}
