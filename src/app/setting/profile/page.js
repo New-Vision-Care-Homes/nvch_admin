@@ -27,6 +27,7 @@ const schema = yup.object({
 
 export default function ProfilePage() {
 	const { profile, updateProfile, isLoading, isActionPending, fetchError, actionError, refetch } = useProfile();
+	console.log(profile);
 
 	const [isEditing, setIsEditing] = useState(false);
 
