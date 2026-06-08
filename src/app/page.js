@@ -19,6 +19,13 @@ const loginSchema = yup.object({
 export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
 
+	// Clear any cloned/stale token so a second login in a new tab isn't silently
+	// redirected to a different account's session (browsers copy sessionStorage
+	// when a tab is opened via a link).
+	React.useEffect(() => {
+		sessionStorage.removeItem("token");
+	}, []);
+
 	const { loginCheck, isLoginPending, loginErrorMessage, isLoginError } = useLogin();
 
 	const {
