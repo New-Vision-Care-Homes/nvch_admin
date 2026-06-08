@@ -16,6 +16,8 @@ import { useParams } from "next/navigation";
 
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import ErrorState from "@components/UI/ErrorState";
+import { useProfile } from "@/hooks/useProfile";
 
 
 export default function Page() {
@@ -30,6 +32,9 @@ export default function Page() {
 		updateCaregiver,
 		toggleCaregiverStatus
 	} = useCaregivers(id);
+
+	const { profile } = useProfile();
+	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
 
 	// --- Image Upload States ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -75,9 +80,11 @@ export default function Page() {
 	}
 
 	// --- Render Logic ---
-	if (isLoading) return <p>Loading user data...</p>;
-	if (isError) return <p>Error: {errorMessage}</p>;
-	if (!caregiverDetail) return <p>User data not found or failed to load.</p>;
+	if (isLoading || isError || !caregiverDetail) return (
+		<PageLayout>
+			<ErrorState isLoading={isLoading} errorMessage={isError ? errorMessage : (!caregiverDetail ? "Caregiver not found." : null)} />
+		</PageLayout>
+	);
 
 	const activeStatus = caregiverDetail.isActive;
 
@@ -102,14 +109,16 @@ export default function Page() {
 				<div className={styles.header}>
 					<h1>Caregiver Profile: {caregiverDetail.firstName} {caregiverDetail.lastName}</h1>
 					<div className={styles.headerActions}>
-						<Button
-							variant={activeStatus ? "dangerLight" : "successLight"}
-							icon={<Activity size={16} />}
-							onClick={handleActive}
-							disabled={isCaregiverActionPending}
-						>
-							{activeStatus ? "Inactive" : "Active"}
-						</Button>
+						{canEdit && (
+							<Button
+								variant={activeStatus ? "dangerLight" : "successLight"}
+								icon={<Activity size={16} />}
+								onClick={handleActive}
+								disabled={isCaregiverActionPending}
+							>
+								{activeStatus ? "Inactive" : "Active"}
+							</Button>
+						)}
 						<Link href="/caregivers">
 							<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
 						</Link>

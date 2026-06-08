@@ -1128,3 +1128,38 @@
 		padding: 14px;
 	}
 }
+
+@media (max-width: 480px) {
+	.pageHeader {
+		gap: 0.5rem;
+	}
+
+	/* Stack buttons full-width so they're easy to tap */
+	.headerActions {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.headerActions > * {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.shiftId {
+		font-size: 0.68rem;
+		word-break: break-all;
+	}
+
+	.cancelModal {
+		padding: 0.25rem 0;
+	}
+
+	.cancelModalActions {
+		flex-direction: column-reverse;
+	}
+
+	.cancelModalActions > * {
+		width: 100%;
+		justify-content: center;
+	}
+}

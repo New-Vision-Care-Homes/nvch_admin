@@ -22,9 +22,21 @@
 .cell {
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-start;
 	flex: 1;
 	gap: 1rem;
+	min-width: 0;     /* allow cell to shrink within the flex row */
+	overflow: hidden; /* clip content that exceeds the cell's bounds */
+}
+
+/* Plain text spans inside cells (name labels etc.) get ellipsis.
+   The :not([class]) guard leaves status-pill spans and other styled
+   components untouched. */
+.cell > span:not([class]) {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	min-width: 0;
 }
 
 .content {

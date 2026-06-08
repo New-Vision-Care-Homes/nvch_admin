@@ -1,0 +1,458 @@
+/* ── Page Shell ── */
+.page {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.container {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	min-width: 0;
+}
+
+.body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	padding: 28px 32px 20px;
+	background: #f4f7fb;
+	overflow: hidden;
+	gap: 16px;
+	min-height: 0;
+	min-width: 0;
+}
+
+/* ── Header ── */
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-shrink: 0;
+	gap: 16px;
+}
+
+.titleArea {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.titleRow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.titleIcon {
+	color: var(--color-primary);
+	flex-shrink: 0;
+}
+
+.heading {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary);
+	letter-spacing: -0.025em;
+	margin: 0;
+	line-height: 1.1;
+}
+
+.subtitle {
+	margin: 0;
+	font-size: 0.83rem;
+	color: var(--color-secondary, #6b7280);
+	font-style: italic;
+}
+
+/* ── House Selector ── */
+.houseSelectorCard {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: #ffffff;
+	border: 1.5px solid #e5e7eb;
+	border-radius: 12px;
+	padding: 10px 16px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+	flex-shrink: 0;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.houseSelectorCard:focus-within {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 79, 70, 229), 0.1);
+}
+
+.houseIcon {
+	color: var(--color-primary);
+	flex-shrink: 0;
+}
+
+.houseSelect {
+	border: none;
+	background: transparent;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #1f2937;
+	cursor: pointer;
+	outline: none;
+	min-width: 160px;
+	max-width: 260px;
+}
+
+/* ── Pay Period Bar ── */
+.periodBar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	background: #ffffff;
+	border-radius: 14px;
+	padding: 13px 24px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+	flex-shrink: 0;
+}
+
+.periodNav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	border: 1.5px solid #e5e7eb;
+	background: #f9fafb;
+	cursor: pointer;
+	color: #374151;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.periodNav:hover {
+	background: #f3f4f6;
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+	transform: scale(1.05);
+}
+
+.periodInfo {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.periodBadge {
+	background: linear-gradient(135deg, var(--color-primary, #4f46e5), #6366f1);
+	color: #ffffff;
+	font-weight: 700;
+	font-size: 0.8rem;
+	padding: 5px 14px;
+	border-radius: 20px;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+}
+
+.periodDates {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #374151;
+	white-space: nowrap;
+}
+
+/* ── Table Card ── */
+.tableCard {
+	background: #ffffff;
+	border-radius: 18px;
+	box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+	overflow: hidden;
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.tableWrapper {
+	overflow-x: auto;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	min-width: 860px;
+}
+
+/* ── Column Headers (day cells) ── */
+.labelHeaderCell {
+	width: 76px;
+	min-width: 76px;
+	padding: 14px 10px;
+	background: #f8fafc;
+	border-bottom: 2px solid #e5e7eb;
+	border-right: 2px solid #e5e7eb;
+}
+
+.dayHeader {
+	padding: 12px 6px 14px;
+	text-align: center;
+	background: #f8fafc;
+	border-bottom: 2px solid #e5e7eb;
+	border-right: 1px solid #f1f5f9;
+	min-width: 64px;
+}
+
+.dayHeaderContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.dayName {
+	font-size: 0.65rem;
+	font-weight: 700;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+}
+
+.dayNum {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: #1f2937;
+	line-height: 1;
+}
+
+.dayMonth {
+	font-size: 0.62rem;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* ── Row Labels ── */
+.rowLabel {
+	width: 76px;
+	min-width: 76px;
+	padding: 0;
+	vertical-align: middle;
+	border-right: 2px solid #e5e7eb;
+}
+
+.rowLabelContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 10px 8px;
+	height: 100%;
+}
+
+.dayRowLabel {
+	background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.dayRowLabel .rowLabelIcon {
+	color: #d97706;
+}
+
+.dayRowLabel .rowLabelText {
+	color: #92400e;
+}
+
+.dayRowLabel .rowLabelTime {
+	color: #b45309;
+}
+
+.nightRowLabel {
+	background: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%);
+}
+
+.nightRowLabel .rowLabelIcon {
+	color: #4f46e5;
+}
+
+.nightRowLabel .rowLabelText {
+	color: #3730a3;
+}
+
+.nightRowLabel .rowLabelTime {
+	color: #4338ca;
+}
+
+.rowLabelIcon {
+	opacity: 0.9;
+}
+
+.rowLabelText {
+	font-size: 0.7rem;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.rowLabelTime {
+	font-size: 0.6rem;
+	opacity: 0.75;
+	white-space: nowrap;
+}
+
+/* ── Cells ── */
+.cell {
+	padding: 8px 6px;
+	text-align: center;
+	border-right: 1px solid #f1f5f9;
+}
+
+.dayRowTop {
+	background: #fffdf5;
+	border-bottom: 1px solid #fef9c3;
+}
+
+.dayRowBottom {
+	background: #fffbeb;
+	border-bottom: 2px solid #e5e7eb;
+}
+
+.nightRowTop {
+	background: #f7f7ff;
+	border-bottom: 1px solid #e8e8fd;
+}
+
+.nightRowBottom {
+	background: #f5f3ff;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+/* ── Slot Buttons ── */
+.slotBtn {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	border: none;
+	font-size: 1rem;
+	font-weight: 900;
+	cursor: pointer;
+	transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+	letter-spacing: 0.02em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	user-select: none;
+}
+
+.daySlotBtn {
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.daySlotBtn:hover {
+	background: linear-gradient(135deg, #fbbf24, #f59e0b);
+	transform: translateY(-2px) scale(1.1);
+	box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+}
+
+.daySlotBtn:active {
+	transform: translateY(0) scale(0.96);
+	box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+}
+
+.nightSlotBtn {
+	background: linear-gradient(135deg, #6366f1, #4f46e5);
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.nightSlotBtn:hover {
+	background: linear-gradient(135deg, #818cf8, #6366f1);
+	transform: translateY(-2px) scale(1.1);
+	box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+}
+
+.nightSlotBtn:active {
+	transform: translateY(0) scale(0.96);
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
+}
+
+/* ── Legend ── */
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-shrink: 0;
+	padding: 2px 4px;
+}
+
+.legendItem {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.8rem;
+	color: #6b7280;
+	font-weight: 500;
+}
+
+.legendBadge {
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 900;
+	font-size: 0.85rem;
+	color: #ffffff;
+	flex-shrink: 0;
+}
+
+.legendBadgeD {
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.legendBadgeN {
+	background: linear-gradient(135deg, #6366f1, #4f46e5);
+	box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.legendDivider {
+	width: 1px;
+	height: 20px;
+	background: #e5e7eb;
+}
+
+.legendNote {
+	margin-left: auto;
+	font-size: 0.77rem;
+	color: #9ca3af;
+	font-style: italic;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+	.body {
+		padding: 16px;
+		gap: 12px;
+	}
+
+	.header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.legend {
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.legendNote {
+		margin-left: 0;
+	}
+}

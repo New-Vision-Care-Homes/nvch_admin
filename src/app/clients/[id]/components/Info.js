@@ -23,6 +23,7 @@ import {
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import { useHomes } from "@/hooks/useHomes";
+import ClientConflictModal from "@/components/UI/ClientConflictModal";
 import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
 
 // --- Helper ---
@@ -242,6 +243,7 @@ export default function Info() {
 	const { id } = useParams();
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [status, setStatus] = useState(null); // { variant, text }
+	const [conflictInfo, setConflictInfo] = useState(null); // { currentHomeName, pendingBody }
 
 	const {
 		clientDetail,
@@ -273,7 +275,7 @@ export default function Info() {
 		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true });
 	}
 
-	const { homes } = useHomes({ limit: 100 });
+	const { homes, fetchHome } = useHomes({ limit: 100 });
 	const watchHomeId = watch("homeId");
 	const watchNoHomeSelected = watch("noHomeSelected");
 
@@ -316,92 +318,90 @@ export default function Info() {
 	}, [clientDetail, reset, isInitialized]);
 
 	// --- 3. Submit ---
-	const onSubmit = (data) => {
-		setStatus(null);
+	const buildBody = (data) => ({
+		email: data.email,
+		firstName: data.firstName,
+		lastName: data.lastName,
+		phone: data.phone,
+		dateOfBirth: data.birth,
+		region: data.region,
+		maritalStatus: data.maritalStatus || null,
+		levelOfSupport: data.levelOfSupport || null,
+		notes: data.notes || null,
+		homeId: data.noHomeSelected ? null : (data.homeId || null),
 
-		const body = {
-			email: data.email,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			phone: data.phone,
-			dateOfBirth: data.birth,
-			region: data.region,
-			maritalStatus: data.maritalStatus || null,
-			levelOfSupport: data.levelOfSupport || null,
-			notes: data.notes || null,
-			homeId: data.noHomeSelected ? null : (data.homeId || null),
-
-			address: {
-				street: data.street,
-				unit: data.unit || undefined,
-				city: data.city,
-				state: data.state,
-				pinCode: data.pinCode,
-				country: data.country,
-				gpsCoordinates: {
-					latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6476,
-					longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5728,
-				},
+		address: {
+			street: data.street,
+			unit: data.unit || undefined,
+			city: data.city,
+			state: data.state,
+			pinCode: data.pinCode,
+			country: data.country,
+			gpsCoordinates: {
+				latitude: (data.latitude != null && data.latitude !== "") ? Number(data.latitude) : 44.6476,
+				longitude: (data.longitude != null && data.longitude !== "") ? Number(data.longitude) : -63.5728,
 			},
+		},
 
-			healthCard: {
-				number: data.healthCardNumber || null,
-				expiryDate: data.healthCardExpiryDate || null,
-			},
+		healthCard: {
+			number: data.healthCardNumber || null,
+			expiryDate: data.healthCardExpiryDate || null,
+		},
 
-			emergencyContact: {
-				name: fullName(data.emergencyFName, data.emergencyLName),
-				phone: data.emergencyPhone || null,
-				relationship: data.relationship || null,
-			},
+		emergencyContact: {
+			name: fullName(data.emergencyFName, data.emergencyLName),
+			phone: data.emergencyPhone || null,
+			relationship: data.relationship || null,
+		},
 
-			nextOfKin: {
-				name: fullName(data.nokFName, data.nokLName),
-				phone: data.nokPhone || null,
-				email: data.nokEmail || null,
-			},
+		nextOfKin: {
+			name: fullName(data.nokFName, data.nokLName),
+			phone: data.nokPhone || null,
+			email: data.nokEmail || null,
+		},
 
-			statutoryDecisionMaker: {
-				name: fullName(data.sdmFName, data.sdmLName),
-				phoneNumber: data.sdmPhone || null,
-				email: data.sdmEmail || null,
-			},
+		statutoryDecisionMaker: {
+			name: fullName(data.sdmFName, data.sdmLName),
+			phoneNumber: data.sdmPhone || null,
+			email: data.sdmEmail || null,
+		},
 
-			careCoordinatorOrDspCaseManager: {
-				name: fullName(data.careCoordinatorFName, data.careCoordinatorLName),
-				phone: data.careCoordinatorPhone || null,
-				email: data.careCoordinatorEmail || null,
-			},
+		careCoordinatorOrDspCaseManager: {
+			name: fullName(data.careCoordinatorFName, data.careCoordinatorLName),
+			phone: data.careCoordinatorPhone || null,
+			email: data.careCoordinatorEmail || null,
+		},
 
-			powerOfAttorney: {
-				name: fullName(data.poaFName, data.poaLName),
-				phone: data.poaPhone || null,
-				email: data.poaEmail || null,
-			},
+		powerOfAttorney: {
+			name: fullName(data.poaFName, data.poaLName),
+			phone: data.poaPhone || null,
+			email: data.poaEmail || null,
+		},
 
-			personalDirective: {
-				name: fullName(data.pdFName, data.pdLName),
-				phone: data.pdPhone || null,
-				email: data.pdEmail || null,
-			},
+		personalDirective: {
+			name: fullName(data.pdFName, data.pdLName),
+			phone: data.pdPhone || null,
+			email: data.pdEmail || null,
+		},
 
-			legalGuardianship: {
-				name: fullName(data.lgFName, data.lgLName),
-				phone: data.lgPhone || null,
-				email: data.lgEmail || null,
-			},
+		legalGuardianship: {
+			name: fullName(data.lgFName, data.lgLName),
+			phone: data.lgPhone || null,
+			email: data.lgEmail || null,
+		},
 
-			adultProtectionOrPublicTrustee: {
-				name: fullName(data.aptFName, data.aptLName),
-				phone: data.aptPhone || null,
-				email: data.aptEmail || null,
-			},
+		adultProtectionOrPublicTrustee: {
+			name: fullName(data.aptFName, data.aptLName),
+			phone: data.aptPhone || null,
+			email: data.aptEmail || null,
+		},
 
-			communityTreatmentOrder: {
-				notes: data.ctoNotes || null,
-			},
-		};
+		communityTreatmentOrder: {
+			notes: data.ctoNotes || null,
+		},
+	});
 
+	const submitUpdate = (body) => {
 		updateClient(
 			{ id, data: body },
 			{
@@ -411,8 +411,8 @@ export default function Info() {
 				},
 				onError: (err) => {
 					const resData = err.response?.data;
-					const status = err.response?.status;
-					if (status === 400 && resData?.details?.length > 0) {
+					const httpStatus = err.response?.status;
+					if (httpStatus === 400 && resData?.details?.length > 0) {
 						setStatus({ variant: "error", text: resData.details.map((d) => `${d.msg}${d.path ? ` (${d.path})` : ""}`).join(" | ") });
 					} else {
 						setStatus({ variant: "error", text: resData?.message || resData?.error || err.message || "Failed to update client." });
@@ -420,6 +420,36 @@ export default function Info() {
 				},
 			}
 		);
+	};
+
+	const onSubmit = async (data) => {
+		setStatus(null);
+
+		const newHomeId = data.noHomeSelected ? null : (data.homeId || null);
+
+		// Detect home reassignment conflict
+		const currentHomeRaw = clientDetail?.home;
+		const currentHomeId =
+			typeof currentHomeRaw === "string" ? currentHomeRaw :
+			(currentHomeRaw?._id || currentHomeRaw?.id || clientDetail?.homeId || null);
+
+		if (newHomeId && currentHomeId && newHomeId !== currentHomeId) {
+			let currentHomeName = null;
+			try {
+				const homeDetail = await fetchHome(currentHomeId);
+				currentHomeName = homeDetail?.name || homeDetail?.home?.name || null;
+			} catch {}
+			setConflictInfo({ currentHomeName, pendingBody: buildBody(data) });
+			return;
+		}
+
+		submitUpdate(buildBody(data));
+	};
+
+	const handleConflictConfirm = () => {
+		if (!conflictInfo) return;
+		submitUpdate({ ...conflictInfo.pendingBody, confirmMove: true });
+		setConflictInfo(null);
 	};
 
 	const handleCancel = () => {
@@ -431,8 +461,20 @@ export default function Info() {
 		return <div>Loading client info...</div>;
 	}
 
+	const newHomeName = watchHomeId
+		? homes.find(h => h.id === watchHomeId || h._id === watchHomeId)?.name
+		: undefined;
+
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
+			<ClientConflictModal
+				isOpen={!!conflictInfo}
+				onClose={() => setConflictInfo(null)}
+				onConfirm={handleConflictConfirm}
+				clientName={clientDetail ? `${clientDetail.firstName} ${clientDetail.lastName}` : ""}
+				currentHomeName={conflictInfo?.currentHomeName}
+				newHomeName={newHomeName}
+			/>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
 			<div className={styles.body}>
