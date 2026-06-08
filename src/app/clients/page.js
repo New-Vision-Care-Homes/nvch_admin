@@ -14,6 +14,7 @@ import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
+import { useProfile } from "@/hooks/useProfile";
 
 /**
  * Clients Page Component
@@ -26,6 +27,10 @@ import { useClients } from "@/hooks/useClients";
  * - Safe delete confirmation modal
  */
 export default function Clients() {
+	const { profile } = useProfile();
+	const slugs = profile?.permissionSlugs ?? [];
+	const canCreate = slugs.includes("create_clients");
+	const canDelete = slugs.includes("delete_all_clients") || slugs.includes("delete_assigned_clients");
 
 	// --- State ---
 	const [search, setSearch] = useState("");
@@ -111,9 +116,11 @@ export default function Clients() {
 					{/* Header — always visible */}
 					<div className={styles.header}>
 						<h1>Client Management</h1>
-						<Link href="/clients/add_new_client">
-							<Button variant="primary" icon={<Plus />}>Add New Client</Button>
-						</Link>
+						{canCreate && (
+							<Link href="/clients/add_new_client">
+								<Button variant="primary" icon={<Plus />}>Add New Client</Button>
+							</Link>
+						)}
 					</div>
 
 					{/* Action error — shown when delete/create/update fails */}
@@ -203,11 +210,13 @@ export default function Clients() {
 													<Link href={`/clients/${client.id}`}>
 														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 													</Link>
-													<Trash2
-														color="#ef4444"
-														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
-														onClick={() => deleteHandler(client.id)}
-													/>
+													{canDelete && (
+														<Trash2
+															color="#ef4444"
+															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+															onClick={() => deleteHandler(client.id)}
+														/>
+													)}
 												</TableCell>
 											</TableContent>
 										))}

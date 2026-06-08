@@ -69,6 +69,7 @@ import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 
 import { useShifts } from "@/hooks//useShifts";
+import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
 import { exportScheduleToExcel } from "@/utils/exportSchedule";
@@ -138,6 +139,8 @@ function makeColorAssigner(state) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
+	const { profile } = useProfile();
+	const canCreateShift = profile?.permissionSlugs?.includes("create_shifts");
 
 	// ── Layout state ──────────────────────────────────────────────────────────
 	const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -918,9 +921,11 @@ export default function SchedulingPage() {
 								{view === "payroll" && "Click any row to view shift details"}
 							</p>
 						</div>
-						<Link href="/scheduling/add_new_shift">
-							<Button icon={<CalendarPlus size={16} />}>Create New Shift</Button>
-						</Link>
+						{canCreateShift && (
+							<Link href="/scheduling/add_new_shift">
+								<Button icon={<CalendarPlus size={16} />}>Create New Shift</Button>
+							</Link>
+						)}
 					</div>
 
 					{/* Shift ID search — type a shift ID to jump directly to its detail page */}

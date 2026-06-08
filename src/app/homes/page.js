@@ -13,9 +13,15 @@ import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
+import { useProfile } from "@/hooks/useProfile";
 import Modal from "@components/UI/Modal";
 
 export default function Homes() {
+	const { profile } = useProfile();
+	const slugs = profile?.permissionSlugs ?? [];
+	const canCreate = slugs.includes("create_home");
+	const canDelete = slugs.includes("delete_home");
+
 	// --- State for Pagination ---
 	const [currentPage, setCurrentPage] = useState(0); // 0-indexed for ReactPaginate
 	const itemsPerPage = 10; // Default limit
@@ -76,9 +82,11 @@ export default function Homes() {
 					{/* Header */}
 					<div className={styles.header}>
 						<h1>Homes</h1>
-						<Link href="/homes/add_new_home">
-							<Button variant="primary" icon={<Plus />}>Add New Home</Button>
-						</Link>
+						{canCreate && (
+							<Link href="/homes/add_new_home">
+								<Button variant="primary" icon={<Plus />}>Add New Home</Button>
+							</Link>
+						)}
 					</div>
 
 					{actionError && <ActionMessage variant="error" message={actionError} />}
@@ -159,11 +167,13 @@ export default function Homes() {
 													<Link href={`/homes/${home.id || home._id}`}>
 														<Eye color="#1C4A6EFF" style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
 													</Link>
-													<Trash2
-														color="#ef4444"
-														style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-														onClick={() => handleDeleteClick(home.id || home._id)}
-													/>
+													{canDelete && (
+														<Trash2
+															color="#ef4444"
+															style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+															onClick={() => handleDeleteClick(home.id || home._id)}
+														/>
+													)}
 												</TableCell>
 											</TableContent>
 										))}

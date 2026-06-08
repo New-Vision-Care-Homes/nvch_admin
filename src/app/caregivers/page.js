@@ -14,12 +14,19 @@ import Link from "next/link";
 import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
 
 export default function Caregivers() {
+	const { profile } = useProfile();
+	const slugs = profile?.permissionSlugs ?? [];
+	const canCreate = slugs.includes("create_caregivers");
+	const canView = slugs.includes("view_all_caregivers") || slugs.includes("view_assigned_caregivers");
+	const canDelete = slugs.includes("delete_all_caregivers") || slugs.includes("update_assigned_caregivers");
+
 	// --- State ---
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -97,9 +104,11 @@ export default function Caregivers() {
 					{/* Header */}
 					<div className={styles.header}>
 						<h1>Caregiver Management</h1>
-						<Link href="/caregivers/add_new_caregiver">
-							<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
-						</Link>
+						{canCreate && (
+							<Link href="/caregivers/add_new_caregiver">
+								<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+							</Link>
+						)}
 					</div>
 
 					{/* Action error — shown when delete/create/update fails */}
@@ -195,14 +204,18 @@ export default function Caregivers() {
 
 												{/* Actions */}
 												<TableCell>
-													<Link href={`/caregivers/${caregiver.id}`}>
-														<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-													</Link>
-													<Trash2
-														color="#ef4444"
-														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-														onClick={() => deleteHandler(caregiver.id)}
-													/>
+													{canView && (
+														<Link href={`/caregivers/${caregiver.id}`}>
+															<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+														</Link>
+													)}
+													{canDelete && (
+														<Trash2
+															color="#ef4444"
+															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+															onClick={() => deleteHandler(caregiver.id)}
+														/>
+													)}
 												</TableCell>
 											</TableContent>
 										))}

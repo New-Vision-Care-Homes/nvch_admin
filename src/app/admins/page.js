@@ -15,9 +15,13 @@ import Link from "next/link";
 import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
+import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
 
 export default function Admins() {
+	const { profile } = useProfile();
+	const canCreate = profile?.permissionSlugs?.includes("create_admin");
+
 	// --- State ---
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -94,9 +98,11 @@ export default function Admins() {
 					{/* Header */}
 					<div className={styles.header}>
 						<h1>Admin Management</h1>
-						<Link href="/admins/add_new_admin">
-							<Button variant="primary" icon={<Plus />}>Add New Admin</Button>
-						</Link>
+						{canCreate && (
+							<Link href="/admins/add_new_admin">
+								<Button variant="primary" icon={<Plus />}>Add New Admin</Button>
+							</Link>
+						)}
 					</div>
 
 					{/* Action error — shown when delete/create/update fails */}

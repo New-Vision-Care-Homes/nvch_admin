@@ -14,6 +14,7 @@ import { useParams } from "next/navigation";
 
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useClients } from "@/hooks/useClients";
+import ErrorState from "@components/UI/ErrorState";
 
 
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
@@ -80,29 +81,14 @@ export default function Page() {
 
 
 
-	if (isLoading) {
+	if (isLoading || isError || !clientDetail) {
 		return (
 			<PageLayout>
-				<div>Loading client info...</div>
+				<ErrorState isLoading={isLoading} errorMessage={isError ? errorMessage : (!clientDetail ? "Client not found." : null)} />
 			</PageLayout>
 		);
 	}
 
-	if (isError) {
-		return (
-			<PageLayout>
-				<div style={{ color: 'red' }}>Error: {errorMessage}</div>
-			</PageLayout>
-		);
-	}
-
-	if (!clientDetail) {
-		return (
-			<PageLayout>
-				<div>Client not found.</div>
-			</PageLayout>
-		);
-	}
 
 
 	return (

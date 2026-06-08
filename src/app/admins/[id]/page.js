@@ -18,6 +18,7 @@ import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/valida
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
+import ErrorState from "@components/UI/ErrorState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 
@@ -233,9 +234,11 @@ export default function Page() {
 	}
 
 	// --- Render Logic ---
-	if (isLoading) return <p>Loading admin data...</p>;
-	if (fetchError) return <p>{fetchError}</p>;
-	if (!user) return <p>Admin data not found or failed to load.</p>;
+	if (isLoading || fetchError || !user) return (
+		<PageLayout>
+			<ErrorState isLoading={isLoading} errorMessage={fetchError ?? (!user ? "Admin not found." : null)} />
+		</PageLayout>
+	);
 
 	const activeStatus = user.isActive;
 

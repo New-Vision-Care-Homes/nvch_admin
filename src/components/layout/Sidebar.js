@@ -4,15 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
 import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
-	{ id: 2, label: "Clients", icon: Users, href: "/clients" },
-	{ id: 3, label: "Caregivers", icon: IdCardLanyard, href: "/caregivers" },
-	{ id: 4, label: "Admins", icon: UserLock, href: "/admins" },
-	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions" },
-	{ id: 5, label: "Homes", icon: Building, href: "/homes" },
-	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true },
+	{ id: 2, label: "Clients", icon: Users, href: "/clients", requiredSlugs: ["view_all_clients", "view_assigned_clients"] },
+	{ id: 3, label: "Caregivers", icon: IdCardLanyard, href: "/caregivers", requiredSlugs: ["view_all_caregivers", "view_assigned_caregivers"] },
+	{ id: 4, label: "Admins", icon: UserLock, href: "/admins", requiredSlugs: ["view_admin"] },
+	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions", requiredSlugs: ["view_permissions_groups"] },
+	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes"] },
+	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true, requiredSlugs: ["view_shifts"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
@@ -45,6 +46,12 @@ const keywordToTabMap = {
 
 export default function Sidebar({ open = false, onClose = () => {} }) {
 	const pathname = usePathname();
+	const { profile } = useProfile();
+
+	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const visibleTabs = tabs.filter(tab =>
+		!tab.requiredSlugs || tab.requiredSlugs.some(slug => permissionSlugs.includes(slug))
+	);
 
 	const [activeTab, setActiveTab] = useState(() => {
 		const tabMatch = tabs.find(tab => tab.href === pathname);
@@ -103,7 +110,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 			/>
 
 			<aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ""}`}>
-				{tabs.map(tab => {
+				{visibleTabs.map(tab => {
 					const Icon = tab.icon;
 					const isActive = tab.id === activeTab;
 
