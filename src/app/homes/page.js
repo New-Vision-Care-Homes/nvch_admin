@@ -7,7 +7,7 @@ import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import ReactPaginate from "react-paginate";
 import Link from "next/link";
-import { Eye, Trash2, Plus, Search } from "lucide-react";
+import { Eye, Trash2, Plus } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
