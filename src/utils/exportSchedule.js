@@ -3,7 +3,7 @@ import { utcToZonedDateObject } from "@/utils/timeHandling";
 
 const HALIFAX_TZ       = "America/Halifax";
 const INCLUDED_STATUSES = new Set(["scheduled", "completed", "in_progress"]);
-const PAYROLL_ANCHOR   = new Date(2026, 0, 1);
+const PAYROLL_ANCHOR   = new Date(2025, 11, 18); // Dec 18, 2025 — start of PP1
 const PERIOD_DAYS      = 14;
 
 function calcPayPeriodNumber(periodStart) {

@@ -59,7 +59,7 @@ import {
 import enCA from "date-fns/locale/en-CA"; // weeks start on Sunday in Canada
 import { DateTime } from "luxon";
 
-import { Building2, CalendarPlus, Clock, Download, MapPin, Search, User, Users } from "lucide-react";
+import { Building2, CalendarPlus, Clock, Download, MapPin, Moon, Search, Sun, User, Users } from "lucide-react";
 import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
@@ -85,9 +85,9 @@ import styles from "./scheduling.module.css";
 // Halifax (Atlantic) time, regardless of where the admin's browser is located.
 const HALIFAX_TZ = "America/Halifax";
 
-// Payroll periods are 14 days long, anchored to Jan 1 2026.
-// Period 0 = Jan 1–14, Period 1 = Jan 15–28, Period -1 = Dec 18–31 2025, etc.
-const PAYROLL_ANCHOR = new Date(2026, 0, 1);
+// Payroll periods are 14 days long, anchored to Dec 18 2025 (start of PP1).
+// PP1 = Dec 18–31 2025, PP2 = Jan 1–14 2026, PP3 = Jan 15–28 2026, etc.
+const PAYROLL_ANCHOR = new Date(2025, 11, 18); // Dec 18, 2025
 const PERIOD_DAYS = 14;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -140,8 +140,8 @@ function makeColorAssigner(state) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
-	const { profile } = useProfile();
-	const canCreateShift = profile?.permissionSlugs?.includes("create_shifts");
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const canCreateShift = !isProfileFetching && profile?.permissionSlugs?.includes("create_shifts");
 
 	// ── Layout state ──────────────────────────────────────────────────────────
 	const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -207,9 +207,9 @@ export default function SchedulingPage() {
 	}, [router]);
 
 	// ── Calendar view & date ──────────────────────────────────────────────────
-	// `view`  — which tab is active: "month" | "week" | "day" | "agenda" | "payroll"
+	// `view`  — which tab is active: "month" | "week" | "day" | "agenda" | "payroll" | "overview"
 	// `date`  — the anchor date the calendar is centered on (changes when navigating prev/next)
-	const [view, setView] = useState("week");
+	const [view, setView] = useState("overview");
 
 	// Default to agenda on small screens — week/month grids are unusable on mobile.
 	useEffect(() => {
@@ -678,7 +678,7 @@ export default function SchedulingPage() {
 
 	// Label shown in the centre of the toolbar (e.g. "Apr 24 – Apr 30, 2025").
 	const calendarToolbarLabel = useMemo(() => {
-		if (view === "payroll") {
+		if (view === "payroll" || view === "overview") {
 			return `${format(payrollPeriod.start, "MMM d")} – ${format(payrollPeriod.end, "MMM d, yyyy")}`;
 		}
 		switch (view) {
@@ -698,7 +698,7 @@ export default function SchedulingPage() {
 	}, [view, date, payrollPeriod]);
 
 	const handleToolbarPrev = useCallback(() => {
-		if (view === "payroll") { setPayrollOffset((o) => o - 1); return; }
+		if (view === "payroll" || view === "overview") { setPayrollOffset((o) => o - 1); return; }
 		if (view === "month")  setDate((d) => subMonths(d, 1));
 		else if (view === "week") setDate((d) => subDays(d, 7));
 		else if (view === "day")  setDate((d) => subDays(d, 1));
@@ -706,13 +706,13 @@ export default function SchedulingPage() {
 	}, [view]);
 
 	const handleToolbarToday = useCallback(() => {
-		if (view === "payroll") { setPayrollOffset(0); return; }
+		if (view === "payroll" || view === "overview") { setPayrollOffset(0); return; }
 		const dt = DateTime.now().setZone(HALIFAX_TZ);
 		setDate(new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond));
 	}, [view]);
 
 	const handleToolbarNext = useCallback(() => {
-		if (view === "payroll") { setPayrollOffset((o) => o + 1); return; }
+		if (view === "payroll" || view === "overview") { setPayrollOffset((o) => o + 1); return; }
 		if (view === "month")  setDate((d) => addMonths(d, 1));
 		else if (view === "week") setDate((d) => addDays(d, 7));
 		else if (view === "day")  setDate((d) => addDays(d, 1));
@@ -744,6 +744,13 @@ export default function SchedulingPage() {
 					onClick={() => setView("payroll")}
 				>
 					Payroll
+				</button>
+				<button
+					type="button"
+					className={`${styles.toolbarBtn} ${view === "overview" ? styles.toolbarBtnActive : ""}`}
+					onClick={() => setView("overview")}
+				>
+					Overview
 				</button>
 			</div>
 		</div>
@@ -901,6 +908,206 @@ export default function SchedulingPage() {
 
 
 	// ═══════════════════════════════════════════════════════════════════════════
+	// OVERVIEW VIEW  —  roster grid matching the Excel export layout
+	// ═══════════════════════════════════════════════════════════════════════════
+	// Caregivers × dates table for the current pay period.
+	// Status-coloured chips per cell; click any chip to open the shift detail.
+	const OverviewView = () => {
+		const dates = useMemo(() => {
+			const arr = [];
+			let cursor = new Date(payrollPeriod.start);
+			while (cursor <= payrollPeriod.end) {
+				arr.push(new Date(cursor));
+				cursor = addDays(cursor, 1);
+			}
+			return arr;
+		}, []);
+
+		const todayStr = useMemo(() => {
+			const dt = DateTime.now().setZone(HALIFAX_TZ);
+			return format(new Date(dt.year, dt.month - 1, dt.day), "yyyy-MM-dd");
+		}, []);
+
+		const { cgNames, shiftMap, sortedCgIds, stats } = useMemo(() => {
+			const filtered = payrollShifts || [];
+			const names = {};
+			const map   = {};
+
+			filtered.forEach((shift) => {
+				const cgId = shift.caregiver?._id || shift.caregiver?.id;
+				if (!cgId) return;
+				names[cgId] = [shift.caregiver?.firstName, shift.caregiver?.lastName]
+					.filter(Boolean).join(" ") || "Unknown";
+
+				const startLocal = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+				const endLocal   = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+				const ds         = format(startLocal, "yyyy-MM-dd");
+				const timeRange  = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
+				const isNight    = startLocal.getHours() >= 18 ||
+				                   format(endLocal, "yyyy-MM-dd") !== ds;
+
+				if (!map[cgId])     map[cgId]     = {};
+				if (!map[cgId][ds]) map[cgId][ds] = [];
+				map[cgId][ds].push({ timeRange, status: shift.status, id: shift._id || shift.id, isNight });
+			});
+
+			const ids = Object.keys(names).sort((a, b) => names[a].localeCompare(names[b]));
+
+			const scheduledHrs = filtered.reduce(
+				(sum, s) => sum + (new Date(s.endTime) - new Date(s.startTime)) / 3_600_000, 0
+			);
+			const workedHrs = filtered.reduce((sum, s) => sum + (s.hoursWorked || 0), 0);
+			const cgSet = new Set(filtered.map((s) => s.caregiver?._id || s.caregiver?.id).filter(Boolean));
+
+			return {
+				cgNames:     names,
+				shiftMap:    map,
+				sortedCgIds: ids,
+				stats: {
+					total:      filtered.length,
+					scheduled:  scheduledHrs.toFixed(1),
+					worked:     workedHrs.toFixed(1),
+					caregivers: cgSet.size,
+				},
+			};
+		}, []);
+
+		if (isPayrollLoading) return <ErrorState isLoading />;
+		if (payrollError)     return <ErrorState errorMessage={payrollError} onRetry={refetchPayroll} />;
+
+		return (
+			<div className={styles.overviewView}>
+				{/* Stats */}
+				<div className={styles.payrollStats}>
+					{[
+						{ value: stats.total,            label: "Shifts"     },
+						{ value: `${stats.scheduled} h`, label: "Scheduled"  },
+						{ value: `${stats.worked} h`,    label: "Worked"     },
+						{ value: stats.caregivers,       label: "Caregivers" },
+					].map(({ value, label }) => (
+						<div key={label} className={styles.payrollStatCard}>
+							<span className={styles.payrollStatValue}>{value}</span>
+							<span className={styles.payrollStatLabel}>{label}</span>
+						</div>
+					))}
+				</div>
+
+				{sortedCgIds.length === 0 ? (
+					<div className={styles.overviewEmpty}>No shifts scheduled for this pay period.</div>
+				) : (
+					<>
+						{/* Status legend */}
+						<div className={styles.overviewLegend}>
+							<span className={styles.overviewLegendLabel}>Status:</span>
+							{[
+								{ key: "completed",   label: "Completed"   },
+								{ key: "scheduled",   label: "Scheduled"   },
+								{ key: "in_progress", label: "In Progress" },
+								{ key: "cancelled",   label: "Cancelled"   },
+								{ key: "missed",      label: "Missed"      },
+							].map(({ key, label }) => (
+								<span
+									key={key}
+									className={`${styles.overviewChip} ${styles[`overviewChip_${key}`]} ${styles.overviewChipStatic}`}
+								>
+									{label}
+								</span>
+							))}
+						</div>
+
+						{/* Roster grid */}
+						<div className={styles.overviewTableWrap}>
+							<table className={styles.overviewTable}>
+								<thead>
+									<tr>
+										<th className={styles.overviewNameHeader}>Caregiver</th>
+										{dates.map((d) => {
+											const ds      = format(d, "yyyy-MM-dd");
+											const isToday = ds === todayStr;
+											return (
+												<th
+													key={ds}
+													className={`${styles.overviewDayHeader}${isToday ? ` ${styles.overviewDayHeaderToday}` : ""}`}
+												>
+													<span className={styles.overviewDayName}>{format(d, "EEE")}</span>
+													<span className={styles.overviewDayNum}>{format(d, "d")}</span>
+													<span className={styles.overviewDayMon}>{format(d, "MMM")}</span>
+													{isToday && <span className={styles.overviewTodayPill}>today</span>}
+												</th>
+											);
+										})}
+										<th className={styles.overviewTotalHeader}>#</th>
+									</tr>
+								</thead>
+								<tbody>
+									{sortedCgIds.map((cgId, idx) => {
+										const color       = getCaregiverColor(cgId);
+										const totalShifts = Object.values(shiftMap[cgId] || {}).reduce(
+											(sum, arr) => sum + arr.length, 0
+										);
+										return (
+											<tr
+												key={cgId}
+												className={`${styles.overviewRow}${idx % 2 === 0 ? ` ${styles.overviewRowEven}` : ""}`}
+											>
+												<td
+													className={styles.overviewNameCell}
+													style={{ borderLeft: `4px solid ${color.border}` }}
+												>
+													<div className={styles.overviewNameInner}>
+														<User size={13} style={{ color: color.border, flexShrink: 0 }} />
+														{cgNames[cgId]}
+													</div>
+												</td>
+												{dates.map((d) => {
+													const ds      = format(d, "yyyy-MM-dd");
+													const entries = shiftMap[cgId]?.[ds] || [];
+													const isToday = ds === todayStr;
+													return (
+														<td
+															key={ds}
+															className={`${styles.overviewCell}${isToday ? ` ${styles.overviewCellToday}` : ""}`}
+														>
+															{entries.map((entry, i) => (
+																<span
+																	key={i}
+																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled}`}
+																	onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
+																	title={`${cgNames[cgId]} · ${entry.timeRange} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
+																>
+																	{entry.isNight
+																		? <Moon size={9} style={{ flexShrink: 0 }} />
+																		: <Sun  size={9} style={{ flexShrink: 0 }} />}
+																	{entry.timeRange}
+																</span>
+															))}
+														</td>
+													);
+												})}
+												<td className={styles.overviewTotalCell}>
+													{totalShifts > 0 && (
+														<span
+															className={styles.overviewTotalBadge}
+															style={{ background: color.bg, color: color.text, borderColor: color.border }}
+														>
+															{totalShifts}
+														</span>
+													)}
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+					</>
+				)}
+			</div>
+		);
+	};
+
+
+	// ═══════════════════════════════════════════════════════════════════════════
 	// RENDER
 	// ═══════════════════════════════════════════════════════════════════════════
 	return (
@@ -915,11 +1122,12 @@ export default function SchedulingPage() {
 						<div>
 							<h1 className={styles.heading}>Scheduling</h1>
 							<p className={styles.subtitle}>
-								{view === "month"   && "Click any day to view all shifts for that day"}
-								{view === "week"    && "Click a block to view shift details"}
-								{view === "day"     && "Click a block to view shift details"}
-								{view === "agenda"  && "Click any shift to view its detail"}
-								{view === "payroll" && "Click any row to view shift details"}
+								{view === "month"    && "Click any day to view all shifts for that day"}
+								{view === "week"     && "Click a block to view shift details"}
+								{view === "day"      && "Click a block to view shift details"}
+								{view === "agenda"   && "Click any shift to view its detail"}
+								{view === "payroll"  && "Click any row to view shift details"}
+								{view === "overview" && "Roster grid — click any shift chip to view its detail"}
 							</p>
 						</div>
 						{canCreateShift && (
@@ -1044,6 +1252,8 @@ export default function SchedulingPage() {
 						<div className={styles.calendarBody}>
 							{view === "payroll" ? (
 								<PayrollView />
+							) : view === "overview" ? (
+								<OverviewView />
 							) : (
 								<>
 									<ErrorState
