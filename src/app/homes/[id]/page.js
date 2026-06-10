@@ -22,8 +22,8 @@ export default function HomeDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { homeDetail: home, isLoading, fetchError } = useHomes(id);
-	const { profile, isFetching: isProfileFetching } = useProfile();
-	const canEdit = !isProfileFetching && profile?.permissionSlugs?.includes("update_home");
+	const { profile } = useProfile();
+	const canEdit = profile?.permissionSlugs?.includes("update_home");
 
 	// Normalise admins — API may return [{ admin: {...}, adminLevel }] or flat user objects
 	const normalisedAdmins = (home?.admins || []).map(entry =>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -27,7 +27,6 @@ const schema = yup.object({
 
 export default function ProfilePage() {
 	const { profile, updateProfile, isLoading, isActionPending, fetchError, actionError, refetch } = useProfile();
-	console.log(profile);
 
 	const [isEditing, setIsEditing] = useState(false);
 

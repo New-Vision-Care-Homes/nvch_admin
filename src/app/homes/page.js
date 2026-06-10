@@ -17,8 +17,8 @@ import { useProfile } from "@/hooks/useProfile";
 import Modal from "@components/UI/Modal";
 
 export default function Homes() {
-	const { profile, isFetching: isProfileFetching } = useProfile();
-	const slugs = isProfileFetching ? [] : (profile?.permissionSlugs ?? []);
+	const { profile } = useProfile();
+	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_home");
 	const canDelete = slugs.includes("delete_home");
 
