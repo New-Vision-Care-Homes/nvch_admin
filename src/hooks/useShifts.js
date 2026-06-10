@@ -97,6 +97,12 @@ export const useShifts = (options = {}) => {
 		},
 	});
 
+	// 7. Bulk-create shifts from the schedule builder
+	const createBulkMutation = useMutation({
+		mutationFn: shiftService.createBulk,
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
+	});
+
 	// Fetch errors: from initial data loading (shown via ErrorState component)
 	const fetchError =
 		shiftsQuery.error ||
@@ -108,7 +114,8 @@ export const useShifts = (options = {}) => {
 		createMutation.error ||
 		updateUpcommingShift.error ||
 		updateCompletedShift.error ||
-		cancelMutation.error;
+		cancelMutation.error ||
+		createBulkMutation.error;
 
 
 	return {
@@ -144,5 +151,10 @@ export const useShifts = (options = {}) => {
 		isCancelPending: cancelMutation.isPending,
 		cancelShiftError: cancelMutation.error ? getErrorMessage(cancelMutation.error) : null,
 		refetch: shiftsQuery.refetch,
+
+		// Bulk create
+		createBulkShifts: createBulkMutation.mutateAsync,
+		isBulkPending: createBulkMutation.isPending,
+		bulkShiftError: createBulkMutation.error ? getErrorMessage(createBulkMutation.error) : null,
 	};
 };
