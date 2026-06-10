@@ -113,10 +113,68 @@
 	background: #fff;
 	border: 1.5px solid #e2e8f0;
 	border-radius: 16px;
-	padding: 16px 20px;
+	padding: 14px 18px;
 	flex-shrink: 0;
 	flex-wrap: wrap;
 	box-shadow: 0 1px 6px rgba(28, 74, 110, 0.06);
+}
+
+/* ── Pay period navigator ── */
+.periodNavBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	background: #fff;
+	color: #64748b;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.14s ease;
+}
+.periodNavBtn:hover {
+	border-color: var(--color-primary, #1c4a6e);
+	color: var(--color-primary, #1c4a6e);
+	background: #f0f7ff;
+}
+
+.periodDisplay {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+	min-width: 160px;
+}
+
+.periodBadge {
+	font-size: 0.78rem;
+	font-weight: 800;
+	color: var(--color-primary, #1c4a6e);
+	letter-spacing: 0.04em;
+}
+
+.periodDates {
+	font-size: 0.71rem;
+	font-weight: 500;
+	color: #94a3b8;
+	white-space: nowrap;
+}
+
+/* Pushes the action buttons to the far right on wide screens */
+.controlsSpacer {
+	flex: 1;
+	min-width: 8px;
+}
+
+/* Clear all + Publish grouped together */
+.controlsActions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+	padding-bottom: 1px; /* align with bottom of selects */
 }
 
 .controlGroup {
@@ -168,13 +226,35 @@
 }
 
 .controlSelect {
-	min-width: 180px;
+	min-width: 110px;
 	cursor: pointer;
 }
 
-.controlInput[type="date"],
-.controlInput[type="time"] {
+/* Date inputs keep a wider min-width so the value doesn't clip */
+.controlInput[type="date"] {
+	min-width: 136px;
 	cursor: pointer;
+}
+
+/* ── Info notice ── */
+.infoBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 9px 14px;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 10px;
+	font-size: 0.8rem;
+	color: #1e40af;
+	flex-shrink: 0;
+	line-height: 1.5;
+}
+
+.infoIcon {
+	flex-shrink: 0;
+	margin-top: 1px;
+	color: #3b82f6;
 }
 
 /* ── Error / result banners ── */
@@ -434,6 +514,21 @@
 .trEven td { background: #f8fafc; }
 .tr:hover td { background: #f0f7ff !important; }
 
+/* Row being dragged over — blue outline signals the drop target */
+.trDragOver td { background: #eef2ff !important; }
+.trDragOver .tdName { background: #eef2ff !important; }
+.trDragOver { outline: 2px solid #6366f1; outline-offset: -2px; }
+
+/* ── Drag handle ── */
+.dragHandle {
+	cursor: grab;
+	color: #d1d5db;
+	flex-shrink: 0;
+	transition: color 0.12s ease;
+}
+.tr:hover .dragHandle { color: #94a3b8; }
+.dragHandle:active { cursor: grabbing; }
+
 /* ── Caregiver name cell ── */
 .tdName {
 	position: sticky;
@@ -598,6 +693,12 @@
 	letter-spacing: 0.02em;
 }
 
+/* Muted style for cells loaded from the API (existing shifts) */
+.cellExisting {
+	opacity: 0.45;
+	filter: saturate(0.5);
+}
+
 /* ── Custom cell ── */
 .cellCustom {
 	display: flex;
@@ -706,11 +807,46 @@
 
 .legendDivider { width: 1px; height: 18px; background: #e2e8f0; }
 
+.legendLabel {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #475569;
+}
+
+/* Inline time dropdowns inside the legend */
+.legendSelect {
+	padding: 4px 8px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: #1e293b;
+	background: #f8fafc;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.legendSelect:hover { border-color: #cbd5e1; }
+.legendSelect:focus {
+	border-color: var(--color-primary, #4f46e5);
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+	background: #fff;
+}
+
+.legendSep {
+	font-size: 0.8rem;
+	color: #94a3b8;
+	font-weight: 500;
+}
+
 .legendNote {
 	margin-left: auto;
 	font-size: 0.76rem;
 	color: #94a3b8;
 	font-style: italic;
+	display: flex;
+	align-items: center;
+	gap: 3px;
 }
 
 /* ── Responsive ── */

@@ -97,9 +97,15 @@ export const useShifts = (options = {}) => {
 		},
 	});
 
-	// 7. Bulk-create shifts from the schedule builder
+	// 7. Bulk-create shifts from the schedule builder (POST — new period, no existing shifts)
 	const createBulkMutation = useMutation({
 		mutationFn: shiftService.createBulk,
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
+	});
+
+	// 8. Bulk-save shifts (create + update) from the schedule builder (PUT — period has existing shifts)
+	const saveBulkMutation = useMutation({
+		mutationFn: shiftService.saveBulk,
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shifts"] }),
 	});
 
@@ -115,7 +121,8 @@ export const useShifts = (options = {}) => {
 		updateUpcommingShift.error ||
 		updateCompletedShift.error ||
 		cancelMutation.error ||
-		createBulkMutation.error;
+		createBulkMutation.error ||
+		saveBulkMutation.error;
 
 
 	return {
@@ -152,9 +159,14 @@ export const useShifts = (options = {}) => {
 		cancelShiftError: cancelMutation.error ? getErrorMessage(cancelMutation.error) : null,
 		refetch: shiftsQuery.refetch,
 
-		// Bulk create
+		// Bulk create (POST — no existing shifts in period)
 		createBulkShifts: createBulkMutation.mutateAsync,
 		isBulkPending: createBulkMutation.isPending,
 		bulkShiftError: createBulkMutation.error ? getErrorMessage(createBulkMutation.error) : null,
+
+		// Bulk save — create + update (PUT — period already has shifts)
+		saveBulkShifts: saveBulkMutation.mutateAsync,
+		isSaveBulkPending: saveBulkMutation.isPending,
+		saveBulkShiftError: saveBulkMutation.error ? getErrorMessage(saveBulkMutation.error) : null,
 	};
 };
