@@ -19,8 +19,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
 
 export default function Admins() {
-	const { profile } = useProfile();
-	const canCreate = profile?.permissionSlugs?.includes("create_admin");
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const canCreate = !isProfileFetching && profile?.permissionSlugs?.includes("create_admin");
 
 	// --- State ---
 	const [search, setSearch] = useState("");

@@ -27,8 +27,8 @@ import { useProfile } from "@/hooks/useProfile";
  * - Safe delete confirmation modal
  */
 export default function Clients() {
-	const { profile } = useProfile();
-	const slugs = profile?.permissionSlugs ?? [];
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const slugs = isProfileFetching ? [] : (profile?.permissionSlugs ?? []);
 	const canCreate = slugs.includes("create_clients");
 	const canDelete = slugs.includes("delete_all_clients") || slugs.includes("delete_assigned_clients");
 

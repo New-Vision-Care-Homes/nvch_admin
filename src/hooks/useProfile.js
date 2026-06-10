@@ -21,9 +21,12 @@ export const useProfile = () => {
 	};
 
 	// Fetch the current user's profile
+	// refetchOnMount: 'always' ensures fresh data on every page mount instead of
+	// serving a stale cached profile while the background refetch runs.
 	const profileQuery = useQuery({
 		queryKey: ["profile"],
 		queryFn: () => authService.getProfile(),
+		refetchOnMount: 'always',
 	});
 
 	const updateMutation = useMutation({
@@ -43,6 +46,9 @@ export const useProfile = () => {
 
 		// Status Indicators
 		isLoading: profileQuery.isLoading,
+		// isFetching is true during both the initial load AND any background refetch.
+		// Use this to avoid showing permission-gated UI based on stale cached data.
+		isFetching: profileQuery.isFetching,
 		isActionPending: updateMutation.isPending,
 		isChangePasswordPending: changePasswordMutation.isPending,
 

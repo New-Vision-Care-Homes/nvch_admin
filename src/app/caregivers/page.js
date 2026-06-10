@@ -21,11 +21,11 @@ import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
 
 export default function Caregivers() {
-	const { profile } = useProfile();
-	const slugs = profile?.permissionSlugs ?? [];
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const slugs = isProfileFetching ? [] : (profile?.permissionSlugs ?? []);
 	const canCreate = slugs.includes("create_caregivers");
 	const canView = slugs.includes("view_all_caregivers") || slugs.includes("view_assigned_caregivers");
-	const canDelete = slugs.includes("delete_all_caregivers") || slugs.includes("update_assigned_caregivers");
+	const canDelete = slugs.includes("delete_all_caregivers") || slugs.includes("delete_assigned_caregivers");
 
 	// --- State ---
 	const [search, setSearch] = useState("");

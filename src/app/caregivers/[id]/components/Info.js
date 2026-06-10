@@ -88,8 +88,8 @@ const schema = yup.object({
 
 
 export default function Info() {
-	const { profile } = useProfile();
-	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const canEdit = !isProfileFetching && (profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers"));
 
 	const [status, setStatus] = useState(null);
 	const [isEditing, setIsEditing] = useState(false);

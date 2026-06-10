@@ -85,8 +85,8 @@ const quickActions = [
 export default function Dashboard() {
 	const { clients, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
 	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
-	const { profile } = useProfile();
-	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const permissionSlugs = isProfileFetching ? [] : (profile?.permissionSlugs ?? []);
 	const visibleQuickActions = quickActions.filter(a => permissionSlugs.includes(a.requiredSlug));
 
 	const getStatValue = (stat) => {

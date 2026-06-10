@@ -33,8 +33,8 @@ export default function Page() {
 		toggleCaregiverStatus
 	} = useCaregivers(id);
 
-	const { profile } = useProfile();
-	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
+	const { profile, isFetching: isProfileFetching } = useProfile();
+	const canEdit = !isProfileFetching && (profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers"));
 
 	// --- Image Upload States ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
