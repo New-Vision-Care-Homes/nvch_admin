@@ -73,6 +73,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
 import { exportScheduleToExcel } from "@/utils/exportSchedule";
+import logoImg from "@/assets/logo/nv.png";
 
 import styles from "./scheduling.module.css";
 
@@ -1018,6 +1019,7 @@ export default function SchedulingPage() {
 									payPeriodStart: payrollPeriod.start,
 									payPeriodEnd:   payrollPeriod.end,
 									shifts:         payrollShifts,
+									logoUrl:        logoImg.src,
 								});
 							}}
 						>
