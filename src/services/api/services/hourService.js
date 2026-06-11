@@ -24,13 +24,23 @@ export const hourService = {
 
 	/**
 	 * Update completed hour.
-	 * @param {string} id 
-	 * @param {Object} updateData 
+	 * @param {string} id
+	 * @param {Object} updateData
 	 */
 	updateCompletedHour: async (id, updateData) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.HOURS.UPDATE_CAREGIVER_HOURS(id), updateData);
 		return data.message;
 	},
 
+	/**
+	 * Look up pay-period dates.
+	 * GET /api/hours/pay-periods
+	 * @param {Object} params — {} (current period), { date }, { payYear },
+	 *                          or { payYear, ppNumber }
+	 */
+	getPayPeriods: async (params = {}) => {
+		const response = await axiosClient.get(API_ENDPOINTS.HOURS.GET_PAY_PERIODS, { params });
+		return response.data.data;
+	},
 
 };

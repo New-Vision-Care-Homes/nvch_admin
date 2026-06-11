@@ -1,18 +1,9 @@
 import { format, addDays } from "date-fns";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
 const HALIFAX_TZ = "America/Halifax";
 const INCLUDED_STATUSES = new Set(["scheduled", "completed", "in_progress"]);
-
-// Mirrors the anchor used in the scheduling page
-const PAYROLL_ANCHOR = new Date(2026, 0, 1);
-const PERIOD_DAYS = 14;
-
-function calcPayPeriodNumber(periodStart) {
-	const msPerPeriod = PERIOD_DAYS * 24 * 60 * 60 * 1000;
-	const diff = Math.max(0, periodStart.getTime() - PAYROLL_ANCHOR.getTime());
-	return Math.floor(diff / msPerPeriod) + 1; // 1-based
-}
 
 // ARGB color constants
 const C_NAVY     = "FF1C4A6E"; // app primary — table header background
@@ -31,8 +22,10 @@ function allBorders() {
  *
  * homeId: when provided, only shifts belonging to that home are included.
  *         When null/empty, all shifts in the period are shown (All Homes).
+ * payYear / periodNumber: the period's identity as resolved by the backend
+ *         (GET /api/hours/pay-periods) — not recomputed here.
  */
-export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, payPeriodEnd, shifts }) {
+export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, payPeriodEnd, payYear, periodNumber, shifts }) {
 	// Dynamic import keeps ExcelJS out of the SSR bundle
 	const ExcelJS = (await import("exceljs")).default;
 
@@ -91,12 +84,11 @@ export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, 
 	];
 
 	// ── Info block (above the table, plain bold text, no borders) ────────────
-	const ppNumber = calcPayPeriodNumber(payPeriodStart);
 	[
 		`House: ${homeName || "All Homes"}`,
 		`Start Date: ${format(payPeriodStart, "MMM d, yyyy")}`,
 		`End Date: ${format(payPeriodEnd, "MMM d, yyyy")}`,
-		`Pay Period: ${ppNumber}`,
+		`Pay Period: ${formatPayPeriodLabel({ payYear, periodNumber })}`,
 	].forEach((label) => {
 		const row = ws.addRow([label]);
 		row.getCell(1).font = { bold: true, size: 11, color: { argb: C_NAVY } };

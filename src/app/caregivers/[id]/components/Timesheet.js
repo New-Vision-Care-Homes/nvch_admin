@@ -12,6 +12,7 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHours } from "@/hooks/useHours";
 import { useProfile } from "@/hooks/useProfile";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,7 +316,13 @@ export default function Timesheet() {
 						</CardContent>
 					</Card>
 
-					{/* Quick-stat cards sourced from the useHours hook */}
+					{/* Quick-stat cards sourced from the useHours hook (current pay period) */}
+					{hours?.currentPeriod?.periodNumber && (
+						<div className={styles.sectionHeader}>
+							<h3 className={styles.sectionTitle}>Current Pay Period</h3>
+							<span className={styles.sectionCount}>{formatPayPeriodLabel(hours.currentPeriod)}</span>
+						</div>
+					)}
 					<div className={styles.statsGrid}>
 						<Card className={styles.statCard}>
 							<div className={styles.statLabel}>Total Hours</div>
@@ -458,6 +465,7 @@ export default function Timesheet() {
 			<div className={styles.scrollableTable}>
 				<Table>
 					<TableHeader>
+						<TableCell>Period</TableCell>
 						<TableCell>Period Start</TableCell>
 						<TableCell>Period End</TableCell>
 						<TableCell>Total Hours</TableCell>
@@ -468,6 +476,7 @@ export default function Timesheet() {
 					{hours?.payPeriods && hours.payPeriods.length > 0 ? (
 						hours.payPeriods.map((period, idx) => (
 							<TableContent key={idx}>
+								<TableCell>{formatPayPeriodLabel(period) || "—"}</TableCell>
 								<TableCell>{utcToFullDisplay(period.periodStart, profile?.timezone || "America/Halifax")}</TableCell>
 								<TableCell>{utcToFullDisplay(period.periodEnd, profile?.timezone || "America/Halifax")}</TableCell>
 								<TableCell>
@@ -486,7 +495,7 @@ export default function Timesheet() {
 						))
 					) : (
 						<TableContent>
-							<TableCell colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
+							<TableCell colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
 								No pay periods found for this caregiver.
 							</TableCell>
 						</TableContent>

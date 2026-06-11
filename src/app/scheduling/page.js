@@ -70,8 +70,10 @@ import EmptyState from "@components/UI/EmptyState";
 
 import { useShifts } from "@/hooks//useShifts";
 import { useHomes } from "@/hooks/useHomes";
+import { usePayPeriod } from "@/hooks/usePayPeriods";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
 import { exportScheduleToExcel } from "@/utils/exportSchedule";
+import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
 import styles from "./scheduling.module.css";
 
@@ -83,10 +85,9 @@ import styles from "./scheduling.module.css";
 // Halifax (Atlantic) time, regardless of where the admin's browser is located.
 const HALIFAX_TZ = "America/Halifax";
 
-// Payroll periods are 14 days long, anchored to Jan 1 2026.
-// Period 0 = Jan 1–14, Period 1 = Jan 15–28, Period -1 = Dec 18–31 2025, etc.
-const PAYROLL_ANCHOR = new Date(2026, 0, 1);
-const PERIOD_DAYS = 14;
+// Payroll periods are a continuous 14-day rotation with 26 numbered periods
+// (PP1..PP26) per pay year. Period dates are fetched from the backend
+// (GET /api/hours/pay-periods via usePayPeriod) — no client-side date math.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CALENDAR LOCALIZER
@@ -298,33 +299,44 @@ export default function SchedulingPage() {
 	// isn't left on a page that doesn't exist for the new dataset.
 	useEffect(() => { setPayrollPage(1); }, [payrollOffset, selectedHomeId]);
 
-	// Calculate the start and end dates of the selected pay period.
-	// Formula: currentPeriodIndex = floor((today - anchor) / 14 days)
-	//          then shift by payrollOffset periods.
-	const payrollPeriod = useMemo(() => {
-		const msPerPeriod = PERIOD_DAYS * 24 * 60 * 60 * 1000;
-		const nowHfx  = DateTime.now().setZone(HALIFAX_TZ);
-		const today   = new Date(nowHfx.year, nowHfx.month - 1, nowHfx.day);
-		const diffMs  = Math.max(0, today.getTime() - PAYROLL_ANCHOR.getTime());
-		const currentIdx = Math.floor(diffMs / msPerPeriod);
-		const start = addDays(PAYROLL_ANCHOR, (currentIdx + payrollOffset) * PERIOD_DAYS);
-		const end   = addDays(start, PERIOD_DAYS - 1);
-		return { start, end };
-	}, [payrollOffset]);
+	// Resolve the selected pay period from the backend: today's period shifted
+	// by payrollOffset along the rotation. `payPeriod` carries payYear,
+	// periodNumber (1–26), and UTC ISO periodStart/periodEnd.
+	const {
+		payPeriod: payrollPeriodData,
+		isPayPeriodLoading,
+		payPeriodError,
+	} = usePayPeriod(payrollOffset);
 
-	const payrollWindow = useMemo(() => ({
-		startDate: format(payrollPeriod.start, "yyyy-MM-dd"),
-		endDate:   format(payrollPeriod.end,   "yyyy-MM-dd"),
-	}), [payrollPeriod]);
+	// Convert the server's UTC boundaries to Halifax wall-clock Date objects
+	// (what the table, toolbar, and Excel export work with). Null until the
+	// period has been fetched.
+	const payrollPeriod = useMemo(() => {
+		if (!payrollPeriodData) return null;
+		return {
+			...payrollPeriodData,
+			start: utcToZonedDateObject(payrollPeriodData.periodStart, HALIFAX_TZ),
+			end:   utcToZonedDateObject(payrollPeriodData.periodEnd,   HALIFAX_TZ),
+		};
+	}, [payrollPeriodData]);
+
+	const payrollWindow = useMemo(() => {
+		if (!payrollPeriod) return null;
+		return {
+			startDate: format(payrollPeriod.start, "yyyy-MM-dd"),
+			endDate:   format(payrollPeriod.end,   "yyyy-MM-dd"),
+		};
+	}, [payrollPeriod]);
 
 	// Fetch shifts for the payroll period (separate query so it doesn't conflict
-	// with the calendar query when the user is on a different view).
+	// with the calendar query when the user is on a different view). Held until
+	// the pay-period dates have arrived from the backend.
 	const {
 		shifts: payrollShifts,
 		isShiftLoading: isPayrollLoading,
 		fetchShiftError: payrollError,
 		refetch: refetchPayroll,
-	} = useShifts({ ...payrollWindow, ...homeFilter });
+	} = useShifts({ params: { ...(payrollWindow ?? {}), ...homeFilter }, enabled: !!payrollWindow });
 
 	// Override react-big-calendar's "now" indicator so the red line always shows
 	// Halifax wall-clock time, not the browser's local time.
@@ -675,7 +687,8 @@ export default function SchedulingPage() {
 	// Label shown in the centre of the toolbar (e.g. "Apr 24 – Apr 30, 2025").
 	const calendarToolbarLabel = useMemo(() => {
 		if (view === "payroll") {
-			return `${format(payrollPeriod.start, "MMM d")} – ${format(payrollPeriod.end, "MMM d, yyyy")}`;
+			if (!payrollPeriod) return "Loading pay period…";
+			return `${formatPayPeriodLabel(payrollPeriod)} · ${format(payrollPeriod.start, "MMM d")} – ${format(payrollPeriod.end, "MMM d, yyyy")}`;
 		}
 		switch (view) {
 			case "month":  return format(date, "MMMM yyyy");
@@ -788,7 +801,8 @@ export default function SchedulingPage() {
 			missed:      { label: "Missed",      bg: "#f3f4f6", color: "#374151" },
 		};
 
-		if (isPayrollLoading) return <ErrorState isLoading />;
+		if (isPayrollLoading || (!payrollPeriod && !payPeriodError)) return <ErrorState isLoading />;
+		if (payPeriodError)   return <ErrorState errorMessage={payPeriodError} />;
 		if (payrollError)     return <ErrorState errorMessage={payrollError} onRetry={refetchPayroll} />;
 
 		return (
@@ -1002,7 +1016,9 @@ export default function SchedulingPage() {
 						<button
 							type="button"
 							className={styles.exportBtn}
+							disabled={!payrollPeriod}
 							onClick={async () => {
+								if (!payrollPeriod) return;
 								const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
 								const homeName = selectedHome
 									? (selectedHome.name || selectedHome.homeName)
@@ -1012,6 +1028,8 @@ export default function SchedulingPage() {
 									homeId:         selectedHomeId || null,
 									payPeriodStart: payrollPeriod.start,
 									payPeriodEnd:   payrollPeriod.end,
+									payYear:        payrollPeriod.payYear,
+									periodNumber:   payrollPeriod.periodNumber,
 									shifts:         payrollShifts,
 								});
 							}}

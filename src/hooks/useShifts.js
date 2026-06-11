@@ -21,6 +21,11 @@ export const useShifts = (options = {}) => {
 			params = options;
 		}
 	}
+	// Allow callers to hold the list query until their inputs are ready
+	// (only honoured when using the { params, enabled } call shape).
+	const listEnabled = typeof options === 'object' && options.enabled !== undefined
+		? !!options.enabled
+		: true;
 
 	/**
 	 * Extracts the most relevant error message from an Axios error object.
@@ -46,7 +51,7 @@ export const useShifts = (options = {}) => {
 		queryKey: ["shifts", params],
 		queryFn: () => shiftService.getAll(params),
 		// Only run if we are NOT looking for a specific single shift detail
-		enabled: !shiftId,
+		enabled: !shiftId && listEnabled,
 		placeholderData: keepPreviousData,
 	});
 
