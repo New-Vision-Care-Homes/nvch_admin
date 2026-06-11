@@ -928,6 +928,7 @@ export default function SchedulingPage() {
 	// Status-coloured chips per cell; click any chip to open the shift detail.
 	const OverviewView = () => {
 		const dates = useMemo(() => {
+			if (!payrollPeriod) return [];
 			const arr = [];
 			let cursor = new Date(payrollPeriod.start);
 			while (cursor <= payrollPeriod.end) {
@@ -986,7 +987,8 @@ export default function SchedulingPage() {
 			};
 		}, []);
 
-		if (isPayrollLoading) return <ErrorState isLoading />;
+		if (isPayrollLoading || (!payrollPeriod && !payPeriodError)) return <ErrorState isLoading />;
+		if (payPeriodError)   return <ErrorState errorMessage={payPeriodError} />;
 		if (payrollError)     return <ErrorState errorMessage={payrollError} onRetry={refetchPayroll} />;
 
 		return (
