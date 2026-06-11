@@ -1,16 +1,9 @@
 import { format, addDays } from "date-fns";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
 const HALIFAX_TZ       = "America/Halifax";
 const INCLUDED_STATUSES = new Set(["scheduled", "completed", "in_progress"]);
-const PAYROLL_ANCHOR   = new Date(2025, 11, 18); // Dec 18, 2025 — start of PP1
-const PERIOD_DAYS      = 14;
-
-function calcPayPeriodNumber(periodStart) {
-	const msPerPeriod = PERIOD_DAYS * 24 * 60 * 60 * 1000;
-	const diff = Math.max(0, periodStart.getTime() - PAYROLL_ANCHOR.getTime());
-	return Math.floor(diff / msPerPeriod) + 1;
-}
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C_NAVY        = "FF1C4A6E"; // deep navy — header, title, borders
@@ -37,10 +30,14 @@ const solidFill = (argb) => ({ type: "pattern", pattern: "solid", fgColor: { arg
 /**
  * Exports a roster-style Excel schedule for a 14-day pay period.
  *
+ * homeId: when provided, only shifts belonging to that home are included.
+ *         When null/empty, all shifts in the period are shown (All Homes).
+ * payYear / periodNumber: the period's identity as resolved by the backend
+ *         (GET /api/hours/pay-periods) — not recomputed here.
  * logoUrl: fetched and embedded at the top of the sheet, horizontally centered.
- * homeId:  when provided, filters to that home only (safety net — API already filters).
  */
-export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, payPeriodEnd, shifts, logoUrl }) {
+export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, payPeriodEnd, payYear, periodNumber, shifts, logoUrl }) {
+	// Dynamic import keeps ExcelJS out of the SSR bundle
 	const ExcelJS = (await import("exceljs")).default;
 
 	// ── Date list for the period ───────────────────────────────────────────────
@@ -167,11 +164,11 @@ export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, 
 	// ═══════════════════════════════════════════════════════════════════════════
 	// SECTION 3 — INFO CARD
 	// ═══════════════════════════════════════════════════════════════════════════
-	const ppNumber   = calcPayPeriodNumber(payPeriodStart);
+	const payPeriodLabel = formatPayPeriodLabel({ payYear, periodNumber });
 	const infoLines  = [
 		[
 			{ label: "House", value: homeName || "All Homes" },
-			{ label: "Pay Period", value: `#${ppNumber}` },
+			{ label: "Pay Period", value: payPeriodLabel },
 		],
 		[
 			{ label: "Period Dates", value: `${format(payPeriodStart, "MMM d, yyyy")}  –  ${format(payPeriodEnd, "MMM d, yyyy")}` },
