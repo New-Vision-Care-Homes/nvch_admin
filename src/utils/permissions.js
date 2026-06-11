@@ -10,18 +10,9 @@ export const PERMISSION_SCHEMAS = [
 			"update_admin",
 			"delete_admin",
 			"view_admin",
+			"toggle_admin_status",
 			// Admin may sign in to the mobile app. Portal access does not require this.
 			"access_app"
-		]
-	},
-	{
-		module: "User management",
-		slugs: [
-			"list_users",
-			"view_user",
-			"update_user",
-			"toggle_user_status",
-			"delete_user"
 		]
 	},
 	{
@@ -33,7 +24,8 @@ export const PERMISSION_SCHEMAS = [
 			"delete_all_caregivers",
 			"update_assigned_caregivers",
 			"delete_assigned_caregivers",
-			"view_assigned_caregivers"
+			"view_assigned_caregivers",
+			"toggle_caregiver_status"
 		]
 	},
 	{
@@ -45,7 +37,8 @@ export const PERMISSION_SCHEMAS = [
 			"delete_all_clients",
 			"delete_assigned_clients",
 			"update_assigned_clients",
-			"view_assigned_clients"
+			"view_assigned_clients",
+			"toggle_client_status"
 		]
 	},
 	{
@@ -62,16 +55,7 @@ export const PERMISSION_SCHEMAS = [
 		module: "Hours",
 		slugs: [
 			"update_hours",
-			"delete_hours",
 			"view_hours"
-		]
-	},
-	{
-		module: "Permissions (module)",
-		slugs: [
-			"view_permissions",
-			"update_permissions",
-			"delete_permissions"
 		]
 	},
 	{
