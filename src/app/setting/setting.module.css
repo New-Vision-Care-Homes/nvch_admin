@@ -23,19 +23,14 @@
 }
 
 @media (max-width: 768px) {
-	.page {
-		height: auto;
-		min-height: 100vh;
-		overflow: visible;
-	}
-
+	/* Keep the page fixed-height so the inner body can scroll, not the document.
+	   (globals.css sets body{overflow:hidden}, so document-level scroll never works.) */
 	.container {
 		flex-direction: column;
-		overflow: visible;
 	}
 
 	.body {
-		height: auto;
+		min-height: 0;  /* lets flex item shrink so overflow-y:auto actually triggers */
 		padding: 1rem;
 	}
 }

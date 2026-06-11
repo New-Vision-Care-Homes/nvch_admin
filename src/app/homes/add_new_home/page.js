@@ -18,7 +18,9 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
+import ClientConflictModal from "@/components/UI/ClientConflictModal";
 import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
+
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -41,7 +43,7 @@ const schema = yup.object({
 
 export default function AddNewHomePage() {
 	const router = useRouter();
-	const { addHome, isActionPending, actionError } = useHomes();
+	const { addHome, isActionPending, actionError, fetchHome } = useHomes();
 
 	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
 		resolver: yupResolver(schema),
@@ -96,6 +98,10 @@ export default function AddNewHomePage() {
 	const [clientSearch, setClientSearch] = useState("");
 	const [showClientResults, setShowClientResults] = useState(false);
 	const [selectedClients, setSelectedClients] = useState([]);
+	const [conflictInfo, setConflictInfo] = useState(null); // { client, currentHomeName }
+	const [hasClientMove, setHasClientMove] = useState(false);
+	const [isCheckingClient, setIsCheckingClient] = useState(false);
+	const [clientHomeMap, setClientHomeMap] = useState({}); // { clientId: boolean }
 
 	// Admin search state
 	const [adminSearch, setAdminSearch] = useState("");
@@ -145,7 +151,7 @@ export default function AddNewHomePage() {
 
 	// Search Clients
 	const [clientSearchParams, setClientSearchParams] = useState({});
-	const { clients: searchedClients } = useClients(clientSearchParams);
+	const { clients: searchedClients, fetchClient } = useClients(clientSearchParams);
 
 	const searchClients = (searchTerm) => {
 		if (searchTerm.length < 2) {
@@ -167,17 +173,65 @@ export default function AddNewHomePage() {
 		});
 	}, [searchedClients, clientSearchParams.search, selectedClients]);
 
+	// Batch-fetch full client details when search results change to drive the "· assigned" hint
+	useEffect(() => {
+		if (!clientResults.length) { setClientHomeMap({}); return; }
+		let cancelled = false;
+		Promise.all(clientResults.map(c => fetchClient(getStaffId(c)))).then(full => {
+			if (cancelled) return;
+			const map = {};
+			full.forEach((f, i) => {
+				const homeRaw = f.home;
+				map[getStaffId(clientResults[i])] = !!(
+					(typeof homeRaw === "string" ? homeRaw : (homeRaw?._id || homeRaw?.id)) || f.homeId
+				);
+			});
+			setClientHomeMap(map);
+		}).catch(() => {});
+		return () => { cancelled = true; };
+	}, [clientResults]);
+
 	const debouncedSearchClients = useCallback(debounce(searchClients, 300), [selectedClients]);
 
 	useEffect(() => {
 		debouncedSearchClients(clientSearch);
 	}, [clientSearch, debouncedSearchClients]);
 
-	const handleClientSelect = (client) => {
-		setSelectedClients([...selectedClients, client]);
+	const handleClientSelect = async (client) => {
+		if (isCheckingClient) return;
 		setClientSearch("");
 		setShowClientResults(false);
+		setIsCheckingClient(true);
+		try {
+			const full = await fetchClient(getStaffId(client));
+			const homeRaw = full.home;
+			const existingHomeId =
+				typeof homeRaw === "string" ? homeRaw :
+				(homeRaw?._id || homeRaw?.id || full.homeId || null);
+			if (existingHomeId) {
+				let currentHomeName = null;
+				try {
+					const homeDetail = await fetchHome(existingHomeId);
+					currentHomeName = homeDetail?.name || homeDetail?.home?.name || null;
+				} catch {}
+				setConflictInfo({ client, currentHomeName });
+				return;
+			}
+			setSelectedClients(prev => [...prev, client]);
+		} catch {
+			setSelectedClients(prev => [...prev, client]);
+		} finally {
+			setIsCheckingClient(false);
+		}
 	};
+
+	const handleConflictConfirm = () => {
+		if (!conflictInfo) return;
+		setSelectedClients(prev => [...prev, conflictInfo.client]);
+		setHasClientMove(true);
+		setConflictInfo(null);
+	};
+
 	const removeClient = (id) => { setSelectedClients(selectedClients.filter(c => getStaffId(c) !== id)); };
 
 	// Search Admins via useAdmins hook (GET /api/auth/admin/admins)
@@ -233,6 +287,7 @@ export default function AddNewHomePage() {
 			caregivers: selectedCaregivers.map(s => getStaffId(s)),
 			admins: selectedAdmins.map(a => ({ admin: getStaffId(a), adminLevel: a.adminLevel || 'supervisor' })),
 			clients: selectedClients.map(c => getStaffId(c)),
+			...(hasClientMove && { confirmMove: true }),
 			nightChecksEnabled: data.nightChecksEnabled || false,
 			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
@@ -254,8 +309,19 @@ export default function AddNewHomePage() {
 	}
 
 
+	const formValues = watch();
+	const newHomeName = formValues.name || "this home";
+
 	return (
 		<PageLayout>
+			<ClientConflictModal
+				isOpen={!!conflictInfo}
+				onClose={() => setConflictInfo(null)}
+				onConfirm={handleConflictConfirm}
+				clientName={conflictInfo ? `${conflictInfo.client.firstName} ${conflictInfo.client.lastName}` : ""}
+				currentHomeName={conflictInfo?.currentHomeName}
+				newHomeName={newHomeName}
+			/>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div className={styles.header}>
 					<h1>Add New Home</h1>
@@ -397,12 +463,22 @@ export default function AddNewHomePage() {
 										/>
 										{showClientResults && clientResults.length > 0 && (
 											<div className={cardStyles.searchResults}>
-												{clientResults.map(client => (
-													<div key={getStaffId(client)} onMouseDown={() => handleClientSelect(client)} className={cardStyles.searchItem}>
-														<span className={cardStyles.searchItemName}>{client.firstName} {client.lastName}</span>
-														<span className={cardStyles.searchItemSub}>{client.email || client.phone}</span>
-													</div>
-												))}
+												{clientResults.map(client => {
+													const hasHome = !!clientHomeMap[getStaffId(client)];
+													return (
+														<div key={getStaffId(client)} onMouseDown={() => handleClientSelect(client)} className={cardStyles.searchItem}>
+															<span className={cardStyles.searchItemName}>{client.firstName} {client.lastName}</span>
+															<span className={cardStyles.searchItemSub}>
+																{client.email || client.phone}
+																{hasHome && (
+																	<span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
+																		· assigned
+																	</span>
+																)}
+															</span>
+														</div>
+													);
+												})}
 											</div>
 										)}
 									</div>

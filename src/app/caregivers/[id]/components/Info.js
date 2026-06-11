@@ -14,6 +14,7 @@ import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { useProfile } from "@/hooks/useProfile";
 import { useAdmins } from "@/hooks/useAdmins";
 import ErrorState from "@components/UI/ErrorState";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
@@ -87,6 +88,9 @@ const schema = yup.object({
 
 
 export default function Info() {
+	const { profile } = useProfile();
+	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
+
 	const [status, setStatus] = useState(null);
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
@@ -388,22 +392,24 @@ export default function Info() {
 				</Card>
 			</div>
 
-			<div className={styles.bottom_bar}>
-				{!isEditing ? (
-					<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)} type="button">
-						Edit
-					</Button>
-				) : (
-					<>
-						<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} type="button" disabled={isCaregiverActionPending}>
-							Cancel
+			{canEdit && (
+				<div className={styles.bottom_bar}>
+					{!isEditing ? (
+						<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)} type="button">
+							Edit
 						</Button>
-						<Button variant="primary" icon={<Save size={16} />} type="submit" disabled={!isDirty || isCaregiverActionPending}>
-							{isCaregiverActionPending ? "Saving..." : "Save Changes"}
-						</Button>
-					</>
-				)}
-			</div>
+					) : (
+						<>
+							<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} type="button" disabled={isCaregiverActionPending}>
+								Cancel
+							</Button>
+							<Button variant="primary" icon={<Save size={16} />} type="submit" disabled={!isDirty || isCaregiverActionPending}>
+								{isCaregiverActionPending ? "Saving..." : "Save Changes"}
+							</Button>
+						</>
+					)}
+				</div>
+			)}
 		</form>
 	);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -73,26 +73,30 @@ export default function ProfilePage() {
 	};
 
 
+	const isPageLoading = isLoading || (!profile && !fetchError);
+
 	return (
 		<>
 			<div className={styles.header}>
 				<h1 className={styles.title}>My Profile</h1>
-				<div className={styles.headerActions}>
-					{!isEditing ? (
-						<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)}>
-							Edit Profile
-						</Button>
-					) : (
-						<>
-							<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} disabled={isActionPending}>
-								Cancel
+				{!isPageLoading && !fetchError && (
+					<div className={styles.headerActions}>
+						{!isEditing ? (
+							<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)}>
+								Edit Profile
 							</Button>
-							<Button variant="primary" icon={<Save size={16} />} onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
-								{isActionPending ? "Saving..." : "Save Changes"}
-							</Button>
-						</>
-					)}
-				</div>
+						) : (
+							<>
+								<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} disabled={isActionPending}>
+									Cancel
+								</Button>
+								<Button variant="primary" icon={<Save size={16} />} onClick={handleSubmit(onSubmit)} disabled={isActionPending}>
+									{isActionPending ? "Saving..." : "Save Changes"}
+								</Button>
+							</>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Action error — shown when delete/create/update fails */}
@@ -100,15 +104,24 @@ export default function ProfilePage() {
 				<p className={styles.actionError}>{actionError}</p>
 			)}
 
-			{/* Fetch error or loading state */}
-			<ErrorState
-				isLoading={isLoading}
-				errorMessage={fetchError}
-				onRetry={refetch}
-			/>
+			{/* Loading spinner centered in remaining body space */}
+			{isPageLoading && (
+				<div className={styles.loadingWrap}>
+					<div className={styles.spinner} />
+					<p className={styles.loadingText}>Loading...</p>
+				</div>
+			)}
 
+			{/* Fetch error */}
+			{fetchError && (
+				<ErrorState
+					isLoading={false}
+					errorMessage={fetchError}
+					onRetry={refetch}
+				/>
+			)}
 
-			{!fetchError && !isLoading && profile && (
+			{!fetchError && !isPageLoading && profile && (
 				<>
 					<div className={styles.section}>
 						<Card>

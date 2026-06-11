@@ -36,6 +36,7 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/shifts/${id}`,
 		CANCEL: (id) => `/api/shifts/${id}/cancel`,
 		UPDATE_COMPLETED_SHIFT: (id) => `/api/hours/shifts/${id}`,
+		BULK: '/api/shifts/bulk',
 	},
 
 	/* All related endpoints for homes */

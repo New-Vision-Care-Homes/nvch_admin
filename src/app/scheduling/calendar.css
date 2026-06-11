@@ -341,3 +341,23 @@
 	padding: 32px;
 	text-align: center;
 }
+
+/* ════════════════════
+   MOBILE — scrollable calendar
+════════════════════ */
+/* Week/day view: give the calendar a minimum width so 7-column grids don't
+   collapse to a few pixels. The parent (.calendarBody) has overflow:auto on
+   mobile, so exceeding its width triggers a horizontal scrollbar. */
+@media (max-width: 900px) {
+	.my_calendar {
+		min-width: 680px;
+		padding: 12px 14px 12px;
+	}
+}
+
+@media (max-width: 480px) {
+	.my_calendar {
+		min-width: 560px;
+		padding: 8px 10px 10px;
+	}
+}

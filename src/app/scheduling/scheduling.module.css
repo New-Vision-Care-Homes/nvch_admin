@@ -12,6 +12,7 @@
 	display: flex;
 	flex: 1;
 	min-height: 0;
+	min-width: 0;   /* prevent flex children from forcing layout wider than viewport */
 }
 
 .body {
@@ -23,6 +24,7 @@
 	overflow: hidden;
 	gap: 18px;
 	min-height: 0;
+	min-width: 0;   /* prevent intrinsic child widths from expanding this beyond viewport */
 }
 
 /* ── Header Row ── */
@@ -120,6 +122,7 @@
 	min-height: 0;
 	overflow: hidden;
 	position: relative;
+	-webkit-overflow-scrolling: touch;
 }
 
 /* ═══════════════════════════════════════
@@ -302,6 +305,332 @@
 	padding: 48px 0;
 }
 
+/* ═══════════════════════════════════════
+   OVERVIEW VIEW  (pay-period roster grid)
+═══════════════════════════════════════ */
+.overviewView {
+	height: 100%;
+	overflow-y: auto;
+	padding: 20px 24px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	box-sizing: border-box;
+}
+
+.overviewLegend {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.overviewLegendLabel {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	margin-right: 4px;
+}
+
+.overviewTableWrap {
+	overflow-x: auto;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 14px;
+	flex-shrink: 0;
+}
+
+.overviewTable {
+	border-collapse: separate;
+	border-spacing: 0;
+	width: max-content;
+	min-width: 100%;
+	font-size: 0.83rem;
+}
+
+/* Sticky header row */
+.overviewTable thead th {
+	position: sticky;
+	top: 0;
+	z-index: 3;
+}
+
+.overviewNameHeader {
+	position: sticky;
+	left: 0;
+	z-index: 4;
+	background: #f8fafc;
+	color: #94a3b8;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	padding: 14px 16px;
+	text-align: left;
+	min-width: 175px;
+	white-space: nowrap;
+	border-right: 1.5px solid #e2e8f0;
+	border-bottom: 2px solid #e2e8f0;
+}
+
+.overviewDayHeader {
+	background: #f8fafc;
+	color: #1e293b;
+	text-align: center;
+	padding: 10px 8px;
+	min-width: 94px;
+	border-right: 1px solid #e2e8f0;
+	border-bottom: 2px solid #e2e8f0;
+	vertical-align: top;
+}
+
+.overviewDayHeaderToday {
+	background: #eef2ff !important;
+	border-bottom-color: #4f46e5 !important;
+}
+
+.overviewDayName {
+	display: block;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+.overviewDayNum {
+	display: block;
+	font-size: 1.2rem;
+	font-weight: 800;
+	line-height: 1.05;
+	margin: 2px 0 1px;
+	letter-spacing: -0.01em;
+	color: #1e293b;
+}
+
+.overviewDayHeaderToday .overviewDayNum {
+	color: #4338ca;
+}
+
+.overviewDayMon {
+	display: block;
+	font-size: 0.6rem;
+	font-weight: 500;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+.overviewTodayPill {
+	display: inline-block;
+	background: #4f46e5;
+	color: #fff;
+	font-size: 0.54rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	padding: 1px 7px;
+	border-radius: 8px;
+	margin-top: 5px;
+}
+
+.overviewTotalHeader {
+	background: #f8fafc;
+	color: #cbd5e1;
+	border-bottom: 2px solid #e2e8f0;
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	text-align: center;
+	padding: 10px 10px;
+	min-width: 52px;
+	white-space: nowrap;
+}
+
+/* Body rows */
+.overviewRow td {
+	border-bottom: 1px solid #e8eef4;
+	transition: background 0.12s ease;
+}
+
+.overviewRow:last-child td {
+	border-bottom: none;
+}
+
+.overviewRowEven td {
+	background: #f8fafc;
+}
+
+.overviewRow:hover td {
+	background: #eef2ff !important;
+}
+
+.overviewRow:hover .overviewCellToday {
+	background: #e0e7ff !important;
+}
+
+/* Sticky name column in body */
+.overviewNameCell {
+	position: sticky;
+	left: 0;
+	z-index: 2;
+	background: #fff;
+	border-right: 1.5px solid #e2e8f0;
+	padding: 10px 14px;
+	min-width: 175px;
+}
+
+.overviewRowEven .overviewNameCell {
+	background: #f8fafc;
+}
+
+.overviewRow:hover .overviewNameCell {
+	background: #eff6ff !important;
+}
+
+.overviewNameInner {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-weight: 700;
+	font-size: 0.84rem;
+	color: #1e293b;
+	white-space: nowrap;
+}
+
+.overviewCell {
+	padding: 6px 7px;
+	vertical-align: top;
+	border-right: 1px solid #e8eef4;
+	min-width: 94px;
+	background: #fff;
+}
+
+.overviewRowEven .overviewCell {
+	background: #f8fafc;
+}
+
+.overviewCellToday {
+	background: #eef2ff !important;
+	border-right-color: #c7d2fe !important;
+}
+
+.overviewTotalCell {
+	text-align: center;
+	padding: 8px 10px;
+	vertical-align: middle;
+	background: #fff;
+	min-width: 52px;
+}
+
+.overviewRowEven .overviewTotalCell {
+	background: #f8fafc;
+}
+
+.overviewRow:hover .overviewTotalCell {
+	background: #eff6ff !important;
+}
+
+/* Time-range chips */
+.overviewChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	font-size: 0.69rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	padding: 2px 7px;
+	border-radius: 5px;
+	cursor: pointer;
+	margin-bottom: 3px;
+	transition: filter 0.12s ease, transform 0.12s ease;
+	white-space: nowrap;
+	line-height: 1.55;
+	border-width: 1px;
+	border-style: solid;
+}
+
+.overviewChip:last-child {
+	margin-bottom: 0;
+}
+
+.overviewChip:hover {
+	filter: brightness(0.9);
+	transform: translateY(-1px);
+}
+
+/* Static chips used in the legend (no hover interaction) */
+.overviewChipStatic {
+	display: inline-block;
+	cursor: default;
+	pointer-events: none;
+	margin-bottom: 0;
+	font-size: 0.72rem;
+}
+
+.overviewChip_scheduled {
+	background: #dbeafe;
+	color: #1e40af;
+	border-color: #93c5fd;
+}
+
+.overviewChip_completed {
+	background: #d1fae5;
+	color: #065f46;
+	border-color: #6ee7b7;
+}
+
+.overviewChip_in_progress {
+	background: #fef3c7;
+	color: #92400e;
+	border-color: #fcd34d;
+}
+
+.overviewChip_cancelled {
+	background: #fee2e2;
+	color: #991b1b;
+	border-color: #fca5a5;
+	text-decoration: line-through;
+	opacity: 0.8;
+}
+
+.overviewChip_missed {
+	background: #f1f5f9;
+	color: #64748b;
+	border-color: #cbd5e1;
+}
+
+/* Total badge (circle) */
+.overviewTotalBadge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.73rem;
+	font-weight: 800;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	border-width: 1px;
+	border-style: solid;
+}
+
+.overviewEmpty {
+	text-align: center;
+	color: #94a3b8;
+	font-size: 0.9rem;
+	padding: 48px 0;
+}
+
+@media (max-width: 768px) {
+	.overviewView {
+		padding: 14px 12px;
+		gap: 12px;
+	}
+}
+
 @media (max-width: 768px) {
 	.payrollStats {
 		grid-template-columns: repeat(2, 1fr);
@@ -318,6 +647,21 @@
 		order: -1;
 		text-align: center;
 		font-size: 0.95rem;
+	}
+
+	/* Allow view-tab button group to scroll horizontally if too wide */
+	.toolbarBtnGroup {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		flex-wrap: nowrap;
+		max-width: 100%;
+		gap: 4px;
+	}
+
+	.toolbarBtn {
+		flex-shrink: 0;
+		font-size: 0.72rem;
+		padding: 5px 10px;
 	}
 }
 
@@ -612,6 +956,7 @@
 	align-items: center;
 	gap: 10px;
 	flex-shrink: 0;
+	flex-wrap: wrap;   /* fallback: wrap items on very narrow screens before media query fires */
 }
 
 .exportBtn {
@@ -692,6 +1037,8 @@
 	.body {
 		padding: 16px 12px;
 		gap: 12px;
+		overflow-y: auto;   /* allow the whole page body to scroll on mobile */
+		overflow-x: hidden;
 	}
 
 	.titleRow {
@@ -703,9 +1050,51 @@
 		font-size: 1.4rem !important;
 	}
 
-	/* Let week/day grids scroll sideways instead of squashing columns. */
+	/* Calendar card: fixed height on mobile so it stays in the scrollable body */
 	.calendarCard {
-		overflow-x: auto;
+		flex: 0 0 auto;
+		width: 100%;                    /* cap at parent width — prevents 680px calendar min-width from expanding the card */
+		height: calc(100dvh - 290px);   /* dvh (dynamic viewport height) accounts for mobile browser chrome */
+		min-height: 420px;
+		overflow: hidden;
+	}
+
+	/* Calendar body: both axes scrollable on mobile */
+	.calendarBody {
+		overflow: auto;
+		-webkit-overflow-scrolling: touch;
+		width: 100%;   /* ensure it stays within the card boundary */
+	}
+
+	/* Filter row: stack vertically so nothing overflows the screen */
+	.filterRow {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	/* Hide the decorative icon and label — the select is self-explanatory */
+	.filterIcon {
+		display: none;
+	}
+
+	.filterLabel {
+		display: none;
+	}
+
+	/* Select stretches to full row width */
+	.homeSelect {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	/* Export button on its own full-width row */
+	.exportBtn {
+		margin-left: 0;
+		width: 100%;
+		justify-content: center;
+		box-sizing: border-box;
 	}
 }
 

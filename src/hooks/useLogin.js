@@ -1,5 +1,5 @@
 import { authService } from '@/services/api/services/authService';
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from 'next/navigation';
 
 const getErrorMessage = (err) => {
@@ -14,6 +14,7 @@ const getErrorMessage = (err) => {
 
 export const useLogin = () => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	const loginMutation = useMutation({
 		mutationFn: ({ email, password }) => authService.userLogin(email, password),
@@ -21,6 +22,7 @@ export const useLogin = () => {
 			const token = data?.token;
 			if (token) {
 				sessionStorage.setItem("token", token);
+				queryClient.clear(); // wipe any cached data from a previous session
 				router.push("/dashboard");
 			}
 		},

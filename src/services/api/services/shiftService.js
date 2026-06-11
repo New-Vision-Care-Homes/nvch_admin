@@ -64,4 +64,25 @@ export const shiftService = {
 		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.CANCEL(id), body);
 		return data.data.shift;
 	},
+
+	/**
+	 * Bulk-create shifts from a schedule-builder grid.
+	 * Returns { created, failed, summary } — always resolves (partial success is 200 OK).
+	 * @param {Object} bulkData - { startDate, endDate, homeId, timezone, dayShift, nightShift, caregivers }
+	 */
+	createBulk: async (bulkData) => {
+		const { data } = await axiosClient.post(API_ENDPOINTS.SHIFTS.BULK, bulkData);
+		return data.data; // { created[], failed[], summary }
+	},
+
+	/**
+	 * Bulk-save (create + update) shifts from a schedule-builder grid.
+	 * Assignments with a shiftId are updated; those without are created.
+	 * Returns { created, updated, failed, summary }.
+	 * @param {Object} bulkData - same shape as createBulk; assignments may include shiftId
+	 */
+	saveBulk: async (bulkData) => {
+		const { data } = await axiosClient.put(API_ENDPOINTS.SHIFTS.BULK, bulkData);
+		return data.data; // { created[], updated[], failed[], summary }
+	},
 };

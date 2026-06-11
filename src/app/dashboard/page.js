@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useShifts } from "@/hooks/useShifts";
+import { useProfile } from "@/hooks/useProfile";
 
 const stats = [
 	{
@@ -59,6 +60,7 @@ const quickActions = [
 		iconColor: "#1C4A6E",
 		label: "Add New Client",
 		description: "Add a new client",
+		requiredSlug: "create_clients",
 	},
 	{
 		id: "add-new-home",
@@ -67,6 +69,7 @@ const quickActions = [
 		iconColor: "#f58b00ff",
 		label: "Add New Home",
 		description: "Add a new home",
+		requiredSlug: "create_home",
 	},
 	{
 		id: "add-new-shift",
@@ -75,12 +78,16 @@ const quickActions = [
 		iconColor: "#5bd3d3ff",
 		label: "Add New Shift",
 		description: "Add a new shift",
+		requiredSlug: "create_shifts",
 	},
 ];
 
 export default function Dashboard() {
 	const { clients, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
 	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
+	const { profile } = useProfile();
+	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const visibleQuickActions = quickActions.filter(a => permissionSlugs.includes(a.requiredSlug));
 
 	const getStatValue = (stat) => {
 		if (stat.id === "active-clients") return clients?.length ?? "—";
@@ -139,7 +146,7 @@ export default function Dashboard() {
 			<section className={styles.section}>
 				<h2>Quick Actions</h2>
 				<div className={styles.actionsGrid}>
-					{quickActions.map((action) => {
+					{visibleQuickActions.map((action) => {
 						const Icon = action.icon;
 						return (
 							<Link key={action.id} href={action.href} className={styles.actionCard}>

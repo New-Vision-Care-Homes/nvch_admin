@@ -35,7 +35,7 @@ export const useClients = (options = {}) => {
 	const getErrorMessage = (err) => {
 		const data = err?.response?.data;
 
-		const sdmDetail = data?.details?.find((d) => d.path === "statutoryDecisionMaker");
+		const sdmDetail = Array.isArray(data?.details) && data.details.find((d) => d.path === "statutoryDecisionMaker");
 		if (sdmDetail) {
 			return "Statutory Decision Maker requires at least a phone number or email address";
 		}
@@ -63,6 +63,15 @@ export const useClients = (options = {}) => {
 		queryFn: () => clientService.getClient(clientId),
 		enabled: !!clientId,
 	});
+
+	// Imperative fetch for a single client — uses the React Query cache so
+	// repeated calls for the same ID are free within the stale window.
+	const fetchClient = (id) =>
+		queryClient.fetchQuery({
+			queryKey: ["client", id],
+			queryFn: () => clientService.getClient(id),
+			staleTime: 30_000,
+		});
 
 	// --- Mutations ---
 
@@ -138,6 +147,7 @@ export const useClients = (options = {}) => {
 		updateClient: updateMutation.mutate,
 		deleteClient: deleteMutation.mutate,
 		toggleClientStatus: toggleStatusMutation.mutate,
+		fetchClient,
 		refetch: clientsQuery.refetch,
 	};
 };

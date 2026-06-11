@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Button from "@components/UI/Button";
 import { useHomes } from "@/hooks/useHomes";
+import { useProfile } from "@/hooks/useProfile";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
@@ -21,6 +22,8 @@ export default function HomeDetailPage() {
 	const { id } = useParams();
 	const router = useRouter();
 	const { homeDetail: home, isLoading, fetchError } = useHomes(id);
+	const { profile } = useProfile();
+	const canEdit = profile?.permissionSlugs?.includes("update_home");
 
 	// Normalise admins — API may return [{ admin: {...}, adminLevel }] or flat user objects
 	const normalisedAdmins = (home?.admins || []).map(entry =>
@@ -135,9 +138,11 @@ export default function HomeDetailPage() {
 				<h1>{home.name}</h1>
 				<div className={styles.buttons}>
 					<Button variant="secondary" onClick={() => router.push("/homes")}>Back</Button>
-					<Link href={`/homes/${id}/edit`}>
-						<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>
-					</Link>
+					{canEdit && (
+						<Link href={`/homes/${id}/edit`}>
+							<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>
+						</Link>
+					)}
 				</div>
 			</div>
 

@@ -1,3 +1,32 @@
+.loadingWrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	gap: 0.75rem;
+	padding: 3rem 0;
+}
+
+.spinner {
+	width: 28px;
+	height: 28px;
+	border: 2px solid #e5e7eb;
+	border-top-color: #1C4A6E;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+.loadingText {
+	font-size: 14px;
+	color: #6b7280;
+	margin: 0;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
 .header {
 	display: flex;
 	align-items: center;
@@ -249,6 +278,28 @@
 
 	.text {
 		justify-content: center;
+	}
+}
+
+@media (max-width: 640px) {
+	/* minmax(400px,1fr) would overflow phones — collapse to single column */
+	.gridContainer {
+		grid-template-columns: 1fr;
+		gap: 1.25rem;
+	}
+
+	.header {
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.headerActions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+
+	.column {
+		min-width: 0;
 	}
 }
 
