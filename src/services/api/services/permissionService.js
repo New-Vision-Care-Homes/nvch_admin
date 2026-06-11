@@ -86,7 +86,7 @@ export const permissionService = {
 	 * This is the source of truth — use it instead of the hardcoded list in
 	 * utils/permissions.js so new slugs added on the backend appear automatically.
 	 *
-	 * Requires: view_permissions OR update_permissions_groups on the JWT.
+	 * Requires: view_permissions_groups on the JWT (super admins bypass).
 	 *
 	 * @returns {Promise<string[]>} e.g. ["create_admin", "view_admin", ...]
 	 */
