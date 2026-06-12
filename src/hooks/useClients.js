@@ -11,13 +11,21 @@ import { clientService } from "@/services/api/services/clientService";
 export const useClients = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	const clientId = typeof options === 'string' || typeof options === 'number' ? options : options.clientId;
+	// String/number argument = detail mode: only the single-client query may run.
+	// An empty-string id must NOT fall through to the list query — callers pass
+	// "" for "no client selected" and don't expect a fetch of every client.
+	const isDetailMode = typeof options === 'string' || typeof options === 'number';
+	const clientId = isDetailMode ? options : options.clientId;
+	const enabled = isDetailMode ? true : options.enabled !== false;
 	let params = {};
-	if (typeof options === 'object') {
+	if (!isDetailMode) {
 		if (options.params) {
 			params = options.params;
 		} else if (!options.clientId) {
-			params = options;
+			// `enabled` is hook config, not a backend filter — keep it out of the
+			// query params (and therefore out of the query key / URL).
+			const { enabled: _enabled, ...rest } = options;
+			params = rest;
 		}
 	}
 
@@ -53,7 +61,7 @@ export const useClients = (options = {}) => {
 	const clientsQuery = useQuery({
 		queryKey: ["clients", params],
 		queryFn: () => clientService.getAll(params),
-		enabled: !clientId,
+		enabled: enabled && !isDetailMode && !clientId,
 		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
@@ -61,7 +69,7 @@ export const useClients = (options = {}) => {
 	const clientDetailQuery = useQuery({
 		queryKey: ["client", clientId],
 		queryFn: () => clientService.getClient(clientId),
-		enabled: !!clientId,
+		enabled: enabled && !!clientId,
 	});
 
 	// Imperative fetch for a single client — uses the React Query cache so

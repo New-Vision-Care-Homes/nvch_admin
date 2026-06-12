@@ -37,8 +37,7 @@ export default function Page() {
 	const {
 		clientDetail,
 		isLoading,
-		isError,
-		errorMessage,
+		fetchError,
 		isActionPending,
 		toggleClientStatus
 	} = useClients(id);
@@ -90,10 +89,10 @@ export default function Page() {
 
 
 
-	if (isLoading || isError || !clientDetail) {
+	if (isLoading || fetchError || !clientDetail) {
 		return (
 			<PageLayout>
-				<ErrorState isLoading={isLoading} errorMessage={isError ? errorMessage : (!clientDetail ? "Client not found." : null)} />
+				<ErrorState isLoading={isLoading} errorMessage={fetchError ?? (!clientDetail ? "Client not found." : null)} />
 			</PageLayout>
 		);
 	}

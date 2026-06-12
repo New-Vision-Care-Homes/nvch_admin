@@ -8,13 +8,21 @@ import { adminService } from "@/services/api/services/adminService";
 export const useAdmins = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	const adminId = typeof options === 'string' || typeof options === 'number' ? options : options.adminId;
+	// String/number argument = detail mode: only the single-admin query may run.
+	// An empty-string id must NOT fall through to the list query — callers pass
+	// "" for "no admin selected" and don't expect a fetch of every admin.
+	const isDetailMode = typeof options === 'string' || typeof options === 'number';
+	const adminId = isDetailMode ? options : options.adminId;
+	const enabled = isDetailMode ? true : options.enabled !== false;
 	let params = {};
-	if (typeof options === 'object') {
+	if (!isDetailMode) {
 		if (options.params) {
 			params = options.params;
 		} else if (!options.adminId) {
-			params = options;
+			// `enabled` is hook config, not a backend filter — keep it out of the
+			// query params (and therefore out of the query key / URL).
+			const { enabled: _enabled, ...rest } = options;
+			params = rest;
 		}
 	}
 
@@ -47,7 +55,7 @@ export const useAdmins = (options = {}) => {
 	const adminsQuery = useQuery({
 		queryKey: ["admins", params],
 		queryFn: () => adminService.getAll(params),
-		enabled: !adminId,
+		enabled: enabled && !isDetailMode && !adminId,
 		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
@@ -55,7 +63,7 @@ export const useAdmins = (options = {}) => {
 	const adminDetailQuery = useQuery({
 		queryKey: ["admin", adminId],
 		queryFn: () => adminService.getAdmin(adminId),
-		enabled: !!adminId,
+		enabled: enabled && !!adminId,
 	});
 
 	// 3. DELETE: Remove an admin

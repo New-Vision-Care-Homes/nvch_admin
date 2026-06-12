@@ -26,9 +26,8 @@ export default function Page() {
 
 	const {
 		caregiverDetail,
-		isLoading,
-		isError,
-		errorMessage,
+		isCaregiverLoading,
+		caregiverFetchError,
 		isCaregiverActionPending,
 		updateCaregiver,
 		toggleCaregiverStatus
@@ -85,9 +84,9 @@ export default function Page() {
 	}
 
 	// --- Render Logic ---
-	if (isLoading || isError || !caregiverDetail) return (
+	if (isCaregiverLoading || caregiverFetchError || !caregiverDetail) return (
 		<PageLayout>
-			<ErrorState isLoading={isLoading} errorMessage={isError ? errorMessage : (!caregiverDetail ? "Caregiver not found." : null)} />
+			<ErrorState isLoading={isCaregiverLoading} errorMessage={caregiverFetchError ?? (!caregiverDetail ? "Caregiver not found." : null)} />
 		</PageLayout>
 	);
 
