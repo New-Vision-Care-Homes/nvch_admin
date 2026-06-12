@@ -22,6 +22,8 @@ import {
 } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
+import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 import { useHomes } from "@/hooks/useHomes";
 import ClientConflictModal from "@/components/UI/ClientConflictModal";
 import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
@@ -252,6 +254,11 @@ export default function Info() {
 		isActionPending,
 	} = useClients(id);
 
+	const { profile } = useProfile();
+	// update_assigned_clients only counts when the client shares a region with
+	// the requester — same scoping the backend applies on save.
+	const canEdit = canManageTarget(profile, clientDetail, "update_all_clients", "update_assigned_clients");
+
 	const {
 		register,
 		handleSubmit,
@@ -477,6 +484,9 @@ export default function Info() {
 			/>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
+			{/* Updating a client requires update_all_clients or update_assigned_clients;
+			    without either the form is read-only and the save bar is hidden. */}
+			<fieldset disabled={!canEdit} style={{ border: "none", padding: 0, margin: 0, minWidth: 0 }}>
 			<div className={styles.body}>
 
 				{/* ── Personal Information ── */}
@@ -677,13 +687,16 @@ export default function Info() {
 				</Card>
 
 			</div>
+			</fieldset>
 
-			<div className={styles.buttons}>
-				<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
-				<Button type="submit" variant="primary" disabled={isActionPending}>
-					{isActionPending ? "Saving..." : "Save Changes"}
-				</Button>
-			</div>
+			{canEdit && (
+				<div className={styles.buttons}>
+					<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
+					<Button type="submit" variant="primary" disabled={isActionPending}>
+						{isActionPending ? "Saving..." : "Save Changes"}
+					</Button>
+				</div>
+			)}
 		</form>
 	);
 }

@@ -15,6 +15,7 @@ import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 import { useAdmins } from "@/hooks/useAdmins";
 import ErrorState from "@components/UI/ErrorState";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
@@ -89,7 +90,6 @@ const schema = yup.object({
 
 export default function Info() {
 	const { profile } = useProfile();
-	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
 
 	const [status, setStatus] = useState(null);
 	const [isEditing, setIsEditing] = useState(false);
@@ -98,6 +98,10 @@ export default function Info() {
 	const { id } = useParams();
 
 	const { caregiverDetail, updateCaregiver, isCaregiverLoading, isCaregiverActionPending, caregiverFetchError } = useCaregivers(id);
+
+	// update_assigned_caregivers only counts when the caregiver shares a region
+	// with the requester — same scoping the backend applies on save.
+	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
 
 	const { register, handleSubmit, control, setValue, formState: { errors, isDirty }, watch, reset } = useForm({
 		resolver: yupResolver(schema),

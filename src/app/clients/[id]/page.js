@@ -14,6 +14,8 @@ import { useParams } from "next/navigation";
 
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useClients } from "@/hooks/useClients";
+import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 import ErrorState from "@components/UI/ErrorState";
 
 
@@ -40,6 +42,13 @@ export default function Page() {
 		isActionPending,
 		toggleClientStatus
 	} = useClients(id);
+
+	const { profile } = useProfile();
+	// The activate/deactivate endpoint requires toggle_client_status.
+	const canToggle = profile?.permissionSlugs?.includes("toggle_client_status");
+	// Changing another user's picture requires update rights on the target
+	// (same scoping as the edit form — backend assertCanManageUser).
+	const canEdit = canManageTarget(profile, clientDetail, "update_all_clients", "update_assigned_clients");
 
 
 	// --- Image Upload States ---
@@ -111,14 +120,16 @@ export default function Page() {
 				<div className={styles.header}>
 					<h1>Client Profile: {clientDetail.firstName} {clientDetail.lastName}</h1>
 					<div className={styles.headerActions}>
-						<Button
-							variant={clientDetail.isActive ? "dangerLight" : "successLight"}
-							icon={<Activity size={16} />}
-							onClick={handleActive}
-							disabled={isActionPending}
-						>
-							{clientDetail.isActive ? "Inactive" : "Active"}
-						</Button>
+						{canToggle && (
+							<Button
+								variant={clientDetail.isActive ? "dangerLight" : "successLight"}
+								icon={<Activity size={16} />}
+								onClick={handleActive}
+								disabled={isActionPending}
+							>
+								{clientDetail.isActive ? "Inactive" : "Active"}
+							</Button>
+						)}
 						<Link href="/clients">
 							<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
 						</Link>
@@ -151,14 +162,16 @@ export default function Page() {
 								className={styles.image}
 								unoptimized
 							/>
-							<Button
-								variant="secondary"
-								size="sm"
-								icon={<Upload size={16} />}
-								onClick={() => setIsImageModalOpen(true)}
-							>
-								Upload
-							</Button>
+							{canEdit && (
+								<Button
+									variant="secondary"
+									size="sm"
+									icon={<Upload size={16} />}
+									onClick={() => setIsImageModalOpen(true)}
+								>
+									Upload
+								</Button>
+							)}
 						</div>
 					</div>
 				</Card>
