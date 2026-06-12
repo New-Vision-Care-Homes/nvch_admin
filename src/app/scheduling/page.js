@@ -59,7 +59,7 @@ import {
 import enCA from "date-fns/locale/en-CA"; // weeks start on Sunday in Canada
 import { DateTime } from "luxon";
 
-import { Building2, CalendarPlus, Clock, Download, MapPin, Moon, Search, Sun, User, Users } from "lucide-react";
+import { CalendarPlus, Clock, Download, MapPin, Moon, Search, Sun, User, Users } from "lucide-react";
 import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
@@ -1022,7 +1022,7 @@ export default function SchedulingPage() {
 					<div className={styles.overviewEmpty}>No shifts scheduled for this pay period.</div>
 				) : (
 					<>
-						{/* Status legend */}
+						{/* Status legend + export */}
 						<div className={styles.overviewLegend}>
 							<span className={styles.overviewLegendLabel}>Status:</span>
 							{[
@@ -1039,6 +1039,32 @@ export default function SchedulingPage() {
 									{label}
 								</span>
 							))}
+							<button
+								type="button"
+								className={styles.exportBtn}
+								style={{ marginLeft: "auto" }}
+								disabled={!payrollPeriod}
+								onClick={async () => {
+									if (!payrollPeriod) return;
+									const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
+									const homeName = selectedHome
+										? (selectedHome.name || selectedHome.homeName)
+										: "All Homes";
+									await exportScheduleToExcel({
+										homeName,
+										homeId:         selectedHomeId || null,
+										payPeriodStart: payrollPeriod.start,
+										payPeriodEnd:   payrollPeriod.end,
+										payYear:        payrollPeriod.payYear,
+										periodNumber:   payrollPeriod.periodNumber,
+										shifts:         payrollShifts,
+										logoUrl:        logoImg.src,
+									});
+								}}
+							>
+								<Download size={14} />
+								Export Schedule
+							</button>
 						</div>
 
 						{/* Roster grid */}
@@ -1165,66 +1191,64 @@ export default function SchedulingPage() {
 						)}
 					</div>
 
-					{/* Shift ID search — type a shift ID to jump directly to its detail page */}
-					<div className={styles.searchWrapper} ref={searchRef}>
-						<div className={styles.searchInputRow}>
-							<Search size={15} className={styles.searchIcon} />
-							<input
-								className={styles.searchInput}
-								type="text"
-								placeholder="Search shifts by ID…"
-								value={shiftInput}
-								onChange={(e) => { setShiftInput(e.target.value); setShowShiftDropdown(true); }}
-								onFocus={() => setShowShiftDropdown(true)}
-							/>
-							{shiftInput && (
-								<button
-									className={styles.searchClear}
-									onClick={() => { setShiftInput(""); setShiftSearch(""); setShowShiftDropdown(false); }}
-									aria-label="Clear search"
-								>
-									×
-								</button>
+					{/* Search + home filter + export — single toolbar row */}
+					<div className={styles.filterRow}>
+						{/* Shift ID search */}
+						<div className={styles.searchWrapper} ref={searchRef}>
+							<div className={styles.searchInputRow}>
+								<Search size={15} className={styles.searchIcon} />
+								<input
+									className={styles.searchInput}
+									type="text"
+									placeholder="Search shifts by ID…"
+									value={shiftInput}
+									onChange={(e) => { setShiftInput(e.target.value); setShowShiftDropdown(true); }}
+									onFocus={() => setShowShiftDropdown(true)}
+								/>
+								{shiftInput && (
+									<button
+										className={styles.searchClear}
+										onClick={() => { setShiftInput(""); setShiftSearch(""); setShowShiftDropdown(false); }}
+										aria-label="Clear search"
+									>
+										×
+									</button>
+								)}
+							</div>
+
+							{showShiftDropdown && shiftInput.trim().length > 0 && (
+								<div className={styles.searchDropdown}>
+									{isSearchLoading ? (
+										<div className={styles.searchMeta}>Searching…</div>
+									) : searchError ? (
+										<div className={styles.searchMeta}>Invalid shift ID</div>
+									) : searchResults.length === 0 ? (
+										<div className={styles.searchMeta}>No shifts found</div>
+									) : (
+										searchResults.map((shift) => {
+											const id = shift._id || shift.id;
+											const caregiverName = [shift.caregiver?.firstName, shift.caregiver?.lastName]
+												.filter(Boolean).join(" ") || "Unassigned";
+											const start     = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+											const end       = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+											const dateLabel = format(start, "EEE, MMM d, yyyy");
+											const timeLabel = `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`;
+											return (
+												<button key={id} className={styles.searchItem} onClick={() => handleSearchSelect(shift)}>
+													<User size={14} className={styles.searchItemIcon} />
+													<div className={styles.searchItemBody}>
+														<span className={styles.searchItemName}>{caregiverName}</span>
+														<span className={styles.searchItemMeta}>{dateLabel} · {timeLabel}</span>
+													</div>
+												</button>
+											);
+										})
+									)}
+								</div>
 							)}
 						</div>
 
-						{showShiftDropdown && shiftInput.trim().length > 0 && (
-							<div className={styles.searchDropdown}>
-								{isSearchLoading ? (
-									<div className={styles.searchMeta}>Searching…</div>
-								) : searchError ? (
-									<div className={styles.searchMeta}>Invalid shift ID</div>
-								) : searchResults.length === 0 ? (
-									<div className={styles.searchMeta}>No shifts found</div>
-								) : (
-									searchResults.map((shift) => {
-										const id = shift._id || shift.id;
-										const caregiverName = [shift.caregiver?.firstName, shift.caregiver?.lastName]
-											.filter(Boolean).join(" ") || "Unassigned";
-										const start     = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-										const end       = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
-										const dateLabel = format(start, "EEE, MMM d, yyyy");
-										const timeLabel = `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`;
-										return (
-											<button key={id} className={styles.searchItem} onClick={() => handleSearchSelect(shift)}>
-												<User size={14} className={styles.searchItemIcon} />
-												<div className={styles.searchItemBody}>
-													<span className={styles.searchItemName}>{caregiverName}</span>
-													<span className={styles.searchItemMeta}>{dateLabel} · {timeLabel}</span>
-												</div>
-											</button>
-										);
-									})
-								)}
-							</div>
-						)}
-					</div>
-
-					{/* Home filter — narrows all calendar views and payroll to a single home.
-					    Selecting "All Homes" (empty value) removes the filter. */}
-					<div className={styles.filterRow}>
-						<Building2 size={15} className={styles.filterIcon} />
-						<label className={styles.filterLabel} htmlFor="home-filter">Filter by Home:</label>
+						{/* Home filter */}
 						<select
 							id="home-filter"
 							className={styles.homeSelect}
@@ -1241,31 +1265,6 @@ export default function SchedulingPage() {
 								);
 							})}
 						</select>
-						<button
-							type="button"
-							className={styles.exportBtn}
-							disabled={!payrollPeriod}
-							onClick={async () => {
-								if (!payrollPeriod) return;
-								const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
-								const homeName = selectedHome
-									? (selectedHome.name || selectedHome.homeName)
-									: "All Homes";
-								await exportScheduleToExcel({
-									homeName,
-									homeId:         selectedHomeId || null,
-									payPeriodStart: payrollPeriod.start,
-									payPeriodEnd:   payrollPeriod.end,
-									payYear:        payrollPeriod.payYear,
-									periodNumber:   payrollPeriod.periodNumber,
-									shifts:         payrollShifts,
-									logoUrl:        logoImg.src,
-								});
-							}}
-						>
-							<Download size={14} />
-							Export Schedule
-						</button>
 					</div>
 
 					{/* Halifax time banner — only shown when the admin's device is in a

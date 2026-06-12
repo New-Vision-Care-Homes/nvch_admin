@@ -10,50 +10,42 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Edit, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Edit, Search, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
+import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
+import { REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
-/**
- * Clients Page Component
- * 
- * Displays a paginated list of all clients in the system.
- * Features:
- * - Debounced text search to find specific clients by name or ID
- * - Dropdown filter to show only Active or Inactive clients
- * - Table view with client details and quick actions (Edit, Delete)
- * - Safe delete confirmation modal
- */
 export default function Clients() {
 	const { profile } = useProfile();
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_clients");
-	// delete_assigned_clients only counts for clients sharing a region with the
-	// requester (backend scoping), so the delete icon is decided per row.
 	const canDeleteClient = (client) => canManageTarget(profile, client, "delete_all_clients", "delete_assigned_clients");
 
 	// --- State ---
-	const [search, setSearch] = useState("");
+	const [search, setSearch]               = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [showDropdown, setShowDropdown] = useState(false);
-	const [showModal, setShowModal] = useState(false);
+	const [statusFilter, setStatusFilter]   = useState("");
+	const [homeId, setHomeId]               = useState("");
+	const [showModal, setShowModal]         = useState(false);
 	const [deletedClientId, setDeletedClientId] = useState(null);
-	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 5;
+	const [currentPage, setCurrentPage]     = useState(1);
+	const itemsPerPage = 10;
 
-	// Debounce search — only fire API after user stops typing for 400ms
+	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
 		const timer = setTimeout(() => setDebouncedSearch(search), 400);
 		return () => clearTimeout(timer);
 	}, [search]);
 
 	let isActiveParam = "";
-	if (statusFilter === "Active") isActiveParam = true;
+	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
+
+	const { homes } = useHomes({ limit: 100 });
 
 	const {
 		clients,
@@ -66,24 +58,23 @@ export default function Clients() {
 		refetch,
 	} = useClients({
 		params: {
-			page: currentPage,
-			limit: itemsPerPage,
-			search: debouncedSearch,
+			page:     currentPage,
+			limit:    itemsPerPage,
+			search:   debouncedSearch,
 			isActive: isActiveParam,
-		}
+			homeId,
+		},
 	});
 
-	// Reset to page 1 when filters change
+	// Reset to page 1 when any filter changes
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter]);
+	}, [debouncedSearch, statusFilter, homeId]);
 
-	// If a page becomes empty (e.g. after deleting its last row), step back to
-	// the previous page. This reacts to the freshly-fetched `clients` data rather
-	// than reading a stale length at delete time.
+	// Step back to the previous page if the current one becomes empty after a delete
 	useEffect(() => {
 		if (!isLoading && clients.length === 0 && currentPage > 1) {
-			setCurrentPage(prev => prev - 1);
+			setCurrentPage((prev) => prev - 1);
 		}
 	}, [clients, isLoading, currentPage]);
 
@@ -94,7 +85,7 @@ export default function Clients() {
 	};
 
 	const handleModalCancel = () => {
-		if (isActionPending) return; // don't dismiss mid-request
+		if (isActionPending) return;
 		setShowModal(false);
 	};
 
@@ -107,16 +98,13 @@ export default function Clients() {
 		});
 	};
 
-	const handlePageClick = (event) => {
-		setCurrentPage(event.selected + 1);
-	};
+	const handlePageClick = (event) => setCurrentPage(event.selected + 1);
 
 	return (
 		<>
 			<PageLayout>
 				<div className={styles.pageContainer}>
-
-					{/* Header — always visible */}
+					{/* Header */}
 					<div className={styles.header}>
 						<h1>Client Management</h1>
 						{canCreate && (
@@ -126,70 +114,73 @@ export default function Clients() {
 						)}
 					</div>
 
-					{/* Action error — shown when delete/create/update fails */}
-					{actionError && (
-						<p className={styles.actionError}>{actionError}</p>
-					)}
+					{actionError && <p className={styles.actionError}>{actionError}</p>}
 
-					{/* Fetch error or loading state */}
 					<ErrorState
 						isLoading={isLoading}
 						errorMessage={fetchError}
 						onRetry={refetch}
 					/>
 
-					{/* Main content — only shown when not loading and no fetch error */}
 					{!isLoading && !fetchError && (
 						<>
-							{/* Filters */}
+							{/* Filter bar */}
 							<div className={styles.filter_row}>
-								<input
-									type="text"
-									placeholder="Search clients..."
-									className={styles.search}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								<div className={styles.filter}>
-									<div className={styles.dropdownContainer}>
-										<Button
-											variant="secondary"
-											icon={<ChevronDown />}
-											onClick={() => setShowDropdown(prev => !prev)}
-										>
-											{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
-										</Button>
-										{showDropdown && (
-											<div className={styles.dropdownMenu}>
-												<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
-												<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
-												<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
-											</div>
-										)}
-									</div>
+								<div className={styles.searchWrapper}>
+									<Search size={15} className={styles.searchIcon} />
+									<input
+										type="text"
+										placeholder="Search by name, email or ID…"
+										className={styles.search}
+										value={search}
+										onChange={(e) => setSearch(e.target.value)}
+									/>
 								</div>
+								<select
+									className={styles.filterSelect}
+									value={statusFilter}
+									onChange={(e) => setStatusFilter(e.target.value)}
+								>
+									<option value="">All Status</option>
+									<option value="Active">Active</option>
+									<option value="Inactive">Inactive</option>
+								</select>
+								<select
+									className={styles.filterSelect}
+									value={homeId}
+									onChange={(e) => setHomeId(e.target.value)}
+								>
+									<option value="">All Homes</option>
+									{homes?.map((h) => {
+										const id = h._id || h.id;
+										return (
+											<option key={id} value={id}>
+												{h.name || h.homeName || id}
+											</option>
+										);
+									})}
+								</select>
 							</div>
 
-							{/* Clients Table */}
+							{/* Table */}
 							{clients.length === 0 ? (
 								<div style={{ marginTop: "2rem" }}>
-									<EmptyState 
-										title="No clients found" 
-										message="There are no clients matching your criteria." 
+									<EmptyState
+										title="No clients found"
+										message="There are no clients matching your criteria."
 									/>
 								</div>
 							) : (
 								<div className={styles.tableWrapper}>
-									<h2 style={{ marginBottom: "1.5rem" }}>All Clients</h2>
 									<Table>
 										<TableHeader>
 											<TableCell>Client Name</TableCell>
 											<TableCell>Client ID</TableCell>
-											<TableCell>Contact</TableCell>
+											<TableCell>Region</TableCell>
 											<TableCell>Status</TableCell>
 											<TableCell>Actions</TableCell>
 										</TableHeader>
-										{clients.map(client => (
+										{clients.map((client) => (
 											<TableContent key={client.id}>
 												<TableCell>
 													<Image
@@ -203,7 +194,16 @@ export default function Clients() {
 													<span>{client.firstName} {client.lastName}</span>
 												</TableCell>
 												<TableCell><span>{client.clientId}</span></TableCell>
-												<TableCell><span>{client.email}</span></TableCell>
+												<TableCell>
+													{client.region ? (() => {
+														const c = REGION_COLORS[client.region] ?? COLOR_FALLBACK;
+														return (
+															<span style={{ display: "inline-block", padding: "0.2rem 0.75rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text }}>
+																{client.region}
+															</span>
+														);
+													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${client.isActive ? styles.statusActive : styles.statusInactive}`}>
 														{client.isActive ? "Active" : "Inactive"}
@@ -211,12 +211,12 @@ export default function Clients() {
 												</TableCell>
 												<TableCell>
 													<Link href={`/clients/${client.id}`}>
-														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
+														<Edit color="#1C4A6EFF" style={{ width: "1.5rem", height: "1.5rem" }} />
 													</Link>
 													{canDeleteClient(client) && (
 														<Trash2
 															color="#ef4444"
-															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+															style={{ width: "1.5rem", height: "1.5rem", cursor: "pointer" }}
 															onClick={() => deleteHandler(client.id)}
 														/>
 													)}
@@ -224,8 +224,6 @@ export default function Clients() {
 											</TableContent>
 										))}
 									</Table>
-
-									{/* Pagination */}
 									<ReactPaginate
 										pageCount={Math.max(totalPages, 1)}
 										forcePage={currentPage - 1}
@@ -235,8 +233,8 @@ export default function Clients() {
 										breakLabel="..."
 										breakClassName={styles.pageItem}
 										breakLinkClassName={styles.pageLink}
-										previousLabel={"Prev"}
-										nextLabel={"Next"}
+										previousLabel="Prev"
+										nextLabel="Next"
 										containerClassName={styles.pagination}
 										pageClassName={styles.pageItem}
 										pageLinkClassName={styles.pageLink}
@@ -250,11 +248,9 @@ export default function Clients() {
 							)}
 						</>
 					)}
-
 				</div>
 			</PageLayout>
 
-			{/* Delete Confirmation Modal */}
 			<Modal isOpen={showModal} onClose={handleModalCancel}>
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this client?</h2>
@@ -269,4 +265,3 @@ export default function Clients() {
 		</>
 	);
 }
-

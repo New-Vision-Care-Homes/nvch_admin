@@ -87,9 +87,11 @@ body {
 
 h1 {
 	font-family: var(--font-family-primary);
-	font-size: var(--font-size-xl);
-	font-weight: var(--font-weight-lg);
-	color: var(--color-text-primary);
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary);
+	letter-spacing: -0.025em;
+	line-height: 1.1;
 	margin: 0;
 }
 

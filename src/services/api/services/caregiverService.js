@@ -17,6 +17,7 @@ export const caregiverService = {
 		if (params.page) queryParams.append('page', params.page);
 		if (params.limit) queryParams.append('limit', params.limit);
 		if (params.isActive !== undefined && params.isActive !== '') queryParams.append('isActive', params.isActive);
+		if (params.homeId) queryParams.append('homeId', params.homeId);
 		if (params.region) queryParams.append('region', params.region);
 
 		const queryString = queryParams.toString();
