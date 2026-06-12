@@ -36,6 +36,7 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/shifts/${id}`,
 		CANCEL: (id) => `/api/shifts/${id}/cancel`,
 		UPDATE_COMPLETED_SHIFT: (id) => `/api/hours/shifts/${id}`,
+		BULK: '/api/shifts/bulk',
 	},
 
 	/* All related endpoints for homes */
@@ -55,6 +56,7 @@ export const API_ENDPOINTS = {
 		GET_CAREGIVER_HOURS: (id) => `/api/hours/caregivers/${id}`,
 		GET_CAREGIVER_HISTORY: (id) => `/api/hours/caregivers/${id}/history`,
 		UPDATE_CAREGIVER_HOURS: (id) => `/api/hours/shifts/${id}`,
+		GET_PAY_PERIODS: '/api/hours/pay-periods',
 	},
 
 	/* All related endpoints for upload profile picture and certificates */

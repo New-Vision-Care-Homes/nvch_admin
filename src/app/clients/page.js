@@ -15,6 +15,7 @@ import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 
 /**
  * Clients Page Component
@@ -30,7 +31,9 @@ export default function Clients() {
 	const { profile } = useProfile();
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_clients");
-	const canDelete = slugs.includes("delete_all_clients") || slugs.includes("delete_assigned_clients");
+	// delete_assigned_clients only counts for clients sharing a region with the
+	// requester (backend scoping), so the delete icon is decided per row.
+	const canDeleteClient = (client) => canManageTarget(profile, client, "delete_all_clients", "delete_assigned_clients");
 
 	// --- State ---
 	const [search, setSearch] = useState("");
@@ -210,7 +213,7 @@ export default function Clients() {
 													<Link href={`/clients/${client.id}`}>
 														<Edit color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 													</Link>
-													{canDelete && (
+													{canDeleteClient(client) && (
 														<Trash2
 															color="#ef4444"
 															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}

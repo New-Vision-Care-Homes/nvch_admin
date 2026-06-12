@@ -8,7 +8,7 @@ import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
-import { PERMISSION_SCHEMAS } from "@/utils/permissions";
+import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS } from "@/utils/permissions";
 
 export default function AddPermissionGroupPage() {
 	const router = useRouter();
@@ -43,8 +43,10 @@ export default function AddPermissionGroupPage() {
 			return;
 		}
 		// Prevent accidentally naming a group the same as a permission slug,
-		// which would be confusing when assigning permissions to users.
-		if (permissionSlugs.includes(data.name.trim())) {
+		// which would be confusing when assigning permissions to users. The
+		// backend checks the full catalog, including the implicit self slugs
+		// that the definitions endpoint no longer returns.
+		if (permissionSlugs.includes(data.name.trim()) || IMPLICIT_SELF_SLUGS.includes(data.name.trim())) {
 			setError("name", {
 				type: "manual",
 				message: "Group name cannot be the same as an individual permission slug."

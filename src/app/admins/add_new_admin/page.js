@@ -63,7 +63,7 @@ const schema = yup.object({
 export default function Page() {
 	const router = useRouter();
 	const { addAdmin, isActionPending, actionError } = useAdmins();
-	const { permissionGroups } = usePermissionGroups();
+	const { permissionGroups, permissionGroupsFetchError } = usePermissionGroups();
 
 	// selectedGroupIds: Set of permission group _ids the admin will be assigned
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
@@ -228,7 +228,15 @@ export default function Page() {
 								<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
 									Select Group <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
 								</p>
-								{permissionGroups.length === 0 ? (
+								{permissionGroupsFetchError ? (
+									/* Without view_permissions_groups the list request 403s — say so
+									   instead of showing a dead-end empty picklist (a group is required). */
+									<p style={{ color: '#b91c1c', fontSize: '0.9rem' }}>
+										Couldn&apos;t load permission groups: {permissionGroupsFetchError}.
+										Creating an admin requires selecting a permission group — ask for the
+										&quot;view permission groups&quot; permission if you don&apos;t have it.
+									</p>
+								) : permissionGroups.length === 0 ? (
 									<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
 										No permission groups found.
 									</p>

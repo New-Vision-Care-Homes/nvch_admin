@@ -18,6 +18,7 @@ import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 
 
 export default function Page() {
@@ -25,16 +26,19 @@ export default function Page() {
 
 	const {
 		caregiverDetail,
-		isLoading,
-		isError,
-		errorMessage,
+		isCaregiverLoading,
+		caregiverFetchError,
 		isCaregiverActionPending,
 		updateCaregiver,
 		toggleCaregiverStatus
 	} = useCaregivers(id);
 
 	const { profile } = useProfile();
-	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
+	// The activate/deactivate endpoint requires toggle_caregiver_status, not the update slugs.
+	const canToggle = profile?.permissionSlugs?.includes("toggle_caregiver_status");
+	// Changing another user's picture requires update rights on the target
+	// (same scoping as the edit form — backend assertCanManageUser).
+	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
 
 	// --- Image Upload States ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -80,9 +84,9 @@ export default function Page() {
 	}
 
 	// --- Render Logic ---
-	if (isLoading || isError || !caregiverDetail) return (
+	if (isCaregiverLoading || caregiverFetchError || !caregiverDetail) return (
 		<PageLayout>
-			<ErrorState isLoading={isLoading} errorMessage={isError ? errorMessage : (!caregiverDetail ? "Caregiver not found." : null)} />
+			<ErrorState isLoading={isCaregiverLoading} errorMessage={caregiverFetchError ?? (!caregiverDetail ? "Caregiver not found." : null)} />
 		</PageLayout>
 	);
 
@@ -109,7 +113,7 @@ export default function Page() {
 				<div className={styles.header}>
 					<h1>Caregiver Profile: {caregiverDetail.firstName} {caregiverDetail.lastName}</h1>
 					<div className={styles.headerActions}>
-						{canEdit && (
+						{canToggle && (
 							<Button
 								variant={activeStatus ? "dangerLight" : "successLight"}
 								icon={<Activity size={16} />}
@@ -156,14 +160,16 @@ export default function Page() {
 								unoptimized
 							/>
 							{/* Button to open the image upload modal */}
-							<Button
-								variant="secondary"
-								size="sm"
-								icon={<Upload size={16} />}
-								onClick={() => setIsImageModalOpen(true)}
-							>
-								Upload
-							</Button>
+							{canEdit && (
+								<Button
+									variant="secondary"
+									size="sm"
+									icon={<Upload size={16} />}
+									onClick={() => setIsImageModalOpen(true)}
+								>
+									Upload
+								</Button>
+							)}
 						</div>
 					</div>
 				</Card>

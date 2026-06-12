@@ -12,7 +12,7 @@ const tabs = [
 	{ id: 3, label: "Caregivers", icon: IdCardLanyard, href: "/caregivers", requiredSlugs: ["view_all_caregivers", "view_assigned_caregivers"] },
 	{ id: 4, label: "Admins", icon: UserLock, href: "/admins", requiredSlugs: ["view_admin"] },
 	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions", requiredSlugs: ["view_permissions_groups"] },
-	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes"] },
+	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes", "view_home"] },
 	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true, requiredSlugs: ["view_shifts"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
@@ -46,8 +46,11 @@ const keywordToTabMap = {
 
 export default function Sidebar({ open = false, onClose = () => {} }) {
 	const pathname = usePathname();
-	const { profile } = useProfile();
+	const { profile, isLoading, fetchError, refetch } = useProfile();
 
+	// While the profile is loading (or failed to load) only the ungated tabs
+	// render; the ErrorState below makes that state visible instead of
+	// silently hiding every permission-gated module.
 	const permissionSlugs = profile?.permissionSlugs ?? [];
 	const visibleTabs = tabs.filter(tab =>
 		!tab.requiredSlugs || tab.requiredSlugs.some(slug => permissionSlugs.includes(slug))
@@ -147,6 +150,38 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 						</Link>
 					);
 				})}
+
+				{/* Compact inline states: while the profile loads, gated tabs are
+				    simply not yet shown; if the fetch failed with no cached profile,
+				    say so instead of silently hiding every module. */}
+				{isLoading && (
+					<div style={{ padding: "0.75rem 1rem", color: "#6B7280", fontSize: "0.85rem" }}>
+						Loading menu…
+					</div>
+				)}
+				{!isLoading && fetchError && !profile && (
+					<div style={{ padding: "0.75rem 1rem", fontSize: "0.85rem" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#DC2626" }}>
+							<AlertCircle size={14} />
+							<span>Couldn&apos;t load your permissions</span>
+						</div>
+						<button
+							onClick={() => refetch()}
+							style={{
+								marginTop: "6px",
+								fontSize: "0.8rem",
+								color: "#1D4ED8",
+								background: "none",
+								border: "none",
+								cursor: "pointer",
+								textDecoration: "underline",
+								padding: 0,
+							}}
+						>
+							Try again
+						</button>
+					</div>
+				)}
 			</aside>
 
 			{hoveredTabId !== null && flyoutMenus[hoveredTabId] && (

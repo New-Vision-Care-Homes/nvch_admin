@@ -11,6 +11,8 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
+import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 
 // --- 1. Yup Validation Schema (Flat for Form Fields) ---
 const carePlanSchema = yup.object({
@@ -87,6 +89,11 @@ export default function CarePlan() {
 		isLoading,
 		isActionPending,
 	} = useClients(id);
+
+	const { profile } = useProfile();
+	// update_assigned_clients only counts when the client shares a region with
+	// the requester — same scoping the backend applies on save.
+	const canEdit = canManageTarget(profile, clientDetail, "update_all_clients", "update_assigned_clients");
 
 	const {
 		register,
@@ -169,6 +176,9 @@ export default function CarePlan() {
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
+			{/* Updating a care plan requires update_all_clients or update_assigned_clients;
+			    without either the form is read-only and the save bar is hidden. */}
+			<fieldset disabled={!canEdit} style={{ border: "none", padding: 0, margin: 0, minWidth: 0 }}>
 			<div className={styles.body}>
 				{/* MEDICAL CONDITIONS */}
 				<Card>
@@ -302,16 +312,19 @@ export default function CarePlan() {
 					</CardContent>
 				</Card>
 			</div>
+			</fieldset>
 
 			{/* BUTTONS */}
-			<div className={styles.buttons}>
-				<Button variant="secondary" type="button" onClick={handleCancel}>
-					Cancel
-				</Button>
-				<Button variant="primary" type="submit" disabled={isActionPending}>
-					{isActionPending ? "Saving..." : "Save Changes"}
-				</Button>
-			</div>
+			{canEdit && (
+				<div className={styles.buttons}>
+					<Button variant="secondary" type="button" onClick={handleCancel}>
+						Cancel
+					</Button>
+					<Button variant="primary" type="submit" disabled={isActionPending}>
+						{isActionPending ? "Saving..." : "Save Changes"}
+					</Button>
+				</div>
+			)}
 		</form>
 	);
 }

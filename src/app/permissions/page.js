@@ -12,6 +12,7 @@ import { Plus, Eye, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
+import { useProfile } from "@/hooks/useProfile";
 import { format } from "date-fns";
 
 export default function Permissions() {
@@ -20,6 +21,12 @@ export default function Permissions() {
 	const [deletedGroupId, setDeletedGroupId] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 8;
+
+	const { profile } = useProfile();
+	const slugs = profile?.permissionSlugs ?? [];
+	// Creating a group uses the same backend slug as updating one.
+	const canUpdate = slugs.includes("update_permissions_groups");
+	const canDelete = slugs.includes("delete_permissions_groups");
 
 	const {
 		permissionGroups,
@@ -74,9 +81,11 @@ export default function Permissions() {
 					{/* Header */}
 					<div className={styles.header}>
 						<h1>Permission Groups</h1>
-						<Link href="/permissions/add_new_permissions_group">
-							<Button variant="primary" icon={<Plus />}>New Permission Group</Button>
-						</Link>
+						{canUpdate && (
+							<Link href="/permissions/add_new_permissions_group">
+								<Button variant="primary" icon={<Plus />}>New Permission Group</Button>
+							</Link>
+						)}
 					</div>
 
 					{/* Inline error for delete failures */}
@@ -134,11 +143,13 @@ export default function Permissions() {
 													<Link href={`/permissions/${group._id}`}>
 														<Eye color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
 													</Link>
-													<Trash2
-														color="#ef4444"
-														style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-														onClick={() => deleteHandler(group._id)}
-													/>
+													{canDelete && (
+														<Trash2
+															color="#ef4444"
+															style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
+															onClick={() => deleteHandler(group._id)}
+														/>
+													)}
 												</TableCell>
 											</TableContent>
 										))}

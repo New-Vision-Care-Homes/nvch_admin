@@ -186,18 +186,20 @@ function PersonSearchInput({
 // ── Public export ──────────────────────────────────────────────────────────────
 export default function PersonSearchField({
 	label, name, control, error, type = "caregiver", placeholder, required, readOnly = false,
+	fallbackDisplayName = "",
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const debouncedSearch = useDebounce(searchQuery, 350);
 
-	// All three hooks called unconditionally (React rules of hooks).
-	// Each receives the debounced search string as its options param,
-	// which each hook passes straight through to its service's getAll().
+	// All three hooks called unconditionally (React rules of hooks), but only
+	// the hook matching the active `type` may actually fetch — the other two
+	// are disabled so a picker never hits list endpoints (and permission gates)
+	// for roles it isn't searching.
 	const searchOptions = debouncedSearch.trim() ? { search: debouncedSearch } : {};
 
-	const { caregivers, isCaregiverLoading } = useCaregivers(searchOptions);
-	const { clients, isClientLoading } = useClients(searchOptions);
-	const { admins, isAdminLoading } = useAdmins(searchOptions);
+	const { caregivers, isCaregiverLoading } = useCaregivers({ ...searchOptions, enabled: type === "caregiver" });
+	const { clients, isClientLoading } = useClients({ ...searchOptions, enabled: type === "client" });
+	const { admins, isAdminLoading } = useAdmins({ ...searchOptions, enabled: type === "admin" });
 
 	// Pick only the data relevant to the active type
 	const people =
@@ -211,9 +213,13 @@ export default function PersonSearchField({
 				isAdminLoading;
 
 	const fieldValue = useWatch({ control, name });
-	const fetchCaregiverId = type === "caregiver" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
-	const fetchClientId = type === "client" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
-	const fetchAdminId = type === "admin" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+	// When the parent already knows the current selection's name (e.g. the
+	// caregiver payload embeds supervisorInfo/teamLeadInfo), skip the per-id
+	// lookup entirely — it may be permission-gated for this user.
+	const shouldResolveById = !fallbackDisplayName;
+	const fetchCaregiverId = shouldResolveById && type === "caregiver" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+	const fetchClientId = shouldResolveById && type === "client" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
+	const fetchAdminId = shouldResolveById && type === "admin" && fieldValue && typeof fieldValue === "string" ? fieldValue : "";
 
 	const { caregiverDetail } = useCaregivers(fetchCaregiverId);
 	const { clientDetail } = useClients(fetchClientId);
@@ -226,7 +232,7 @@ export default function PersonSearchField({
 
 	const initialDisplayName = initialPerson
 		? `${initialPerson.firstName || ""} ${initialPerson.lastName || ""}`.trim()
-		: "";
+		: fallbackDisplayName;
 
 	if (readOnly) {
 		return <InfoField label={label}>{initialDisplayName || "—"}</InfoField>;
