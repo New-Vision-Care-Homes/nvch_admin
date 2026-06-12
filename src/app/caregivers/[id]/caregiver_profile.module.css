@@ -56,7 +56,6 @@
 	color: #b91c1c;
 }
 
-
 .content {
 	display: flex;
 	width: 100%;
@@ -84,6 +83,103 @@
 	border-radius: 50%;
 	border: 4px solid #fff;
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Editable Caregiver ID ── */
+.idViewRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.idEditRow {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.idInput {
+	flex: 1;
+	min-width: 0;
+	padding: 3px 7px;
+	border: 1.5px solid #93c5fd;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	color: #1e293b;
+	background: #f0f9ff;
+	outline: none;
+}
+
+.idInput:focus {
+	border-color: #1c4a6e;
+	background: #fff;
+}
+
+.idEditTrigger {
+	display: flex;
+	align-items: center;
+	padding: 3px;
+	border: none;
+	background: none;
+	cursor: pointer;
+	color: #94a3b8;
+	border-radius: 4px;
+	transition: color 0.15s, background 0.15s;
+}
+
+.idEditTrigger:hover {
+	color: #1c4a6e;
+	background: #eff6ff;
+}
+
+.idSaveBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 5px;
+	border: 1.5px solid #86efac;
+	background: #f0fdf4;
+	color: #16a34a;
+	cursor: pointer;
+	transition: background 0.15s;
+	flex-shrink: 0;
+}
+
+.idSaveBtn:hover:not(:disabled) { background: #dcfce7; }
+.idSaveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.idCancelBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	border-radius: 5px;
+	border: 1.5px solid #fca5a5;
+	background: #fff1f2;
+	color: #dc2626;
+	cursor: pointer;
+	transition: background 0.15s;
+	flex-shrink: 0;
+}
+
+.idCancelBtn:hover:not(:disabled) { background: #fee2e2; }
+.idCancelBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.idFeedbackError {
+	margin-top: 4px;
+	font-size: 0.78rem;
+	color: #dc2626;
+	font-weight: 500;
+}
+
+.idFeedbackSuccess {
+	margin-top: 4px;
+	font-size: 0.78rem;
+	color: #16a34a;
+	font-weight: 500;
 }
 
 /* Modal specific styles for upload */

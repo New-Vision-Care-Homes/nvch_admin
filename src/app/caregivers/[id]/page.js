@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-// Assuming component paths are correct
+import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
@@ -10,15 +9,15 @@ import styles from "./caregiver_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Link from "next/link";
-import { Activity, Undo2, Upload } from "lucide-react";
+import { Activity, Check, Pencil, Undo2, Upload, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
-
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
+import { utcToFullDisplay } from "@/utils/timeHandling";
 
 
 export default function Page() {
@@ -40,14 +39,25 @@ export default function Page() {
 	// (same scoping as the edit form — backend assertCanManageUser).
 	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
 
-	// --- Image Upload States ---
+	// --- Image Upload ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-	// --- General UI States ---
+	// --- General UI ---
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
 	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
+
+	// --- Editable Caregiver ID ---
+	const [editingId, setEditingId] = useState(false);
+	const [idValue, setIdValue] = useState("");
+	const [idSaving, setIdSaving] = useState(false);
+	const [idError, setIdError] = useState(null);
+	const [idSuccess, setIdSuccess] = useState(null);
+
+	useEffect(() => {
+		setIdValue(caregiverDetail?.employeeId || "");
+	}, [caregiverDetail?.employeeId]);
 
 
 
@@ -77,6 +87,79 @@ export default function Page() {
 	};
 
 
+
+	// --- Save Caregiver ID ---
+	const handleSaveId = () => {
+		const trimmed = idValue.trim();
+		if (!trimmed) {
+			setIdError("Caregiver ID cannot be empty.");
+			return;
+		}
+		setIdSaving(true);
+		setIdError(null);
+		setIdSuccess(null);
+
+		// PUT requires the full caregiver payload — send all existing fields
+		// (same shape as Info.js onSubmit) and override only employeeId.
+		const cd = caregiverDetail;
+		const fullPayload = {
+			email:               cd.email || null,
+			firstName:           cd.firstName,
+			lastName:            cd.lastName,
+			phone:               cd.phone || null,
+			dateOfBirth:         cd.dateOfBirth || null,
+			employeeStartDate:   cd.employeeStartDate ? new Date(cd.employeeStartDate).toISOString() : null,
+			regions:             cd.regions,
+			employmentStatus:    cd.employmentStatus || null,
+			address: {
+				street:  cd.address?.street,
+				unit:    cd.address?.unit || null,
+				city:    cd.address?.city,
+				state:   cd.address?.state,
+				pinCode: cd.address?.pinCode,
+				country: cd.address?.country,
+				gpsCoordinates: {
+					latitude:  cd.address?.gpsCoordinates?.latitude,
+					longitude: cd.address?.gpsCoordinates?.longitude,
+				},
+			},
+			biWeeklyWorkCapacity: { maxHours: cd.biWeeklyWorkCapacity?.maxHours },
+			supervisor:    cd.supervisor || null,
+			teamLead:      cd.teamLead   || null,
+			emergencyContact: {
+				name:         cd.emergencyContact?.name         || null,
+				phone:        cd.emergencyContact?.phone        || null,
+				relationship: cd.emergencyContact?.relationship || null,
+			},
+			employeeId: trimmed,
+		};
+
+		updateCaregiver(
+			{ id, data: fullPayload },
+			{
+				onSuccess: () => {
+					setIdSaving(false);
+					setEditingId(false);
+					setIdSuccess("Caregiver ID updated successfully.");
+					setTimeout(() => setIdSuccess(null), 4000);
+				},
+				onError: (err) => {
+					setIdSaving(false);
+					setIdError(
+						err?.response?.data?.details?.[0]?.msg ||
+						err?.response?.data?.error ||
+						"Failed to update Caregiver ID."
+					);
+				},
+			}
+		);
+	};
+
+	const handleCancelIdEdit = () => {
+		setEditingId(false);
+		setIdValue(caregiverDetail?.employeeId || "");
+		setIdError(null);
+	};
 
 	// --- Utility Handlers ---
 	function handleGeneralModalCancel() {
@@ -135,21 +218,60 @@ export default function Page() {
 					<div className={styles.content}>
 						<div className={styles.text}>
 							<div className={styles.column}>
-								<InfoField label="Caregiver ID">{caregiverDetail.employeeId}</InfoField>
-								<InfoField label="Next Appointment">2024-08-05 (10:00 AM) default data</InfoField>
-							</div>
-							<div className={styles.column}>
+								{/* Caregiver ID — editable */}
+								<InfoField label="Caregiver ID">
+									{editingId ? (
+										<div className={styles.idEditRow}>
+											<input
+												className={styles.idInput}
+												value={idValue}
+												onChange={(e) => setIdValue(e.target.value)}
+												onKeyDown={(e) => { if (e.key === "Enter") handleSaveId(); if (e.key === "Escape") handleCancelIdEdit(); }}
+												disabled={idSaving}
+												autoFocus
+											/>
+											<button className={styles.idSaveBtn} onClick={handleSaveId} disabled={idSaving} title="Save">
+												<Check size={13} />
+											</button>
+											<button className={styles.idCancelBtn} onClick={handleCancelIdEdit} disabled={idSaving} title="Cancel">
+												<X size={13} />
+											</button>
+										</div>
+									) : (
+										<div className={styles.idViewRow}>
+											<span>{caregiverDetail.employeeId || "—"}</span>
+											{canEdit && (
+												<button
+													className={styles.idEditTrigger}
+													onClick={() => { setEditingId(true); setIdError(null); setIdSuccess(null); }}
+													title="Edit Caregiver ID"
+												>
+													<Pencil size={12} />
+												</button>
+											)}
+										</div>
+									)}
+									{idError   && <div className={styles.idFeedbackError}>{idError}</div>}
+									{idSuccess && <div className={styles.idFeedbackSuccess}>{idSuccess}</div>}
+								</InfoField>
+
 								<InfoField label="Status">
 									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
 										{activeStatus ? "Active" : "Inactive"}
 									</span>
 								</InfoField>
-								<InfoField label="Care Plan Status">On Track default data</InfoField>
 							</div>
+
 							<div className={styles.column}>
-								<InfoField label="Last Shift">2024-07-28 default data</InfoField>
+								<InfoField label="Created">
+									{utcToFullDisplay(caregiverDetail.createdAt, "America/Halifax")}
+								</InfoField>
+								<InfoField label="Last Updated">
+									{utcToFullDisplay(caregiverDetail.updatedAt, "America/Halifax")}
+								</InfoField>
 							</div>
 						</div>
+
 						<div className={styles.picture}>
 							<Image
 								src={caregiverDetail.profilePictureUrl || defaultAvatar}
@@ -159,7 +281,6 @@ export default function Page() {
 								className={styles.image}
 								unoptimized
 							/>
-							{/* Button to open the image upload modal */}
 							{canEdit && (
 								<Button
 									variant="secondary"
