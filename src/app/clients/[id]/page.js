@@ -141,15 +141,13 @@ export default function Page() {
 						<div className={styles.text}>
 							<div className={styles.column}>
 								<InfoField label="Client ID">{clientDetail.clientId}</InfoField>
+							</div>
+							<div className={styles.column}>
 								<InfoField label="Status">
 									<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
 										{clientDetail.isActive ? "Active" : "Inactive"}
 									</span>
 								</InfoField>
-							</div>
-							<div className={styles.column}>
-								<InfoField label="Care Plan Status">On Track</InfoField>
-								<InfoField label="Last Visit">2024-07-28</InfoField>
 							</div>
 						</div>
 						<div className={styles.picture}>

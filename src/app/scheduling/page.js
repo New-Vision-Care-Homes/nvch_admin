@@ -116,6 +116,16 @@ const PALETTE = [
 	{ bg: "#ffedd5", border: "#ea580c", text: "#7c2d12" }, // orange
 ];
 
+// Rank order for the # badge: first match wins (missed is worst, completed is best)
+const STATUS_PRIORITY = ["missed", "cancelled", "in_progress", "scheduled", "completed"];
+const STATUS_BADGE_COLORS = {
+	missed:      { background: "#f1f5f9", color: "#64748b", borderColor: "#cbd5e1" },
+	cancelled:   { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" },
+	in_progress: { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
+	scheduled:   { background: "#dbeafe", color: "#1e40af", borderColor: "#93c5fd" },
+	completed:   { background: "#d1fae5", color: "#065f46", borderColor: "#6ee7b7" },
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // makeColorAssigner(state)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -741,7 +751,7 @@ export default function SchedulingPage() {
 			</div>
 			<span className={styles.toolbarLabel}>{calendarToolbarLabel}</span>
 			<div className={styles.toolbarBtnGroup}>
-				{["month", "week", "day", "agenda"].map((v) => (
+				{["month", "agenda"].map((v) => (
 					<button
 						key={v}
 						type="button"
@@ -1058,9 +1068,11 @@ export default function SchedulingPage() {
 								<tbody>
 									{sortedCgIds.map((cgId, idx) => {
 										const color       = getCaregiverColor(cgId);
-										const totalShifts = Object.values(shiftMap[cgId] || {}).reduce(
-											(sum, arr) => sum + arr.length, 0
-										);
+										const allEntries  = Object.values(shiftMap[cgId] || {}).flat();
+										const totalShifts = allEntries.length;
+										const statusSet   = new Set(allEntries.map((e) => e.status));
+										const dominant    = STATUS_PRIORITY.find((s) => statusSet.has(s)) || "completed";
+										const badgeStyle  = STATUS_BADGE_COLORS[dominant];
 										return (
 											<tr
 												key={cgId}
@@ -1068,10 +1080,10 @@ export default function SchedulingPage() {
 											>
 												<td
 													className={styles.overviewNameCell}
-													style={{ borderLeft: `4px solid ${color.border}` }}
+													style={{ borderLeft: `4px solid ${badgeStyle.borderColor}` }}
 												>
 													<div className={styles.overviewNameInner}>
-														<User size={13} style={{ color: color.border, flexShrink: 0 }} />
+														<User size={13} style={{ color: badgeStyle.borderColor, flexShrink: 0 }} />
 														{cgNames[cgId]}
 													</div>
 												</td>
@@ -1104,7 +1116,7 @@ export default function SchedulingPage() {
 													{totalShifts > 0 && (
 														<span
 															className={styles.overviewTotalBadge}
-															style={{ background: color.bg, color: color.text, borderColor: color.border }}
+															style={badgeStyle}
 														>
 															{totalShifts}
 														</span>

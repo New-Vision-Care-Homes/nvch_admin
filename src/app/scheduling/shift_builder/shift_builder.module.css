@@ -134,10 +134,14 @@
 	flex-shrink: 0;
 	transition: all 0.14s ease;
 }
-.periodNavBtn:hover {
+.periodNavBtn:hover:not(:disabled) {
 	border-color: var(--color-primary, #1c4a6e);
 	color: var(--color-primary, #1c4a6e);
 	background: #f0f7ff;
+}
+.periodNavBtn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
 }
 
 .periodDisplay {
@@ -697,6 +701,15 @@
 .cellExisting {
 	opacity: 0.45;
 	filter: saturate(0.5);
+}
+
+/* Past date cells — non-interactive; cursor on the td so it shows despite pointer-events: none */
+.cellPast {
+	pointer-events: none;
+}
+
+.tdCellPast {
+	cursor: not-allowed;
 }
 
 /* ── Custom cell ── */

@@ -78,11 +78,17 @@
 	font-size: 0.82rem;
 	color: #6b7280;
 	margin-top: 2px;
+	flex-wrap: wrap;
 }
 
 .assignedBy strong {
 	color: #374151;
 	font-weight: 600;
+}
+
+.metaSep {
+	color: #d1d5db;
+	flex-shrink: 0;
 }
 
 /* ── Status badge ────────────────────────────────────────────────────────── */

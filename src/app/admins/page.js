@@ -226,8 +226,11 @@ export default function Admins() {
 										pageCount={Math.max(totalPages, 1)}
 										forcePage={currentPage - 1}
 										onPageChange={handlePageClick}
-										pageRangeDisplayed={Math.max(totalPages, 1)}
+										pageRangeDisplayed={3}
 										marginPagesDisplayed={1}
+										breakLabel="..."
+										breakClassName={styles.pageItem}
+										breakLinkClassName={styles.pageLink}
 										previousLabel={"Prev"}
 										nextLabel={"Next"}
 										containerClassName={styles.pagination}

@@ -40,7 +40,6 @@ import {
 	ChevronRight,
 	ChevronUp,
 	GripVertical,
-	Info,
 	Moon,
 	RotateCcw,
 	Sun,
@@ -66,6 +65,7 @@ import styles from "./shift_builder.module.css";
 const HALIFAX_TZ    = "America/Halifax";
 const PAYROLL_ANCHOR = new Date(2025, 11, 18); // Dec 18 2025 — PP1 starts here; PP13 = Jun 4–17 2026
 const PERIOD_DAYS   = 14;
+const PP_PER_YEAR   = 26; // pay periods per year; number wraps PP26 → PP1
 const MAX_DAYS      = 42; // safety cap to prevent runaway renders on bad date ranges
 
 // Every 30-minute slot from 00:00 → 23:30, used in Custom cell dropdowns and the
@@ -158,6 +158,7 @@ function buildAssignmentsFromShifts(shifts) {
 function ShiftCell({
 	assignment,
 	isExisting,
+	isPast,
 	dayStart,
 	dayEnd,
 	nightStart,
@@ -166,11 +167,13 @@ function ShiftCell({
 	onSetCustomTime,
 }) {
 	const type = assignment?.type;
-
 	const existingClass = isExisting ? ` ${styles.cellExisting}` : "";
+	const pastClass     = isPast     ? ` ${styles.cellPast}`     : "";
 
-	// Empty — invisible area; shows dashed hover outline
+	// Empty cell
 	if (!type) {
+		// Past dates: locked placeholder, no interaction
+		if (isPast) return <div className={`${styles.cellEmpty} ${styles.cellPast}`} />;
 		return (
 			<button
 				className={styles.cellEmpty}
@@ -184,9 +187,10 @@ function ShiftCell({
 	if (type === "day") {
 		return (
 			<button
-				className={`${styles.cellDay}${existingClass}`}
-				onClick={onCycle}
-				title={`${isExisting ? "Existing · " : ""}Day · ${dayStart}–${dayEnd}\nClick to change`}
+				className={`${styles.cellDay}${existingClass}${pastClass}`}
+				onClick={isPast ? undefined : onCycle}
+				disabled={isPast}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Day · ${dayStart}–${dayEnd}\nClick to change`}
 			>
 				<Sun size={11} className={styles.cellIcon} />
 				<span className={styles.cellLetter}>D</span>
@@ -199,9 +203,10 @@ function ShiftCell({
 	if (type === "night") {
 		return (
 			<button
-				className={`${styles.cellNight}${existingClass}`}
-				onClick={onCycle}
-				title={`${isExisting ? "Existing · " : ""}Night · ${nightStart}–${nightEnd}\nClick to change`}
+				className={`${styles.cellNight}${existingClass}${pastClass}`}
+				onClick={isPast ? undefined : onCycle}
+				disabled={isPast}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Night · ${nightStart}–${nightEnd}\nClick to change`}
 			>
 				<Moon size={11} className={styles.cellIcon} />
 				<span className={styles.cellLetter}>N</span>
@@ -210,43 +215,47 @@ function ShiftCell({
 		);
 	}
 
-	// Custom shift — shows a "C" badge + inline time dropdowns
+	// Custom shift
 	return (
-		<div className={`${styles.cellCustom}${existingClass}`}>
+		<div className={`${styles.cellCustom}${existingClass}${pastClass}`}>
 			<button
 				className={styles.cellCustomBadge}
-				onClick={onCycle}
-				title={`${isExisting ? "Existing · " : ""}Custom shift · click to remove`}
+				onClick={isPast ? undefined : onCycle}
+				disabled={isPast}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Custom shift · click to change`}
 			>
 				C
 			</button>
-
-			{/*
-			 * stopPropagation prevents clicks inside the selects from also
-			 * triggering onCycle (which would clear the assignment).
-			 */}
-			<div className={styles.cellCustomRange} onClick={(e) => e.stopPropagation()}>
-				<select
-					className={styles.cellTimeSelect}
-					value={assignment.customStart || ""}
-					onChange={(e) => { e.stopPropagation(); onSetCustomTime("customStart", e.target.value); }}
-					onClick={(e) => e.stopPropagation()}
-				>
-					<option value="">--</option>
-					{TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-				</select>
-
-				<span className={styles.cellRangeDash}>–</span>
-
-				<select
-					className={styles.cellTimeSelect}
-					value={assignment.customEnd || ""}
-					onChange={(e) => { e.stopPropagation(); onSetCustomTime("customEnd", e.target.value); }}
-					onClick={(e) => e.stopPropagation()}
-				>
-					<option value="">--</option>
-					{TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-				</select>
+			<div className={styles.cellCustomRange} onClick={isPast ? undefined : (e) => e.stopPropagation()}>
+				{isPast ? (
+					<>
+						<span className={styles.cellTimeSelect}>{assignment.customStart || "--"}</span>
+						<span className={styles.cellRangeDash}>–</span>
+						<span className={styles.cellTimeSelect}>{assignment.customEnd || "--"}</span>
+					</>
+				) : (
+					<>
+						<select
+							className={styles.cellTimeSelect}
+							value={assignment.customStart || ""}
+							onChange={(e) => { e.stopPropagation(); onSetCustomTime("customStart", e.target.value); }}
+							onClick={(e) => e.stopPropagation()}
+						>
+							<option value="">--</option>
+							{TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+						</select>
+						<span className={styles.cellRangeDash}>–</span>
+						<select
+							className={styles.cellTimeSelect}
+							value={assignment.customEnd || ""}
+							onChange={(e) => { e.stopPropagation(); onSetCustomTime("customEnd", e.target.value); }}
+							onClick={(e) => e.stopPropagation()}
+						>
+							<option value="">--</option>
+							{TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+						</select>
+					</>
+				)}
 			</div>
 		</div>
 	);
@@ -337,9 +346,11 @@ export default function ShiftBuilderPage() {
 		const today       = new Date(nowHfx.year, nowHfx.month - 1, nowHfx.day);
 		const diffMs      = Math.max(0, today.getTime() - PAYROLL_ANCHOR.getTime());
 		const currentIdx  = Math.floor(diffMs / msPerPeriod);
-		const start       = addDays(PAYROLL_ANCHOR, (currentIdx + periodOffset) * PERIOD_DAYS);
-		const end         = addDays(start, PERIOD_DAYS - 1);
-		const ppNumber    = currentIdx + 1 + periodOffset; // 1-based
+		const start          = addDays(PAYROLL_ANCHOR, (currentIdx + periodOffset) * PERIOD_DAYS);
+		const end            = addDays(start, PERIOD_DAYS - 1);
+		const totalOffset    = currentIdx + periodOffset;
+		// Wrap so the count cycles PP1–PP26 and then restarts from PP1
+		const ppNumber       = ((totalOffset % PP_PER_YEAR) + PP_PER_YEAR) % PP_PER_YEAR + 1;
 		return { start, end, ppNumber };
 	}, [periodOffset]);
 
@@ -573,8 +584,11 @@ export default function ShiftBuilderPage() {
 				caregiverMap[dateStr] = { type: "night", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
 			} else if (current.type === "night") {
 				caregiverMap[dateStr] = { type: "custom", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
+			} else if (shiftId) {
+				// Existing shift: custom → Day (DNC loop — no blank state for updates)
+				caregiverMap[dateStr] = { type: "day", customStart: "", customEnd: "", shiftId };
 			} else {
-				// custom → clear
+				// New shift: custom → clear
 				delete caregiverMap[dateStr];
 			}
 
@@ -629,16 +643,20 @@ export default function ShiftBuilderPage() {
 		setSubmitError(null);
 	}, []);
 
-	/** Moves to the adjacent pay period and clears any pending new assignments. */
+	/** Moves to the adjacent pay period and clears any pending new assignments.
+	 *  Navigation to past periods (offset < 0) is blocked — admins may only
+	 *  schedule the current or future pay periods. */
 	const changePeriod = useCallback((delta) => {
-		setPeriodOffset((prev) => prev + delta);
+		const next = periodOffset + delta;
+		if (next < 0) return; // block past-period navigation
+		setPeriodOffset(next);
 		// The existingShifts effect will repopulate once the query resolves.
 		// We clear immediately so the grid doesn't show stale data during the fetch.
 		baseAssignments.current = {};
 		setAssignments({});
 		setBulkResult(null);
 		setSubmitError(null);
-	}, []);
+	}, [periodOffset]);
 
 	// ── Drag-to-reorder handlers ──────────────────────────────────────────────
 
@@ -813,7 +831,8 @@ export default function ShiftBuilderPage() {
 								<button
 									className={styles.periodNavBtn}
 									onClick={() => changePeriod(-1)}
-									title="Previous pay period"
+									disabled={periodOffset === 0}
+									title={periodOffset === 0 ? "Cannot navigate to past periods" : "Previous pay period"}
 								>
 									<ChevronLeft size={15} />
 								</button>
@@ -869,15 +888,6 @@ export default function ShiftBuilderPage() {
 							})()}
 						</div>
 
-					</div>
-
-					{/* ── Info notice ────────────────────────────────────────── */}
-					<div className={styles.infoBanner}>
-						<Info size={14} className={styles.infoIcon} />
-						<span>
-							Clearing an existing shift cell here <strong>does not cancel the shift</strong>.
-							To cancel, open the shift detail page and submit a cancellation reason.
-						</span>
 					</div>
 
 					{/* ── Error banner ───────────────────────────────────────── */}
@@ -995,12 +1005,13 @@ export default function ShiftBuilderPage() {
 
 													{/* One shift cell per date */}
 													{dates.map((dateStr) => {
-														const asgn     = caregiverAssignments[dateStr];
-														const isToday  = dateStr === todayStr;
+														const asgn    = caregiverAssignments[dateStr];
+														const isToday = dateStr === todayStr;
+														const isPast  = dateStr < todayStr;
 														return (
 															<td
 																key={dateStr}
-																className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}`}
+																className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}${isPast ? ` ${styles.tdCellPast}` : ""}`}
 															>
 																<ShiftCell
 																	assignment={asgn}
@@ -1010,6 +1021,7 @@ export default function ShiftBuilderPage() {
 																		!(asgn?.type === "day" && dayTimesChanged) &&
 																		!(asgn?.type === "night" && nightTimesChanged)
 																	}
+																	isPast={isPast}
 																	dayStart={dayStart}
 																	dayEnd={dayEnd}
 																	nightStart={nightStart}
@@ -1077,7 +1089,7 @@ export default function ShiftBuilderPage() {
 							<span>Custom time</span>
 						</div>
 						<span className={styles.legendNote}>
-							Muted = existing &nbsp;·&nbsp; Bright = new &nbsp;·&nbsp; Click to cycle D → N → C → clear &nbsp;·&nbsp; Drag <GripVertical size={11} style={{ display: "inline", verticalAlign: "middle" }} /> to reorder
+							Muted = existing &nbsp;·&nbsp; Bright = new &nbsp;·&nbsp; New shifts: D → N → C → clear &nbsp;·&nbsp; Existing shifts: D → N → C → D &nbsp;·&nbsp; Drag <GripVertical size={11} style={{ display: "inline", verticalAlign: "middle" }} /> to reorder
 						</span>
 					</div>
 
