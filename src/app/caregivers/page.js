@@ -15,6 +15,7 @@ import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
+import { canManageTarget } from "@/utils/permissions";
 import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
@@ -25,7 +26,9 @@ export default function Caregivers() {
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_caregivers");
 	const canView = slugs.includes("view_all_caregivers") || slugs.includes("view_assigned_caregivers");
-	const canDelete = slugs.includes("delete_all_caregivers") || slugs.includes("delete_assigned_caregivers");
+	// delete_assigned_caregivers only counts for caregivers sharing a region
+	// with the requester (backend scoping), so the delete icon is decided per row.
+	const canDeleteCaregiver = (caregiver) => canManageTarget(profile, caregiver, "delete_all_caregivers", "delete_assigned_caregivers");
 
 	// --- State ---
 	const [search, setSearch] = useState("");
@@ -209,7 +212,7 @@ export default function Caregivers() {
 															<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 														</Link>
 													)}
-													{canDelete && (
+													{canDeleteCaregiver(caregiver) && (
 														<Trash2
 															color="#ef4444"
 															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}

@@ -8,14 +8,22 @@ import { caregiverService } from "@/services/api/services/caregiverService";
 export const useCaregivers = (options = {}) => {
 	const queryClient = useQueryClient();
 
-	// Support both old API (single caregiverId) and new API (options object)
-	const caregiverId = typeof options === 'string' || typeof options === 'number' ? options : options.caregiverId;
+	// Support both old API (single caregiverId) and new API (options object).
+	// String/number argument = detail mode: only the single-caregiver query may
+	// run. An empty-string id must NOT fall through to the list query — callers
+	// pass "" for "no caregiver selected" and don't expect a fetch of everyone.
+	const isDetailMode = typeof options === 'string' || typeof options === 'number';
+	const caregiverId = isDetailMode ? options : options.caregiverId;
+	const enabled = isDetailMode ? true : options.enabled !== false;
 	let params = {};
-	if (typeof options === 'object') {
+	if (!isDetailMode) {
 		if (options.params) {
 			params = options.params;
 		} else if (!options.caregiverId) {
-			params = options;
+			// `enabled` is hook config, not a backend filter — keep it out of the
+			// query params (and therefore out of the query key / URL).
+			const { enabled: _enabled, ...rest } = options;
+			params = rest;
 		}
 	}
 
@@ -40,7 +48,7 @@ export const useCaregivers = (options = {}) => {
 	const caregiversQuery = useQuery({
 		queryKey: ["caregivers", params],
 		queryFn: () => caregiverService.getAll(params),
-		enabled: !caregiverId,
+		enabled: enabled && !isDetailMode && !caregiverId,
 		placeholderData: keepPreviousData, // Keep showing old results while fetching new ones (prevents flash)
 	});
 
@@ -48,7 +56,7 @@ export const useCaregivers = (options = {}) => {
 	const caregiverDetailQuery = useQuery({
 		queryKey: ["caregiver", caregiverId],
 		queryFn: () => caregiverService.getCaregiver(caregiverId),
-		enabled: !!caregiverId,
+		enabled: enabled && !!caregiverId,
 	});
 
 	// 3. DELETE: Remove a caregiver

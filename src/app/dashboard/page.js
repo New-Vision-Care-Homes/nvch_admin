@@ -9,6 +9,7 @@ import {
 	Clock,
 	TriangleAlert,
 	UserPlus,
+	IdCardLanyard,
 	HousePlus,
 	CalendarPlus,
 	CircleCheckBig,
@@ -61,6 +62,15 @@ const quickActions = [
 		label: "Add New Client",
 		description: "Add a new client",
 		requiredSlug: "create_clients",
+	},
+	{
+		id: "add-new-caregiver",
+		href: "/caregivers/add_new_caregiver",
+		icon: IdCardLanyard,
+		iconColor: "#16a34a",
+		label: "Add New Caregiver",
+		description: "Add a new caregiver",
+		requiredSlug: "create_caregivers",
 	},
 	{
 		id: "add-new-home",

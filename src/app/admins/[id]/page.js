@@ -18,6 +18,7 @@ import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/valida
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
+import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
@@ -74,6 +75,18 @@ export default function Page() {
 	// --- Editing State & Form Setup ---
 	const [isEditing, setIsEditing] = useState(false);
 	const { permissionGroups } = usePermissionGroups();
+
+	const { profile } = useProfile();
+	// The backend rejects update/toggle/delete on a super admin unless the
+	// requester is a super admin, regardless of slugs (assertCanManageUser).
+	const canTouchTarget = profile?.adminLevel === "super" || user?.adminLevel !== "super";
+	const canEdit = canTouchTarget && profile?.permissionSlugs?.includes("update_admin");
+	// The activate/deactivate endpoint requires toggle_admin_status.
+	const canToggle = canTouchTarget && profile?.permissionSlugs?.includes("toggle_admin_status");
+	// Picture upload: always allowed on your own profile; for another admin it
+	// needs the same update rights as editing them.
+	const isSelf = profile?.id != null && String(profile.id) === String(id);
+	const canUploadPicture = isSelf || canEdit;
 
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
 
@@ -266,22 +279,26 @@ export default function Page() {
 						<div className={styles.headerActions}>
 							{!isEditing ? (
 								<>
-									<Button
-										variant="primary"
-										icon={<Edit size={16} />}
-										onClick={startEditing}
-										type="button"
-									>
-										Edit
-									</Button>
-									<Button
-										variant={activeStatus ? "dangerLight" : "successLight"}
-										icon={<Activity size={16} />}
-										onClick={handleActive}
-										type="button"
-									>
-										{activeStatus ? "Inactive" : "Active"}
-									</Button>
+									{canEdit && (
+										<Button
+											variant="primary"
+											icon={<Edit size={16} />}
+											onClick={startEditing}
+											type="button"
+										>
+											Edit
+										</Button>
+									)}
+									{canToggle && (
+										<Button
+											variant={activeStatus ? "dangerLight" : "successLight"}
+											icon={<Activity size={16} />}
+											onClick={handleActive}
+											type="button"
+										>
+											{activeStatus ? "Inactive" : "Active"}
+										</Button>
+									)}
 									<Link href="/admins">
 										<Button variant="secondary" icon={<Undo2 size={16} />} type="button">Back</Button>
 									</Link>
@@ -539,15 +556,17 @@ export default function Page() {
 											className={styles.image}
 											unoptimized
 										/>
-										<Button
-											variant="secondary"
-											size="sm"
-											icon={<Upload size={16} />}
-											onClick={() => setIsImageModalOpen(true)}
-											type="button"
-										>
-											Upload Picture
-										</Button>
+										{canUploadPicture && (
+											<Button
+												variant="secondary"
+												size="sm"
+												icon={<Upload size={16} />}
+												onClick={() => setIsImageModalOpen(true)}
+												type="button"
+											>
+												Upload Picture
+											</Button>
+										)}
 									</div>
 								</CardContent>
 							</Card>

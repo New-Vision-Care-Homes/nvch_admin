@@ -141,8 +141,8 @@ function makeColorAssigner(state) {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function SchedulingPage() {
 	const router = useRouter();
-	const { profile, isFetching: isProfileFetching } = useProfile();
-	const canCreateShift = !isProfileFetching && profile?.permissionSlugs?.includes("create_shifts");
+	const { profile, isLoading: isProfileLoading } = useProfile();
+	const canCreateShift = !isProfileLoading && profile?.permissionSlugs?.includes("create_shifts");
 
 	// ── Layout state ──────────────────────────────────────────────────────────
 	const [sidebarOpen, setSidebarOpen] = useState(false);

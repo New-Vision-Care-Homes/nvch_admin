@@ -21,6 +21,11 @@ import { fullName } from "@/utils/formatting";
 export default function Admins() {
 	const { profile } = useProfile();
 	const canCreate = profile?.permissionSlugs?.includes("create_admin");
+	// The backend rejects delete on a super admin unless the requester is a
+	// super admin (assertCanManageUser), so the icon is decided per row.
+	const canDeleteAdmin = (admin) =>
+		profile?.permissionSlugs?.includes("delete_admin") &&
+		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");
 
 	// --- State ---
 	const [search, setSearch] = useState("");
@@ -204,11 +209,13 @@ export default function Admins() {
 													<Link href={`/admins/${admin.id}`}>
 														<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
 													</Link>
-													<Trash2
-														color="#ef4444"
-														style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-														onClick={() => deleteHandler(admin.id)}
-													/>
+													{canDeleteAdmin(admin) && (
+														<Trash2
+															color="#ef4444"
+															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
+															onClick={() => deleteHandler(admin.id)}
+														/>
+													)}
 												</TableCell>
 											</TableContent>
 										))}

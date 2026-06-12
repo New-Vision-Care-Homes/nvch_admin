@@ -8,7 +8,8 @@ import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InputField, InfoField } from "@components/UI/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
-import { PERMISSION_SCHEMAS } from "@/utils/permissions";
+import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS } from "@/utils/permissions";
+import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@/components/UI/ErrorState";
 import ActionMessage from "@/components/UI/ActionMessage";
 
@@ -39,9 +40,17 @@ export default function PermissionGroupDetailPage() {
 		refetchDefinitions,
 	} = usePermissionDefinitions();
 
+	const { profile } = useProfile();
+	const canUpdate = profile?.permissionSlugs?.includes("update_permissions_groups");
+
 	const { register, handleSubmit, control, formState: { errors }, setError, reset } = useForm({
 		defaultValues: { name: "", description: "", permissions: [] }
 	});
+
+	// Implicit self slugs may linger in groups saved before they became
+	// non-grantable — hide them from the view-mode pills.
+	const visiblePermissions = (permissionGroupDetail?.permissions || [])
+		.filter(slug => !IMPLICIT_SELF_SLUGS.includes(slug));
 
 	// Pre-fill the form whenever the fetched group data arrives, or when
 	// the user cancels an edit (isEditing toggles back to false), to reset
@@ -51,7 +60,11 @@ export default function PermissionGroupDetailPage() {
 			reset({
 				name: permissionGroupDetail.name || "",
 				description: permissionGroupDetail.description || "",
-				permissions: permissionGroupDetail.permissions || []
+				// Strip implicit self slugs lingering from before they became
+				// non-grantable: no checkbox renders for them, so leaving them in
+				// would invisibly satisfy the "at least one permission" rule.
+				permissions: (permissionGroupDetail.permissions || [])
+					.filter(slug => !IMPLICIT_SELF_SLUGS.includes(slug))
 			});
 		}
 	}, [permissionGroupDetail, isEditing, reset]);
@@ -70,8 +83,10 @@ export default function PermissionGroupDetailPage() {
 			setError("description", { type: "manual", message: "Description is required." });
 			return;
 		}
-		// Prevent naming a group the same as a permission slug.
-		if (permissionSlugs.includes(data.name.trim())) {
+		// Prevent naming a group the same as a permission slug (the backend
+		// checks the full catalog, including the implicit self slugs that the
+		// definitions endpoint no longer returns).
+		if (permissionSlugs.includes(data.name.trim()) || IMPLICIT_SELF_SLUGS.includes(data.name.trim())) {
 			setError("name", {
 				type: "manual",
 				message: "Group name cannot be the same as an individual permission slug."
@@ -114,7 +129,9 @@ export default function PermissionGroupDetailPage() {
 							{!isEditing && (
 								<div style={{ display: 'flex', gap: '10px' }}>
 									<Button variant="secondary" onClick={() => router.back()}>Back</Button>
-									<Button variant="primary" onClick={() => { setIsEditing(true); setSuccessMessage(null); }}>Edit</Button>
+									{canUpdate && (
+										<Button variant="primary" onClick={() => { setIsEditing(true); setSuccessMessage(null); }}>Edit</Button>
+									)}
 								</div>
 							)}
 						</div>
@@ -245,7 +262,7 @@ export default function PermissionGroupDetailPage() {
 								) : (
 									/* View mode — show granted slugs as blue badge pills */
 									<div className={styles.slugGrid} style={{ gap: '10px' }}>
-										{(permissionGroupDetail.permissions || []).map(slug => (
+										{visiblePermissions.map(slug => (
 											<span key={slug} style={{
 												display: 'inline-block',
 												background: '#EFF6FF',
@@ -260,7 +277,7 @@ export default function PermissionGroupDetailPage() {
 												{slug}
 											</span>
 										))}
-										{(permissionGroupDetail.permissions || []).length === 0 && (
+										{visiblePermissions.length === 0 && (
 											<p style={{ color: '#6B7280', fontSize: '0.9rem' }}>No permissions assigned.</p>
 										)}
 									</div>

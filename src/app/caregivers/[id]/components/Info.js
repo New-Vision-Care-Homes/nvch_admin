@@ -15,7 +15,7 @@ import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
-import { useAdmins } from "@/hooks/useAdmins";
+import { canManageTarget } from "@/utils/permissions";
 import ErrorState from "@components/UI/ErrorState";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PersonSearchField from "@/components/UI/PersonSearchField";
@@ -89,7 +89,6 @@ const schema = yup.object({
 
 export default function Info() {
 	const { profile } = useProfile();
-	const canEdit = profile?.permissionSlugs?.includes("update_all_caregivers") || profile?.permissionSlugs?.includes("update_assigned_caregivers");
 
 	const [status, setStatus] = useState(null);
 	const [isEditing, setIsEditing] = useState(false);
@@ -98,6 +97,10 @@ export default function Info() {
 	const { id } = useParams();
 
 	const { caregiverDetail, updateCaregiver, isCaregiverLoading, isCaregiverActionPending, caregiverFetchError } = useCaregivers(id);
+
+	// update_assigned_caregivers only counts when the caregiver shares a region
+	// with the requester — same scoping the backend applies on save.
+	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
 
 	const { register, handleSubmit, control, setValue, formState: { errors, isDirty }, watch, reset } = useForm({
 		resolver: yupResolver(schema),
@@ -109,12 +112,7 @@ export default function Info() {
 	const watchState = watch("state");
 	const watchPincode = watch("pincode");
 	const watchCountry = watch("country");
-	const watchSupervisor = watch("supervisor");
-	const watchTeamLead = watch("teamLead");
 	const selectedRegions = watch("regions") || [];
-
-	const { adminDetail: supervisorDetail } = useAdmins(watchSupervisor || "");
-	const { adminDetail: teamLeadDetail } = useAdmins(watchTeamLead || "");
 
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
 		if (street) setValue("street", street, { shouldValidate: true });
@@ -231,14 +229,14 @@ export default function Info() {
 									</div>
 									<div className={styles.vfield}>
 										<div className={styles.vlabel}>Supervisor</div>
-										<div className={supervisorDetail ? styles.vvalue : styles.vvalue_empty}>
-											{supervisorDetail ? `${supervisorDetail.firstName} ${supervisorDetail.lastName}` : (watchSupervisor ? "Loading..." : "Not assigned")}
+										<div className={d.supervisorInfo ? styles.vvalue : styles.vvalue_empty}>
+											{d.supervisorInfo ? `${d.supervisorInfo.firstName} ${d.supervisorInfo.lastName}` : "Not assigned"}
 										</div>
 									</div>
 									<div className={styles.vfield}>
 										<div className={styles.vlabel}>Team Lead</div>
-										<div className={teamLeadDetail ? styles.vvalue : styles.vvalue_empty}>
-											{teamLeadDetail ? `${teamLeadDetail.firstName} ${teamLeadDetail.lastName}` : (watchTeamLead ? "Loading..." : "Not assigned")}
+										<div className={d.teamLeadInfo ? styles.vvalue : styles.vvalue_empty}>
+											{d.teamLeadInfo ? `${d.teamLeadInfo.firstName} ${d.teamLeadInfo.lastName}` : "Not assigned"}
 										</div>
 									</div>
 								</div>
@@ -285,8 +283,8 @@ export default function Info() {
 									<InputField label="Max Work Hours Biweekly" name="maxHours" type="number" register={register} error={errors.maxHours} placeholder="84 (Default)" />
 								</div>
 								<div className={styles.card_row_2}>
-									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" />
-									<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" />
+									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" fallbackDisplayName={d.supervisorInfo ? `${d.supervisorInfo.firstName} ${d.supervisorInfo.lastName}` : ""} />
+									<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" fallbackDisplayName={d.teamLeadInfo ? `${d.teamLeadInfo.firstName} ${d.teamLeadInfo.lastName}` : ""} />
 								</div>
 
 								<div className={styles.edit_divider}>

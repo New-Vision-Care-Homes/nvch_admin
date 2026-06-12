@@ -91,16 +91,42 @@ export const PERMISSION_SCHEMAS = [
 		slugs: [
 			"use_upload_urls"
 		]
-	},
-	{
-		module: "Profile (all users)",
-		slugs: [
-			"view_own_profile",
-			"update_own_profile",
-			"change_own_password"
-		]
 	}
+	// view_own_profile / update_own_profile / change_own_password are implicit
+	// for every authenticated user (backend IMPLICIT_SELF_SLUGS) — they are not
+	// grantable and the backend excludes them from /api/permissions/definitions.
 ];
+
+/** Implicit self-service slugs — held by every user, never shown as grantable. */
+export const IMPLICIT_SELF_SLUGS = [
+	"view_own_profile",
+	"update_own_profile",
+	"change_own_password"
+];
+
+// Mirrors the backend's toRegions (userAuthorization.ts): regions array with a
+// legacy fallback to the singular region field.
+const toRegions = (doc) => {
+	const regions = Array.isArray(doc?.regions) ? [...doc.regions] : [];
+	if (regions.length === 0 && doc?.region) regions.push(doc.region);
+	return regions;
+};
+
+/**
+ * Mirrors the backend's assertCanManageUser scoping (userAuthorization.ts):
+ * the "all" slug grants unconditionally; the "assigned" slug grants only when
+ * the target shares a region with the requester — fail-closed when either
+ * side has no regions on file. Use this instead of a bare `includes(slug)`
+ * check whenever an action accepts an assigned-scope slug, so the UI never
+ * shows a control the backend would reject for out-of-region targets.
+ */
+export const canManageTarget = (profile, target, allSlug, assignedSlug) => {
+	const slugs = profile?.permissionSlugs ?? [];
+	if (slugs.includes(allSlug)) return true;
+	if (!assignedSlug || !slugs.includes(assignedSlug)) return false;
+	const requesterRegions = toRegions(profile);
+	return toRegions(target).some(r => requesterRegions.includes(r));
+};
 
 export const ALL_PERMISSION_SLUGS = PERMISSION_SCHEMAS.reduce((acc, current) => {
 	return [...acc, ...current.slugs];
