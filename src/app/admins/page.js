@@ -12,40 +12,42 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
+import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, DEPARTMENT_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
 export default function Admins() {
 	const { profile } = useProfile();
 	const canCreate = profile?.permissionSlugs?.includes("create_admin");
-	// The backend rejects delete on a super admin unless the requester is a
-	// super admin (assertCanManageUser), so the icon is decided per row.
 	const canDeleteAdmin = (admin) =>
 		profile?.permissionSlugs?.includes("delete_admin") &&
 		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");
 
 	// --- State ---
-	const [search, setSearch] = useState("");
+	const [search, setSearch]               = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [showDropdown, setShowDropdown] = useState(false);
-	const [showModal, setShowModal] = useState(false);
+	const [statusFilter, setStatusFilter]   = useState("");
+	const [homeId, setHomeId]               = useState("");
+	const [showModal, setShowModal]         = useState(false);
 	const [deletedAdminId, setDeletedAdminId] = useState(null);
-	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 5;
+	const [currentPage, setCurrentPage]     = useState(1);
+	const itemsPerPage = 10;
 
-	// Debounce search — only fire API after user stops typing for 400ms
+	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
 		const timer = setTimeout(() => setDebouncedSearch(search), 400);
 		return () => clearTimeout(timer);
 	}, [search]);
 
 	let isActiveParam = "";
-	if (statusFilter === "Active") isActiveParam = true;
+	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
+
+	const { homes } = useHomes({ limit: 100 });
 
 	const {
 		admins,
@@ -58,30 +60,30 @@ export default function Admins() {
 		refetch,
 	} = useAdmins({
 		params: {
-			page: currentPage,
-			limit: itemsPerPage,
-			search: debouncedSearch,
+			page:     currentPage,
+			limit:    itemsPerPage,
+			search:   debouncedSearch,
 			isActive: isActiveParam,
-		}
+			homeId,
+		},
 	});
 
-	// Reset to page 1 when filters change
+	// Reset to page 1 when any filter changes
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter]);
+	}, [debouncedSearch, statusFilter, homeId]);
 
-	// --- Handle delete button click ---
+	// --- Handlers ---
 	const deleteHandler = (id) => {
 		setDeletedAdminId(id);
 		setShowModal(true);
 	};
 
 	const handleModalCancel = () => {
-		if (isActionPending) return; // don't dismiss mid-request
+		if (isActionPending) return;
 		setShowModal(false);
 	};
 
-	// --- Confirm delete ---
 	const confirmDelete = () => {
 		if (!deletedAdminId) return;
 		deleteAdmin(deletedAdminId, {
@@ -92,9 +94,7 @@ export default function Admins() {
 		});
 	};
 
-	const handlePageClick = (event) => {
-		setCurrentPage(event.selected + 1);
-	};
+	const handlePageClick = (event) => setCurrentPage(event.selected + 1);
 
 	return (
 		<>
@@ -110,12 +110,8 @@ export default function Admins() {
 						)}
 					</div>
 
-					{/* Action error — shown when delete/create/update fails */}
-					{actionError && (
-						<p className={styles.actionError}>{actionError}</p>
-					)}
+					{actionError && <p className={styles.actionError}>{actionError}</p>}
 
-					{/* Fetch error or loading state */}
 					<ErrorState
 						isLoading={isLoading}
 						errorMessage={fetchError}
@@ -123,43 +119,48 @@ export default function Admins() {
 					/>
 
 					{!fetchError && !isLoading && (
-
-						<>
-							{/* Filters */}
+						<div className={styles.tableCard}>
+							{/* Filter bar */}
 							<div className={styles.filter_row}>
-								{/* Search input */}
-								<input
-									type="text"
-									placeholder="Search admins..."
-									className={styles.search}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-
-								{/* Status filter dropdown */}
-								<div className={styles.filter}>
-									<div className={styles.dropdownContainer}>
-										<Button
-											variant="secondary"
-											icon={<ChevronDown />}
-											onClick={() => setShowDropdown(prev => !prev)}
-										>
-											{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
-										</Button>
-										{showDropdown && (
-											<div className={styles.dropdownMenu}>
-												<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
-												<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
-												<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
-											</div>
-										)}
-									</div>
+								<div className={styles.searchWrapper}>
+									<Search size={15} className={styles.searchIcon} />
+									<input
+										type="text"
+										placeholder="Search by name, email or ID…"
+										className={styles.search}
+										value={search}
+										onChange={(e) => setSearch(e.target.value)}
+									/>
 								</div>
+								<select
+									className={styles.filterSelect}
+									value={statusFilter}
+									onChange={(e) => setStatusFilter(e.target.value)}
+								>
+									<option value="">All Status</option>
+									<option value="Active">Active</option>
+									<option value="Inactive">Inactive</option>
+								</select>
+								<select
+									className={styles.filterSelect}
+									value={homeId}
+									onChange={(e) => setHomeId(e.target.value)}
+								>
+									<option value="">All Homes</option>
+									{homes?.map((h) => {
+										const id = h._id || h.id;
+										return (
+											<option key={id} value={id}>
+												{h.name || h.homeName || id}
+											</option>
+										);
+									})}
+								</select>
 							</div>
 
-							{/* Admins Table */}
+							{/* Table */}
 							{admins.length === 0 ? (
-								<div style={{ marginTop: "2rem" }}>
+								<div className={styles.emptyWrapper}>
 									<EmptyState
 										title="No admins found"
 										message="There are no administrators matching your criteria."
@@ -167,19 +168,18 @@ export default function Admins() {
 								</div>
 							) : (
 								<div className={styles.tableWrapper}>
-									<h2 style={{ marginBottom: "1.5rem" }}>All Admins</h2>
 									<Table>
 										<TableHeader>
-											<TableCell>Admin Name</TableCell>
+											<TableCell className={styles.firstCol}>Admin Name</TableCell>
 											<TableCell>Employee ID</TableCell>
-											<TableCell>Contact</TableCell>
+											<TableCell>Admin Level</TableCell>
+											<TableCell>Department</TableCell>
 											<TableCell>Status</TableCell>
 											<TableCell>Actions</TableCell>
 										</TableHeader>
-										{admins.map(admin => (
+										{admins.map((admin) => (
 											<TableContent key={admin.id}>
-												{/* Name & Avatar */}
-												<TableCell>
+												<TableCell className={styles.firstCol}>
 													<Image
 														src={admin.profilePictureUrl || defaultAvatar}
 														width={50}
@@ -190,46 +190,58 @@ export default function Admins() {
 													/>
 													<span>{fullName(admin)}</span>
 												</TableCell>
-
-												{/* Employee ID */}
 												<TableCell><span>{admin.employeeId}</span></TableCell>
-
-												{/* Contact */}
-												<TableCell><span>{admin.email || "-"}</span></TableCell>
-
-												{/* Status with pill */}
+												<TableCell>
+													{admin.adminLevel ? (() => {
+														const c = ADMIN_LEVEL_COLORS[admin.adminLevel] ?? COLOR_FALLBACK;
+														return (
+															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
+																{ADMIN_LEVEL_LABEL[admin.adminLevel] ?? admin.adminLevel}
+															</span>
+														);
+													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</TableCell>
+												<TableCell>
+													{admin.department ? (() => {
+														const c = DEPARTMENT_COLORS[admin.department] ?? COLOR_FALLBACK;
+														return (
+															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
+																{admin.department}
+															</span>
+														);
+													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
 														{admin.isActive ? "Active" : "Inactive"}
 													</span>
 												</TableCell>
-
-												{/* Actions */}
 												<TableCell>
-													<Link href={`/admins/${admin.id}`}>
-														<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-													</Link>
-													{canDeleteAdmin(admin) && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-															onClick={() => deleteHandler(admin.id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														<Link href={`/admins/${admin.id}`} className={styles.iconBtn}>
+															<Eye size={15} />
+														</Link>
+														{canDeleteAdmin(admin) && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(admin.id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
 									</Table>
-
-									{/* Pagination */}
 									<ReactPaginate
 										pageCount={Math.max(totalPages, 1)}
 										forcePage={currentPage - 1}
 										onPageChange={handlePageClick}
-										pageRangeDisplayed={Math.max(totalPages, 1)}
+										pageRangeDisplayed={3}
 										marginPagesDisplayed={1}
-										previousLabel={"Prev"}
-										nextLabel={"Next"}
+										breakLabel="..."
+										breakClassName={styles.pageItem}
+										breakLinkClassName={styles.pageLink}
+										previousLabel="Prev"
+										nextLabel="Next"
 										containerClassName={styles.pagination}
 										pageClassName={styles.pageItem}
 										pageLinkClassName={styles.pageLink}
@@ -241,12 +253,11 @@ export default function Admins() {
 									/>
 								</div>
 							)}
-						</>
+						</div>
 					)}
 				</div>
 			</PageLayout>
 
-			{/* Delete Confirmation Modal */}
 			<Modal isOpen={showModal} onClose={handleModalCancel}>
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this admin?</h2>

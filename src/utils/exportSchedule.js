@@ -7,15 +7,14 @@ const INCLUDED_STATUSES = new Set(["scheduled", "completed", "in_progress"]);
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C_NAVY        = "FF1C4A6E"; // deep navy — header, title, borders
-const C_BLUE_MED    = "FF2D7FC1"; // medium blue — subtitle, accents
 const C_WHITE       = "FFFFFFFF";
+const C_INFO_BG     = "FFEEF5FF"; // info card background
 const C_ROW_EVEN    = "FFFFFFFF"; // white rows
 const C_ROW_ALT     = "FFEDF5FF"; // very-light-blue alternating rows
 const C_NAME_COL    = "FFD5EAF7"; // name column tint
 const C_BORDER      = "FFD0DCE8"; // thin border color
 const C_OVERNIGHT   = "FFB8D8F8"; // light blue — overnight shift cells
 const C_DAY         = "FFFFD3A0"; // warm orange — day shift cells
-const C_INFO_BG     = "FFEEF5FF"; // info card background
 const C_FOOTER      = "FF8BA0B5"; // muted footer text
 
 // ─── Border helpers ────────────────────────────────────────────────────────────
@@ -107,103 +106,84 @@ export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, 
 	};
 
 	// ═══════════════════════════════════════════════════════════════════════════
-	// SECTION 1 — LOGO
+	// SECTION 1 — INFO CARD (light-blue, [logo | text] block centered)
 	// ═══════════════════════════════════════════════════════════════════════════
-	// Use a tl+br two-cell anchor spanning a fixed number of date columns.
-	// This avoids nativeColOff (sub-column pixel offsets are unreliable in ExcelJS)
-	// and lets Excel position the image exactly at integer column boundaries.
-	// Spanning 4 date columns (≈380 px) centers the logo within ~9 px of sheet center.
-	const LOGO_ROWS = 6;
-	const LOGO_SPAN = 4; // date columns the image spans
+	// Layout: padLeft cols | LOGO_COLS | TEXT_COLS | padRight cols
+	// LOGO_COLS=1 keeps the logo immediately beside the text (no dead-air gap).
+	// With totalCols=15: padLeft=3 → left ≈50u, right ≈52u (nearly symmetric).
+	const LOGO_COLS    = 1;
+	const TEXT_COLS    = 7;
+	const padLeft      = Math.max(1, Math.floor((totalCols - LOGO_COLS - TEXT_COLS) / 2));
+	const logoStart    = padLeft + 1;                          // 1-indexed
+	const textStart    = logoStart + LOGO_COLS;                // 1-indexed
+	const textEnd      = Math.min(textStart + TEXT_COLS - 1, totalCols); // 1-indexed
+	const INFO_ROW_H   = 24; // points per info row
 
-	for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([]).height = 22;
-
-	if (logoUrl) {
-		try {
-			const resp   = await fetch(logoUrl);
-			const buffer = await resp.arrayBuffer();
-			const imgId  = wb.addImage({ buffer, extension: "png" });
-
-			// Pixel widths: Truncate(((width*7+5)/7)*7) for Calibri 11pt
-			const nameColPx = 172; // col 0 (width=24)
-			const dateColPx = 95;  // cols 1–N (width=13)
-			const sheetPx   = nameColPx + dates.length * dateColPx;
-			const spanPx    = LOGO_SPAN * dateColPx;
-
-			// Find the column whose left edge is closest to the ideal center-left of the logo
-			const idealLeft = (sheetPx - spanPx) / 2;
-			let tlCol = 0;
-			if (idealLeft >= nameColPx) {
-				tlCol = 1 + Math.round((idealLeft - nameColPx) / dateColPx);
-			}
-			tlCol = Math.max(0, Math.min(tlCol, totalCols - LOGO_SPAN));
-
-			ws.addImage(imgId, {
-				tl: { col: tlCol,             row: 0          },
-				br: { col: tlCol + LOGO_SPAN, row: LOGO_ROWS  },
-			});
-		} catch { /* logo fetch failed — blank rows still reserve the space */ }
-	}
-
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SECTION 2 — TITLE & SUBTITLE
-	// ═══════════════════════════════════════════════════════════════════════════
-	addMergedRow("NEW VISION CARE HOMES", 28, (cell) => {
-		cell.font      = { bold: true, size: 16, color: { argb: C_NAVY }, name: "Calibri" };
-		cell.alignment = { horizontal: "center", vertical: "middle" };
-	});
-
-	addMergedRow("Staff Schedule", 18, (cell) => {
-		cell.font      = { size: 11, color: { argb: C_BLUE_MED }, italic: true, name: "Calibri" };
-		cell.alignment = { horizontal: "center", vertical: "middle" };
-	});
-
-	// ── Spacer ────────────────────────────────────────────────────────────────
-	ws.addRow([]).height = 8;
-
-	// ═══════════════════════════════════════════════════════════════════════════
-	// SECTION 3 — INFO CARD
-	// ═══════════════════════════════════════════════════════════════════════════
 	const payPeriodLabel = formatPayPeriodLabel({ payYear, periodNumber });
-	const infoLines  = [
+
+	const infoRowData = [
 		[
-			{ label: "House", value: homeName || "All Homes" },
-			{ label: "Pay Period", value: payPeriodLabel },
+			{ label: "House",        value: homeName || "All Homes" },
+			{ label: "Pay Period",   value: payPeriodLabel           },
 		],
 		[
 			{ label: "Period Dates", value: `${format(payPeriodStart, "MMM d, yyyy")}  –  ${format(payPeriodEnd, "MMM d, yyyy")}` },
 		],
 	];
 
-	infoLines.forEach((pairs, rowIdx) => {
+	const infoStartRow = ws.rowCount + 1; // 1-indexed, for image anchor
+
+	infoRowData.forEach((pairs, rowIdx) => {
 		const isFirst = rowIdx === 0;
-		const isLast  = rowIdx === infoLines.length - 1;
+		const isLast  = rowIdx === infoRowData.length - 1;
+		const row     = ws.addRow([]);
+		row.height    = INFO_ROW_H;
 
-		// Build cell text: "Label:  Value    Label:  Value"
-		const text = pairs.map((p) => `${p.label}:   ${p.value}`).join("        ");
-		const row  = ws.addRow([text]);
-		row.height = 20;
-		ws.mergeCells(row.number, 1, row.number, totalCols);
+		// All cells: light-blue bg + outer border only
+		for (let c = 1; c <= totalCols; c++) {
+			const cell  = row.getCell(c);
+			cell.fill   = solidFill(C_INFO_BG);
+			cell.border = {
+				left:   c === 1         ? thinSide() : undefined,
+				right:  c === totalCols ? thinSide() : undefined,
+				top:    isFirst         ? thinSide() : undefined,
+				bottom: isLast          ? thinSide() : undefined,
+			};
+		}
 
-		const cell = row.getCell(1);
-		cell.fill      = solidFill(C_INFO_BG);
-		cell.font      = { size: 10, color: { argb: C_NAVY }, name: "Calibri" };
-		cell.alignment = { horizontal: "left", vertical: "middle", indent: 2 };
-		cell.border    = {
-			left:   medSide(),
-			right:  thinSide(),
-			top:    isFirst ? thinSide() : { style: "hair", color: { argb: C_BORDER } },
+		// Merge text columns and center the rich-text content
+		ws.mergeCells(row.number, textStart, row.number, textEnd);
+		const textCell     = row.getCell(textStart);
+		textCell.fill      = solidFill(C_INFO_BG);
+		textCell.alignment = { horizontal: "center", vertical: "middle" };
+		textCell.border    = {
+			top:    isFirst ? thinSide() : undefined,
 			bottom: isLast  ? thinSide() : undefined,
 		};
-
-		// Bold the label portions — ExcelJS rich text
-		const richText = pairs.flatMap((p, i) => [
-			...(i > 0 ? [{ text: "        " }] : []),
-			{ text: `${p.label}:  `, font: { bold: true, size: 10, color: { argb: C_NAVY } } },
-			{ text: p.value,          font: { size: 10,  color: { argb: C_NAVY } } },
-		]);
-		cell.value = { richText };
+		textCell.value = {
+			richText: pairs.flatMap((p, i) => [
+				...(i > 0 ? [{ text: "     " }] : []),
+				{ text: `${p.label}:  `, font: { bold: true, size: 10, color: { argb: C_NAVY } } },
+				{ text: p.value,         font: { size: 10,              color: { argb: C_NAVY } } },
+			]),
+		};
 	});
+
+	// Logo: fixed pixel size so it stays proportional regardless of column widths.
+	// Height fills both info rows with a small margin; width is slightly wider than tall.
+	if (logoUrl) {
+		try {
+			const resp      = await fetch(logoUrl);
+			const buffer    = await resp.arrayBuffer();
+			const imgId     = wb.addImage({ buffer, extension: "png" });
+			const logoH_px  = Math.round(INFO_ROW_H * infoRowData.length * 96 / 72) - 12; // px, ≈52px — 6px top+bottom margin
+			const logoW_px  = Math.round(logoH_px * 1.7); // ≈88px landscape, fits within one 13-unit date column (~97px)
+			ws.addImage(imgId, {
+				tl:  { col: logoStart - 1, row: infoStartRow - 1 + 0.15 }, // 0-indexed; 0.15 row ≈ 4px top margin
+				ext: { width: logoW_px, height: logoH_px },
+			});
+		} catch { /* logo fetch failed — info card still visible */ }
+	}
 
 	// ── Spacer ────────────────────────────────────────────────────────────────
 	ws.addRow([]).height = 10;

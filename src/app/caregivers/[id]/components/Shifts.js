@@ -297,6 +297,9 @@ export default function Shifts() {
 					onPageChange={(e) => setCurrentPage(e.selected + 1)}
 					pageRangeDisplayed={3}
 					marginPagesDisplayed={1}
+					breakLabel="..."
+					breakClassName={styles.pageItem}
+					breakLinkClassName={styles.pageLink}
 					previousLabel="Prev"
 					nextLabel="Next"
 					containerClassName={styles.pagination}

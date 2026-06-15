@@ -19,6 +19,7 @@ export const clientService = {
 		if (params.isActive !== undefined && params.isActive !== "") {
 			queryParams.append('isActive', params.isActive);
 		}
+		if (params.homeId) queryParams.append('homeId', params.homeId);
 
 		const queryString = queryParams.toString();
 		const url = queryString ? `${API_ENDPOINTS.CLIENTS.BASE}?${queryString}` : API_ENDPOINTS.CLIENTS.BASE;

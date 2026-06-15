@@ -13,16 +13,8 @@ import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
-import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS, DEPARTMENT_OPTIONS } from "@/utils/dropdown_list";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
-
-const DEPARTMENT_OPTIONS = [
-	{ label: "Operations", value: "Operations" },
-	{ label: "Human Resources", value: "Human Resources" },
-	{ label: "Finance", value: "Finance" },
-	{ label: "IT", value: "IT" },
-	{ label: "Administration", value: "Administration" },
-];
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },

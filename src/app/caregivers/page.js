@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
-import styles from "./caregivers.module.css"; // Use client CSS for consistency
+import styles from "./caregivers.module.css";
 import Button from "@components/UI/Button";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
@@ -11,9 +11,10 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import ReactPaginate from "react-paginate";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Eye, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, Eye, Search, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
 import { fullName } from "@/utils/formatting";
@@ -26,29 +27,30 @@ export default function Caregivers() {
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_caregivers");
 	const canView = slugs.includes("view_all_caregivers") || slugs.includes("view_assigned_caregivers");
-	// delete_assigned_caregivers only counts for caregivers sharing a region
-	// with the requester (backend scoping), so the delete icon is decided per row.
-	const canDeleteCaregiver = (caregiver) => canManageTarget(profile, caregiver, "delete_all_caregivers", "delete_assigned_caregivers");
+	const canDeleteCaregiver = (caregiver) =>
+		canManageTarget(profile, caregiver, "delete_all_caregivers", "delete_assigned_caregivers");
 
 	// --- State ---
-	const [search, setSearch] = useState("");
+	const [search, setSearch]               = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
-	const [showDropdown, setShowDropdown] = useState(false);
-	const [showModal, setShowModal] = useState(false);
+	const [statusFilter, setStatusFilter]   = useState("");
+	const [homeId, setHomeId]               = useState("");
+	const [showModal, setShowModal]         = useState(false);
 	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null);
-	const [currentPage, setCurrentPage] = useState(1);
-	const itemsPerPage = 5;
+	const [currentPage, setCurrentPage]     = useState(1);
+	const itemsPerPage = 10;
 
-	// Debounce search — only fire API after user stops typing for 400ms
+	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
 		const timer = setTimeout(() => setDebouncedSearch(search), 400);
 		return () => clearTimeout(timer);
 	}, [search]);
 
 	let isActiveParam = "";
-	if (statusFilter === "Active") isActiveParam = true;
+	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
+
+	const { homes } = useHomes({ limit: 100 });
 
 	const {
 		caregivers,
@@ -61,31 +63,30 @@ export default function Caregivers() {
 		refetch,
 	} = useCaregivers({
 		params: {
-			page: currentPage,
-			limit: itemsPerPage,
-			search: debouncedSearch,
+			page:     currentPage,
+			limit:    itemsPerPage,
+			search:   debouncedSearch,
 			isActive: isActiveParam,
-		}
+			homeId,
+		},
 	});
 
-
-	// Reset to page 1 when filters change
+	// Reset to page 1 when any filter changes
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter]);
+	}, [debouncedSearch, statusFilter, homeId]);
 
-	// --- Handle delete button click ---
+	// --- Handlers ---
 	const deleteHandler = (id) => {
 		setDeletedCaregiverId(id);
 		setShowModal(true);
 	};
 
 	const handleModalCancel = () => {
-		if (isCaregiverActionPending) return; // don't dismiss mid-request
+		if (isCaregiverActionPending) return;
 		setShowModal(false);
 	};
 
-	// --- Confirm delete ---
 	const confirmDelete = () => {
 		if (!deletedCaregiverId) return;
 		deleteCaregiver(deletedCaregiverId, {
@@ -96,9 +97,7 @@ export default function Caregivers() {
 		});
 	};
 
-	const handlePageClick = (event) => {
-		setCurrentPage(event.selected + 1);
-	};
+	const handlePageClick = (event) => setCurrentPage(event.selected + 1);
 
 	return (
 		<>
@@ -114,7 +113,6 @@ export default function Caregivers() {
 						)}
 					</div>
 
-					{/* Action error — shown when delete/create/update fails */}
 					<ActionMessage variant="error" message={caregiverActionError} />
 
 					<ErrorState
@@ -123,44 +121,49 @@ export default function Caregivers() {
 						onRetry={refetch}
 					/>
 
-					{/* Only show filters and table when there is no fetch error and not loading */}
 					{!caregiverFetchError && !isCaregiverLoading && (
-						<>
-							{/* Filters */}
+						<div className={styles.tableCard}>
+							{/* Filter bar */}
 							<div className={styles.filter_row}>
-								{/* Search input */}
-								<input
-									type="text"
-									placeholder="Search caregivers..."
-									className={styles.search}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-
-								{/* Status filter dropdown */}
-								<div className={styles.filter}>
-									<div className={styles.dropdownContainer}>
-										<Button
-											variant="secondary"
-											icon={<ChevronDown />}
-											onClick={() => setShowDropdown(prev => !prev)}
-										>
-											{statusFilter ? `Status: ${statusFilter}` : "Filter by Status"}
-										</Button>
-										{showDropdown && (
-											<div className={styles.dropdownMenu}>
-												<div onClick={() => { setStatusFilter(""); setShowDropdown(false); }}>All</div>
-												<div onClick={() => { setStatusFilter("Active"); setShowDropdown(false); }}>Active</div>
-												<div onClick={() => { setStatusFilter("Inactive"); setShowDropdown(false); }}>Inactive</div>
-											</div>
-										)}
-									</div>
+								<div className={styles.searchWrapper}>
+									<Search size={15} className={styles.searchIcon} />
+									<input
+										type="text"
+										placeholder="Search by name, email or ID…"
+										className={styles.search}
+										value={search}
+										onChange={(e) => setSearch(e.target.value)}
+									/>
 								</div>
+								<select
+									className={styles.filterSelect}
+									value={statusFilter}
+									onChange={(e) => setStatusFilter(e.target.value)}
+								>
+									<option value="">All Status</option>
+									<option value="Active">Active</option>
+									<option value="Inactive">Inactive</option>
+								</select>
+								<select
+									className={styles.filterSelect}
+									value={homeId}
+									onChange={(e) => setHomeId(e.target.value)}
+								>
+									<option value="">All Homes</option>
+									{homes?.map((h) => {
+										const id = h._id || h.id;
+										return (
+											<option key={id} value={id}>
+												{h.name || h.homeName || id}
+											</option>
+										);
+									})}
+								</select>
 							</div>
 
-							{/* Caregivers Table */}
+							{/* Table */}
 							{caregivers.length === 0 ? (
-								<div style={{ marginTop: "2rem" }}>
+								<div className={styles.emptyWrapper}>
 									<EmptyState
 										title="No caregivers found"
 										message="There are no caregivers matching your criteria."
@@ -168,19 +171,17 @@ export default function Caregivers() {
 								</div>
 							) : (
 								<div className={styles.tableWrapper}>
-									<h2 style={{ marginBottom: "1.5rem" }}>All Caregivers</h2>
 									<Table>
 										<TableHeader>
-											<TableCell>Caregiver Name</TableCell>
+											<TableCell className={styles.firstCol}>Caregiver Name</TableCell>
 											<TableCell>Employee ID</TableCell>
 											<TableCell>Contact</TableCell>
 											<TableCell>Status</TableCell>
 											<TableCell>Actions</TableCell>
 										</TableHeader>
-										{caregivers.map(caregiver => (
+										{caregivers.map((caregiver) => (
 											<TableContent key={caregiver.id}>
-												{/* Name & Avatar */}
-												<TableCell>
+												<TableCell className={styles.firstCol}>
 													<Image
 														src={caregiver.profilePictureUrl || defaultAvatar}
 														width={50}
@@ -191,48 +192,41 @@ export default function Caregivers() {
 													/>
 													<span>{fullName(caregiver)}</span>
 												</TableCell>
-
-												{/* Employee ID */}
 												<TableCell><span>{caregiver.employeeId}</span></TableCell>
-
-												{/* Contact */}
 												<TableCell><span>{caregiver.email || "-"}</span></TableCell>
-
-												{/* Status with pill */}
 												<TableCell>
 													<span className={`${styles.statusPill} ${caregiver.isActive ? styles.statusActive : styles.statusInactive}`}>
 														{caregiver.isActive ? "Active" : "Inactive"}
 													</span>
 												</TableCell>
-
-												{/* Actions */}
 												<TableCell>
-													{canView && (
-														<Link href={`/caregivers/${caregiver.id}`}>
-															<Eye color="#1C4A6EFF" style={{ width: '1.5rem', height: '1.5rem' }} />
-														</Link>
-													)}
-													{canDeleteCaregiver(caregiver) && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-															onClick={() => deleteHandler(caregiver.id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														{canView && (
+															<Link href={`/caregivers/${caregiver.id}`} className={styles.iconBtn}>
+																<Eye size={15} />
+															</Link>
+														)}
+														{canDeleteCaregiver(caregiver) && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(caregiver.id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
 									</Table>
-
-									{/* Pagination */}
 									<ReactPaginate
 										pageCount={Math.max(totalPages, 1)}
 										forcePage={currentPage - 1}
 										onPageChange={handlePageClick}
-										pageRangeDisplayed={Math.max(totalPages, 1)}
+										pageRangeDisplayed={3}
 										marginPagesDisplayed={1}
-										previousLabel={"Prev"}
-										nextLabel={"Next"}
+										breakLabel="..."
+										breakClassName={styles.pageItem}
+										breakLinkClassName={styles.pageLink}
+										previousLabel="Prev"
+										nextLabel="Next"
 										containerClassName={styles.pagination}
 										pageClassName={styles.pageItem}
 										pageLinkClassName={styles.pageLink}
@@ -244,12 +238,11 @@ export default function Caregivers() {
 									/>
 								</div>
 							)}
-						</>
+						</div>
 					)}
 				</div>
 			</PageLayout>
 
-			{/* Delete Confirmation Modal */}
 			<Modal isOpen={showModal} onClose={handleModalCancel}>
 				<div className={styles.modal_content}>
 					<h2>Are you sure you want to delete this caregiver?</h2>
@@ -264,4 +257,3 @@ export default function Caregivers() {
 		</>
 	);
 }
-

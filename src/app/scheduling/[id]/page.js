@@ -87,6 +87,20 @@ export default function ShiftDetailPage() {
 					<div className={styles.assignedBy}>
 						<UserCheck size={13} />
 						<span>Assigned by <strong>{personName(shift.assignedBy)}</strong></span>
+						{shift.createdAt && (
+							<>
+								<span className={styles.metaSep}>·</span>
+								<CalendarDays size={13} />
+								<span>Created <strong>{utcToFullDisplay(shift.createdAt, "America/Halifax")}</strong></span>
+							</>
+						)}
+						{shift.updatedAt && (
+							<>
+								<span className={styles.metaSep}>·</span>
+								<Clock size={13} />
+								<span>Updated <strong>{utcToFullDisplay(shift.updatedAt, "America/Halifax")}</strong></span>
+							</>
+						)}
 					</div>
 				</div>
 				<div className={styles.headerActions}>

@@ -59,7 +59,7 @@ import {
 import enCA from "date-fns/locale/en-CA"; // weeks start on Sunday in Canada
 import { DateTime } from "luxon";
 
-import { Building2, CalendarPlus, Clock, Download, MapPin, Moon, Search, Sun, User, Users } from "lucide-react";
+import { CalendarPlus, Clock, Download, MapPin, Moon, Search, Sun, User, Users } from "lucide-react";
 import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
@@ -116,6 +116,16 @@ const PALETTE = [
 	{ bg: "#ffedd5", border: "#ea580c", text: "#7c2d12" }, // orange
 ];
 
+// Rank order for the # badge: first match wins (missed is worst, completed is best)
+const STATUS_PRIORITY = ["missed", "cancelled", "in_progress", "scheduled", "completed"];
+const STATUS_BADGE_COLORS = {
+	missed:      { background: "#f1f5f9", color: "#64748b", borderColor: "#cbd5e1" },
+	cancelled:   { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" },
+	in_progress: { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
+	scheduled:   { background: "#dbeafe", color: "#1e40af", borderColor: "#93c5fd" },
+	completed:   { background: "#d1fae5", color: "#065f46", borderColor: "#6ee7b7" },
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // makeColorAssigner(state)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,9 +166,7 @@ export default function SchedulingPage() {
 	// Stored in refs (not state/module scope) so the color map resets each time
 	// the page mounts — prevents colors from "drifting" across navigation events.
 	const caregiverColorState = useRef({ map: {}, idx: 0 });
-	const dayColorState       = useRef({ map: {}, idx: 0 });
 	const getCaregiverColor = useMemo(() => makeColorAssigner(caregiverColorState.current), []);
-	const getDayColor       = useMemo(() => makeColorAssigner(dayColorState.current), []);
 
 	// ── Home filter ───────────────────────────────────────────────────────────
 	// When a home is selected, both the calendar and payroll views send homeId
@@ -480,17 +488,28 @@ export default function SchedulingPage() {
 	const agendaEvents = useMemo(() => {
 		if (!shifts?.length) return [];
 
+		// Sort unique date strings so palette colors follow calendar order,
+		// not API response order (which was causing the colour mix-up).
+		const uniqueDates = [...new Set(shifts.map((s) => {
+			const start = utcToZonedDateObject(s.startTime, HALIFAX_TZ);
+			return format(start, "yyyy-MM-dd");
+		}))].sort();
+		const dateColorMap = Object.fromEntries(
+			uniqueDates.map((d, i) => [d, PALETTE[i % PALETTE.length]])
+		);
+
 		return shifts.map((shift) => {
 			const start   = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-			const dateStr = format(start, "yyyy-MM-dd"); // used to assign a per-day color
+			const dateStr = format(start, "yyyy-MM-dd");
 			return {
-				id:       shift.id || shift._id,
-				title:    `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
+				id:        shift.id || shift._id,
+				title:     `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end:      utcToZonedDateObject(shift.endTime, HALIFAX_TZ),
-				_shift:   shift,    // full shift object — used to show the address in the row
-				_dateStr: dateStr,  // all shifts on the same day share the same color
-				_isAgenda: true,    // tells CustomEvent to render the Agenda sub-component
+				end:       utcToZonedDateObject(shift.endTime, HALIFAX_TZ),
+				_shift:    shift,
+				_dateStr:  dateStr,
+				_color:    dateColorMap[dateStr], // deterministic: earliest date = PALETTE[0]
+				_isAgenda: true,
 			};
 		});
 	}, [shifts]);
@@ -611,7 +630,7 @@ export default function SchedulingPage() {
 
 	// Agenda row — caregiver name + address, colored per calendar day.
 	const AgendaEventComponent = ({ event }) => {
-		const color = getDayColor(event._dateStr);
+		const color = event._color ?? PALETTE[0];
 		return (
 			<span className={styles.agendaTitle} style={{ color: color.text }}>
 				{event.title}
@@ -645,12 +664,12 @@ export default function SchedulingPage() {
 
 		// Agenda: pastel card tinted by calendar day.
 		if (event._isAgenda) {
-			const color = getDayColor(event._dateStr);
+			const color = event._color ?? PALETTE[0];
 			return {
 				style: {
 					backgroundColor: color.bg,
 					border:          `1.5px solid ${color.border}`,
-					borderLeft:      `4px solid ${color.border}`, // thick left accent stripe
+					borderLeft:      `4px solid ${color.border}`,
 					borderRadius:    "8px",
 					color:           color.text,
 					padding:         "6px 12px",
@@ -741,7 +760,7 @@ export default function SchedulingPage() {
 			</div>
 			<span className={styles.toolbarLabel}>{calendarToolbarLabel}</span>
 			<div className={styles.toolbarBtnGroup}>
-				{["month", "week", "day", "agenda"].map((v) => (
+				{["month", "agenda"].map((v) => (
 					<button
 						key={v}
 						type="button"
@@ -1012,7 +1031,7 @@ export default function SchedulingPage() {
 					<div className={styles.overviewEmpty}>No shifts scheduled for this pay period.</div>
 				) : (
 					<>
-						{/* Status legend */}
+						{/* Status legend + export */}
 						<div className={styles.overviewLegend}>
 							<span className={styles.overviewLegendLabel}>Status:</span>
 							{[
@@ -1029,6 +1048,32 @@ export default function SchedulingPage() {
 									{label}
 								</span>
 							))}
+							<button
+								type="button"
+								className={styles.exportBtn}
+								style={{ marginLeft: "auto" }}
+								disabled={!payrollPeriod}
+								onClick={async () => {
+									if (!payrollPeriod) return;
+									const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
+									const homeName = selectedHome
+										? (selectedHome.name || selectedHome.homeName)
+										: "All Homes";
+									await exportScheduleToExcel({
+										homeName,
+										homeId:         selectedHomeId || null,
+										payPeriodStart: payrollPeriod.start,
+										payPeriodEnd:   payrollPeriod.end,
+										payYear:        payrollPeriod.payYear,
+										periodNumber:   payrollPeriod.periodNumber,
+										shifts:         payrollShifts,
+										logoUrl:        logoImg.src,
+									});
+								}}
+							>
+								<Download size={14} />
+								Export Schedule
+							</button>
 						</div>
 
 						{/* Roster grid */}
@@ -1058,9 +1103,11 @@ export default function SchedulingPage() {
 								<tbody>
 									{sortedCgIds.map((cgId, idx) => {
 										const color       = getCaregiverColor(cgId);
-										const totalShifts = Object.values(shiftMap[cgId] || {}).reduce(
-											(sum, arr) => sum + arr.length, 0
-										);
+										const allEntries  = Object.values(shiftMap[cgId] || {}).flat();
+										const totalShifts = allEntries.length;
+										const statusSet   = new Set(allEntries.map((e) => e.status));
+										const dominant    = STATUS_PRIORITY.find((s) => statusSet.has(s)) || "completed";
+										const badgeStyle  = STATUS_BADGE_COLORS[dominant];
 										return (
 											<tr
 												key={cgId}
@@ -1068,10 +1115,10 @@ export default function SchedulingPage() {
 											>
 												<td
 													className={styles.overviewNameCell}
-													style={{ borderLeft: `4px solid ${color.border}` }}
+													style={{ borderLeft: `4px solid ${badgeStyle.borderColor}` }}
 												>
 													<div className={styles.overviewNameInner}>
-														<User size={13} style={{ color: color.border, flexShrink: 0 }} />
+														<User size={13} style={{ color: badgeStyle.borderColor, flexShrink: 0 }} />
 														{cgNames[cgId]}
 													</div>
 												</td>
@@ -1104,7 +1151,7 @@ export default function SchedulingPage() {
 													{totalShifts > 0 && (
 														<span
 															className={styles.overviewTotalBadge}
-															style={{ background: color.bg, color: color.text, borderColor: color.border }}
+															style={badgeStyle}
 														>
 															{totalShifts}
 														</span>
@@ -1153,66 +1200,64 @@ export default function SchedulingPage() {
 						)}
 					</div>
 
-					{/* Shift ID search — type a shift ID to jump directly to its detail page */}
-					<div className={styles.searchWrapper} ref={searchRef}>
-						<div className={styles.searchInputRow}>
-							<Search size={15} className={styles.searchIcon} />
-							<input
-								className={styles.searchInput}
-								type="text"
-								placeholder="Search shifts by ID…"
-								value={shiftInput}
-								onChange={(e) => { setShiftInput(e.target.value); setShowShiftDropdown(true); }}
-								onFocus={() => setShowShiftDropdown(true)}
-							/>
-							{shiftInput && (
-								<button
-									className={styles.searchClear}
-									onClick={() => { setShiftInput(""); setShiftSearch(""); setShowShiftDropdown(false); }}
-									aria-label="Clear search"
-								>
-									×
-								</button>
+					{/* Search + home filter + export — single toolbar row */}
+					<div className={styles.filterRow}>
+						{/* Shift ID search */}
+						<div className={styles.searchWrapper} ref={searchRef}>
+							<div className={styles.searchInputRow}>
+								<Search size={15} className={styles.searchIcon} />
+								<input
+									className={styles.searchInput}
+									type="text"
+									placeholder="Search shifts by ID…"
+									value={shiftInput}
+									onChange={(e) => { setShiftInput(e.target.value); setShowShiftDropdown(true); }}
+									onFocus={() => setShowShiftDropdown(true)}
+								/>
+								{shiftInput && (
+									<button
+										className={styles.searchClear}
+										onClick={() => { setShiftInput(""); setShiftSearch(""); setShowShiftDropdown(false); }}
+										aria-label="Clear search"
+									>
+										×
+									</button>
+								)}
+							</div>
+
+							{showShiftDropdown && shiftInput.trim().length > 0 && (
+								<div className={styles.searchDropdown}>
+									{isSearchLoading ? (
+										<div className={styles.searchMeta}>Searching…</div>
+									) : searchError ? (
+										<div className={styles.searchMeta}>Invalid shift ID</div>
+									) : searchResults.length === 0 ? (
+										<div className={styles.searchMeta}>No shifts found</div>
+									) : (
+										searchResults.map((shift) => {
+											const id = shift._id || shift.id;
+											const caregiverName = [shift.caregiver?.firstName, shift.caregiver?.lastName]
+												.filter(Boolean).join(" ") || "Unassigned";
+											const start     = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+											const end       = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+											const dateLabel = format(start, "EEE, MMM d, yyyy");
+											const timeLabel = `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`;
+											return (
+												<button key={id} className={styles.searchItem} onClick={() => handleSearchSelect(shift)}>
+													<User size={14} className={styles.searchItemIcon} />
+													<div className={styles.searchItemBody}>
+														<span className={styles.searchItemName}>{caregiverName}</span>
+														<span className={styles.searchItemMeta}>{dateLabel} · {timeLabel}</span>
+													</div>
+												</button>
+											);
+										})
+									)}
+								</div>
 							)}
 						</div>
 
-						{showShiftDropdown && shiftInput.trim().length > 0 && (
-							<div className={styles.searchDropdown}>
-								{isSearchLoading ? (
-									<div className={styles.searchMeta}>Searching…</div>
-								) : searchError ? (
-									<div className={styles.searchMeta}>Invalid shift ID</div>
-								) : searchResults.length === 0 ? (
-									<div className={styles.searchMeta}>No shifts found</div>
-								) : (
-									searchResults.map((shift) => {
-										const id = shift._id || shift.id;
-										const caregiverName = [shift.caregiver?.firstName, shift.caregiver?.lastName]
-											.filter(Boolean).join(" ") || "Unassigned";
-										const start     = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-										const end       = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
-										const dateLabel = format(start, "EEE, MMM d, yyyy");
-										const timeLabel = `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`;
-										return (
-											<button key={id} className={styles.searchItem} onClick={() => handleSearchSelect(shift)}>
-												<User size={14} className={styles.searchItemIcon} />
-												<div className={styles.searchItemBody}>
-													<span className={styles.searchItemName}>{caregiverName}</span>
-													<span className={styles.searchItemMeta}>{dateLabel} · {timeLabel}</span>
-												</div>
-											</button>
-										);
-									})
-								)}
-							</div>
-						)}
-					</div>
-
-					{/* Home filter — narrows all calendar views and payroll to a single home.
-					    Selecting "All Homes" (empty value) removes the filter. */}
-					<div className={styles.filterRow}>
-						<Building2 size={15} className={styles.filterIcon} />
-						<label className={styles.filterLabel} htmlFor="home-filter">Filter by Home:</label>
+						{/* Home filter */}
 						<select
 							id="home-filter"
 							className={styles.homeSelect}
@@ -1229,31 +1274,6 @@ export default function SchedulingPage() {
 								);
 							})}
 						</select>
-						<button
-							type="button"
-							className={styles.exportBtn}
-							disabled={!payrollPeriod}
-							onClick={async () => {
-								if (!payrollPeriod) return;
-								const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
-								const homeName = selectedHome
-									? (selectedHome.name || selectedHome.homeName)
-									: "All Homes";
-								await exportScheduleToExcel({
-									homeName,
-									homeId:         selectedHomeId || null,
-									payPeriodStart: payrollPeriod.start,
-									payPeriodEnd:   payrollPeriod.end,
-									payYear:        payrollPeriod.payYear,
-									periodNumber:   payrollPeriod.periodNumber,
-									shifts:         payrollShifts,
-									logoUrl:        logoImg.src,
-								});
-							}}
-						>
-							<Download size={14} />
-							Export Schedule
-						</button>
 					</div>
 
 					{/* Halifax time banner — only shown when the admin's device is in a

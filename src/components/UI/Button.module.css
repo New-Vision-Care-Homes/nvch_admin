@@ -3,13 +3,15 @@
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	width: auto; 
-	height: 3rem; 
-	opacity: 1; 
-	border: none; 
-	border-radius: 0.5rem; 
-	padding: 0 12px;
+	width: auto;
+	height: 2.25rem;
+	opacity: 1;
+	border: none;
+	border-radius: 0.5rem;
+	padding: 0 14px;
 	font-family: Inter;
+	font-size: 0.9rem;
+	font-weight: 500;
 	cursor: pointer;
 	transition: background 0.2s;
 }
