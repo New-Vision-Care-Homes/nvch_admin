@@ -776,7 +776,6 @@ export default function ShiftBuilderPage() {
 
 			try {
 				const result = await saveBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
-				console.log(caregiverPayload)
 				setBulkResult(result);
 			} catch (err) {
 				setSubmitError(err?.response?.data?.error || "An unexpected error occurred");

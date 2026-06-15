@@ -18,6 +18,7 @@ import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, DEPARTMENT_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
 export default function Admins() {
 	const { profile } = useProfile();
@@ -118,7 +119,7 @@ export default function Admins() {
 					/>
 
 					{!fetchError && !isLoading && (
-						<>
+						<div className={styles.tableCard}>
 							{/* Filter bar */}
 							<div className={styles.filter_row}>
 								<div className={styles.searchWrapper}>
@@ -159,7 +160,7 @@ export default function Admins() {
 
 							{/* Table */}
 							{admins.length === 0 ? (
-								<div style={{ marginTop: "2rem" }}>
+								<div className={styles.emptyWrapper}>
 									<EmptyState
 										title="No admins found"
 										message="There are no administrators matching your criteria."
@@ -169,15 +170,16 @@ export default function Admins() {
 								<div className={styles.tableWrapper}>
 									<Table>
 										<TableHeader>
-											<TableCell>Admin Name</TableCell>
+											<TableCell className={styles.firstCol}>Admin Name</TableCell>
 											<TableCell>Employee ID</TableCell>
-											<TableCell>Contact</TableCell>
+											<TableCell>Admin Level</TableCell>
+											<TableCell>Department</TableCell>
 											<TableCell>Status</TableCell>
 											<TableCell>Actions</TableCell>
 										</TableHeader>
 										{admins.map((admin) => (
 											<TableContent key={admin.id}>
-												<TableCell>
+												<TableCell className={styles.firstCol}>
 													<Image
 														src={admin.profilePictureUrl || defaultAvatar}
 														width={50}
@@ -189,23 +191,42 @@ export default function Admins() {
 													<span>{fullName(admin)}</span>
 												</TableCell>
 												<TableCell><span>{admin.employeeId}</span></TableCell>
-												<TableCell><span>{admin.email || "-"}</span></TableCell>
+												<TableCell>
+													{admin.adminLevel ? (() => {
+														const c = ADMIN_LEVEL_COLORS[admin.adminLevel] ?? COLOR_FALLBACK;
+														return (
+															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
+																{ADMIN_LEVEL_LABEL[admin.adminLevel] ?? admin.adminLevel}
+															</span>
+														);
+													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</TableCell>
+												<TableCell>
+													{admin.department ? (() => {
+														const c = DEPARTMENT_COLORS[admin.department] ?? COLOR_FALLBACK;
+														return (
+															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
+																{admin.department}
+															</span>
+														);
+													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>
 														{admin.isActive ? "Active" : "Inactive"}
 													</span>
 												</TableCell>
 												<TableCell>
-													<Link href={`/admins/${admin.id}`}>
-														<Eye color="#1C4A6EFF" style={{ width: "1.5rem", height: "1.5rem" }} />
-													</Link>
-													{canDeleteAdmin(admin) && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: "1.5rem", height: "1.5rem", cursor: "pointer", marginLeft: "0.5rem" }}
-															onClick={() => deleteHandler(admin.id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														<Link href={`/admins/${admin.id}`} className={styles.iconBtn}>
+															<Eye size={15} />
+														</Link>
+														{canDeleteAdmin(admin) && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(admin.id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
@@ -232,7 +253,7 @@ export default function Admins() {
 									/>
 								</div>
 							)}
-						</>
+						</div>
 					)}
 				</div>
 			</PageLayout>

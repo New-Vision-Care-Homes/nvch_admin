@@ -123,7 +123,7 @@ export default function Clients() {
 					/>
 
 					{!isLoading && !fetchError && (
-						<>
+						<div className={styles.tableCard}>
 							{/* Filter bar */}
 							<div className={styles.filter_row}>
 								<div className={styles.searchWrapper}>
@@ -164,7 +164,7 @@ export default function Clients() {
 
 							{/* Table */}
 							{clients.length === 0 ? (
-								<div style={{ marginTop: "2rem" }}>
+								<div className={styles.emptyWrapper}>
 									<EmptyState
 										title="No clients found"
 										message="There are no clients matching your criteria."
@@ -174,7 +174,7 @@ export default function Clients() {
 								<div className={styles.tableWrapper}>
 									<Table>
 										<TableHeader>
-											<TableCell>Client Name</TableCell>
+											<TableCell className={styles.firstCol}>Client Name</TableCell>
 											<TableCell>Client ID</TableCell>
 											<TableCell>Region</TableCell>
 											<TableCell>Status</TableCell>
@@ -182,7 +182,7 @@ export default function Clients() {
 										</TableHeader>
 										{clients.map((client) => (
 											<TableContent key={client.id}>
-												<TableCell>
+												<TableCell className={styles.firstCol}>
 													<Image
 														src={client.profilePictureUrl || defaultAvatar}
 														width={50}
@@ -210,16 +210,16 @@ export default function Clients() {
 													</span>
 												</TableCell>
 												<TableCell>
-													<Link href={`/clients/${client.id}`}>
-														<Edit color="#1C4A6EFF" style={{ width: "1.5rem", height: "1.5rem" }} />
-													</Link>
-													{canDeleteClient(client) && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: "1.5rem", height: "1.5rem", cursor: "pointer" }}
-															onClick={() => deleteHandler(client.id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														<Link href={`/clients/${client.id}`} className={styles.iconBtn}>
+															<Edit size={15} />
+														</Link>
+														{canDeleteClient(client) && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(client.id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
@@ -246,7 +246,7 @@ export default function Clients() {
 									/>
 								</div>
 							)}
-						</>
+					</div>
 					)}
 				</div>
 			</PageLayout>

@@ -111,7 +111,7 @@ export default function Permissions() {
 								<div className={styles.tableWrapper}>
 									<Table>
 										<TableHeader>
-											<TableCell>Name</TableCell>
+											<TableCell className={styles.firstCol}>Name</TableCell>
 											<TableCell>Description</TableCell>
 											<TableCell>Granted Permissions</TableCell>
 											<TableCell>Created</TableCell>
@@ -120,7 +120,7 @@ export default function Permissions() {
 										</TableHeader>
 										{permissionGroups?.map?.((group) => (
 											<TableContent key={group._id}>
-												<TableCell><strong>{group.name}</strong></TableCell>
+												<TableCell className={styles.firstCol}><strong>{group.name}</strong></TableCell>
 												<TableCell>
 													<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
 														{group.description?.length > 60
@@ -140,16 +140,16 @@ export default function Permissions() {
 													{format(new Date(group.updatedAt), "MMM d, yyyy")}
 												</TableCell>
 												<TableCell>
-													<Link href={`/permissions/${group._id}`}>
-														<Eye color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
-													</Link>
-													{canDelete && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-															onClick={() => deleteHandler(group._id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														<Link href={`/permissions/${group._id}`} className={styles.iconBtn}>
+															<Eye size={15} />
+														</Link>
+														{canDelete && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(group._id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}

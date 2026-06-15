@@ -122,7 +122,7 @@ export default function Caregivers() {
 					/>
 
 					{!caregiverFetchError && !isCaregiverLoading && (
-						<>
+						<div className={styles.tableCard}>
 							{/* Filter bar */}
 							<div className={styles.filter_row}>
 								<div className={styles.searchWrapper}>
@@ -163,7 +163,7 @@ export default function Caregivers() {
 
 							{/* Table */}
 							{caregivers.length === 0 ? (
-								<div style={{ marginTop: "2rem" }}>
+								<div className={styles.emptyWrapper}>
 									<EmptyState
 										title="No caregivers found"
 										message="There are no caregivers matching your criteria."
@@ -173,7 +173,7 @@ export default function Caregivers() {
 								<div className={styles.tableWrapper}>
 									<Table>
 										<TableHeader>
-											<TableCell>Caregiver Name</TableCell>
+											<TableCell className={styles.firstCol}>Caregiver Name</TableCell>
 											<TableCell>Employee ID</TableCell>
 											<TableCell>Contact</TableCell>
 											<TableCell>Status</TableCell>
@@ -181,7 +181,7 @@ export default function Caregivers() {
 										</TableHeader>
 										{caregivers.map((caregiver) => (
 											<TableContent key={caregiver.id}>
-												<TableCell>
+												<TableCell className={styles.firstCol}>
 													<Image
 														src={caregiver.profilePictureUrl || defaultAvatar}
 														width={50}
@@ -200,18 +200,18 @@ export default function Caregivers() {
 													</span>
 												</TableCell>
 												<TableCell>
-													{canView && (
-														<Link href={`/caregivers/${caregiver.id}`}>
-															<Eye color="#1C4A6EFF" style={{ width: "1.5rem", height: "1.5rem" }} />
-														</Link>
-													)}
-													{canDeleteCaregiver(caregiver) && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: "1.5rem", height: "1.5rem", cursor: "pointer", marginLeft: "0.5rem" }}
-															onClick={() => deleteHandler(caregiver.id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														{canView && (
+															<Link href={`/caregivers/${caregiver.id}`} className={styles.iconBtn}>
+																<Eye size={15} />
+															</Link>
+														)}
+														{canDeleteCaregiver(caregiver) && (
+															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(caregiver.id)}>
+																<Trash2 size={15} />
+															</button>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
@@ -238,7 +238,7 @@ export default function Caregivers() {
 									/>
 								</div>
 							)}
-						</>
+						</div>
 					)}
 				</div>
 			</PageLayout>

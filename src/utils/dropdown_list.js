@@ -7,6 +7,40 @@ export const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Payroll Admin", value: "payroll" },
 ];
 
+export const ADMIN_LEVEL_COLORS = {
+	super:        { bg: "#ede9fe", border: "#8b5cf6", text: "#3b0764" }, // violet  — highest privilege
+	manager:      { bg: "#dbeafe", border: "#3b82f6", text: "#1e3a5f" }, // blue
+	supervisor:   { bg: "#ccfbf1", border: "#14b8a6", text: "#0f766e" }, // teal
+	office_admin: { bg: "#ffedd5", border: "#f97316", text: "#7c2d12" }, // orange
+	team_lead:    { bg: "#d1fae5", border: "#10b981", text: "#064e3b" }, // emerald
+	payroll:      { bg: "#fef3c7", border: "#d97706", text: "#78350f" }, // amber
+};
+
+export const ADMIN_LEVEL_LABEL = {
+	super:        "Super Admin",
+	manager:      "Manager",
+	supervisor:   "Supervisor",
+	office_admin: "Office Admin",
+	team_lead:    "Team Lead",
+	payroll:      "Payroll Admin",
+};
+
+export const DEPARTMENT_OPTIONS = [
+	{ label: "Operations",      value: "Operations" },
+	{ label: "Human Resources", value: "Human Resources" },
+	{ label: "Finance",         value: "Finance" },
+	{ label: "IT",              value: "IT" },
+	{ label: "Administration",  value: "Administration" },
+];
+
+export const DEPARTMENT_COLORS = {
+	"Operations":      { bg: "#e0e7ff", border: "#6366f1", text: "#3730a3" }, // indigo
+	"Human Resources": { bg: "#ffe4e6", border: "#f43f5e", text: "#881337" }, // rose
+	"Finance":         { bg: "#cffafe", border: "#06b6d4", text: "#164e63" }, // cyan
+	"IT":              { bg: "#fae8ff", border: "#d946ef", text: "#701a75" }, // fuchsia
+	"Administration":  { bg: "#ecfccb", border: "#84cc16", text: "#365314" }, // lime
+};
+
 export const CERTIFICATE_OPTIONS = [
 	{ value: "child-abuse-registry-check", label: "Child Abuse Registry Check" },
 	{ value: "criminal-vulnerable-sector-record-check", label: "Criminal & Vulnerable Sector Record Check" },

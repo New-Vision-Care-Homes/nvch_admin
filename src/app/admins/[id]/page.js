@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS, DEPARTMENT_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
@@ -30,14 +30,6 @@ const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Office Admin", value: "office_admin" },
 	{ label: "Team Lead", value: "team_lead" },
 	{ label: "Payroll Admin", value: "payroll" },
-];
-
-const DEPARTMENT_OPTIONS = [
-	{ label: "Operations", value: "Operations" },
-	{ label: "Human Resources", value: "Human Resources" },
-	{ label: "Finance", value: "Finance" },
-	{ label: "IT", value: "IT" },
-	{ label: "Administration", value: "Administration" },
 ];
 
 const schema = yup.object({

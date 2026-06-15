@@ -166,9 +166,7 @@ export default function SchedulingPage() {
 	// Stored in refs (not state/module scope) so the color map resets each time
 	// the page mounts — prevents colors from "drifting" across navigation events.
 	const caregiverColorState = useRef({ map: {}, idx: 0 });
-	const dayColorState       = useRef({ map: {}, idx: 0 });
 	const getCaregiverColor = useMemo(() => makeColorAssigner(caregiverColorState.current), []);
-	const getDayColor       = useMemo(() => makeColorAssigner(dayColorState.current), []);
 
 	// ── Home filter ───────────────────────────────────────────────────────────
 	// When a home is selected, both the calendar and payroll views send homeId
@@ -490,17 +488,28 @@ export default function SchedulingPage() {
 	const agendaEvents = useMemo(() => {
 		if (!shifts?.length) return [];
 
+		// Sort unique date strings so palette colors follow calendar order,
+		// not API response order (which was causing the colour mix-up).
+		const uniqueDates = [...new Set(shifts.map((s) => {
+			const start = utcToZonedDateObject(s.startTime, HALIFAX_TZ);
+			return format(start, "yyyy-MM-dd");
+		}))].sort();
+		const dateColorMap = Object.fromEntries(
+			uniqueDates.map((d, i) => [d, PALETTE[i % PALETTE.length]])
+		);
+
 		return shifts.map((shift) => {
 			const start   = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-			const dateStr = format(start, "yyyy-MM-dd"); // used to assign a per-day color
+			const dateStr = format(start, "yyyy-MM-dd");
 			return {
-				id:       shift.id || shift._id,
-				title:    `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
+				id:        shift.id || shift._id,
+				title:     `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end:      utcToZonedDateObject(shift.endTime, HALIFAX_TZ),
-				_shift:   shift,    // full shift object — used to show the address in the row
-				_dateStr: dateStr,  // all shifts on the same day share the same color
-				_isAgenda: true,    // tells CustomEvent to render the Agenda sub-component
+				end:       utcToZonedDateObject(shift.endTime, HALIFAX_TZ),
+				_shift:    shift,
+				_dateStr:  dateStr,
+				_color:    dateColorMap[dateStr], // deterministic: earliest date = PALETTE[0]
+				_isAgenda: true,
 			};
 		});
 	}, [shifts]);
@@ -621,7 +630,7 @@ export default function SchedulingPage() {
 
 	// Agenda row — caregiver name + address, colored per calendar day.
 	const AgendaEventComponent = ({ event }) => {
-		const color = getDayColor(event._dateStr);
+		const color = event._color ?? PALETTE[0];
 		return (
 			<span className={styles.agendaTitle} style={{ color: color.text }}>
 				{event.title}
@@ -655,12 +664,12 @@ export default function SchedulingPage() {
 
 		// Agenda: pastel card tinted by calendar day.
 		if (event._isAgenda) {
-			const color = getDayColor(event._dateStr);
+			const color = event._color ?? PALETTE[0];
 			return {
 				style: {
 					backgroundColor: color.bg,
 					border:          `1.5px solid ${color.border}`,
-					borderLeft:      `4px solid ${color.border}`, // thick left accent stripe
+					borderLeft:      `4px solid ${color.border}`,
 					borderRadius:    "8px",
 					color:           color.text,
 					padding:         "6px 12px",
