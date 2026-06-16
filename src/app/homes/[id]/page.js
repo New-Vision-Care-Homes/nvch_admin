@@ -17,6 +17,7 @@ import { Edit, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
 import ErrorState from "@components/UI/ErrorState";
+import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
 export default function HomeDetailPage() {
 	const { id } = useParams();
@@ -154,7 +155,12 @@ export default function HomeDetailPage() {
 					<CardContent>
 						<div className={styles.infoGrid}>
 							<InfoItem label="Home Name">{home.name}</InfoItem>
-							<InfoItem label="Region">{home.region}</InfoItem>
+							<InfoItem label="Region">
+								{home.region ? (() => {
+									const c = REGION_COLORS[home.region] ?? COLOR_FALLBACK;
+									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.region}</span>;
+								})() : "—"}
+							</InfoItem>
 							<InfoItem label="Status">
 								<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
 									{home.isActive ? "Active" : "Inactive"}
@@ -164,11 +170,10 @@ export default function HomeDetailPage() {
 								{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 							</InfoItem>
 							<InfoItem label="Home Type">
-								{home.homeType ? (
-									<span className={styles.chip}>{home.homeType}</span>
-								) : (
-									"—"
-								)}
+								{home.homeType ? (() => {
+									const c = HOME_TYPE_COLORS[home.homeType] ?? COLOR_FALLBACK;
+									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.homeType}</span>;
+								})() : "—"}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>

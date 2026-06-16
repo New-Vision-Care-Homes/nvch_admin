@@ -123,7 +123,11 @@ export default function Certification() {
 									<span className={styles.noFile}>No File</span>
 								)}
 							</TableCell>
-							<TableCell>{c.isActive ? "Active" : "Inactive"}</TableCell>
+							<TableCell>
+								<span className={`${styles.statusPill} ${c.isActive ? styles.statusActive : styles.statusInactive}`}>
+									{c.isActive ? "Active" : "Inactive"}
+								</span>
+							</TableCell>
 							<TableCell>
 								<Trash2
 									color="#ef4444"

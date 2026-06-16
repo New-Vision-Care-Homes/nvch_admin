@@ -111,12 +111,25 @@
     font-style: italic;
 }
 
+.statusPill {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .statusActive {
-    color: #10b981;
-    background: #ecfdf5;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.statusInactive {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
 }
 
 
