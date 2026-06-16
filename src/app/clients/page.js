@@ -4,10 +4,11 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./clients.module.css";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import ReactPaginate from "react-paginate";
+import Pagination from "@components/UI/Pagination";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Edit, Search, Trash2 } from "lucide-react";
@@ -211,39 +212,20 @@ export default function Clients() {
 												</TableCell>
 												<TableCell>
 													<div className={styles.actionsCell}>
-														<Link href={`/clients/${client.id}`} className={styles.iconBtn}>
+														<IconButton href={`/clients/${client.id}`} title="View Client">
 															<Edit size={15} />
-														</Link>
+														</IconButton>
 														{canDeleteClient(client) && (
-															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(client.id)}>
+															<IconButton variant="danger" onClick={() => deleteHandler(client.id)} title="Delete Client">
 																<Trash2 size={15} />
-															</button>
+															</IconButton>
 														)}
 													</div>
 												</TableCell>
 											</TableContent>
 										))}
 									</Table>
-									<ReactPaginate
-										pageCount={Math.max(totalPages, 1)}
-										forcePage={currentPage - 1}
-										onPageChange={handlePageClick}
-										pageRangeDisplayed={3}
-										marginPagesDisplayed={1}
-										breakLabel="..."
-										breakClassName={styles.pageItem}
-										breakLinkClassName={styles.pageLink}
-										previousLabel="Prev"
-										nextLabel="Next"
-										containerClassName={styles.pagination}
-										pageClassName={styles.pageItem}
-										pageLinkClassName={styles.pageLink}
-										previousClassName={styles.pageItem}
-										previousLinkClassName={styles.pageLink}
-										nextClassName={styles.pageItem}
-										nextLinkClassName={styles.pageLink}
-										activeClassName={styles.active}
-									/>
+									<Pagination pageCount={totalPages} forcePage={currentPage - 1} onPageChange={handlePageClick} />
 								</div>
 							)}
 					</div>

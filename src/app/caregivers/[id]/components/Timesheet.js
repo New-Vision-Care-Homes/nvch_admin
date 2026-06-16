@@ -247,10 +247,6 @@ export default function Timesheet() {
 	return (
 		<div className={styles.container}>
 
-			<div className={styles.topHeader}>
-				<h2 className={styles.pageTitle}>Timesheet Overview</h2>
-			</div>
-
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
 			{/* ── Top section: Availability card + Work Capacity card + Stats ── */}

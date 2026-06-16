@@ -1,14 +1,14 @@
 .container {
-	padding: 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
 }
 
-.title {
+.toolbar {
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-end;
 	margin-bottom: 1rem;
 }
-
 
 .uploadField {
 	margin-top: 1rem;
@@ -93,7 +93,6 @@
     border: 1px solid #cce4ff;
 }
 
-
 .viewFileBtn:hover {
     background-color: #0066cc;
     color: #ffffff;
@@ -131,7 +130,6 @@
     color: #b91c1c;
     border: 1px solid #fca5a5;
 }
-
 
 /* 
 ==========================================

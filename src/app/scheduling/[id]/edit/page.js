@@ -12,6 +12,7 @@ import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
 import cardStyles from "@components/UI/Card.module.css";
@@ -438,10 +439,9 @@ export default function EditShiftPage() {
 												value={task.description || task.title || ""}
 												placeholder="Task description"
 												onChange={e => { const t = [...tasks]; t[i] = { ...t[i], description: e.target.value }; setTasks(t); }} />
-											<button type="button" className={shiftStyles.iconBtn}
-												onClick={() => setTasks(tasks.filter((_, j) => j !== i))}>
+											<IconButton variant="danger" onClick={() => setTasks(tasks.filter((_, j) => j !== i))}>
 												<Trash2 size={14} />
-											</button>
+											</IconButton>
 										</div>
 									))}
 									<div style={{ marginTop: 8 }}>
