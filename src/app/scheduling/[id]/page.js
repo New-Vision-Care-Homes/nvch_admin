@@ -18,6 +18,7 @@ import {
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
+import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -260,9 +261,21 @@ export default function ShiftDetailPage() {
 							<CardContent>
 								<div className={styles.personGrid}>
 									<InfoField label="Home Name" value={shift.home.name || "—"} />
-									{shift.home.region && <InfoField label="Region" value={shift.home.region} />}
-									<InfoField label="Status" value={shift.home.isActive ? "Active" : "Inactive"} />
-									{shift.home.homeType && <InfoField label="Home Type" value={shift.home.homeType} />}
+									{shift.home.region && (
+										<InfoField label="Region">
+											{(() => { const c = REGION_COLORS[shift.home.region] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.region}</span>; })()}
+										</InfoField>
+									)}
+									<InfoField label="Status">
+										<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap", ...(shift.home.isActive ? { background: "#d1fae5", border: "1px solid #6ee7b7", color: "#065f46" } : { background: "#fee2e2", border: "1px solid #fca5a5", color: "#b91c1c" }) }}>
+											{shift.home.isActive ? "Active" : "Inactive"}
+										</span>
+									</InfoField>
+									{shift.home.homeType && (
+										<InfoField label="Home Type">
+											{(() => { const c = HOME_TYPE_COLORS[shift.home.homeType] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.homeType}</span>; })()}
+										</InfoField>
+									)}
 								</div>
 							</CardContent>
 						</Card>
@@ -357,12 +370,35 @@ export default function ShiftDetailPage() {
 							<div className={styles.locationLayout}>
 								{/* Address info panel */}
 								<div className={styles.locationInfo}>
-									{geofenceAddressStr ? (
-										<InfoField label="Service Address" value={geofenceAddressStr} />
-									) : (
-										<InfoField label="Service Address">
-											<p className={styles.emptyText}>No address recorded</p>
-										</InfoField>
+									{geofenceAddressStr && (
+										<div className={`${styles.addrBlock} ${styles.addrBlockBlue}`}>
+											<div className={styles.addrBlockIcon}><MapPin size={13} /></div>
+											<div>
+												<p className={styles.addrBlockLabel}>Service Address</p>
+												<p className={styles.addrBlockVal}>{geofenceAddressStr}</p>
+											</div>
+										</div>
+									)}
+									{shift.startLocation?.address && (
+										<div className={`${styles.addrBlock} ${styles.addrBlockGreen}`}>
+											<div className={styles.addrBlockIcon}><LogIn size={13} /></div>
+											<div>
+												<p className={styles.addrBlockLabel}>Clock In Address</p>
+												<p className={styles.addrBlockVal}>{shift.startLocation.address}</p>
+											</div>
+										</div>
+									)}
+									{shift.endLocation?.address && (
+										<div className={`${styles.addrBlock} ${styles.addrBlockRed}`}>
+											<div className={styles.addrBlockIcon}><LogOut size={13} /></div>
+											<div>
+												<p className={styles.addrBlockLabel}>Clock Out Address</p>
+												<p className={styles.addrBlockVal}>{shift.endLocation.address}</p>
+											</div>
+										</div>
+									)}
+									{!geofenceAddressStr && !shift.startLocation?.address && !shift.endLocation?.address && (
+										<p className={styles.emptyText}>No address recorded.</p>
 									)}
 								</div>
 								{/* Map */}
@@ -370,7 +406,7 @@ export default function ShiftDetailPage() {
 									<GeofenceMap
 										center={mapCenter}
 										radius={shift.geofence.radius || 100}
-										height="100%"
+										height="300px"
 										clockInLocation={shift.startLocation ?? null}
 										clockOutLocation={shift.endLocation ?? null}
 									/>

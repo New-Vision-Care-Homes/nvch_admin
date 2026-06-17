@@ -115,15 +115,13 @@ export default function Dashboard() {
 		<PageLayout>
 			{/* Page Header */}
 			<div className={styles.header}>
-				<div>
-					<h1>Dashboard</h1>
-					<h6>{`Welcome back! Here's what's happening today.`}</h6>
-				</div>
+				<h1>Dashboard</h1>
+				<p className={styles.subtitle}>{`Welcome back! Here's what's happening today.`}</p>
 			</div>
 
 			{/* Stats Overview */}
 			<section className={styles.section}>
-				<h2>Overview</h2>
+				<h2 className={styles.sectionTitle}>Overview</h2>
 				<div className={styles.statsGrid}>
 					{stats.map((stat) => {
 						const Icon = stat.icon;
@@ -154,7 +152,7 @@ export default function Dashboard() {
 
 			{/* Quick Actions */}
 			<section className={styles.section}>
-				<h2>Quick Actions</h2>
+				<h2 className={styles.sectionTitle}>Quick Actions</h2>
 				<div className={styles.actionsGrid}>
 					{visibleQuickActions.map((action) => {
 						const Icon = action.icon;

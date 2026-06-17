@@ -5,10 +5,11 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import ReactPaginate from "react-paginate";
+import Pagination from "@components/UI/Pagination";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
@@ -202,40 +203,21 @@ export default function Caregivers() {
 												<TableCell>
 													<div className={styles.actionsCell}>
 														{canView && (
-															<Link href={`/caregivers/${caregiver.id}`} className={styles.iconBtn}>
+															<IconButton href={`/caregivers/${caregiver.id}`} title="View Caregiver">
 																<Eye size={15} />
-															</Link>
+															</IconButton>
 														)}
 														{canDeleteCaregiver(caregiver) && (
-															<button className={styles.iconBtnDanger} onClick={() => deleteHandler(caregiver.id)}>
+															<IconButton variant="danger" onClick={() => deleteHandler(caregiver.id)} title="Delete Caregiver">
 																<Trash2 size={15} />
-															</button>
+															</IconButton>
 														)}
 													</div>
 												</TableCell>
 											</TableContent>
 										))}
 									</Table>
-									<ReactPaginate
-										pageCount={Math.max(totalPages, 1)}
-										forcePage={currentPage - 1}
-										onPageChange={handlePageClick}
-										pageRangeDisplayed={3}
-										marginPagesDisplayed={1}
-										breakLabel="..."
-										breakClassName={styles.pageItem}
-										breakLinkClassName={styles.pageLink}
-										previousLabel="Prev"
-										nextLabel="Next"
-										containerClassName={styles.pagination}
-										pageClassName={styles.pageItem}
-										pageLinkClassName={styles.pageLink}
-										previousClassName={styles.pageItem}
-										previousLinkClassName={styles.pageLink}
-										nextClassName={styles.pageItem}
-										nextLinkClassName={styles.pageLink}
-										activeClassName={styles.active}
-									/>
+									<Pagination pageCount={totalPages} forcePage={currentPage - 1} onPageChange={handlePageClick} />
 								</div>
 							)}
 						</div>

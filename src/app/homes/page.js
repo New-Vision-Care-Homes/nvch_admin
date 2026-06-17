@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./homes.module.css";
 import Button from "@components/UI/Button";
-import ReactPaginate from "react-paginate";
+import Pagination from "@components/UI/Pagination";
 import Link from "next/link";
 import { Building2, Trash2, Plus, Users, User, MapPin, Search, X } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
@@ -288,28 +288,7 @@ export default function Homes() {
 						)}
 
 						{/* Pagination */}
-						{!isLoading && !fetchError && pageCount > 1 && (
-							<ReactPaginate
-								pageCount={pageCount}
-								onPageChange={handlePageClick}
-								forcePage={currentPage}
-								pageRangeDisplayed={3}
-								marginPagesDisplayed={1}
-								breakLabel="..."
-								breakClassName={styles.pageItem}
-								breakLinkClassName={styles.pageLink}
-								previousLabel={"Prev"}
-								nextLabel={"Next"}
-								containerClassName={styles.pagination}
-								pageClassName={styles.pageItem}
-								pageLinkClassName={styles.pageLink}
-								previousClassName={styles.pageItem}
-								previousLinkClassName={styles.pageLink}
-								nextClassName={styles.pageItem}
-								nextLinkClassName={styles.pageLink}
-								activeClassName={styles.active}
-							/>
-						)}
+						{!isLoading && !fetchError && <Pagination pageCount={pageCount} forcePage={currentPage} onPageChange={handlePageClick} />}
 					</div>
 				</div>
 			</PageLayout>

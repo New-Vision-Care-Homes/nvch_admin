@@ -50,6 +50,22 @@ export default function GeofenceMap({
 	const [pinsOverlap, setPinsOverlap] = useState(false);
 
 	/* ==========================================================================
+		SCOPE: Resize observer — re-triggers Google Maps layout when the container
+		       changes size (e.g. flex parent resizes, window narrows) to prevent
+		       the map from going blank.
+	========================================================================== */
+	useEffect(() => {
+		if (!isLoaded || !divRef.current) return;
+		const observer = new ResizeObserver(() => {
+			if (mapInstanceRef.current) {
+				window.google.maps.event.trigger(mapInstanceRef.current, "resize");
+			}
+		});
+		observer.observe(divRef.current);
+		return () => observer.disconnect();
+	}, [isLoaded]);
+
+	/* ==========================================================================
 		SCOPE: Map Initialization
 	========================================================================== */
 	useEffect(() => {
