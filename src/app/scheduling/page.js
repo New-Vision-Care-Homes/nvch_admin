@@ -500,15 +500,19 @@ export default function SchedulingPage() {
 
 		return shifts.map((shift) => {
 			const start   = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+			const end     = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
 			const dateStr = format(start, "yyyy-MM-dd");
+			// Cap overnight shifts at end-of-day so the event only appears under
+			// its start date in the agenda view (the real end is still in _shift).
+			const agendaEnd = format(end, "yyyy-MM-dd") !== dateStr ? endOfDay(start) : end;
 			return {
 				id:        shift.id || shift._id,
 				title:     `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
 				start,
-				end:       utcToZonedDateObject(shift.endTime, HALIFAX_TZ),
+				end:       agendaEnd,
 				_shift:    shift,
 				_dateStr:  dateStr,
-				_color:    dateColorMap[dateStr], // deterministic: earliest date = PALETTE[0]
+				_color:    dateColorMap[dateStr],
 				_isAgenda: true,
 			};
 		});

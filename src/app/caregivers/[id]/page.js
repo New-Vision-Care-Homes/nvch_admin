@@ -4,12 +4,12 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
-import { Card, CardHeader, InfoField } from "@components/UI/Card";
+import { Card, CardHeader } from "@components/UI/Card";
 import styles from "./caregiver_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Link from "next/link";
-import { Activity, Check, Pencil, Undo2, Upload, X } from "lucide-react";
+import { Activity, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
@@ -215,11 +215,31 @@ export default function Page() {
 				{/* Caregiver Overview */}
 				<Card>
 					<CardHeader>Caregiver Overview</CardHeader>
-					<div className={styles.content}>
-						<div className={styles.text}>
-							<div className={styles.column}>
-								{/* Caregiver ID — editable */}
-								<InfoField label="Caregiver ID">
+					<div className={styles.overviewBody}>
+						<div className={styles.avatarWrap}>
+							<Image
+								src={caregiverDetail.profilePictureUrl || defaultAvatar}
+								alt="Profile Photo"
+								width={88}
+								height={88}
+								className={styles.avatar}
+								unoptimized
+							/>
+							{canEdit && (
+								<button
+									className={styles.uploadTrigger}
+									onClick={() => setIsImageModalOpen(true)}
+									title="Upload photo"
+								>
+									<Upload size={13} />
+								</button>
+							)}
+						</div>
+
+						<div className={styles.overviewInfo}>
+							<div className={styles.mainInfo}>
+								<div className={styles.fullName}>{caregiverDetail.firstName} {caregiverDetail.lastName}</div>
+								<div className={styles.idSection}>
 									{editingId ? (
 										<div className={styles.idEditRow}>
 											<input
@@ -239,58 +259,48 @@ export default function Page() {
 										</div>
 									) : (
 										<div className={styles.idViewRow}>
-											<span>{caregiverDetail.employeeId || "—"}</span>
+											<Hash size={12} className={styles.idIcon} />
+											<span className={styles.idText}>{caregiverDetail.employeeId || "—"}</span>
 											{canEdit && (
 												<button
 													className={styles.idEditTrigger}
 													onClick={() => { setEditingId(true); setIdError(null); setIdSuccess(null); }}
 													title="Edit Caregiver ID"
 												>
-													<Pencil size={12} />
+													<Pencil size={11} />
 												</button>
 											)}
 										</div>
 									)}
 									{idError   && <div className={styles.idFeedbackError}>{idError}</div>}
 									{idSuccess && <div className={styles.idFeedbackSuccess}>{idSuccess}</div>}
-								</InfoField>
-
-								<InfoField label="Status">
+								</div>
+								<div className={styles.badges}>
 									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
 										{activeStatus ? "Active" : "Inactive"}
 									</span>
-								</InfoField>
+									{caregiverDetail.employmentStatus && (
+										<span className={styles.empBadge}>{caregiverDetail.employmentStatus}</span>
+									)}
+								</div>
 							</div>
 
-							<div className={styles.column}>
-								<InfoField label="Created">
-									{utcToFullDisplay(caregiverDetail.createdAt, "America/Halifax")}
-								</InfoField>
-								<InfoField label="Last Updated">
-									{utcToFullDisplay(caregiverDetail.updatedAt, "America/Halifax")}
-								</InfoField>
+							<div className={styles.timestamps}>
+								<div className={styles.metaItem}>
+									<Calendar size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Created</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(caregiverDetail.createdAt, "America/Halifax")}</div>
+									</div>
+								</div>
+								<div className={styles.metaItem}>
+									<Clock size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Last Updated</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(caregiverDetail.updatedAt, "America/Halifax")}</div>
+									</div>
+								</div>
 							</div>
-						</div>
-
-						<div className={styles.picture}>
-							<Image
-								src={caregiverDetail.profilePictureUrl || defaultAvatar}
-								alt="Profile Photo"
-								width={100}
-								height={100}
-								className={styles.image}
-								unoptimized
-							/>
-							{canEdit && (
-								<Button
-									variant="secondary"
-									size="sm"
-									icon={<Upload size={16} />}
-									onClick={() => setIsImageModalOpen(true)}
-								>
-									Upload
-								</Button>
-							)}
 						</div>
 					</div>
 				</Card>
