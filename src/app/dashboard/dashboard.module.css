@@ -10,6 +10,16 @@
 	border-bottom: var(--border-primary);
 }
 
+.brand {
+	margin: 0;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: var(--color-primary, #1c4a6e);
+	opacity: 0.6;
+}
+
 .subtitle {
 	margin: 0;
 	font-size: 0.95rem;

@@ -115,6 +115,7 @@ export default function Dashboard() {
 		<PageLayout>
 			{/* Page Header */}
 			<div className={styles.header}>
+				<p className={styles.brand}>New Vision Cares Admin Portal</p>
 				<h1>Dashboard</h1>
 				<p className={styles.subtitle}>{`Welcome back! Here's what's happening today.`}</p>
 			</div>

@@ -92,6 +92,50 @@
 	border-radius: 9999px;
 }
 
+/* ── Card search bar ───────────────────────────────────────────────────────── */
+.searchWrap {
+	position: relative;
+	width: 220px;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: #9ca3af;
+	pointer-events: none;
+}
+
+.searchInput {
+	width: 100%;
+	padding: 6px 12px 6px 32px;
+	font-size: 0.875rem;
+	font-family: inherit;
+	border-radius: 8px;
+	border: 1.5px solid #e5e7eb;
+	background: #f9fafb;
+	color: #111827;
+	outline: none;
+	transition: border-color 0.2s, background 0.2s;
+}
+
+.searchInput:focus {
+	border-color: #93c5fd;
+	background: #fff;
+}
+
+/* ── Table utilities ───────────────────────────────────────────────────────── */
+.capitalize {
+	text-transform: capitalize;
+}
+
+.emptyText {
+	margin: 1.5rem 0 0;
+	color: #6b7280;
+	font-size: 0.9rem;
+}
+
 /* ── Responsive (≤ 768px) ── */
 @media (max-width: 768px) {
 	.header {

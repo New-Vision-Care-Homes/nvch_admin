@@ -4,11 +4,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
-import { Card, CardHeader, InfoField } from "@components/UI/Card";
+import { Card, CardHeader } from "@components/UI/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
-import { Edit, Activity, Undo2, Upload } from "lucide-react";
+import { Activity, Calendar, Clock, Hash, Undo2, Upload } from "lucide-react";
+import { utcToFullDisplay } from "@/utils/timeHandling";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
 
@@ -137,38 +138,55 @@ export default function Page() {
 
 				<Card>
 					<CardHeader>Client Overview</CardHeader>
-					<div className={styles.content}>
-						<div className={styles.text}>
-							<div className={styles.column}>
-								<InfoField label="Client ID">{clientDetail.clientId}</InfoField>
-							</div>
-							<div className={styles.column}>
-								<InfoField label="Status">
-									<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
-										{clientDetail.isActive ? "Active" : "Inactive"}
-									</span>
-								</InfoField>
-							</div>
-						</div>
-						<div className={styles.picture}>
+					<div className={styles.overviewBody}>
+						<div className={styles.avatarWrap}>
 							<Image
 								src={clientDetail.profilePictureUrl || defaultAvatar}
 								alt="Profile"
-								width={100}
-								height={100}
-								className={styles.image}
+								width={88}
+								height={88}
+								className={styles.avatar}
 								unoptimized
 							/>
 							{canEdit && (
-								<Button
-									variant="secondary"
-									size="sm"
-									icon={<Upload size={16} />}
+								<button
+									className={styles.uploadTrigger}
 									onClick={() => setIsImageModalOpen(true)}
+									title="Upload photo"
 								>
-									Upload
-								</Button>
+									<Upload size={13} />
+								</button>
 							)}
+						</div>
+
+						<div className={styles.overviewInfo}>
+							<div className={styles.mainInfo}>
+								<div className={styles.fullName}>{clientDetail.firstName} {clientDetail.lastName}</div>
+								<div className={styles.idLine}>
+									<Hash size={12} />
+									{clientDetail.clientId || "—"}
+								</div>
+								<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
+									{clientDetail.isActive ? "Active" : "Inactive"}
+								</span>
+							</div>
+
+							<div className={styles.timestamps}>
+								<div className={styles.metaItem}>
+									<Calendar size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Created</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(clientDetail.createdAt, "America/Halifax")}</div>
+									</div>
+								</div>
+								<div className={styles.metaItem}>
+									<Clock size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Last Updated</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(clientDetail.updatedAt, "America/Halifax")}</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</Card>

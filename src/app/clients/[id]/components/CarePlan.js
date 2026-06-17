@@ -160,16 +160,6 @@ export default function CarePlan() {
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
-			{/* Top bar — Edit button in view mode */}
-			<div className={styles.topBar}>
-				{!isEditing && canEdit && (
-					<button type="button" className={styles.editBtn} onClick={() => setIsEditing(true)}>
-						<Edit size={14} />
-						Edit Care Plan
-					</button>
-				)}
-			</div>
-
 			<div className={styles.sections}>
 
 				{/* ── MEDICAL CONDITIONS ── */}
@@ -260,15 +250,22 @@ export default function CarePlan() {
 
 			</div>
 
-			{/* Save / Cancel — only visible in edit mode */}
-			{isEditing && (
+			{canEdit && (
 				<div className={styles.actionBar}>
-					<Button variant="secondary" type="button" onClick={handleCancel}>
-						Cancel
-					</Button>
-					<Button variant="primary" type="submit" disabled={isActionPending}>
-						{isActionPending ? "Saving…" : "Save Changes"}
-					</Button>
+					{!isEditing ? (
+						<Button variant="primary" icon={<Edit size={16} />} type="button" onClick={() => setIsEditing(true)}>
+							Edit Care Plan
+						</Button>
+					) : (
+						<>
+							<Button variant="secondary" type="button" onClick={handleCancel}>
+								Cancel
+							</Button>
+							<Button variant="primary" type="submit" disabled={isActionPending}>
+								{isActionPending ? "Saving…" : "Save Changes"}
+							</Button>
+						</>
+					)}
 				</div>
 			)}
 		</form>

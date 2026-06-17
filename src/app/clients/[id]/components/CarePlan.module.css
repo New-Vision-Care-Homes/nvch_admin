@@ -7,33 +7,6 @@
 	flex-direction: column;
 }
 
-/* ── Top action bar ── */
-.topBar {
-	display: flex;
-	justify-content: flex-end;
-	margin-bottom: 1.125rem;
-}
-
-.editBtn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.4rem;
-	padding: 0.45rem 1rem;
-	font-size: 0.83rem;
-	font-weight: 600;
-	color: #1c4a6e;
-	background: #eff6ff;
-	border: 1.5px solid #bfdbfe;
-	border-radius: 8px;
-	cursor: pointer;
-	transition: background 0.13s, border-color 0.13s;
-}
-
-.editBtn:hover {
-	background: #dbeafe;
-	border-color: #93c5fd;
-}
-
 /* ── Sections stack ── */
 .sections {
 	display: flex;

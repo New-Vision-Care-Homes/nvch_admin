@@ -35,61 +35,118 @@
 	gap: 0.75rem;
 }
 
-
-
+/* ── Status pill ─────────────────────────────────────────────────── */
 .statusPill {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.25rem 0.75rem;
+	padding: 0.15rem 0.45rem;
 	border-radius: 9999px;
-	font-size: 0.875rem;
-	font-weight: 500;
+	font-size: 0.72rem;
+	font-weight: 600;
+	flex-shrink: 0;
+	width: fit-content;
 }
 
-.statusActive {
-	background-color: #dcfce7;
-	color: #166534;
+.statusDot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	flex-shrink: 0;
 }
 
-.statusInactive {
-	background-color: #fee2e2;
-	color: #b91c1c;
-}
+.statusActive  { background-color: #dcfce7; color: #166534; }
+.statusInactive { background-color: #fee2e2; color: #b91c1c; }
 
-.content {
+/* ── Overview Card ───────────────────────────────────────────────── */
+.overviewBody {
 	display: flex;
-	width: 100%;
+	align-items: center;
+	gap: 1.5rem;
+	padding: 0.25rem 0;
+}
+
+.avatarWrap {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.avatar {
+	width: 88px;
+	height: 88px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 3px solid #fff;
+	box-shadow: 0 0 0 2.5px #DBEAFE, 0 4px 14px rgba(28, 74, 110, 0.18);
+	display: block;
+}
+
+.uploadTrigger {
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: #1c4a6e;
+	border: 2px solid #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	cursor: pointer;
+	transition: background 0.15s;
+	padding: 0;
+}
+
+.uploadTrigger:hover { background: #153956; }
+
+/* left + right sit side by side */
+.overviewInfo {
+	flex: 1;
+	min-width: 0;
+	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: clamp(1.5rem, 6vw, 10rem);
 }
 
-.text {
-	display: flex;
-	width: 80%;
-	justify-content: space-between;
-}
-
-.picture {
+/* left: name / id / badges stacked */
+.mainInfo {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 1rem;
-	margin-bottom: 1rem;
-	padding-top: 1rem;
+	gap: 0.3rem;
+	min-width: 0;
 }
 
-.image {
-	object-fit: cover;
-	border-radius: 50%;
-	border: 4px solid #fff;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+.fullName {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: #111827;
+	line-height: 1.2;
 }
 
-/* ── Editable Caregiver ID ── */
+/* ── Editable Employee ID ─────────────────────────────────────────── */
+.idSection {
+	display: flex;
+	flex-direction: column;
+}
+
 .idViewRow {
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: 5px;
+}
+
+.idIcon {
+	color: #9CA3AF;
+	flex-shrink: 0;
+}
+
+.idText {
+	font-size: 0.78rem;
+	color: #6B7280;
+	font-weight: 500;
 }
 
 .idEditRow {
@@ -101,10 +158,11 @@
 .idInput {
 	flex: 1;
 	min-width: 0;
+	max-width: 140px;
 	padding: 3px 7px;
 	border: 1.5px solid #93c5fd;
 	border-radius: 6px;
-	font-size: 0.875rem;
+	font-size: 0.82rem;
 	color: #1e293b;
 	background: #f0f9ff;
 	outline: none;
@@ -118,26 +176,23 @@
 .idEditTrigger {
 	display: flex;
 	align-items: center;
-	padding: 3px;
+	padding: 2px;
 	border: none;
 	background: none;
 	cursor: pointer;
 	color: #94a3b8;
-	border-radius: 4px;
+	border-radius: 3px;
 	transition: color 0.15s, background 0.15s;
 }
 
-.idEditTrigger:hover {
-	color: #1c4a6e;
-	background: #eff6ff;
-}
+.idEditTrigger:hover { color: #1c4a6e; background: #eff6ff; }
 
 .idSaveBtn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 24px;
-	height: 24px;
+	width: 22px;
+	height: 22px;
 	border-radius: 5px;
 	border: 1.5px solid #86efac;
 	background: #f0fdf4;
@@ -154,8 +209,8 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 24px;
-	height: 24px;
+	width: 22px;
+	height: 22px;
 	border-radius: 5px;
 	border: 1.5px solid #fca5a5;
 	background: #fff1f2;
@@ -169,20 +224,76 @@
 .idCancelBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .idFeedbackError {
-	margin-top: 4px;
-	font-size: 0.78rem;
+	margin-top: 3px;
+	font-size: 0.75rem;
 	color: #dc2626;
 	font-weight: 500;
 }
 
 .idFeedbackSuccess {
-	margin-top: 4px;
-	font-size: 0.78rem;
+	margin-top: 3px;
+	font-size: 0.75rem;
 	color: #16a34a;
 	font-weight: 500;
 }
 
-/* Modal specific styles for upload */
+/* ── Badges (status + employment type) ──────────────────────────── */
+.badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	align-items: center;
+	margin-top: 0.1rem;
+}
+
+.empBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.2rem 0.55rem;
+	border-radius: 9999px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	background: #EFF6FF;
+	color: #1c4a6e;
+	border: 1px solid #DBEAFE;
+	text-transform: capitalize;
+}
+
+/* right: created / updated stacked */
+.timestamps {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	flex-shrink: 0;
+}
+
+.metaItem {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.metaIcon {
+	color: #9CA3AF;
+	flex-shrink: 0;
+}
+
+.metaLabel {
+	font-size: 0.67rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9CA3AF;
+	margin-bottom: 0.1rem;
+}
+
+.metaValue {
+	font-size: 0.82rem;
+	font-weight: 500;
+	color: #374151;
+}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
 .centeredModalContainer {
 	display: flex;
 	flex-direction: column;
@@ -199,9 +310,7 @@
 	margin-top: 1.5rem;
 }
 
-.hiddenFileInput {
-	display: none;
-}
+.hiddenFileInput { display: none; }
 
 .fileInputLabelCustom {
 	border: 1px solid #1C4A6EFF;
@@ -213,19 +322,10 @@
 	transition: background-color 0.2s;
 }
 
-.fileInputLabelCustom:hover {
-	background-color: #F3F4F6;
-}
+.fileInputLabelCustom:hover { background-color: #F3F4F6; }
 
-.fileName {
-	font-size: 0.875rem;
-	color: #4B5563;
-}
-
-.errorMessage {
-	color: #DC2626;
-	font-size: 0.875rem;
-}
+.fileName { font-size: 0.875rem; color: #4B5563; }
+.errorMessage { color: #DC2626; font-size: 0.875rem; }
 
 .modalActions {
 	display: flex;
@@ -233,22 +333,44 @@
 	margin-top: 1rem;
 }
 
-/* ── Responsive (≤ 768px) ── */
-@media (max-width: 768px) {
+/* ── Responsive (≤ 640px) ──────────────────────────────────────── */
+@media (max-width: 640px) {
 	.header {
 		flex-wrap: wrap;
 		gap: 0.75rem;
 	}
 
-	.content {
+	.overviewBody {
 		flex-direction: column;
-		align-items: stretch;
-		gap: 1.5rem;
+		align-items: center;
+		text-align: center;
+		gap: 1rem;
 	}
 
-	.text {
+	.overviewInfo {
 		flex-direction: column;
-		width: 100%;
-		gap: 1rem;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.mainInfo {
+		align-items: center;
+	}
+
+	.idViewRow {
+		justify-content: center;
+	}
+
+	.idEditRow {
+		justify-content: center;
+	}
+
+	.badges {
+		justify-content: center;
+	}
+
+	.timestamps {
+		flex-direction: row;
+		gap: 1.5rem;
 	}
 }
