@@ -240,7 +240,6 @@ export default function Info() {
 	const [conflictInfo, setConflictInfo] = useState(null);
 
 	const { clientDetail, updateClient, isLoading, isActionPending } = useClients(id);
-	console.log(clientDetail)
 	const { profile } = useProfile();
 	const canEdit = canManageTarget(profile, clientDetail, "update_all_clients", "update_assigned_clients");
 

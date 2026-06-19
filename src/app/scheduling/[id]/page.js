@@ -105,7 +105,7 @@ export default function ShiftDetailPage() {
 					</div>
 				</div>
 				<div className={styles.headerActions}>
-					<Button icon={<Undo2 size={16} />} onClick={() => router.push("/scheduling")} variant="secondary">Back</Button>
+					<Button icon={<Undo2 size={16} />} onClick={() => router.back()} variant="secondary">Back</Button>
 					{!["cancelled", "completed", "in_progress", "missed"].includes(shift.status) && (
 						<Button icon={<XCircle size={16} />} onClick={() => setShowCancelModal(true)} variant="danger">Cancel Shift</Button>
 					)}

@@ -1,4 +1,5 @@
 import { authService } from '@/services/api/services/authService';
+import { notificationService } from '@/services/api/services/notificationService';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from 'next/navigation';
 
@@ -17,11 +18,27 @@ export const useLogin = () => {
 	const queryClient = useQueryClient();
 
 	const loginMutation = useMutation({
-		mutationFn: ({ email, password }) => authService.userLogin(email, password),
-		onSuccess: (data) => {
-			const token = data?.token;
+		// Both login + stream-token run here so isPending covers the full sequence.
+		mutationFn: async ({ email, password }) => {
+			const loginData = await authService.userLogin(email, password);
+			const token = loginData?.token;
 			if (token) {
+				// JWT must be in sessionStorage before getStreamToken fires (axios interceptor reads it).
 				sessionStorage.setItem("token", token);
+				try {
+					const { streamToken, expiresIn } = await notificationService.getStreamToken();
+					sessionStorage.setItem("sseStreamToken", streamToken);
+					sessionStorage.setItem("sseStreamTokenExpiry", String(Date.now() + expiresIn * 1000));
+					sessionStorage.removeItem("sseUnavailable");
+				} catch {
+					// Non-fatal — user still gets in; bell will show degraded state.
+					sessionStorage.setItem("sseUnavailable", "true");
+				}
+			}
+			return loginData;
+		},
+		onSuccess: (data) => {
+			if (data?.token) {
 				queryClient.clear(); // wipe any cached data from a previous session
 				router.push("/dashboard");
 			}

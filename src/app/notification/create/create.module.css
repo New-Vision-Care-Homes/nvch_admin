@@ -1,0 +1,542 @@
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+	margin-bottom: 2rem;
+}
+
+.headingRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+}
+
+.headingLeft {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.megaphoneBox {
+	width: 48px;
+	height: 48px;
+	background: #fef2f2;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.subheading {
+	font-size: 0.875rem;
+	color: #6b7280;
+	margin: 0;
+}
+
+/* ── Form layout ──────────────────────────────────────────────────────────── */
+
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Card sections ────────────────────────────────────────────────────────── */
+
+.card {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	padding: 1.5rem;
+}
+
+.sectionTitle {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #374151;
+	margin: 0 0 1.25rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+/* ── Form fields ──────────────────────────────────────────────────────────── */
+
+.field {
+	margin-bottom: 1.25rem;
+}
+
+.field:last-of-type {
+	margin-bottom: 0;
+}
+
+.label {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #374151;
+	margin-bottom: 6px;
+}
+
+.required {
+	color: #dc2626;
+}
+
+.optional {
+	font-weight: 400;
+	color: #9ca3af;
+	font-size: 0.8rem;
+}
+
+.input {
+	width: 100%;
+	padding: 9px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	color: #111827;
+	outline: none;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-sizing: border-box;
+}
+
+.input:focus {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.inputError {
+	border-color: #dc2626;
+}
+
+.inputError:focus {
+	border-color: #dc2626;
+	box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.textarea {
+	width: 100%;
+	padding: 9px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	color: #111827;
+	outline: none;
+	resize: vertical;
+	font-family: inherit;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-sizing: border-box;
+}
+
+.textarea:focus {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.charCount {
+	text-align: right;
+	font-size: 0.75rem;
+	color: #9ca3af;
+	margin: 4px 0 0;
+}
+
+.errorText {
+	font-size: 0.8rem;
+	color: #dc2626;
+	margin: 5px 0 0;
+}
+
+/* ── Send Push toggle ─────────────────────────────────────────────────────── */
+
+.toggleRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-top: 1rem;
+	margin-top: 0.25rem;
+	border-top: 1px solid #f3f4f6;
+}
+
+.toggleLabel {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #374151;
+	margin: 0 0 3px;
+}
+
+.toggleDesc {
+	font-size: 0.8rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+.toggle {
+	position: relative;
+	width: 44px;
+	height: 24px;
+	background: #e5e7eb;
+	border: none;
+	border-radius: 12px;
+	cursor: pointer;
+	transition: background 0.2s;
+	flex-shrink: 0;
+	padding: 0;
+}
+
+.toggleOn {
+	background: #1c4a6e;
+}
+
+.toggleThumb {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	display: block;
+	width: 20px;
+	height: 20px;
+	background: #ffffff;
+	border-radius: 50%;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	transition: transform 0.2s;
+}
+
+.toggleOn .toggleThumb {
+	transform: translateX(20px);
+}
+
+/* ── Target type picker ───────────────────────────────────────────────────── */
+
+.typeGrid {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 1.25rem;
+}
+
+.typeOption {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border: 1.5px solid #e5e7eb;
+	border-radius: 10px;
+	background: #ffffff;
+	cursor: pointer;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #374151;
+	transition: border-color 0.15s, background 0.15s;
+	white-space: nowrap;
+}
+
+.typeOption:hover {
+	border-color: #d1d5db;
+	background: #f9fafb;
+}
+
+.typeOptionActive {
+	color: #111827;
+}
+
+.typeIconBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	transition: background 0.15s, color 0.15s;
+}
+
+.typeLabel {
+	line-height: 1;
+}
+
+/* ── Recipient note (all_caregivers / all_admins) ─────────────────────────── */
+
+.recipientNote {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 11px 14px;
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #166534;
+	line-height: 1.4;
+}
+
+.recipientNoteIcon {
+	color: #16a34a;
+	flex-shrink: 0;
+}
+
+/* ── Region checkboxes ────────────────────────────────────────────────────── */
+
+.regionGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+	gap: 8px;
+}
+
+.regionOption {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px;
+	border: 1.5px solid #e5e7eb;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 0.875rem;
+	color: #374151;
+	transition: border-color 0.15s, background 0.15s;
+	user-select: none;
+}
+
+.regionOption:hover {
+	border-color: #fbbf24;
+	background: #fffbeb;
+}
+
+.regionOptionSelected {
+	border-color: #f59e0b;
+	background: #fffbeb;
+	color: #92400e;
+	font-weight: 500;
+}
+
+.regionCheckbox {
+	display: none;
+}
+
+/* ── Search fields (homes + users) ───────────────────────────────────────── */
+
+.searchField {
+	position: relative;
+}
+
+.searchInputRow {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 10px;
+	color: #9ca3af;
+	pointer-events: none;
+	flex-shrink: 0;
+}
+
+.searchInput {
+	width: 100%;
+	padding: 9px 36px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #111827;
+	outline: none;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-sizing: border-box;
+}
+
+.searchInput:focus {
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.searchSpinner {
+	position: absolute;
+	right: 10px;
+	color: #9ca3af;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.searchDropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	z-index: 50;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.searchEmpty {
+	padding: 12px 14px;
+	font-size: 0.875rem;
+	color: #9ca3af;
+	text-align: center;
+	margin: 0;
+}
+
+.searchOption {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 9px 14px;
+	text-align: left;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 0.875rem;
+	color: #374151;
+	transition: background 0.1s;
+}
+
+.searchOption:hover {
+	background: #f9fafb;
+}
+
+.searchOptionIcon {
+	color: #6b7280;
+	flex-shrink: 0;
+}
+
+/* ── Role chip (C = caregiver, A = admin) ─────────────────────────────────── */
+
+.roleChip {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.role_caregiver {
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
+.role_admin {
+	background: #ede9fe;
+	color: #6d28d9;
+}
+
+/* ── Selected chips ───────────────────────────────────────────────────────── */
+
+.chipList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 8px 4px 6px;
+	background: #f3f4f6;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	color: #374151;
+}
+
+.chipIcon {
+	color: #6b7280;
+}
+
+.chipRemove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #9ca3af;
+	padding: 0;
+	margin-left: 1px;
+	border-radius: 3px;
+	line-height: 1;
+	transition: color 0.1s;
+}
+
+.chipRemove:hover {
+	color: #dc2626;
+}
+
+/* ── Target validation error ──────────────────────────────────────────────── */
+
+.targetError {
+	margin-top: 10px;
+}
+
+/* ── Submit area ──────────────────────────────────────────────────────────── */
+
+.submitError {
+	padding: 12px 16px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #dc2626;
+}
+
+.successBanner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #166534;
+}
+
+.submitRow {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	align-items: center;
+}
+
+/* Spinner applied to the icon passed into Button when sending */
+.btnSpinner {
+	animation: spin 0.8s linear infinite;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+	.typeGrid {
+		gap: 6px;
+	}
+
+	.typeOption {
+		padding: 7px 11px;
+		font-size: 0.825rem;
+	}
+
+	.card {
+		padding: 1.25rem;
+	}
+
+	.submitRow {
+		flex-direction: column-reverse;
+		align-items: stretch;
+	}
+
+	.cancelBtn,
+	.submitBtn {
+		justify-content: center;
+	}
+}
