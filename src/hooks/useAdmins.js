@@ -122,7 +122,7 @@ export const useAdmins = (options = {}) => {
 
 		totalPages: adminsQuery.data?.pagination?.totalPages ?? adminsQuery.data?.totalPages ?? 0,
 		currentPage: adminsQuery.data?.pagination?.currentPage ?? adminsQuery.data?.currentPage ?? 1,
-		totalCount: adminsQuery.data?.pagination?.totalCount ?? adminsQuery.data?.totalCount ?? 0,
+		totalCount: adminsQuery.data?.pagination?.totalAdmins ?? adminsQuery.data?.pagination?.totalCount ?? adminsQuery.data?.totalCount ?? 0,
 
 		// Status Indicators
 		isLoading: adminsQuery.isLoading || adminDetailQuery.isLoading,
