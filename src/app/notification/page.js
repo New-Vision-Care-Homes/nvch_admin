@@ -7,6 +7,7 @@ import Pagination from "@/components/UI/Pagination";
 import EmptyState from "@/components/UI/EmptyState";
 import Button from "@components/UI/Button";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useProfile } from "@/hooks/useProfile";
 import styles from "./notification.module.css";
 import {
 	Bell,
@@ -138,10 +139,22 @@ function FilterTab({ label, active, badge, onClick }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const BROADCAST_SLUGS = [
+	"broadcast_to_all_caregivers",
+	"broadcast_to_all_admins",
+	"broadcast_to_regions",
+	"broadcast_to_homes",
+	"broadcast_to_individuals",
+];
+
 export default function NotificationsPage() {
 	const router = useRouter();
 	const [filter, setFilter] = useState("all"); // "all" | "unread"
 	const [page,   setPage]   = useState(1);
+
+	const { profile } = useProfile();
+	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const canSendBroadcast = BROADCAST_SLUGS.some(s => permissionSlugs.includes(s));
 
 	const params = {
 		page,
@@ -189,13 +202,15 @@ export default function NotificationsPage() {
 					<p className={styles.subheading}>Recent updates from your portal</p>
 				</div>
 				<div className={styles.headerActions}>
-					<Button
-						variant="primary"
-						icon={<Megaphone size={15} />}
-						onClick={() => router.push("/notification/create")}
-					>
-						Send Notification
-					</Button>
+					{canSendBroadcast && (
+						<Button
+							variant="primary"
+							icon={<Megaphone size={15} />}
+							onClick={() => router.push("/notification/create")}
+						>
+							Send Notification
+						</Button>
+					)}
 					{unreadCount > 0 && (
 						<button
 							className={styles.markAllBtn}
