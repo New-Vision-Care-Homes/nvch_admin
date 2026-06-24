@@ -11,7 +11,7 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
-import { Plus, Edit, Search, Trash2 } from "lucide-react";
+import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
@@ -213,7 +213,7 @@ export default function Clients() {
 												<TableCell>
 													<div className={styles.actionsCell}>
 														<IconButton href={`/clients/${client.id}`} title="View Client">
-															<Edit size={15} />
+															<Eye size={15} />
 														</IconButton>
 														{canDeleteClient(client) && (
 															<IconButton variant="danger" onClick={() => deleteHandler(client.id)} title="Delete Client">
