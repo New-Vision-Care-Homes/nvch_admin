@@ -115,7 +115,7 @@ export const useCaregivers = (options = {}) => {
 
 		totalPages: caregiversQuery.data?.pagination?.totalPages ?? caregiversQuery.data?.totalPages ?? 0,
 		currentPage: caregiversQuery.data?.pagination?.currentPage ?? caregiversQuery.data?.currentPage ?? 1,
-		totalCount: caregiversQuery.data?.pagination?.totalCount ?? caregiversQuery.data?.totalCount ?? 0,
+		totalCount: caregiversQuery.data?.pagination?.totalCaregivers ?? caregiversQuery.data?.pagination?.totalCount ?? caregiversQuery.data?.totalCount ?? 0,
 
 		// Status Indicators
 		isCaregiverLoading: caregiversQuery.isLoading || caregiverDetailQuery.isLoading,

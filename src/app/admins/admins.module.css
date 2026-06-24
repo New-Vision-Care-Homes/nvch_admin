@@ -26,33 +26,98 @@
 	margin-bottom: 1rem;
 }
 
-/* 
+/*
+==========================================
+ UNIFIED CARD (filter + table together)
+==========================================
+*/
+.tableCard {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	margin-top: 1rem;
+	background: #fff;
+	border-radius: 10px;
+	border: 1px solid #e8edf3;
+	box-shadow: var(--shadow-lg);
+	overflow: hidden;
+}
+
+.emptyWrapper {
+	padding: 2rem;
+}
+
+/*
 ==========================================
  FILTER ROW
 ==========================================
 */
 .filter_row {
 	display: flex;
-	width: 100%;
 	align-items: center;
-	justify-content: space-between;
-	margin-top: 1rem;
+	gap: 10px;
+	padding: 0.875rem 1rem;
+	flex-wrap: wrap;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.searchWrapper {
+	position: relative;
+	flex: 1;
+	min-width: 200px;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 11px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: #94a3b8;
+	pointer-events: none;
 }
 
 .search {
-	width: 40%;
-	height: 3rem;
-	padding: 0.7rem 1rem;
-	font-size: 1rem;
-	border: 1px solid #ccc;
-	border-radius: 6px;
-	margin-bottom: 1rem;
+	width: 100%;
+	height: 40px;
+	padding: 0 12px 0 34px;
+	font-size: 0.875rem;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+	outline: none;
+	color: #1e293b;
+	transition: border-color 0.14s, box-shadow 0.14s;
 }
 
-.filter {
-	display: flex;
-	align-items: center;
-	gap: 2rem;
+.search:focus {
+	border-color: #1c4a6e;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+	background: #fff;
+}
+
+.search::placeholder {
+	color: #94a3b8;
+}
+
+.filterSelect {
+	height: 40px;
+	padding: 0 10px;
+	font-size: 0.875rem;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+	color: #1e293b;
+	outline: none;
+	cursor: pointer;
+	min-width: 130px;
+	transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.filterSelect:focus {
+	border-color: #1c4a6e;
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+	background: #fff;
 }
 
 /* ── Responsive (≤ 768px) ── */
@@ -69,87 +134,41 @@
 	.filter_row {
 		flex-direction: column;
 		align-items: stretch;
-		gap: 0.5rem;
 	}
 
-	.search {
+	.searchWrapper,
+	.filterSelect {
 		width: 100%;
 	}
-
-	.filter {
-		width: 100%;
-		gap: 1rem;
-	}
 }
 
-.button {
-	height: 3rem;
-	padding: 0.7rem 1rem;
-}
-
-/* 
-==========================================
- DROPDOWN
-==========================================
-*/
-.dropdownContainer {
-	position: relative;
-}
-
-.dropdownContainer button {
+/* ==========================================
+   ACTION ICON BUTTONS
+========================================== */
+.actionsCell {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem;
-	padding: 0.5rem 1rem;
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	background-color: white;
-	cursor: pointer;
-	font-size: 0.95rem;
+	gap: 0.375rem;
 }
 
-.dropdownContainer button:hover {
-	background-color: #f9f9f9;
-}
-
-.dropdownMenu {
-	position: absolute;
-	top: 110%;
-	left: 0;
-	width: 100%;
-	background: white;
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-	z-index: 10;
-}
-
-.dropdownMenu div {
-	padding: 0.5rem 1rem;
-	cursor: pointer;
-	transition: background-color 0.2s;
-}
-
-.dropdownMenu div:hover {
-	background-color: #f2f2f2;
-}
-
-/* 
+/*
 ==========================================
  TABLE
 ==========================================
 */
+
+/* Nudge the first column right so it aligns with the search bar (which has 1rem left padding).
+   The table row already has 8px padding; this adds another 8px to close the gap. */
+.firstCol {
+	padding-left: 0.5rem;
+}
+
 .tableWrapper {
 	display: flex;
 	flex-direction: column;
-	flex-grow: 1;
-	width: 100%;
-	padding: 1rem;
-	background: #fff;
-	border-radius: 10px;
-	box-shadow: 0px 0px 1px #171a1f12, 0px 0px 2px #171a1f1F;
+	flex: 1;
 	min-height: 0;
+	width: 100%;
 	overflow-y: auto;
 }
 
@@ -184,37 +203,6 @@
 
 /* 
 ==========================================
- PAGINATION
-==========================================
-*/
-.pagination {
-	margin-top: auto;
-	display: flex;
-	justify-content: center;
-	list-style: none;
-	gap: 0.5rem;
-	padding: 1rem 0;
-}
-
-.pageItem {
-	margin: 0;
-}
-
-.pageLink {
-	padding: 0.4rem 0.8rem;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	cursor: pointer;
-}
-
-.active .pageLink {
-	background-color: #1C4A6EFF;
-	color: #fff;
-	border-color: #1C4A6EFF;
-}
-
-/* 
-==========================================
  MODAL
 ==========================================
 */
@@ -236,4 +224,19 @@
 
 .modal_buttons button {
 	min-width: 80px;
+}
+
+/*
+==========================================
+ ACTION ERROR
+==========================================
+*/
+.actionError {
+	font-size: 13px;
+	color: #DC2626;
+	background: #FEF2F2;
+	border: 0.5px solid #FECACA;
+	border-radius: 8px;
+	padding: 10px 16px;
+	margin-bottom: 1rem;
 }

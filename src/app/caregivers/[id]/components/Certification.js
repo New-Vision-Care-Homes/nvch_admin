@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./Certification.module.css";
 import { Trash2, Upload, Eye, ExternalLink } from "lucide-react";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import Modal from "@components/UI/Modal";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -57,11 +58,9 @@ export default function Certification() {
 
 	return (
 		<div className={styles.container}>
-			<div className={styles.title}>
-				<h2>Certifications</h2>
-				<Button onClick={handleNewCertification}>
-					<Upload size={16} style={{ marginRight: 8 }} />
-					Upload New Certificate
+			<div className={styles.toolbar}>
+				<Button onClick={handleNewCertification} icon={<Upload size={14} />}>
+					Upload Certificate
 				</Button>
 			</div>
 
@@ -123,13 +122,15 @@ export default function Certification() {
 									<span className={styles.noFile}>No File</span>
 								)}
 							</TableCell>
-							<TableCell>{c.isActive ? "Active" : "Inactive"}</TableCell>
 							<TableCell>
-								<Trash2
-									color="#ef4444"
-									style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer', marginLeft: '0.5rem' }}
-									onClick={() => handleDeleteClick(c._id)}
-								/>
+								<span className={`${styles.statusPill} ${c.isActive ? styles.statusActive : styles.statusInactive}`}>
+									{c.isActive ? "Active" : "Inactive"}
+								</span>
+							</TableCell>
+							<TableCell>
+								<IconButton variant="danger" onClick={() => handleDeleteClick(c._id)} title="Delete Certificate">
+									<Trash2 size={15} />
+								</IconButton>
 							</TableCell>
 						</TableContent>
 						);

@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
-// Assuming component paths are correct
+import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
-import { Card, CardHeader, InfoField } from "@components/UI/Card";
+import { Card, CardHeader } from "@components/UI/Card";
 import styles from "./caregiver_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Link from "next/link";
-import { Activity, Undo2, Upload } from "lucide-react";
+import { Activity, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
-
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/ErrorState";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
+import { utcToFullDisplay } from "@/utils/timeHandling";
 
 
 export default function Page() {
@@ -39,15 +38,28 @@ export default function Page() {
 	// Changing another user's picture requires update rights on the target
 	// (same scoping as the edit form — backend assertCanManageUser).
 	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
+	const isSuperAdmin = profile?.adminLevel === "super";
 
-	// --- Image Upload States ---
+
+	// --- Image Upload ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-	// --- General UI States ---
+	// --- General UI ---
 	const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
 	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
 	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
+
+	// --- Editable Caregiver ID ---
+	const [editingId, setEditingId] = useState(false);
+	const [idValue, setIdValue] = useState("");
+	const [idSaving, setIdSaving] = useState(false);
+	const [idError, setIdError] = useState(null);
+	const [idSuccess, setIdSuccess] = useState(null);
+
+	useEffect(() => {
+		setIdValue(caregiverDetail?.employeeId || "");
+	}, [caregiverDetail?.employeeId]);
 
 
 
@@ -77,6 +89,79 @@ export default function Page() {
 	};
 
 
+
+	// --- Save Caregiver ID ---
+	const handleSaveId = () => {
+		const trimmed = idValue.trim();
+		if (!trimmed) {
+			setIdError("Caregiver ID cannot be empty.");
+			return;
+		}
+		setIdSaving(true);
+		setIdError(null);
+		setIdSuccess(null);
+
+		// PUT requires the full caregiver payload — send all existing fields
+		// (same shape as Info.js onSubmit) and override only employeeId.
+		const cd = caregiverDetail;
+		const fullPayload = {
+			email:               cd.email || null,
+			firstName:           cd.firstName,
+			lastName:            cd.lastName,
+			phone:               cd.phone || null,
+			dateOfBirth:         cd.dateOfBirth || null,
+			employeeStartDate:   cd.employeeStartDate ? new Date(cd.employeeStartDate).toISOString() : null,
+			regions:             cd.regions,
+			employmentStatus:    cd.employmentStatus || null,
+			address: {
+				street:  cd.address?.street,
+				unit:    cd.address?.unit || null,
+				city:    cd.address?.city,
+				state:   cd.address?.state,
+				pinCode: cd.address?.pinCode,
+				country: cd.address?.country,
+				gpsCoordinates: {
+					latitude:  cd.address?.gpsCoordinates?.latitude,
+					longitude: cd.address?.gpsCoordinates?.longitude,
+				},
+			},
+			biWeeklyWorkCapacity: { maxHours: cd.biWeeklyWorkCapacity?.maxHours },
+			supervisor:    cd.supervisor || null,
+			teamLead:      cd.teamLead   || null,
+			emergencyContact: {
+				name:         cd.emergencyContact?.name         || null,
+				phone:        cd.emergencyContact?.phone        || null,
+				relationship: cd.emergencyContact?.relationship || null,
+			},
+			employeeId: trimmed,
+		};
+
+		updateCaregiver(
+			{ id, data: fullPayload },
+			{
+				onSuccess: () => {
+					setIdSaving(false);
+					setEditingId(false);
+					setIdSuccess("Caregiver ID updated successfully.");
+					setTimeout(() => setIdSuccess(null), 4000);
+				},
+				onError: (err) => {
+					setIdSaving(false);
+					setIdError(
+						err?.response?.data?.details?.[0]?.msg ||
+						err?.response?.data?.error ||
+						"Failed to update Caregiver ID."
+					);
+				},
+			}
+		);
+	};
+
+	const handleCancelIdEdit = () => {
+		setEditingId(false);
+		setIdValue(caregiverDetail?.employeeId || "");
+		setIdError(null);
+	};
 
 	// --- Utility Handlers ---
 	function handleGeneralModalCancel() {
@@ -132,44 +217,92 @@ export default function Page() {
 				{/* Caregiver Overview */}
 				<Card>
 					<CardHeader>Caregiver Overview</CardHeader>
-					<div className={styles.content}>
-						<div className={styles.text}>
-							<div className={styles.column}>
-								<InfoField label="Caregiver ID">{caregiverDetail.employeeId}</InfoField>
-								<InfoField label="Next Appointment">2024-08-05 (10:00 AM) default data</InfoField>
-							</div>
-							<div className={styles.column}>
-								<InfoField label="Status">
-									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
-										{activeStatus ? "Active" : "Inactive"}
-									</span>
-								</InfoField>
-								<InfoField label="Care Plan Status">On Track default data</InfoField>
-							</div>
-							<div className={styles.column}>
-								<InfoField label="Last Shift">2024-07-28 default data</InfoField>
-							</div>
-						</div>
-						<div className={styles.picture}>
+					<div className={styles.overviewBody}>
+						<div className={styles.avatarWrap}>
 							<Image
 								src={caregiverDetail.profilePictureUrl || defaultAvatar}
 								alt="Profile Photo"
-								width={100}
-								height={100}
-								className={styles.image}
+								width={88}
+								height={88}
+								className={styles.avatar}
 								unoptimized
 							/>
-							{/* Button to open the image upload modal */}
 							{canEdit && (
-								<Button
-									variant="secondary"
-									size="sm"
-									icon={<Upload size={16} />}
+								<button
+									className={styles.uploadTrigger}
 									onClick={() => setIsImageModalOpen(true)}
+									title="Upload photo"
 								>
-									Upload
-								</Button>
+									<Upload size={13} />
+								</button>
 							)}
+						</div>
+
+						<div className={styles.overviewInfo}>
+							<div className={styles.mainInfo}>
+								<div className={styles.fullName}>{caregiverDetail.firstName} {caregiverDetail.lastName}</div>
+								<div className={styles.idSection}>
+									{editingId ? (
+										<div className={styles.idEditRow}>
+											<input
+												className={styles.idInput}
+												value={idValue}
+												onChange={(e) => setIdValue(e.target.value)}
+												onKeyDown={(e) => { if (e.key === "Enter") handleSaveId(); if (e.key === "Escape") handleCancelIdEdit(); }}
+												disabled={idSaving}
+												autoFocus
+											/>
+											<button className={styles.idSaveBtn} onClick={handleSaveId} disabled={idSaving} title="Save">
+												<Check size={13} />
+											</button>
+											<button className={styles.idCancelBtn} onClick={handleCancelIdEdit} disabled={idSaving} title="Cancel">
+												<X size={13} />
+											</button>
+										</div>
+									) : (
+										<div className={styles.idViewRow}>
+											<Hash size={12} className={styles.idIcon} />
+											<span className={styles.idText}>{caregiverDetail.employeeId || "—"}</span>
+											{isSuperAdmin && (
+												<button
+													className={styles.idEditTrigger}
+													onClick={() => { setEditingId(true); setIdError(null); setIdSuccess(null); }}
+													title="Edit Caregiver ID"
+												>
+													<Pencil size={11} />
+												</button>
+											)}
+										</div>
+									)}
+									{idError   && <div className={styles.idFeedbackError}>{idError}</div>}
+									{idSuccess && <div className={styles.idFeedbackSuccess}>{idSuccess}</div>}
+								</div>
+								<div className={styles.badges}>
+									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
+										{activeStatus ? "Active" : "Inactive"}
+									</span>
+									{caregiverDetail.employmentStatus && (
+										<span className={styles.empBadge}>{caregiverDetail.employmentStatus}</span>
+									)}
+								</div>
+							</div>
+
+							<div className={styles.timestamps}>
+								<div className={styles.metaItem}>
+									<Calendar size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Created</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(caregiverDetail.createdAt, "America/Halifax")}</div>
+									</div>
+								</div>
+								<div className={styles.metaItem}>
+									<Clock size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Last Updated</div>
+										<div className={styles.metaValue}>{utcToFullDisplay(caregiverDetail.updatedAt, "America/Halifax")}</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</Card>

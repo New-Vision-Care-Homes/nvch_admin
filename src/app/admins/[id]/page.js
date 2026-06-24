@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS, DEPARTMENT_OPTIONS, ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, DEPARTMENT_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
@@ -30,14 +30,6 @@ const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Office Admin", value: "office_admin" },
 	{ label: "Team Lead", value: "team_lead" },
 	{ label: "Payroll Admin", value: "payroll" },
-];
-
-const DEPARTMENT_OPTIONS = [
-	{ label: "Operations", value: "Operations" },
-	{ label: "Human Resources", value: "Human Resources" },
-	{ label: "Finance", value: "Finance" },
-	{ label: "IT", value: "IT" },
-	{ label: "Administration", value: "Administration" },
 ];
 
 const schema = yup.object({
@@ -380,11 +372,27 @@ export default function Page() {
 										<>
 											<div className={styles.row2}>
 												<InfoField label="Role">Admin</InfoField>
-												<InfoField label="Admin Level">{user.adminLevel || "—"}</InfoField>
+												<InfoField label="Admin Level">
+												{user.adminLevel ? (() => {
+													const c = ADMIN_LEVEL_COLORS[user.adminLevel] ?? COLOR_FALLBACK;
+													return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{ADMIN_LEVEL_LABEL[user.adminLevel] ?? user.adminLevel}</span>;
+												})() : <span style={{ color: "#94a3b8" }}>—</span>}
+											</InfoField>
 											</div>
 											<div className={styles.row2}>
-												<InfoField label="Department">{user.department || "—"}</InfoField>
-												<InfoField label="Regions">{(Array.isArray(user.regions) && user.regions.length > 0 ? user.regions.join(", ") : user.region) || "—"}</InfoField>
+												<InfoField label="Department">
+												{user.department ? (() => {
+													const c = DEPARTMENT_COLORS[user.department] ?? COLOR_FALLBACK;
+													return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{user.department}</span>;
+												})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												</InfoField>
+												<InfoField label="Regions">
+												{(() => {
+													const regionList = Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []);
+													if (!regionList.length) return <span style={{ color: "#94a3b8" }}>—</span>;
+													return <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>{regionList.map((r) => { const c = REGION_COLORS[r] ?? COLOR_FALLBACK; return <span key={r} style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{r}</span>; })}</div>;
+												})()}
+												</InfoField>
 											</div>
 											<div className={styles.row2}>
 												<InfoField label="Employee Start Date">{user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "—"}</InfoField>

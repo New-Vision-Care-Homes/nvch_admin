@@ -9,8 +9,7 @@
 .pageContainer {
 	display: flex;
 	flex-direction: column;
-	flex: 1;
-	overflow: hidden;
+	gap: 0;
 }
 
 /*
@@ -27,66 +26,49 @@
 	margin-bottom: 1rem;
 }
 
-.filter_row {
-	display: flex;
-	width: 100%;
-	align-items: center;
-	justify-content: space-between;
-	margin-top: 1rem;
-	flex-wrap: wrap;
-}
-
-.search {
-	align-items: center;
-	justify-content: center;
-	width: 40%;
-	height: 3rem;
-	padding: 0.7rem 1rem;
-	border: var(--border-secondary);
-	border-radius: var(--border-size-sm);
-	margin-bottom: 1rem;
-	font-size: 1rem;
-}
-
-.filter {
-	display: flex;
-	align-items: center;
-	gap: 2rem;
-}
-
 /* ── Responsive (≤ 768px) ── */
 @media (max-width: 768px) {
-	.pageContainer {
-		overflow: visible;
-	}
-
 	.header {
 		flex-wrap: wrap;
 		gap: 0.75rem;
 	}
 
-	.filter_row {
-		flex-direction: column;
-		align-items: stretch;
+	.tableWrapper {
+		padding: 1rem;
+	}
+
+	.filterBar {
 		gap: 0.5rem;
 	}
 
-	.search {
-		width: 100%;
+	.searchWrap {
+		max-width: 100%;
+		flex: 1 1 100%;
 	}
 
-	.filter {
-		width: 100%;
-		gap: 1rem;
+	.filterSelect {
+		flex: 1 1 calc(50% - 0.25rem);
+		min-width: 0;
+	}
+
+	.clearBtn {
+		flex: 1 1 100%;
+		justify-content: center;
+	}
+
+	.totalBadge {
+		margin-left: 0;
+		flex: 1 1 100%;
+		text-align: center;
+	}
+
+	.legend {
+		flex-wrap: wrap;
+		gap: 4px;
 	}
 }
 
-.button {
-	height: 3rem;
-	padding: 0.7rem 1rem;
-}
-
-/* 
+/*
 ==========================================
  TABLE WRAPPER
 ==========================================
@@ -94,57 +76,299 @@
 .tableWrapper {
 	display: flex;
 	flex-direction: column;
-	flex-grow: 1;
 	width: 100%;
-	padding: 1rem;
+	padding: 1.25rem 1.5rem;
 	border-radius: var(--border-size-md);
-	box-shadow: var(--shadow-md);
-	min-height: 0;
-	overflow-y: auto;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+	/* clip-path removes the top shadow bleed so no phantom line appears above the search bar */
+	clip-path: inset(0 -30px -30px -30px round var(--border-size-md));
+	background: #fff;
 }
 
-.TableCell,
-.TableHeader {
-	padding: 0.75rem 1rem;
+/* ── Filter bar ── */
+.filterBar {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin-bottom: 1rem;
+	flex-wrap: wrap;
 }
 
-.TableCell span {
-	display: block;
+.searchWrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 180px;
+	max-width: 280px;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 10px;
+	color: #94a3b8;
+	pointer-events: none;
+}
+
+.searchInput {
+	width: 100%;
+	padding: 7px 32px 7px 32px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	font-size: 0.84rem;
+	color: #1e293b;
+	background: #f8fafc;
+	outline: none;
+	transition: border-color 0.15s;
+}
+
+.searchInput:focus {
+	border-color: #1c4a6e;
+	background: #fff;
+}
+
+.searchClear {
+	position: absolute;
+	right: 8px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #94a3b8;
+	display: flex;
+	align-items: center;
+	padding: 0;
+}
+
+.searchClear:hover {
+	color: #475569;
+}
+
+.filterSelect {
+	padding: 7px 10px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	font-size: 0.84rem;
+	color: #1e293b;
+	background: #f8fafc;
+	cursor: pointer;
+	outline: none;
+	transition: border-color 0.15s;
+}
+
+.filterSelect:focus {
+	border-color: #1c4a6e;
+	background: #fff;
+}
+
+.clearBtn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 12px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #64748b;
+	background: #f1f5f9;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.clearBtn:hover {
+	background: #e2e8f0;
+}
+
+.totalBadge {
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	color: #64748b;
+	background: #f1f5f9;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 999px;
+	padding: 2px 10px;
+	margin-left: auto;
+}
+
+/* ── Type / Region pills ── */
+.typePill {
+	display: inline-block;
+	padding: 0.18rem 0.6rem;
+	border-radius: 999px;
+	border: 1.5px solid;
+	font-size: 0.74rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+}
+
+/* ── Legend ── */
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	flex-wrap: wrap;
+	margin-bottom: 0.75rem;
+	flex-shrink: 0;
+}
+
+.legendLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #94a3b8;
+	margin-right: 2px;
+}
+
+.legendChip {
+	font-size: 0.71rem;
+	font-weight: 700;
+	padding: 2px 9px;
+	border-radius: 999px;
+	border: 1.5px solid;
+	letter-spacing: 0.02em;
+}
+
+.legendSep {
+	width: 1px;
+	height: 14px;
+	background: #e2e8f0;
+	margin: 0 4px;
+	flex-shrink: 0;
+}
+
+/* ── Table area ── */
+.tableWrap {
+	overflow-x: auto;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+}
+
+.homesTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+
+.homesTable thead th {
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #94a3b8;
+	padding: 11px 16px;
+	border-bottom: 1.5px solid #e8eef4;
+	background: #fafbfc;
+	text-align: left;
+	white-space: nowrap;
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.homeRow {
+	cursor: pointer;
+}
+
+.homeRow:last-child td {
+	border-bottom: none;
+}
+
+.homeRow td {
+	padding: 15px 16px;
+	color: #1e293b;
+	vertical-align: middle;
+	border-bottom: 1px solid #e8eef4;
+	background: #fff;
+	transition: background 0.12s ease;
+}
+
+/* Alternating rows — same pattern as scheduling overview */
+.homeRowEven td {
+	background: #f8fafc;
+}
+
+.homeRow:hover td,
+.homeRowEven:hover td {
+	background: #eff6ff !important;
+}
+
+.homeNameCell {
+	white-space: nowrap;
+	font-weight: 600;
+	font-size: 0.93rem;
+}
+
+.homeNameInner {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+}
+
+.addressCell {
+	max-width: 220px;
+	color: #475569;
+}
+
+.addressInner {
+	display: flex;
+	align-items: flex-start;
+	gap: 5px;
+}
+
+.countCell {
+	text-align: center;
+}
+
+.countInner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	font-weight: 600;
+	color: #334155;
+}
+
+.dateCell {
+	white-space: nowrap;
+	color: #475569;
+}
+
+.actionsCell {
+	text-align: center;
+}
+
+.deleteIcon {
+	color: #ef4444;
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.15s;
+}
+
+.deleteIcon:hover {
+	opacity: 1;
 }
 
 /* Pill style for status */
 .statusPill {
 	display: inline-block;
-	padding: 0.25rem 0.75rem;
-	/* height & horizontal padding */
+	padding: 0.2rem 0.65rem;
 	border-radius: 9999px;
-	/* full round */
-	font-size: 0.85rem;
-	font-weight: 500;
-	text-align: center;
-	min-width: 60px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	white-space: nowrap;
 }
 
-/* Specific colors */
 .statusActive {
-	background-color: #D1FAE5;
-	/* light green background */
-	color: #065F46;
-	/* dark green text */
+	background-color: #d1fae5;
+	color: #065f46;
 }
 
 .statusInactive {
-	background-color: #FEE2E2;
-	/* light red background */
-	color: #B91C1C;
-	/* dark red text */
-}
-
-
-/* Table Row Actions */
-.TableCell>div {
-	display: inline-block;
-	margin-left: 0.5rem;
+	background-color: #fee2e2;
+	color: #b91c1c;
 }
 
 /* 
@@ -152,32 +376,6 @@
  PAGINATION
 ==========================================
 */
-.pagination {
-	margin-top: auto;
-	/* pushes it to the bottom */
-	display: flex;
-	justify-content: center;
-	list-style: none;
-	gap: 0.5rem;
-	padding: 1rem 0;
-}
-
-.pageItem {
-	margin: 0;
-}
-
-.pageLink {
-	padding: 0.4rem 0.8rem;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	cursor: pointer;
-}
-
-.active .pageLink {
-	background-color: #1C4A6EFF;
-	color: #fff;
-	border-color: #1C4A6EFF;
-}
 
 /*
 ==========================================
@@ -293,7 +491,6 @@
 .dropdownMenu div:hover {
 	background-color: #f2f2f2;
 }
-
 
 /*
 ==========================================

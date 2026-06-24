@@ -25,45 +25,24 @@
 /* ==========================================
    TABLE WRAPPER
 ========================================== */
+/* Aligns first column with the search bar above (1rem left padding). */
+.firstCol {
+	padding-left: 0.5rem;
+}
+
 .tableWrapper {
 	display: flex;
 	flex-direction: column;
-	flex-grow: 1;
+	flex: 1;
 	min-height: 0;
+	margin-top: 1rem;
 	width: 100%;
-	padding: 1rem;
+	background: #fff;
 	border-radius: var(--border-size-md);
-	box-shadow: var(--shadow-md);
+	border: 1px solid #e8edf3;
+	box-shadow: var(--shadow-lg);
+	overflow: hidden;
 	overflow-y: auto;
-}
-
-/* ==========================================
-   PAGINATION
-========================================== */
-.pagination {
-	margin-top: auto;
-	display: flex;
-	justify-content: center;
-	list-style: none;
-	gap: 0.5rem;
-	padding: 1rem 0;
-}
-
-.pageItem {
-	margin: 0;
-}
-
-.pageLink {
-	padding: 0.4rem 0.8rem;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	cursor: pointer;
-}
-
-.active .pageLink {
-	background-color: #1C4A6E;
-	color: #fff;
-	border-color: #1C4A6E;
 }
 
 /* ==========================================
@@ -123,7 +102,14 @@
 		gap: 0.75rem;
 	}
 
-	.pagination {
-		flex-wrap: wrap;
-	}
 }
+
+/* ==========================================
+   ACTION ICON BUTTONS
+========================================== */
+.actionsCell {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+

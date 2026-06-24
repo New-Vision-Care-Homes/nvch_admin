@@ -6,29 +6,17 @@
 	gap: 0;
 }
 
-/* ─── Header ────────────────────────────────────────────────────────────── */
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0 0 1.25rem 0;
-}
-
-.header h2 {
-	font-size: 1.25rem;
-	font-weight: 700;
-	color: #111827;
-	margin: 0;
-}
-
+/* ─── Result count badge (lives inside filterBar) ─────────────────────────── */
 .resultCount {
-	font-size: 0.8rem;
+	font-size: 0.75rem;
 	color: #6b7280;
-	font-weight: 500;
+	font-weight: 600;
 	background: #f3f4f6;
 	border: 1px solid #e5e7eb;
-	padding: 0.25rem 0.75rem;
+	padding: 0.2rem 0.7rem;
 	border-radius: 9999px;
+	white-space: nowrap;
+	align-self: flex-end;
 }
 
 /* ─── Filter Bar ─────────────────────────────────────────────────────────── */
@@ -211,44 +199,4 @@
 }
 
 /* ─── Pagination ─────────────────────────────────────────────────────────── */
-.pagination {
-	margin-top: 1rem;
-	display: flex;
-	justify-content: center;
-	list-style: none;
-	gap: 0.35rem;
-	padding: 1rem 0;
-}
 
-.pageItem {
-	margin: 0;
-}
-
-.pageLink {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 36px;
-	height: 36px;
-	padding: 0 0.6rem;
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
-	cursor: pointer;
-	font-size: 0.85rem;
-	color: #374151;
-	transition: all 0.15s ease;
-	font-weight: 500;
-}
-
-.pageLink:hover {
-	border-color: var(--color-primary);
-	color: var(--color-primary);
-	background: #eef2ff;
-}
-
-.pageActive .pageLink {
-	background: var(--color-primary);
-	color: #ffffff;
-	border-color: var(--color-primary);
-	font-weight: 700;
-}

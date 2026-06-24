@@ -1,0 +1,40 @@
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 7px;
+	cursor: pointer;
+	transition: background 0.13s, border-color 0.13s, color 0.13s;
+	text-decoration: none;
+	flex-shrink: 0;
+}
+
+.default {
+	border: 1.5px solid #e2e8f0;
+	background: #f8fafc;
+	color: #475569;
+}
+
+.default:hover {
+	background: #dbeafe;
+	border-color: #93c5fd;
+	color: #1c4a6e;
+}
+
+.danger {
+	border: 1.5px solid #fecaca;
+	background: #fff5f5;
+	color: #ef4444;
+}
+
+.danger:hover {
+	background: #fee2e2;
+	border-color: #f87171;
+}
+
+.btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}

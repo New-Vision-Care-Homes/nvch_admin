@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import styles from "./Shifts.module.css";
-import { ExternalLink, Filter, Calendar, AlertCircle } from "lucide-react";
+import { Eye, Filter, Calendar, AlertCircle } from "lucide-react";
 import { Table, TableHeader, TableCell, TableContent } from "@components/UI/Table";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import { useShifts } from "@/hooks/useShifts";
 import { useParams, useRouter } from "next/navigation";
 import { DateTime } from "luxon";
-import ReactPaginate from "react-paginate";
+import Pagination from "@components/UI/Pagination";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -137,17 +138,6 @@ export default function Shifts() {
 	return (
 		<div className={styles.container}>
 
-			{/* ── Header ──────────────────────────────────────────────────── */}
-			<div className={styles.header}>
-				<h2>Shifts & Schedule</h2>
-				{!isShiftLoading && (
-					<span className={styles.resultCount}>
-						{shifts?.length ?? 0} shift{shifts?.length !== 1 ? "s" : ""}
-						{hasDateFilter ? " in range" : " on this page"}
-					</span>
-				)}
-			</div>
-
 			{/* ── Filter Bar ──────────────────────────────────────────────── */}
 			<div className={styles.filterBar}>
 
@@ -190,6 +180,13 @@ export default function Shifts() {
 				</div>
 
 				{/* Custom date inputs */}
+				{!isShiftLoading && (
+					<span className={styles.resultCount}>
+						{shifts?.length ?? 0} shift{shifts?.length !== 1 ? "s" : ""}
+						{hasDateFilter ? " in range" : " on this page"}
+					</span>
+				)}
+
 				{datePreset === "custom" && (
 					<div className={styles.customDateRow}>
 						<div className={styles.dateField}>
@@ -264,15 +261,12 @@ export default function Shifts() {
 								</TableCell>
 								<TableCell>{clientOrHome}</TableCell>
 								<TableCell>
-									<Button
-										variant="ghost"
-										size="sm"
-										style={{ padding: "0.25rem 0.5rem" }}
+									<IconButton
 										onClick={() => router.push(`/scheduling/${shiftId}`)}
 										title="View Shift Details"
 									>
-										<ExternalLink size={16} color="var(--color-secondary)" />
-									</Button>
+										<Eye size={15} />
+									</IconButton>
 								</TableCell>
 							</TableContent>
 						);
@@ -289,26 +283,7 @@ export default function Shifts() {
 				)}
 			</Table>
 
-			{/* ── Pagination ──────────────────────────────────────────────── */}
-			{showPagination && (
-				<ReactPaginate
-					pageCount={Math.max(totalPages, 1)}
-					forcePage={currentPage - 1}
-					onPageChange={(e) => setCurrentPage(e.selected + 1)}
-					pageRangeDisplayed={3}
-					marginPagesDisplayed={1}
-					previousLabel="Prev"
-					nextLabel="Next"
-					containerClassName={styles.pagination}
-					pageClassName={styles.pageItem}
-					pageLinkClassName={styles.pageLink}
-					previousClassName={styles.pageItem}
-					previousLinkClassName={styles.pageLink}
-					nextClassName={styles.pageItem}
-					nextLinkClassName={styles.pageLink}
-					activeClassName={styles.pageActive}
-				/>
-			)}
+			{!hasDateFilter && <Pagination pageCount={totalPages} forcePage={currentPage - 1} onPageChange={(e) => setCurrentPage(e.selected + 1)} />}
 
 		</div>
 	);

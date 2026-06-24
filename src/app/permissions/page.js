@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./permissions.module.css";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
-import ReactPaginate from "react-paginate";
+import Pagination from "@components/UI/Pagination";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
 import { Plus, Eye, Trash2 } from "lucide-react";
@@ -111,7 +112,7 @@ export default function Permissions() {
 								<div className={styles.tableWrapper}>
 									<Table>
 										<TableHeader>
-											<TableCell>Name</TableCell>
+											<TableCell className={styles.firstCol}>Name</TableCell>
 											<TableCell>Description</TableCell>
 											<TableCell>Granted Permissions</TableCell>
 											<TableCell>Created</TableCell>
@@ -120,7 +121,7 @@ export default function Permissions() {
 										</TableHeader>
 										{permissionGroups?.map?.((group) => (
 											<TableContent key={group._id}>
-												<TableCell><strong>{group.name}</strong></TableCell>
+												<TableCell className={styles.firstCol}><strong>{group.name}</strong></TableCell>
 												<TableCell>
 													<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
 														{group.description?.length > 60
@@ -140,41 +141,22 @@ export default function Permissions() {
 													{format(new Date(group.updatedAt), "MMM d, yyyy")}
 												</TableCell>
 												<TableCell>
-													<Link href={`/permissions/${group._id}`}>
-														<Eye color="#1C4A6E" style={{ width: '1.25rem', height: '1.25rem', marginRight: '1rem' }} />
-													</Link>
-													{canDelete && (
-														<Trash2
-															color="#ef4444"
-															style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-															onClick={() => deleteHandler(group._id)}
-														/>
-													)}
+													<div className={styles.actionsCell}>
+														<IconButton href={`/permissions/${group._id}`} title="View Permission Group">
+															<Eye size={15} />
+														</IconButton>
+														{canDelete && (
+															<IconButton variant="danger" onClick={() => deleteHandler(group._id)} title="Delete Permission Group">
+																<Trash2 size={15} />
+															</IconButton>
+														)}
+													</div>
 												</TableCell>
 											</TableContent>
 										))}
 									</Table>
 
-									{/* Only render pagination when there is more than one page */}
-									{totalPages > 1 && (
-										<ReactPaginate
-											pageCount={Math.max(totalPages, 1)}
-											forcePage={currentPage - 1} // convert 1-based → 0-based for ReactPaginate
-											onPageChange={handlePageClick}
-											pageRangeDisplayed={5}
-											marginPagesDisplayed={1}
-											previousLabel={"Prev"}
-											nextLabel={"Next"}
-											containerClassName={styles.pagination}
-											pageClassName={styles.pageItem}
-											pageLinkClassName={styles.pageLink}
-											previousClassName={styles.pageItem}
-											previousLinkClassName={styles.pageLink}
-											nextClassName={styles.pageItem}
-											nextLinkClassName={styles.pageLink}
-											activeClassName={styles.active}
-										/>
-									)}
+									<Pagination pageCount={totalPages} forcePage={currentPage - 1} onPageChange={handlePageClick} />
 								</div>
 							)}
 						</>

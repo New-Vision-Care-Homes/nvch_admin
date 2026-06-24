@@ -79,4 +79,16 @@ export const API_ENDPOINTS = {
 		BY_SHIFT_ID: (shiftId) => `/api/focus-notes/shift/${shiftId}`,
 		BY_ID: (id) => `/api/focus-notes/${id}`,
 	},
+
+	/* All related endpoints for notifications */
+	NOTIFICATIONS: {
+		BASE: '/api/notifications',
+		BY_ID: (id) => `/api/notifications/${id}`,
+		COUNT: '/api/notifications/count',
+		MARK_READ: (id) => `/api/notifications/${id}/read`,
+		READ_ALL: '/api/notifications/read-all',
+		STREAM_TOKEN: '/api/notifications/stream-token',
+		STREAM: '/api/notifications/stream',
+		BROADCAST: '/api/notifications/broadcast',
+	},
 };

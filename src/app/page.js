@@ -47,7 +47,7 @@ export default function LoginPage() {
 				<div className={styles.logoArea}>
 					<Image
 						src={logoImg}
-						alt="CareConnect Logo"
+						alt="New Vision Cares Logo"
 						width={140}
 						height={48}
 						priority
@@ -57,7 +57,7 @@ export default function LoginPage() {
 				{/* Title */}
 				<div className={styles.titleArea}>
 					<h1>Welcome back</h1>
-					<p>Sign in to your CareConnect portal</p>
+					<p>Sign in to your New Vision Cares Admin Portal</p>
 				</div>
 
 				{/* Error Banner */}

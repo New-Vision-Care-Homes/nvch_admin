@@ -5,18 +5,16 @@ import styles from "./dashboard.module.css";
 import Link from "next/link";
 import {
 	Users,
-	Calendar,
-	Clock,
-	TriangleAlert,
+	Activity,
 	UserPlus,
 	IdCardLanyard,
 	HousePlus,
 	CalendarPlus,
-	CircleCheckBig,
-	FileWarning,
-	Activity,
+	ShieldCheck,
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
+import { useAdmins } from "@/hooks/useAdmins";
+import { useCaregivers } from "@/hooks/useCaregivers";
 import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
 
@@ -36,20 +34,18 @@ const stats = [
 		bgColor: "#fffbeb",
 	},
 	{
-		id: "pending-approvals",
-		label: "Pending Approvals",
-		icon: Clock,
-		iconColor: "#b45309",
-		bgColor: "#fef3c7",
-		value: "N/A",
+		id: "active-admins",
+		label: "Active Admins",
+		icon: ShieldCheck,
+		iconColor: "#1C4A6E",
+		bgColor: "#eff6ff",
 	},
 	{
-		id: "urgent-alerts",
-		label: "Urgent Alerts",
-		icon: TriangleAlert,
-		iconColor: "#dc2626",
-		bgColor: "#fef2f2",
-		value: "N/A",
+		id: "active-caregivers",
+		label: "Active Caregivers",
+		icon: IdCardLanyard,
+		iconColor: "#7c3aed",
+		bgColor: "#f5f3ff",
 	},
 ];
 
@@ -93,21 +89,27 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
-	const { clients, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
+	const { totalCount: activeClientCount, isLoading: isClientsLoading } = useClients({ params: { isActive: true } });
+	const { totalCount: activeAdminCount, isLoading: isAdminsLoading } = useAdmins({ params: { isActive: true } });
+	const { totalCount: activeCaregiverCount, isCaregiverLoading: isCaregiversLoading } = useCaregivers({ params: { isActive: true } });
 	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
 	const { profile } = useProfile();
 	const permissionSlugs = profile?.permissionSlugs ?? [];
 	const visibleQuickActions = quickActions.filter(a => permissionSlugs.includes(a.requiredSlug));
 
 	const getStatValue = (stat) => {
-		if (stat.id === "active-clients") return clients?.length ?? "—";
+		if (stat.id === "active-clients") return activeClientCount || "—";
 		if (stat.id === "in-progress-shifts") return inProgressShifts?.length ?? "—";
-		return stat.value ?? "N/A";
+		if (stat.id === "active-admins") return activeAdminCount || "—";
+		if (stat.id === "active-caregivers") return activeCaregiverCount || "—";
+		return "—";
 	};
 
 	const isStatLoading = (stat) => {
 		if (stat.id === "active-clients") return isClientsLoading;
 		if (stat.id === "in-progress-shifts") return isShiftLoading;
+		if (stat.id === "active-admins") return isAdminsLoading;
+		if (stat.id === "active-caregivers") return isCaregiversLoading;
 		return false;
 	};
 
@@ -115,15 +117,14 @@ export default function Dashboard() {
 		<PageLayout>
 			{/* Page Header */}
 			<div className={styles.header}>
-				<div>
-					<h1>Dashboard</h1>
-					<h6>{`Welcome back! Here's what's happening today.`}</h6>
-				</div>
+				<p className={styles.brand}>New Vision Cares Admin Portal</p>
+				<h1>Dashboard</h1>
+				<p className={styles.subtitle}>{`Welcome back! Here's what's happening today.`}</p>
 			</div>
 
 			{/* Stats Overview */}
 			<section className={styles.section}>
-				<h2>Overview</h2>
+				<h2 className={styles.sectionTitle}>Overview</h2>
 				<div className={styles.statsGrid}>
 					{stats.map((stat) => {
 						const Icon = stat.icon;
@@ -154,7 +155,7 @@ export default function Dashboard() {
 
 			{/* Quick Actions */}
 			<section className={styles.section}>
-				<h2>Quick Actions</h2>
+				<h2 className={styles.sectionTitle}>Quick Actions</h2>
 				<div className={styles.actionsGrid}>
 					{visibleQuickActions.map((action) => {
 						const Icon = action.icon;

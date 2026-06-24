@@ -1,22 +1,21 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
-import { useClients } from "@/hooks/useClients";
-import { useCaregivers } from "@/hooks/useCaregivers";
-import { useAdmins } from "@/hooks/useAdmins";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Edit, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
 import ErrorState from "@components/UI/ErrorState";
+import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
 
 export default function HomeDetailPage() {
 	const { id } = useParams();
@@ -32,84 +31,42 @@ export default function HomeDetailPage() {
 			: { ...entry, adminLevel: entry.adminLevel || "supervisor" }
 	);
 
-	// Debounce utility
-	const debounce = (func, delay) => {
-		let timeoutId;
-		return function (...args) {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => func.apply(this, args), delay);
-		};
-	};
-
 	// --- Caregiver Search ---
 	const [caregiverSearch, setCaregiverSearch] = useState("");
-	const [caregiverSearchParams, setCaregiverSearchParams] = useState({});
-	const { caregivers: searchedCaregivers } = useCaregivers(caregiverSearchParams);
-
-	const searchCaregivers = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setCaregiverSearchParams({});
-			return;
-		}
-		setCaregiverSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	const debouncedSearchCaregivers = useCallback(debounce(searchCaregivers, 300), []);
-	useEffect(() => { debouncedSearchCaregivers(caregiverSearch); }, [caregiverSearch, debouncedSearchCaregivers]);
-
 	const displayCaregivers = useMemo(() => {
 		const assigned = home?.caregivers || [];
-		if (!caregiverSearch || caregiverSearch.length < 2) return assigned;
-		if (!searchedCaregivers) return [];
-		// Intersection of searched caregivers and assigned caregivers
-		return assigned.filter(c => searchedCaregivers.some(sc => sc.id === c.id));
-	}, [home?.caregivers, caregiverSearch, searchedCaregivers]);
+		if (!caregiverSearch) return assigned;
+		const q = caregiverSearch.toLowerCase();
+		return assigned.filter(c =>
+			`${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+			(c.email || "").toLowerCase().includes(q) ||
+			(c.phone || "").toLowerCase().includes(q)
+		);
+	}, [home?.caregivers, caregiverSearch]);
 
 	// --- Client Search ---
 	const [clientSearch, setClientSearch] = useState("");
-	const [clientSearchParams, setClientSearchParams] = useState({});
-	const { clients: searchedClients } = useClients(clientSearchParams);
-
-	const searchClients = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setClientSearchParams({});
-			return;
-		}
-		setClientSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	const debouncedSearchClients = useCallback(debounce(searchClients, 300), []);
-	useEffect(() => { debouncedSearchClients(clientSearch); }, [clientSearch, debouncedSearchClients]);
-
 	const displayClients = useMemo(() => {
 		const assigned = home?.clients || [];
-		if (!clientSearch || clientSearch.length < 2) return assigned;
-		if (!searchedClients) return [];
-		return assigned.filter(c => searchedClients.some(sc => sc.id === c.id));
-	}, [home?.clients, clientSearch, searchedClients]);
+		if (!clientSearch) return assigned;
+		const q = clientSearch.toLowerCase();
+		return assigned.filter(c =>
+			`${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+			(c.email || "").toLowerCase().includes(q) ||
+			(c.phone || "").toLowerCase().includes(q)
+		);
+	}, [home?.clients, clientSearch]);
 
 	// --- Admin Search ---
 	const [adminSearch, setAdminSearch] = useState("");
-	const [adminSearchParams, setAdminSearchParams] = useState({});
-	const { admins: searchedAdmins } = useAdmins(adminSearchParams);
-
-	const searchAdmins = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setAdminSearchParams({});
-			return;
-		}
-		setAdminSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	const debouncedSearchAdmins = useCallback(debounce(searchAdmins, 300), []);
-	useEffect(() => { debouncedSearchAdmins(adminSearch); }, [adminSearch, debouncedSearchAdmins]);
-
 	const displayAdmins = useMemo(() => {
-		const assigned = normalisedAdmins;
-		if (!adminSearch || adminSearch.length < 2) return assigned;
-		if (!searchedAdmins) return [];
-		return assigned.filter(a => searchedAdmins.some(sa => (sa.id || sa._id) === (a.id || a._id)));
-	}, [normalisedAdmins, adminSearch, searchedAdmins]);
+		if (!adminSearch) return normalisedAdmins;
+		const q = adminSearch.toLowerCase();
+		return normalisedAdmins.filter(a =>
+			`${a.firstName} ${a.lastName}`.toLowerCase().includes(q) ||
+			(a.email || "").toLowerCase().includes(q)
+		);
+	}, [normalisedAdmins, adminSearch]);
 
 	const InfoItem = ({ label, children }) => (
 		<div className={styles.infoItem}>
@@ -154,7 +111,12 @@ export default function HomeDetailPage() {
 					<CardContent>
 						<div className={styles.infoGrid}>
 							<InfoItem label="Home Name">{home.name}</InfoItem>
-							<InfoItem label="Region">{home.region}</InfoItem>
+							<InfoItem label="Region">
+								{home.region ? (() => {
+									const c = REGION_COLORS[home.region] ?? COLOR_FALLBACK;
+									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.region}</span>;
+								})() : "—"}
+							</InfoItem>
 							<InfoItem label="Status">
 								<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
 									{home.isActive ? "Active" : "Inactive"}
@@ -164,11 +126,10 @@ export default function HomeDetailPage() {
 								{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 							</InfoItem>
 							<InfoItem label="Home Type">
-								{home.homeType ? (
-									<span className={styles.chip}>{home.homeType}</span>
-								) : (
-									"—"
-								)}
+								{home.homeType ? (() => {
+									const c = HOME_TYPE_COLORS[home.homeType] ?? COLOR_FALLBACK;
+									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.homeType}</span>;
+								})() : "—"}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>
@@ -203,22 +164,19 @@ export default function HomeDetailPage() {
 
 				{/* Caregivers */}
 				<Card>
-					<CardHeader>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-							<span>Caregivers ({home.caregivers?.length || 0})</span>
-							<div style={{ position: "relative", width: "250px" }}>
-								<Search size={16} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-								<input
-									type="text"
-									placeholder="Search caregivers..."
-									value={caregiverSearch}
-									onChange={(e) => setCaregiverSearch(e.target.value)}
-									style={{ width: "100%", padding: "8px 12px 8px 36px", fontSize: "0.9rem", borderRadius: "8px", border: "1px solid #e5e7eb", outline: "none", transition: "border-color 0.2s" }}
-									onFocus={(e) => e.target.style.borderColor = "#3b82f6"}
-									onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-								/>
-							</div>
+					<CardHeader actions={
+						<div className={styles.searchWrap}>
+							<Search size={14} className={styles.searchIcon} />
+							<input
+								className={styles.searchInput}
+								type="text"
+								placeholder="Search caregivers…"
+								value={caregiverSearch}
+								onChange={(e) => setCaregiverSearch(e.target.value)}
+							/>
 						</div>
+					}>
+						Caregivers ({home.caregivers?.length || 0})
 					</CardHeader>
 					<CardContent>
 						{displayCaregivers.length > 0 ? (
@@ -235,37 +193,34 @@ export default function HomeDetailPage() {
 										<TableCell>{c.email || "—"}</TableCell>
 										<TableCell>{c.phone || "—"}</TableCell>
 										<TableCell>
-											<Link href={`/caregivers/${c.id || c._id}`}>
-												<Button variant="secondary" icon={<Eye size={16} />} style={{ fontSize: "0.85rem", padding: "6px 12px" }}>View Detail</Button>
-											</Link>
+											<IconButton href={`/caregivers/${c.id || c._id}`} title="View Caregiver">
+												<Eye size={14} />
+											</IconButton>
 										</TableCell>
 									</TableContent>
 								))}
 							</Table>
 						) : (
-							<p style={{ color: "#6b7280", fontSize: "0.9rem" }}>No caregivers found.</p>
+							<p className={styles.emptyText}>No caregivers found.</p>
 						)}
 					</CardContent>
 				</Card>
 
 				{/* Clients */}
 				<Card>
-					<CardHeader>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-							<span>Clients ({home.clients?.length || 0})</span>
-							<div style={{ position: "relative", width: "250px" }}>
-								<Search size={16} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-								<input
-									type="text"
-									placeholder="Search clients..."
-									value={clientSearch}
-									onChange={(e) => setClientSearch(e.target.value)}
-									style={{ width: "100%", padding: "8px 12px 8px 36px", fontSize: "0.9rem", borderRadius: "8px", border: "1px solid #e5e7eb", outline: "none", transition: "border-color 0.2s" }}
-									onFocus={(e) => e.target.style.borderColor = "#3b82f6"}
-									onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-								/>
-							</div>
+					<CardHeader actions={
+						<div className={styles.searchWrap}>
+							<Search size={14} className={styles.searchIcon} />
+							<input
+								className={styles.searchInput}
+								type="text"
+								placeholder="Search clients…"
+								value={clientSearch}
+								onChange={(e) => setClientSearch(e.target.value)}
+							/>
 						</div>
+					}>
+						Clients ({home.clients?.length || 0})
 					</CardHeader>
 					<CardContent>
 						{displayClients.length > 0 ? (
@@ -282,37 +237,34 @@ export default function HomeDetailPage() {
 										<TableCell>{c.email || "—"}</TableCell>
 										<TableCell>{c.phone || "—"}</TableCell>
 										<TableCell>
-											<Link href={`/clients/${c.id || c._id}`}>
-												<Button variant="secondary" icon={<Eye size={16} />} style={{ fontSize: "0.85rem", padding: "6px 12px" }}>View Detail</Button>
-											</Link>
+											<IconButton href={`/clients/${c.id || c._id}`} title="View Client">
+												<Eye size={14} />
+											</IconButton>
 										</TableCell>
 									</TableContent>
 								))}
 							</Table>
 						) : (
-							<p style={{ color: "#6b7280", fontSize: "0.9rem" }}>No clients found.</p>
+							<p className={styles.emptyText}>No clients found.</p>
 						)}
 					</CardContent>
 				</Card>
 
 				{/* Admins */}
 				<Card>
-					<CardHeader>
-						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-							<span>Admins ({normalisedAdmins.length})</span>
-							<div style={{ position: "relative", width: "250px" }}>
-								<Search size={16} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-								<input
-									type="text"
-									placeholder="Search admins..."
-									value={adminSearch}
-									onChange={(e) => setAdminSearch(e.target.value)}
-									style={{ width: "100%", padding: "8px 12px 8px 36px", fontSize: "0.9rem", borderRadius: "8px", border: "1px solid #e5e7eb", outline: "none", transition: "border-color 0.2s" }}
-									onFocus={(e) => e.target.style.borderColor = "#3b82f6"}
-									onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-								/>
-							</div>
+					<CardHeader actions={
+						<div className={styles.searchWrap}>
+							<Search size={14} className={styles.searchIcon} />
+							<input
+								className={styles.searchInput}
+								type="text"
+								placeholder="Search admins…"
+								value={adminSearch}
+								onChange={(e) => setAdminSearch(e.target.value)}
+							/>
 						</div>
+					}>
+						Admins ({normalisedAdmins.length})
 					</CardHeader>
 					<CardContent>
 						{displayAdmins.length > 0 ? (
@@ -327,17 +279,17 @@ export default function HomeDetailPage() {
 									<TableContent key={a.id || a._id}>
 										<TableCell>{a.firstName} {a.lastName}</TableCell>
 										<TableCell>{a.email || "—"}</TableCell>
-										<TableCell style={{ textTransform: "capitalize" }}>{a.adminLevel}</TableCell>
+										<TableCell className={styles.capitalize}>{a.adminLevel}</TableCell>
 										<TableCell>
-											<div style={{ cursor: "not-allowed", display: "inline-block" }}>
-												<Button variant="secondary" icon={<Eye size={16} />} style={{ fontSize: "0.85rem", padding: "6px 12px", opacity: 0.5, pointerEvents: "none" }}>View Detail</Button>
-											</div>
+											<IconButton disabled title="View Admin">
+												<Eye size={14} />
+											</IconButton>
 										</TableCell>
 									</TableContent>
 								))}
 							</Table>
 						) : (
-							<p style={{ color: "#6b7280", fontSize: "0.9rem" }}>No admins found.</p>
+							<p className={styles.emptyText}>No admins found.</p>
 						)}
 					</CardContent>
 				</Card>
