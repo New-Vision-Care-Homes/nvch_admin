@@ -38,6 +38,8 @@ export default function Page() {
 	// Changing another user's picture requires update rights on the target
 	// (same scoping as the edit form — backend assertCanManageUser).
 	const canEdit = canManageTarget(profile, caregiverDetail, "update_all_caregivers", "update_assigned_caregivers");
+	const isSuperAdmin = profile?.adminLevel === "super";
+
 
 	// --- Image Upload ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -261,7 +263,7 @@ export default function Page() {
 										<div className={styles.idViewRow}>
 											<Hash size={12} className={styles.idIcon} />
 											<span className={styles.idText}>{caregiverDetail.employeeId || "—"}</span>
-											{canEdit && (
+											{isSuperAdmin && (
 												<button
 													className={styles.idEditTrigger}
 													onClick={() => { setEditingId(true); setIdError(null); setIdSuccess(null); }}

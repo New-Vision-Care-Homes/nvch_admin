@@ -34,7 +34,7 @@ export default function Caregivers() {
 	// --- State ---
 	const [search, setSearch]               = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("");
+	const [statusFilter, setStatusFilter]   = useState("Active");
 	const [homeId, setHomeId]               = useState("");
 	const [showModal, setShowModal]         = useState(false);
 	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null);

@@ -9,6 +9,7 @@ import {
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useProfile } from "@/hooks/useProfile";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
@@ -29,11 +30,11 @@ function useDebounce(value, delay) {
 // ─── Target type config ───────────────────────────────────────────────────────
 
 const TARGET_TYPES = [
-	{ value: "all_caregivers", label: "All Caregivers", Icon: Users,     color: "#3b82f6" },
-	{ value: "all_admins",     label: "All Admins",     Icon: User,      color: "#8b5cf6" },
-	{ value: "regions",        label: "By Region",      Icon: MapPin,    color: "#f59e0b" },
-	{ value: "homes",          label: "By Home",        Icon: Building2, color: "#10b981" },
-	{ value: "users",          label: "Specific Users", Icon: Users,     color: "#ec4899" },
+	{ value: "all_caregivers", label: "All Caregivers", Icon: Users,     color: "#3b82f6", slug: "broadcast_to_all_caregivers" },
+	{ value: "all_admins",     label: "All Admins",     Icon: User,      color: "#8b5cf6", slug: "broadcast_to_all_admins"     },
+	{ value: "regions",        label: "By Region",      Icon: MapPin,    color: "#f59e0b", slug: "broadcast_to_regions"        },
+	{ value: "homes",          label: "By Home",        Icon: Building2, color: "#10b981", slug: "broadcast_to_homes"          },
+	{ value: "users",          label: "Specific Users", Icon: Users,     color: "#ec4899", slug: "broadcast_to_individuals"    },
 ];
 
 // ─── UserSearch — multi-select caregivers + admins ────────────────────────────
@@ -219,6 +220,10 @@ export default function CreateNotificationPage() {
 	const router = useRouter();
 	const { sendBroadcast, isBroadcastPending, broadcastError } = useNotifications({ fetchList: false });
 
+	const { profile } = useProfile();
+	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const allowedTargetTypes = TARGET_TYPES.filter(t => permissionSlugs.includes(t.slug));
+
 	const [title,           setTitle]           = useState("");
 	const [body,            setBody]            = useState("");
 	const [sendPush,        setSendPush]        = useState(false);
@@ -358,7 +363,7 @@ export default function CreateNotificationPage() {
 
 					{/* Type picker */}
 					<div className={styles.typeGrid}>
-						{TARGET_TYPES.map(({ value, label, Icon, color }) => (
+						{allowedTargetTypes.map(({ value, label, Icon, color }) => (
 							<button
 								key={value}
 								type="button"
