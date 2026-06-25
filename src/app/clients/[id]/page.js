@@ -229,7 +229,7 @@ export default function Page() {
 	const homeObj = typeof clientDetail.home === "object" && clientDetail.home ? clientDetail.home : null;
 	const homeName = homeObj?.name ?? null;
 	const homeType = homeObj?.homeType ?? null;
-	const showAllowableHours = homeType === "ILS" || homeType === "IF";
+	const showAllowableHours = !homeType || homeType === "ILS" || homeType === "IF";
 
 	return (
 		<>
