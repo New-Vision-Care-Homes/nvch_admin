@@ -8,7 +8,7 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
-import { Edit, Save, X, MapPin, Phone, Mail, Users } from "lucide-react";
+import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
@@ -206,55 +206,85 @@ export default function Info() {
 								</div>
 
 								{/* Fields grid */}
-								<div className={styles.field_grid}>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Date of Birth</div>
-										<div className={d.dateOfBirth ? styles.vvalue : styles.vvalue_empty}>
-											{d.dateOfBirth?.split('T')[0] || "Not provided"}
+								<div className={styles.contact_list}>
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Calendar size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Date of Birth</div>
+											<div className={d.dateOfBirth ? styles.contact_value : styles.contact_value_empty}>
+												{d.dateOfBirth?.split('T')[0] || "Not provided"}
+											</div>
 										</div>
 									</div>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Regions</div>
-										<div className={styles.vvalue}>{(Array.isArray(d.regions) && d.regions.length > 0 ? d.regions : (d.region ? [d.region] : [])).map(r => getLabel(REGION_OPTIONS, r)).join(", ") || "—"}</div>
-									</div>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Employee Start Date</div>
-										<div className={d.employeeStartDate ? styles.vvalue : styles.vvalue_empty}>
-											{d.employeeStartDate?.split('T')[0] || "Not provided"}
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Globe size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Regions</div>
+											<div className={styles.contact_value}>
+												{(Array.isArray(d.regions) && d.regions.length > 0 ? d.regions : (d.region ? [d.region] : [])).map(r => getLabel(REGION_OPTIONS, r)).join(", ") || "—"}
+											</div>
 										</div>
 									</div>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Max Hours Biweekly</div>
-										<div className={styles.vvalue}>{d.biWeeklyWorkCapacity?.maxHours ?? 84} hrs</div>
-									</div>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Supervisor</div>
-										<div className={d.supervisorInfo ? styles.vvalue : styles.vvalue_empty}>
-											{d.supervisorInfo ? `${d.supervisorInfo.firstName} ${d.supervisorInfo.lastName}` : "Not assigned"}
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Briefcase size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Employee Start Date</div>
+											<div className={d.employeeStartDate ? styles.contact_value : styles.contact_value_empty}>
+												{d.employeeStartDate?.split('T')[0] || "Not provided"}
+											</div>
 										</div>
 									</div>
-									<div className={styles.vfield}>
-										<div className={styles.vlabel}>Team Lead</div>
-										<div className={d.teamLeadInfo ? styles.vvalue : styles.vvalue_empty}>
-											{d.teamLeadInfo ? `${d.teamLeadInfo.firstName} ${d.teamLeadInfo.lastName}` : "Not assigned"}
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Clock size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Max Hours Biweekly</div>
+											<div className={styles.contact_value}>{d.biWeeklyWorkCapacity?.maxHours ?? 84} hrs</div>
 										</div>
 									</div>
-								</div>
-
-								{/* Address */}
-								<div className={styles.address_box}>
-									<div className={styles.address_box_header}>
-										<MapPin size={11} />
-										Address
-									</div>
-									{addr.unit && (
-										<div className={styles.address_unit_row}>
-											<span className={styles.address_unit_label}>Unit / Suite</span>
-											<span className={styles.address_unit_value}>{addr.unit}</span>
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Users size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Supervisor</div>
+											<div className={d.supervisorInfo ? styles.contact_value : styles.contact_value_empty}>
+												{d.supervisorInfo ? `${d.supervisorInfo.firstName} ${d.supervisorInfo.lastName}` : "Not assigned"}
+											</div>
 										</div>
-									)}
-									<div className={fullAddress ? styles.address_value : styles.vvalue_empty}>
-										{fullAddress || "No address on file"}
+									</div>
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><User size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Team Lead</div>
+											<div className={d.teamLeadInfo ? styles.contact_value : styles.contact_value_empty}>
+												{d.teamLeadInfo ? `${d.teamLeadInfo.firstName} ${d.teamLeadInfo.lastName}` : "Not assigned"}
+											</div>
+										</div>
+									</div>
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Phone size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Phone</div>
+											<div className={d.phone ? styles.contact_value : styles.contact_value_empty}>
+												{d.phone || "Not provided"}
+											</div>
+										</div>
+									</div>
+									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Mail size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Email</div>
+											<div className={d.email ? styles.contact_value : styles.contact_value_empty}>
+												{d.email || "Not provided"}
+											</div>
+										</div>
+									</div>
+									<div className={styles.contact_row} style={{ gridColumn: "1 / -1" }}>
+										<div className={styles.contact_icon_wrap}><MapPin size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Address{addr.unit ? ` · Unit ${addr.unit}` : ""}</div>
+											<div className={fullAddress ? styles.contact_value : styles.contact_value_empty}>
+												{fullAddress || "No address on file"}
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -309,71 +339,30 @@ export default function Info() {
 					</CardContent>
 				</Card>
 
-				{/* ── Contact Details ── */}
-				<Card>
-					<CardHeader>Contact Details</CardHeader>
-					<CardContent>
-						{!isEditing ? (
-							<div className={styles.contact_list}>
-								<div className={styles.contact_row}>
-									<div className={styles.contact_icon_wrap}><Phone size={16} /></div>
-									<div className={styles.contact_detail}>
-										<div className={styles.contact_label}>Phone</div>
-										<div className={d.phone ? styles.contact_value : styles.contact_value_empty}>
-											{d.phone || "Not provided"}
-										</div>
-									</div>
-								</div>
-								<div className={styles.contact_row}>
-									<div className={styles.contact_icon_wrap}><Mail size={16} /></div>
-									<div className={styles.contact_detail}>
-										<div className={styles.contact_label}>Email</div>
-										<div className={d.email ? styles.contact_value : styles.contact_value_empty}>
-											{d.email || "Not provided"}
-										</div>
-									</div>
-								</div>
-							</div>
-						) : (
-							<div className={styles.card_row_2}>
-								<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
-								<InputField label="Email" name="email" register={register} error={errors.email} />
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
 				{/* ── Emergency Contact ── */}
 				<Card>
 					<CardHeader>Emergency Contact</CardHeader>
 					<CardContent>
 						{!isEditing ? (
-							<>
-								<div className={styles.vfield} style={{ marginBottom: "0.75rem" }}>
-									<div className={styles.vlabel}>Name</div>
-									<div className={ec.name ? styles.vvalue : styles.vvalue_empty}>{ec.name || "Not provided"}</div>
-								</div>
-								<div className={styles.contact_pair}>
-									<div className={styles.contact_row}>
-										<div className={styles.contact_icon_wrap}><Users size={16} /></div>
-										<div className={styles.contact_detail}>
-											<div className={styles.contact_label}>Relationship</div>
-											<div className={ec.relationship ? styles.contact_value : styles.contact_value_empty}>
-												{ec.relationship || "Not provided"}
-											</div>
-										</div>
-									</div>
-									<div className={styles.contact_row}>
-										<div className={styles.contact_icon_wrap}><Phone size={16} /></div>
-										<div className={styles.contact_detail}>
-											<div className={styles.contact_label}>Phone</div>
-											<div className={ec.phone ? styles.contact_value : styles.contact_value_empty}>
-												{ec.phone || "Not provided"}
-											</div>
+							ec.name ? (
+								<div className={styles.ec_card}>
+									<div className={styles.ec_avatar}><Users size={20} /></div>
+									<div className={styles.ec_info}>
+										<div className={styles.ec_name}>{ec.name}</div>
+										<div className={styles.ec_meta}>
+											{ec.relationship && (
+												<span className={styles.ec_tag}><Users size={12} />{ec.relationship}</span>
+											)}
+											{ec.relationship && ec.phone && <span className={styles.ec_dot} />}
+											{ec.phone && (
+												<span className={styles.ec_tag}><Phone size={12} />{ec.phone}</span>
+											)}
 										</div>
 									</div>
 								</div>
-							</>
+							) : (
+								<p className={styles.ec_empty}>No emergency contact on file</p>
+							)
 						) : (
 							<>
 								<div className={styles.card_row_2}>
