@@ -261,7 +261,7 @@ export default function Page() {
 										</div>
 									) : (
 										<div className={styles.idViewRow}>
-											<Hash size={12} className={styles.idIcon} />
+											<Hash size={13} className={styles.idIcon} />
 											<span className={styles.idText}>{caregiverDetail.employeeId || "—"}</span>
 											{isSuperAdmin && (
 												<button
@@ -269,7 +269,7 @@ export default function Page() {
 													onClick={() => { setEditingId(true); setIdError(null); setIdSuccess(null); }}
 													title="Edit Caregiver ID"
 												>
-													<Pencil size={11} />
+													<Pencil size={13} />
 												</button>
 											)}
 										</div>

@@ -190,11 +190,11 @@
 	display: flex;
 	align-items: center;
 	gap: 0.3rem;
-	font-size: 0.62rem;
+	font-size: 0.67rem;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.07em;
-	color: #94a3b8;
+	letter-spacing: 0.06em;
+	color: #9CA3AF;
 }
 
 .hoursCardLabel span {

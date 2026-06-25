@@ -216,9 +216,9 @@
 
 /* ─── View Mode: Contact Rows ─── */
 .contact_list {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 2rem;
 }
 
 /* Two contact rows side by side (used in Emergency Contact) */
@@ -374,4 +374,10 @@
 	text-transform: uppercase;
 	color: var(--color-secondary);
 	white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+	.contact_list {
+		grid-template-columns: 1fr;
+	}
 }

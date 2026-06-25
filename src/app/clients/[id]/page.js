@@ -318,7 +318,7 @@ export default function Page() {
 
 							<div className={styles.hoursSection}>
 								<div className={styles.hoursCardLabel}>
-									<AlarmClockCheck size={11} />
+									<AlarmClockCheck size={13} />
 									<span>Allowable Hours</span>
 									{canEdit && !editingHours && (
 										<button
@@ -326,7 +326,7 @@ export default function Page() {
 											onClick={() => { setEditingHours(true); setHoursError(null); setHoursSuccess(null); }}
 											title="Edit Allowable Hours"
 										>
-											<Pencil size={10} />
+											<Pencil size={14} />
 										</button>
 									)}
 								</div>
@@ -358,7 +358,7 @@ export default function Page() {
 										<span className={styles.hoursNumber}>
 											{clientDetail.allowableHours != null ? clientDetail.allowableHours : "\u2014"}
 										</span>
-										<span className={styles.hoursUnit}>hours</span>
+										<span className={styles.hoursUnit}>hrs / week</span>
 									</div>
 								)}
 								{hoursSuccess && <div className={styles.hoursFeedbackSuccess}>{hoursSuccess}</div>}
