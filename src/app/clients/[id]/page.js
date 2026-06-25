@@ -8,7 +8,7 @@ import { Card, CardHeader } from "@components/UI/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
-import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
+import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Home, Pencil, Undo2, Upload, X } from "lucide-react";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
@@ -226,7 +226,10 @@ export default function Page() {
 		);
 	}
 
-
+	const homeObj = typeof clientDetail.home === "object" && clientDetail.home ? clientDetail.home : null;
+	const homeName = homeObj?.name ?? null;
+	const homeType = homeObj?.homeType ?? null;
+	const showAllowableHours = homeType === "ILS" || homeType === "IF";
 
 	return (
 		<>
@@ -297,6 +300,12 @@ export default function Page() {
 								<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
 									{clientDetail.isActive ? "Active" : "Inactive"}
 								</span>
+								{homeName && (
+									<div className={styles.homeLine}>
+										<Home size={12} />
+										{homeName}
+									</div>
+								)}
 							</div>
 
 							<div className={styles.timestamps}>
@@ -316,7 +325,7 @@ export default function Page() {
 								</div>
 							</div>
 
-							<div className={styles.hoursSection}>
+							{showAllowableHours && <div className={styles.hoursSection}>
 								<div className={styles.hoursCardLabel}>
 									<AlarmClockCheck size={13} />
 									<span>Allowable Hours</span>
@@ -362,7 +371,7 @@ export default function Page() {
 									</div>
 								)}
 								{hoursSuccess && <div className={styles.hoursFeedbackSuccess}>{hoursSuccess}</div>}
-							</div>
+							</div>}
 						</div>
 					</div>
 				</Card>
