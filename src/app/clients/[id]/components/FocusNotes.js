@@ -71,7 +71,7 @@ export default function FocusNotes() {
 		fetchError
 	} = useFocusNotes(id, queryParams);
 
-	const pageNotes = focusNotesOfClient;
+	const pageNotes = focusNotesOfClient ?? [];
 
 	// Extract pagination info from the backend response, falling back to defaults
 	const currentPage = pagination?.currentPage || page;
@@ -146,7 +146,7 @@ export default function FocusNotes() {
 				return (
 					<>
 						{personName(note.updatedBy)}
-						<span className={styles.updatedRole}> ({note.updatedByRole})</span>
+						{note.updatedByRole && <span className={styles.updatedRole}> ({note.updatedByRole})</span>}
 					</>
 				);
 			}

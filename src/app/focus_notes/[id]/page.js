@@ -53,7 +53,7 @@ export default function FocusNoteDetailPage() {
 	const queryClient = useQueryClient();
 
 	// ── Fetch single note by its own ID
-	const { data: fetchedNote, isLoading, error: fetchError } = useQuery({
+	const { data: fetchedNote, isLoading, isFetching, error: fetchError } = useQuery({
 		queryKey: ["focusNote", focusNoteId],
 		queryFn: () => focusNoteService.getByShiftNoteId(focusNoteId),
 		enabled: !!focusNoteId,
@@ -107,10 +107,13 @@ export default function FocusNoteDetailPage() {
 		updateMutation.mutate(form);
 	};
 
-	if (isLoading || fetchError || !note) {
+	if (isLoading || (isFetching && !note) || fetchError || !note) {
 		return (
 			<PageLayout>
-				<ErrorState isLoading={isLoading} errorMessage={fetchError ? (fetchError?.response?.data?.message || "Failed to load focus note.") : (!note && !isLoading ? "Focus note not found." : null)} />
+				<ErrorState
+					isLoading={isLoading || isFetching}
+					errorMessage={fetchError ? (fetchError?.response?.data?.message || "Failed to load focus note.") : (!note && !isLoading && !isFetching ? "Focus note not found." : null)}
+				/>
 			</PageLayout>
 		);
 	}

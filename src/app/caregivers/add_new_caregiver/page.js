@@ -19,6 +19,7 @@ import PersonSearchField from "@/components/UI/PersonSearchField";
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
+import { localDateToUtc } from "@/utils/timeHandling";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -187,8 +188,8 @@ export default function Page() {
 			role: "caregiver",
 			phone: data.phone,
 			employeeId: data.employeeId,
-			dateOfBirth: data.dateOfBirth,
-			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
+			dateOfBirth: localDateToUtc(data.dateOfBirth, "America/Halifax"),
+			employeeStartDate: localDateToUtc(data.employeeStartDate, "America/Halifax"),
 			regions: data.regions,
 			timezone: data.timezone,
 			employmentStatus: data.employmentStatus,
@@ -205,8 +206,8 @@ export default function Page() {
 				pinCode: data.pinCode,
 				country: data.country,
 				gpsCoordinates: {
-					latitude: data.latitude || 44.6476, // fallback to Halifax
-					longitude: data.longitude || -63.5728, // fallback to Halifax
+					latitude: data.latitude ?? 44.6476,
+					longitude: data.longitude ?? -63.5728,
 				},
 			},
 

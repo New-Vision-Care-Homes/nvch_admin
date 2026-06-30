@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
@@ -67,10 +67,17 @@ export default function Page() {
 	const [hoursSaving, setHoursSaving] = useState(false);
 	const [hoursError, setHoursError] = useState(null);
 	const [hoursSuccess, setHoursSuccess] = useState(null);
+	const hoursInitialized = useRef(false);
 
+	// Initialize once when clientDetail first loads. Using a ref instead of a
+	// dependency-tracked effect prevents background refetches from silently
+	// overwriting a value the user is actively typing.
 	useEffect(() => {
-		setHoursValue(clientDetail?.allowableHours ?? "");
-	}, [clientDetail?.allowableHours]);
+		if (clientDetail && !hoursInitialized.current) {
+			setHoursValue(clientDetail.allowableHours ?? "");
+			hoursInitialized.current = true;
+		}
+	}, [clientDetail]);
 
 
 
@@ -227,9 +234,10 @@ export default function Page() {
 	}
 
 	const homeObj = typeof clientDetail.home === "object" && clientDetail.home ? clientDetail.home : null;
+	const hasHome = !!clientDetail.home; // true whether the ref is populated or a bare string ID
 	const homeName = homeObj?.name ?? null;
 	const homeType = homeObj?.homeType ?? null;
-	const showAllowableHours = !homeType || homeType === "ILS" || homeType === "IF";
+	const showAllowableHours = !hasHome || homeType === "ILS" || homeType === "IF";
 
 	return (
 		<>
