@@ -156,6 +156,87 @@
 	line-height: 1.4;
 }
 
+/* ── Pending Approvals Banner ────────────────────────────────────────────── */
+.approvalBanner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	background: #fff;
+	border: 1px solid #ddd6fe;
+	border-left: 4px solid #7c3aed;
+	border-radius: var(--border-size-md);
+	box-shadow: var(--shadow-md);
+	padding: 1.25rem 1.5rem;
+	text-decoration: none;
+	color: var(--color-text-primary);
+	transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.15s ease;
+}
+
+.approvalBanner:hover {
+	box-shadow: var(--shadow-lg);
+	transform: translateY(-2px);
+	background: #faf5ff;
+}
+
+.approvalBannerLeft {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	flex: 1;
+	min-width: 0;
+}
+
+.approvalIconWrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	background: #f5f3ff;
+	border-radius: 10px;
+	flex-shrink: 0;
+}
+
+.approvalBannerText {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.approvalBannerTitle {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	font-size: 0.95rem;
+	font-weight: 500;
+	color: var(--color-text-primary);
+	line-height: 1.4;
+}
+
+.approvalBannerTitle strong {
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #7c3aed;
+}
+
+.approvalBannerDesc {
+	font-size: 0.825rem;
+	color: var(--color-text-secondary);
+	line-height: 1.4;
+}
+
+.approvalBannerArrow {
+	color: #a78bfa;
+	flex-shrink: 0;
+	transition: transform 0.15s ease;
+}
+
+.approvalBanner:hover .approvalBannerArrow {
+	transform: translateX(3px);
+}
+
 /* ── Recent Activity (reserved) ──────────────────────────────────────────── */
 .activityHeader {
 	display: flex;

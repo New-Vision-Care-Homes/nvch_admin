@@ -91,6 +91,13 @@ export const PERMISSION_SCHEMAS = [
 		slugs: [
 			"use_upload_urls"
 		]
+	},
+	{
+		module: "Certificates",
+		slugs: [
+			"approve_all_certificates",
+			"approve_assigned_certificates"
+		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit
 	// for every authenticated user (backend IMPLICIT_SELF_SLUGS) — they are not

@@ -44,6 +44,21 @@
 	background: #E9ECEF;
 }
 
+.tabBadge {
+	margin-left: auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #fff;
+	background: #7c3aed;
+	border-radius: 999px;
+}
+
 .tab:hover:active {
 	color: var(--color-primary);
 	background: #E9ECEF;
@@ -141,9 +156,27 @@
 }
 
 .flyoutItemLabel {
+	display: flex;
+	align-items: center;
+	gap: 7px;
 	font-size: 0.9rem;
 	font-weight: 600;
 	color: #1f2937;
+}
+
+.flyoutBadge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	font-size: 11px;
+	font-weight: 700;
+	color: #fff;
+	background: #7c3aed;
+	border-radius: 999px;
+	flex-shrink: 0;
 }
 
 .flyoutItemDesc {

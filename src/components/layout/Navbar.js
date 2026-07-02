@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X } from "lucide-react";
+import { Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
@@ -20,6 +20,7 @@ const TYPE_CONFIG = {
 	shift_late_reporting:   { Icon: Clock,         color: "#d97706", bg: "#fffbeb" },
 	shift_auto_ended:       { Icon: CircleOff,     color: "#6b7280", bg: "#f3f4f6" },
 	broadcast:              { Icon: Megaphone,     color: "#dc2626", bg: "#fef2f2" },
+	approval_requested:     { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
 };
 
 function timeAgo(dateStr) {

@@ -3,8 +3,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useApprovals } from "@/hooks/useApprovals";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -14,6 +16,7 @@ const tabs = [
 	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions", requiredSlugs: ["view_permissions_groups"] },
 	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes", "view_home"] },
 	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true, requiredSlugs: ["view_shifts"] },
+	{ id: 6.5, label: "Notifications", icon: Bell, href: "/notification", hasFlyout: true },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
@@ -29,6 +32,10 @@ const flyoutMenus = {
 		{ label: "Calendar", href: "/scheduling", icon: CalendarDays, desc: "View & manage shifts" },
 		{ label: "Shift Builder", href: "/scheduling/shift_builder", icon: LayoutGrid, desc: "Design shift templates" },
 	],
+	6.5: [
+		{ label: "All Messages", href: "/notification", icon: MessageSquare, desc: "View all notifications" },
+		{ label: "Approvals", href: "/approvals", icon: ClipboardCheck, desc: "Pending certificate approvals" },
+	],
 };
 
 // Map keywords to specific tab ids
@@ -39,7 +46,9 @@ const keywordToTabMap = {
 	"/admin": 4,        // any path containing "/admin" -> Admins tab
 	"/permission": 4.5, // any path containing "/permission" -> Permissions tab
 	"/homes": 5,        // any path containing "/homes" -> Homes tab
-	"/scheduling": 6,   // any path containing "/scheduling" -> Scheduling tab
+	"/scheduling": 6,     // any path containing "/scheduling" -> Scheduling tab
+	"/notification": 6.5, // any path containing "/notification" -> Notifications tab
+	"/approvals": 6.5,    // any path containing "/approvals" -> Notifications tab
 	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
@@ -47,6 +56,18 @@ const keywordToTabMap = {
 export default function Sidebar({ open = false, onClose = () => {} }) {
 	const pathname = usePathname();
 	const { profile, isLoading, fetchError, refetch } = useProfile();
+
+	const { totalCount: pendingApprovalCount } = useApprovals({
+		params: { page: 1, limit: 1 },
+		fetchQueue: true,
+	});
+
+	const { unreadCount } = useNotifications({ fetchList: false });
+
+	const flyoutBadges = {
+		"/notification": unreadCount,
+		"/approvals": pendingApprovalCount,
+	};
 
 	// While the profile is loading (or failed to load) only the ungated tabs
 	// render; the ErrorState below makes that state visible instead of
@@ -205,7 +226,12 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 							>
 								<ItemIcon size={16} className={styles.flyoutItemIcon} />
 								<div>
-									<div className={styles.flyoutItemLabel}>{item.label}</div>
+									<div className={styles.flyoutItemLabel}>
+										{item.label}
+										{flyoutBadges[item.href] > 0 && (
+											<span className={styles.flyoutBadge}>{flyoutBadges[item.href]}</span>
+										)}
+									</div>
 									<div className={styles.flyoutItemDesc}>{item.desc}</div>
 								</div>
 							</Link>

@@ -11,12 +11,15 @@ import {
 	HousePlus,
 	CalendarPlus,
 	ShieldCheck,
+	ArrowRight,
+	ClipboardCheck,
 } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
+import { useApprovals } from "@/hooks/useApprovals";
 
 const stats = [
 	{
@@ -93,6 +96,7 @@ export default function Dashboard() {
 	const { totalCount: activeAdminCount, isLoading: isAdminsLoading } = useAdmins({ params: { isActive: true } });
 	const { totalCount: activeCaregiverCount, isCaregiverLoading: isCaregiversLoading } = useCaregivers({ params: { isActive: true } });
 	const { shifts: inProgressShifts, isShiftLoading } = useShifts({ status: "in_progress" });
+	const { totalCount: pendingApprovalCount, isLoading: isApprovalsLoading } = useApprovals({ params: { page: 1, limit: 1 }, fetchQueue: true });
 	const { profile } = useProfile();
 	const permissionSlugs = profile?.permissionSlugs ?? [];
 	const visibleQuickActions = quickActions.filter(a => permissionSlugs.includes(a.requiredSlug));
@@ -151,6 +155,41 @@ export default function Dashboard() {
 						);
 					})}
 				</div>
+			</section>
+
+			{/* Pending Approvals */}
+			<section className={styles.section}>
+				<h2 className={styles.sectionTitle}>Approvals</h2>
+				<Link href="/approvals" className={styles.approvalBanner}>
+					<div className={styles.approvalBannerLeft}>
+						<span className={styles.approvalIconWrap}>
+							<ClipboardCheck size={20} color="#7c3aed" />
+						</span>
+						<div className={styles.approvalBannerText}>
+							<span className={styles.approvalBannerTitle}>
+								{isApprovalsLoading ? (
+									<span className={styles.loadingDots}>
+										<span className={styles.dot} />
+										<span className={styles.dot} />
+										<span className={styles.dot} />
+									</span>
+								) : pendingApprovalCount > 0 ? (
+									<>
+										<strong>{pendingApprovalCount}</strong> approval{pendingApprovalCount !== 1 ? "s" : ""} waiting for review
+									</>
+								) : (
+									"No pending approvals"
+								)}
+							</span>
+							<span className={styles.approvalBannerDesc}>
+								{pendingApprovalCount > 0
+									? "Click to review and take action on pending requests."
+									: "All requests have been handled."}
+							</span>
+						</div>
+					</div>
+					<ArrowRight size={16} className={styles.approvalBannerArrow} />
+				</Link>
 			</section>
 
 			{/* Quick Actions */}

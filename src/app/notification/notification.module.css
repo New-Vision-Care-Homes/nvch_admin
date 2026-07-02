@@ -222,6 +222,22 @@
 	flex-shrink: 0;
 }
 
+/* Purple pill shown on approval_requested notifications */
+.approvalBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	color: #5b21b6;
+	background: #ede9fe;
+	border: 1px solid #c4b5fd;
+	border-radius: 999px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
 .bodyText {
 	font-size: 0.845rem;
 	color: #6b7280;
