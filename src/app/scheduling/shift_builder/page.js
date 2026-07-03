@@ -42,7 +42,10 @@ import {
 	GripVertical,
 	Moon,
 	RotateCcw,
+	Search,
 	Sun,
+	UserPlus,
+	X,
 	XCircle,
 	Zap,
 } from "lucide-react";
@@ -56,17 +59,17 @@ import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
+import { useCaregivers } from "@/hooks/useCaregivers";
+import { usePayPeriod } from "@/hooks/usePayPeriods";
+import { getTodayInHalifax } from "@/utils/timeHandling";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 
 import styles from "./shift_builder.module.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const HALIFAX_TZ    = "America/Halifax";
-const PAYROLL_ANCHOR = new Date(2025, 11, 18); // Dec 18 2025 — PP1 starts here; PP13 = Jun 4–17 2026
-const PERIOD_DAYS   = 14;
-const PP_PER_YEAR   = 26; // pay periods per year; number wraps PP26 → PP1
-const MAX_DAYS      = 42; // safety cap to prevent runaway renders on bad date ranges
+const HALIFAX_TZ = "America/Halifax";
+const MAX_DAYS   = 42; // safety cap to prevent runaway renders on bad date ranges
 
 // Every 30-minute slot from 00:00 → 23:30, used in Custom cell dropdowns and the
 // legend's Day / Night hour pickers.
@@ -77,17 +80,6 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Returns a Luxon DateTime set to the Halifax (Atlantic) timezone. */
-function getHalifaxNow() {
-	return DateTime.now().setZone(HALIFAX_TZ);
-}
-
-/** Returns today's date as "yyyy-MM-dd" in the Halifax timezone. */
-function getTodayInHalifax() {
-	const now = getHalifaxNow();
-	return format(new Date(now.year, now.month - 1, now.day), "yyyy-MM-dd");
-}
 
 /**
  * Classifies an existing API shift as "day", "night", or "custom" by
@@ -339,24 +331,13 @@ export default function ShiftBuilderPage() {
 	//   0 = current period, -1 = previous, +1 = next, etc.
 	const [periodOffset, setPeriodOffset] = useState(0);
 
-	// Derive the pay period's start date, end date, and 1-based PP number
-	const payrollPeriod = useMemo(() => {
-		const msPerPeriod = PERIOD_DAYS * 24 * 60 * 60 * 1000;
-		const nowHfx      = getHalifaxNow();
-		const today       = new Date(nowHfx.year, nowHfx.month - 1, nowHfx.day);
-		const diffMs      = Math.max(0, today.getTime() - PAYROLL_ANCHOR.getTime());
-		const currentIdx  = Math.floor(diffMs / msPerPeriod);
-		const start          = addDays(PAYROLL_ANCHOR, (currentIdx + periodOffset) * PERIOD_DAYS);
-		const end            = addDays(start, PERIOD_DAYS - 1);
-		const totalOffset    = currentIdx + periodOffset;
-		// Wrap so the count cycles PP1–PP26 and then restarts from PP1
-		const ppNumber       = ((totalOffset % PP_PER_YEAR) + PP_PER_YEAR) % PP_PER_YEAR + 1;
-		return { start, end, ppNumber };
-	}, [periodOffset]);
+	// Pay period dates from the backend — single source of truth
+	const { payPeriod, isPayPeriodLoading, payPeriodError } = usePayPeriod(periodOffset);
 
-	// Flat string versions used in API calls and date comparisons
-	const startDate = format(payrollPeriod.start, "yyyy-MM-dd");
-	const endDate   = format(payrollPeriod.end,   "yyyy-MM-dd");
+	// Flat "yyyy-MM-dd" strings used in API calls and date comparisons.
+	// Empty strings while loading so the dates useMemo safely returns [].
+	const startDate = payPeriod?.periodStart?.slice(0, 10) ?? "";
+	const endDate   = payPeriod?.periodEnd?.slice(0, 10)   ?? "";
 
 	// ── Global shift hours (editable in the legend at the bottom) ─────────────
 	// These apply to all Day / Night cells. Custom cells have their own time pickers.
@@ -400,6 +381,13 @@ export default function ShiftBuilderPage() {
 	const dragItem     = useRef(null); // ID of the row being dragged
 	const dragOverItem = useRef(null); // ID of the row currently hovered over
 
+	// ── Casual workers ────────────────────────────────────────────────────────
+	const [addedCasualWorkers,  setAddedCasualWorkers]  = useState([]);
+	const [casualSearch,        setCasualSearch]         = useState("");
+	const [showCasualDropdown,  setShowCasualDropdown]   = useState(false);
+	const [casualDropdownPos,   setCasualDropdownPos]    = useState({ top: 0, left: 0, width: 0 });
+	const casualSearchRef = useRef(null);
+
 	// ── Data fetching ─────────────────────────────────────────────────────────
 
 	// All homes for the dropdown
@@ -428,14 +416,23 @@ export default function ShiftBuilderPage() {
 		},
 	});
 
-	// ── Auto-select first home ────────────────────────────────────────────────
+	// Casual workers for the selected home's region
+	const homeRegion = homeDetail?.region ?? null;
+	const { caregivers: allCasualWorkers, isCaregiverLoading: casualLoading } = useCaregivers({
+		params: { employmentStatus: "casual", region: homeRegion, limit: 100 },
+		enabled: !!homeRegion,
+	});
+
+	// ── Effects ───────────────────────────────────────────────────────────────────
+
+	// Auto-select the first home on initial load so the grid isn't blank on first visit.
 	useEffect(() => {
 		if (homes?.length && !selectedHomeId) {
 			setSelectedHomeId(homes[0]._id || homes[0].id);
 		}
 	}, [homes, selectedHomeId]);
 
-	// ── Sync caregiver display order when home changes ────────────────────────
+	// Sync caregiver display order when the home changes.
 	// React Query keeps homeDetail reference-stable between polls, so this only
 	// fires when the user actually switches homes.
 	useEffect(() => {
@@ -444,8 +441,8 @@ export default function ShiftBuilderPage() {
 		}
 	}, [homeDetail]);
 
-	// ── Pre-fill grid from existing API shifts ────────────────────────────────
-	// Runs whenever the existingShifts array changes (home or period change).
+	// Pre-fill the grid from the API when the home or period changes.
+	// Runs whenever the existingShifts array changes.
 	// Builds a fresh assignments map from server data and saves it as the base
 	// so clearAll can restore to this state.
 	// Also captures the current day/night times as a baseline — if the user later
@@ -466,7 +463,59 @@ export default function ShiftBuilderPage() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [existingShifts]);
 
+	// Auto-detect casual workers who have shifts in this home/period but aren't in
+	// the home's permanent roster. Runs whenever existingShifts or homeDetail.caregivers
+	// resolves/updates.
+	// Two responsibilities in one pass:
+	//   1. REMOVE any workers that are actually in the home's permanent roster
+	//      (guards against the race where homeDetail resolves after existingShifts
+	//      with an empty caregivers list, causing all shift workers to be flagged
+	//      as "extra" before the real list arrives).
+	//   2. ADD workers from existingShifts whose IDs are not in the roster.
+	useEffect(() => {
+		if (!homeDetail?.caregivers) return;
+		const homeCgIds = new Set(
+			homeDetail.caregivers.map((cg) => (cg._id || cg.id)?.toString())
+		);
+
+		// Build the set of genuinely extra workers from shift data
+		const extraMap = {};
+		if (existingShifts?.length) {
+			for (const shift of existingShifts) {
+				const cg = shift.caregiver;
+				if (!cg || typeof cg === "string") continue;
+				const id = (cg._id || cg.id)?.toString();
+				if (!id || homeCgIds.has(id) || extraMap[id]) continue;
+				extraMap[id] = cg;
+			}
+		}
+
+		setAddedCasualWorkers((prev) => {
+			// Strip out anyone who turned out to be a permanent home caregiver
+			const cleaned = prev.filter((w) => !homeCgIds.has((w._id || w.id)?.toString()));
+			// Add genuinely extra workers not already in the list
+			const cleanedIds = new Set(cleaned.map((w) => (w._id || w.id)?.toString()));
+			const toAdd = Object.values(extraMap).filter((w) => !cleanedIds.has((w._id || w.id)?.toString()));
+			if (cleaned.length === prev.length && toAdd.length === 0) return prev; // nothing changed
+			return toAdd.length > 0 ? [...cleaned, ...toAdd] : cleaned;
+		});
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [existingShifts, homeDetail?.caregivers]);
+
+	// Close the casual worker search dropdown when the user clicks anywhere outside it.
+	useEffect(() => {
+		const handleOutside = (e) => {
+			if (casualSearchRef.current && !casualSearchRef.current.contains(e.target)) {
+				setShowCasualDropdown(false);
+			}
+		};
+		document.addEventListener("mousedown", handleOutside);
+		return () => document.removeEventListener("mousedown", handleOutside);
+	}, []);
+
 	// ── Derived data ──────────────────────────────────────────────────────────
+
+	// ─ Caregiver list & ordering ────────────────────────────────────────────────
 
 	// Caregivers that belong to the selected home
 	const caregivers = homeDetail?.caregivers ?? [];
@@ -480,6 +529,8 @@ export default function ShiftBuilderPage() {
 			return aIdx - bIdx;
 		});
 	}, [caregivers, caregiverOrder]);
+
+	// ─ Pay period date range ────────────────────────────────────────────────────
 
 	// Array of "yyyy-MM-dd" strings for every day in the pay period
 	const dates = useMemo(() => {
@@ -505,6 +556,24 @@ export default function ShiftBuilderPage() {
 	// Set for O(1) date-in-range checks; also filters out stale assignments
 	const dateSet = useMemo(() => new Set(dates), [dates]);
 
+	// ─ Casual worker search ─────────────────────────────────────────────────────
+
+	// Casual worker search results — excludes already-added workers
+	const filteredCasualResults = useMemo(() => {
+		const addedIds = new Set(addedCasualWorkers.map((cg) => (cg._id || cg.id)?.toString()));
+		const q = casualSearch.trim().toLowerCase();
+		return (allCasualWorkers || []).filter((cg) => {
+			if (addedIds.has((cg._id || cg.id)?.toString())) return false;
+			if (!q) return true;
+			const name = [cg.firstName, cg.lastName].filter(Boolean).join(" ").toLowerCase();
+			return name.includes(q);
+		});
+	}, [allCasualWorkers, casualSearch, addedCasualWorkers]);
+
+	// ─ Grid summary counts ──────────────────────────────────────────────────────
+	// These drive the "Publish N Shifts" / "Save Schedule" button label and
+	// the guard that prevents empty submits.
+
 	// Truly new cells — not existing, not just an existing custom cell with edited times
 	const assignmentCount = useMemo(() => {
 		return Object.values(assignments).reduce((total, dateMap) => {
@@ -527,7 +596,10 @@ export default function ShiftBuilderPage() {
 	// Determines POST (create-only) vs PUT (create + update) mode.
 	const hasExistingShifts = (existingShifts?.length ?? 0) > 0;
 
-	// Tracked separately so only the affected shift type lights up and gets re-sent.
+	// ─ Time-change tracking ─────────────────────────────────────────────────────
+	// When the user edits the Day/Night hour pickers after shifts have loaded, PUT
+	// mode re-includes those existing cells so the backend updates their times.
+	// Each shift type is tracked separately so only the affected type lights up.
 	const dayTimesChanged = useMemo(() => {
 		const orig = originalTimes.current;
 		return dayStart !== orig.dayStart || dayEnd !== orig.dayEnd;
@@ -560,6 +632,10 @@ export default function ShiftBuilderPage() {
 	}, [assignments, dateSet, nightTimesChanged]);
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
+
+	// ─ Grid cell actions ────────────────────────────────────────────────────────
+	// cycleCell / setCustomTime / clearRow / clearAll all write to the assignments map.
+	// They never touch the server — Publish/Save sends the final state in one call.
 
 	/**
 	 * Advances a cell through: empty / existing → day → night → custom → empty.
@@ -634,6 +710,10 @@ export default function ShiftBuilderPage() {
 		setSubmitError(null);
 	}, []);
 
+	// ─ Navigation ────────────────────────────────────────────────────────────────
+	// handleHomeChange / changePeriod reset all transient state so the grid is always
+	// consistent with the currently selected home & period.
+
 	/** Switches home — clears grid immediately; existing shifts load via the hook. */
 	const handleHomeChange = useCallback((homeId) => {
 		setSelectedHomeId(homeId);
@@ -641,6 +721,9 @@ export default function ShiftBuilderPage() {
 		setAssignments({});
 		setBulkResult(null);
 		setSubmitError(null);
+		setAddedCasualWorkers([]);
+		setCasualSearch("");
+		setShowCasualDropdown(false);
 	}, []);
 
 	/** Moves to the adjacent pay period and clears any pending new assignments.
@@ -658,7 +741,10 @@ export default function ShiftBuilderPage() {
 		setSubmitError(null);
 	}, [periodOffset]);
 
-	// ── Drag-to-reorder handlers ──────────────────────────────────────────────
+	// ─ Drag-to-reorder: home caregivers ────────────────────────────────────────
+	// Regular rows update caregiverOrder (an array of caregiver IDs).
+	// Dragging from the regular section into the casual section is a no-op because
+	// the dragItem ID won't be found in caregiverOrder.
 
 	const handleDragStart = useCallback((e, caregiverId) => {
 		dragItem.current = caregiverId;
@@ -693,6 +779,74 @@ export default function ShiftBuilderPage() {
 		dragItem.current     = null;
 		dragOverItem.current = null;
 		setDragOverId(null);
+	}, []);
+
+	// ─ Drag-to-reorder: casual workers ─────────────────────────────────────────
+	// Casual rows update addedCasualWorkers (the ordered array). Uses the same
+	// dragItem/dragOverItem refs as the regular handlers — cross-section drags are
+	// safe no-ops because findIndex won't match in the wrong array.
+
+	const handleCasualDragStart = useCallback((e, caregiverId) => {
+		dragItem.current = caregiverId;
+		e.dataTransfer.effectAllowed = "move";
+	}, []);
+
+	const handleCasualDragEnter = useCallback((caregiverId) => {
+		if (caregiverId === dragItem.current) return;
+		dragOverItem.current = caregiverId;
+		setDragOverId(caregiverId);
+	}, []);
+
+	const handleCasualDragEnd = useCallback(() => {
+		const from = dragItem.current;
+		const to   = dragOverItem.current;
+		if (from && to && from !== to) {
+			setAddedCasualWorkers((prev) => {
+				const order   = [...prev];
+				const fromIdx = order.findIndex((cg) => (cg._id || cg.id)?.toString() === from);
+				const toIdx   = order.findIndex((cg) => (cg._id || cg.id)?.toString() === to);
+				if (fromIdx === -1 || toIdx === -1) return prev;
+				const [item] = order.splice(fromIdx, 1);
+				order.splice(toIdx, 0, item);
+				return order;
+			});
+		}
+		dragItem.current     = null;
+		dragOverItem.current = null;
+		setDragOverId(null);
+	}, []);
+
+	// ─ Casual worker management ──────────────────────────────────────────────────
+	// handleAddCasualWorker / handleRemoveCasualWorker manage addedCasualWorkers state.
+	// openCasualDropdown positions the fixed dropdown relative to the search input.
+
+	const handleAddCasualWorker = useCallback((caregiver) => {
+		setAddedCasualWorkers((prev) => {
+			const id = (caregiver._id || caregiver.id)?.toString();
+			if (prev.some((cg) => (cg._id || cg.id)?.toString() === id)) return prev;
+			return [...prev, caregiver];
+		});
+		setCasualSearch("");
+		setShowCasualDropdown(false);
+	}, []);
+
+	const handleRemoveCasualWorker = useCallback((caregiverId) => {
+		setAddedCasualWorkers((prev) =>
+			prev.filter((cg) => (cg._id || cg.id)?.toString() !== caregiverId)
+		);
+		setAssignments((prev) => {
+			const next = { ...prev };
+			delete next[caregiverId];
+			return next;
+		});
+	}, []);
+
+	const openCasualDropdown = useCallback(() => {
+		if (casualSearchRef.current) {
+			const rect = casualSearchRef.current.getBoundingClientRect();
+			setCasualDropdownPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 260) });
+		}
+		setShowCasualDropdown(true);
 	}, []);
 
 	// ── Submit ────────────────────────────────────────────────────────────────
@@ -785,7 +939,7 @@ export default function ShiftBuilderPage() {
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
-	const isLoading  = homesLoading || (!!selectedHomeId && homeDetailLoading) || existingShiftsLoading;
+	const isLoading = homesLoading || isPayPeriodLoading || (!!selectedHomeId && homeDetailLoading) || existingShiftsLoading;
 
 	return (
 		<div className={styles.page}>
@@ -836,9 +990,15 @@ export default function ShiftBuilderPage() {
 									<ChevronLeft size={15} />
 								</button>
 								<div className={styles.periodDisplay}>
-									<span className={styles.periodBadge}>PP {payrollPeriod.ppNumber}</span>
+									<span className={styles.periodBadge}>
+										PP {payPeriod?.periodNumber ?? "—"}
+										{payPeriod?.payYear ? ` (${payPeriod.payYear})` : ""}
+									</span>
 									<span className={styles.periodDates}>
-										{format(payrollPeriod.start, "MMM d")} – {format(payrollPeriod.end, "MMM d, yyyy")}
+										{payPeriod
+											? `${format(parseISO(payPeriod.periodStart), "MMM d")} – ${format(parseISO(payPeriod.periodEnd), "MMM d, yyyy")}`
+											: "Loading…"
+										}
 									</span>
 								</div>
 								<button
@@ -890,10 +1050,10 @@ export default function ShiftBuilderPage() {
 					</div>
 
 					{/* ── Error banner ───────────────────────────────────────── */}
-					{(submitError || bulkShiftError || saveBulkShiftError) && (
+					{(submitError || bulkShiftError || saveBulkShiftError || payPeriodError) && (
 						<div className={styles.errorBanner}>
 							<AlertCircle size={15} />
-							<span>{submitError || bulkShiftError || saveBulkShiftError}</span>
+							<span>{submitError || bulkShiftError || saveBulkShiftError || payPeriodError}</span>
 						</div>
 					)}
 
@@ -1041,10 +1201,159 @@ export default function ShiftBuilderPage() {
 												</tr>
 											);
 										})}
-									</tbody>
 
-								</table>
-							</div>
+									{/* ── Casual worker separator + rows ──────── */}
+									{addedCasualWorkers.length > 0 && (
+										<tr className={styles.casualSeparatorRow}>
+											<td colSpan={dates.length + 2} className={styles.casualSeparatorCell}>
+												Casual Workers
+											</td>
+										</tr>
+									)}
+									{addedCasualWorkers.map((caregiver) => {
+										const caregiverId          = (caregiver._id || caregiver.id)?.toString();
+										const caregiverAssignments = assignments[caregiverId] || {};
+										const newCount = Object.keys(caregiverAssignments).filter(
+											(d) => dateSet.has(d) && !!caregiverAssignments[d]?.type && !caregiverAssignments[d].existing
+										).length;
+										const fullName = [caregiver.firstName, caregiver.lastName].filter(Boolean).join(" ") || "Unknown";
+										// Renamed: outer hasExistingShifts is a period-level check; this is per-caregiver
+										const casualHasShifts = Object.keys(baseAssignments.current[caregiverId] || {}).length > 0;
+										return (
+											<tr
+												key={caregiverId}
+												draggable
+												onDragStart={(e) => handleCasualDragStart(e, caregiverId)}
+												onDragEnter={() => handleCasualDragEnter(caregiverId)}
+												onDragEnd={handleCasualDragEnd}
+												onDragOver={(e) => e.preventDefault()}
+												className={[
+													styles.tr,
+													styles.casualRow,
+													dragOverId === caregiverId ? styles.trDragOver : "",
+												].filter(Boolean).join(" ")}
+											>
+												<td className={styles.tdName}>
+													<div className={styles.tdNameInner}>
+														<GripVertical
+															size={14}
+															className={styles.dragHandle}
+															title="Drag to reorder"
+														/>
+														<Image
+															src={caregiver.profilePictureUrl || defaultAvatar}
+															alt={fullName}
+															width={28}
+															height={28}
+															className={styles.cgAvatar}
+														/>
+														<span className={styles.tdNameText}>{fullName}</span>
+														{newCount > 0 && (
+															<button
+																className={styles.clearRowBtn}
+																onClick={() => clearRow(caregiverId)}
+																title="Clear new shifts in this row"
+															>
+																✕
+															</button>
+														)}
+														{!casualHasShifts && (
+															<button
+																className={styles.removeCasualBtn}
+																onClick={() => handleRemoveCasualWorker(caregiverId)}
+																title="Remove from schedule"
+															>
+																<X size={11} />
+															</button>
+														)}
+													</div>
+												</td>
+												{dates.map((dateStr) => {
+													const asgn    = caregiverAssignments[dateStr];
+													const isToday = dateStr === todayStr;
+													const isPast  = dateStr < todayStr;
+													return (
+														<td
+															key={dateStr}
+															className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}${isPast ? ` ${styles.tdCellPast}` : ""}`}
+														>
+															<ShiftCell
+																assignment={asgn}
+																isExisting={false}
+																isPast={isPast}
+																dayStart={dayStart}
+																dayEnd={dayEnd}
+																nightStart={nightStart}
+																nightEnd={nightEnd}
+																onCycle={() => cycleCell(caregiverId, dateStr)}
+																onSetCustomTime={(field, value) => setCustomTime(caregiverId, dateStr, field, value)}
+															/>
+														</td>
+													);
+												})}
+												<td className={styles.tdTotal}>
+													{newCount > 0 && <span className={styles.totalBadge}>{newCount}</span>}
+												</td>
+											</tr>
+										);
+									})}
+
+									{/* ── Casual worker search row ────────────── */}
+									{selectedHomeId && (
+										<tr className={styles.casualSearchRow}>
+											<td colSpan={dates.length + 2} className={styles.casualSearchCell}>
+												<div className={styles.casualSearchInner}>
+													<Search size={14} className={styles.casualSearchIcon} />
+													<input
+														ref={casualSearchRef}
+														className={styles.casualSearchInput}
+														placeholder={homeRegion ? `Search casual workers in ${homeRegion}…` : "Search casual workers…"}
+														value={casualSearch}
+														onChange={(e) => { setCasualSearch(e.target.value); setShowCasualDropdown(true); }}
+														onFocus={openCasualDropdown}
+													/>
+													{casualLoading && <span className={styles.casualSearchSpinner} />}
+												</div>
+											</td>
+										</tr>
+									)}
+								</tbody>
+
+							</table>
+						</div>
+					</div>
+					)}
+
+					{/* ── Casual worker dropdown (fixed-position) ─────────── */}
+					{showCasualDropdown && filteredCasualResults.length > 0 && (
+						<div
+							className={styles.casualDropdown}
+							style={{ top: casualDropdownPos.top, left: casualDropdownPos.left, width: casualDropdownPos.width }}
+						>
+							{filteredCasualResults.slice(0, 8).map((cg) => {
+								const id   = (cg._id || cg.id)?.toString();
+								const name = [cg.firstName, cg.lastName].filter(Boolean).join(" ") || "Unknown";
+								return (
+									<button
+										key={id}
+										className={styles.casualDropdownItem}
+										onMouseDown={(e) => { e.preventDefault(); handleAddCasualWorker(cg); }}
+									>
+										<Image
+											src={cg.profilePictureUrl || defaultAvatar}
+											alt={name}
+											width={26}
+											height={26}
+											className={styles.casualDropdownAvatar}
+										/>
+										<div className={styles.casualDropdownInfo}>
+											<span className={styles.casualDropdownName}>{name}</span>
+											{cg.email && <span className={styles.casualDropdownSub}>{cg.email}</span>}
+										</div>
+										<UserPlus size={13} className={styles.casualDropdownAddIcon} />
+									</button>
+								);
+							})}
 						</div>
 					)}
 

@@ -165,6 +165,44 @@
 	min-width: 0;
 }
 
+.subjectRowLink {
+	text-decoration: none;
+	color: inherit;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.subjectRowLink:hover {
+	background: #ede9fe;
+	border-color: #c4b5fd;
+}
+
+.subjectRowLinkIcon {
+	margin-left: auto;
+	flex-shrink: 0;
+	color: #a78bfa;
+	transition: transform 0.15s ease;
+}
+
+.subjectRowLink:hover .subjectRowLinkIcon {
+	transform: translateX(2px) translateY(-2px);
+}
+
+.subjectRowLocked {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.subjectRowValueLocked {
+	text-decoration: line-through;
+	color: #9ca3af;
+}
+
+.subjectRowLockIcon {
+	margin-left: auto;
+	flex-shrink: 0;
+	color: #9ca3af;
+}
+
 .subjectRowLabel {
 	font-size: 0.72rem;
 	font-weight: 600;
@@ -401,6 +439,116 @@
 
 @keyframes spin {
 	to { transform: rotate(360deg); }
+}
+
+/* ── Certificate File card ────────────────────────────────────────────────── */
+
+.fileCard {
+	margin-bottom: 1.25rem;
+}
+
+.fileCardHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.fileViewFullLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.78rem;
+	font-weight: 500;
+	color: #7c3aed;
+	text-decoration: none;
+	transition: opacity 0.15s ease;
+}
+
+.fileViewFullLink:hover {
+	opacity: 0.7;
+}
+
+.fileImageWrap {
+	display: block;
+	position: relative;
+	width: 100%;
+	max-height: 520px;
+	background: #0f0f0f;
+	border-radius: 10px;
+	overflow: hidden;
+	cursor: zoom-in;
+}
+
+.fileImage {
+	display: block;
+	width: 100%;
+	max-height: 520px;
+	object-fit: contain;
+	transition: opacity 0.2s ease;
+}
+
+.fileImageWrap:hover .fileImage {
+	opacity: 0.6;
+}
+
+.fileImageOverlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	color: #fff;
+	font-size: 0.85rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	pointer-events: none;
+}
+
+.fileImageWrap:hover .fileImageOverlay {
+	opacity: 1;
+}
+
+.fileFallback {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 3rem 1.5rem;
+	background: #f9fafb;
+	border-radius: 10px;
+	border: 1px dashed #e5e7eb;
+	text-align: center;
+}
+
+.fileFallbackText {
+	font-size: 0.875rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+.fileFallbackLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: #7c3aed;
+	text-decoration: none;
+	padding: 6px 14px;
+	border: 1px solid #ddd6fe;
+	border-radius: 8px;
+	background: #f5f3ff;
+	transition: background 0.15s ease;
+}
+
+.fileFallbackLink:hover {
+	background: #ede9fe;
 }
 
 /* ── Cancelled/decided banner ─────────────────────────────────────────────── */

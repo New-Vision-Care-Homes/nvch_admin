@@ -61,3 +61,14 @@ export function localDateToUtc(dateString, timeZone) {
     if (!dateString) return null;
     return DateTime.fromISO(dateString, { zone: timeZone }).toUTC().toISO();
 }
+
+// Returns a Luxon DateTime set to the Halifax (Atlantic) timezone.
+export function getHalifaxNow() {
+    return DateTime.now().setZone("America/Halifax");
+}
+
+// Returns today's date as "yyyy-MM-dd" in the Halifax timezone.
+export function getTodayInHalifax() {
+    const now = getHalifaxNow();
+    return now.toFormat("yyyy-MM-dd");
+}

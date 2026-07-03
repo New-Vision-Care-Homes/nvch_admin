@@ -24,6 +24,8 @@ import {
 	Award,
 	ShieldCheck,
 	Ban,
+	ExternalLink,
+	Lock,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
 
@@ -114,6 +116,8 @@ export default function ApprovalDetailPage() {
 	const ctx        = approval.subjectContext ?? {};
 	const caregiverName  = ctx.caregiverName  ?? "—";
 	const certificateName = formatCertName(ctx.certificateName);
+	const fileUrl     = ctx.fileUrl ?? null;
+	const canViewFile = !!fileUrl && (approval.status === "pending" || approval.status === "approved");
 	const decidedByName = decidedByAdmin
 		? `${decidedByAdmin.firstName ?? ""} ${decidedByAdmin.lastName ?? ""}`.trim() || decidedByAdmin.email
 		: decidedById ?? "—";
@@ -253,7 +257,7 @@ export default function ApprovalDetailPage() {
 						<CardHeader>
 							<span className={styles.cardTitleInner}>
 								<FileText size={15} />
-								Subject
+								Documents
 							</span>
 						</CardHeader>
 						<CardContent>
@@ -267,15 +271,45 @@ export default function ApprovalDetailPage() {
 										<span className={styles.subjectRowValue}>{caregiverName}</span>
 									</div>
 								</div>
-								<div className={styles.subjectRow}>
-									<div className={styles.subjectIconBox}>
-										<Award size={16} color="#7c3aed" />
+								{canViewFile ? (
+									<a
+										href={fileUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className={`${styles.subjectRow} ${styles.subjectRowLink}`}
+										title="Open certificate file"
+									>
+										<div className={styles.subjectIconBox}>
+											<Award size={16} color="#7c3aed" />
+										</div>
+										<div className={styles.subjectRowBody}>
+											<span className={styles.subjectRowLabel}>Certificate</span>
+											<span className={styles.subjectRowValue}>{certificateName}</span>
+										</div>
+										<ExternalLink size={14} className={styles.subjectRowLinkIcon} />
+									</a>
+								) : fileUrl ? (
+									<div className={`${styles.subjectRow} ${styles.subjectRowLocked}`}>
+										<div className={styles.subjectIconBox}>
+											<Award size={16} color="#9ca3af" />
+										</div>
+										<div className={styles.subjectRowBody}>
+											<span className={styles.subjectRowLabel}>Certificate</span>
+											<span className={`${styles.subjectRowValue} ${styles.subjectRowValueLocked}`}>{certificateName}</span>
+										</div>
+										<Lock size={13} className={styles.subjectRowLockIcon} />
 									</div>
-									<div className={styles.subjectRowBody}>
-										<span className={styles.subjectRowLabel}>Certificate</span>
-										<span className={styles.subjectRowValue}>{certificateName}</span>
+								) : (
+									<div className={styles.subjectRow}>
+										<div className={styles.subjectIconBox}>
+											<Award size={16} color="#7c3aed" />
+										</div>
+										<div className={styles.subjectRowBody}>
+											<span className={styles.subjectRowLabel}>Certificate</span>
+											<span className={styles.subjectRowValue}>{certificateName}</span>
+										</div>
 									</div>
-								</div>
+								)}
 							</div>
 						</CardContent>
 					</Card>
