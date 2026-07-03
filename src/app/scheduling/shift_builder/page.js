@@ -574,11 +574,21 @@ export default function ShiftBuilderPage() {
 	// These drive the "Publish N Shifts" / "Save Schedule" button label and
 	// the guard that prevents empty submits.
 
-	// Truly new cells — not existing, not just an existing custom cell with edited times
+	// Brand-new cells — no shiftId means they'll be created, not updated
 	const assignmentCount = useMemo(() => {
 		return Object.values(assignments).reduce((total, dateMap) => {
 			const count = Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && !!dateMap[d]?.type && !dateMap[d].existing && !dateMap[d].wasExisting
+				(d) => dateSet.has(d) && !!dateMap[d]?.type && !dateMap[d].existing && !dateMap[d].wasExisting && !dateMap[d].shiftId
+			).length;
+			return total + count;
+		}, 0);
+	}, [assignments, dateSet]);
+
+	// Cells cycled from an existing shift (have shiftId) — these are updates, not creates
+	const updatedCount = useMemo(() => {
+		return Object.values(assignments).reduce((total, dateMap) => {
+			const count = Object.keys(dateMap).filter(
+				(d) => dateSet.has(d) && !!dateMap[d]?.type && !dateMap[d].existing && !dateMap[d].wasExisting && !!dateMap[d].shiftId
 			).length;
 			return total + count;
 		}, 0);
@@ -901,7 +911,7 @@ export default function ShiftBuilderPage() {
 		} else {
 			// ── PUT: create + update (period has existing shifts) ────────────
 			// Nothing to do if the user made no changes at all
-			if (assignmentCount === 0 && modifiedCustomCount === 0 && !timesChanged) return;
+			if (assignmentCount === 0 && updatedCount === 0 && modifiedCustomCount === 0 && !timesChanged) return;
 
 			const caregiverPayload = [];
 			for (const [caregiverId, dateMap] of Object.entries(assignments)) {
@@ -1026,11 +1036,12 @@ export default function ShiftBuilderPage() {
 								const isSubmitting = isBulkPending || isSaveBulkPending;
 								const canSubmit = selectedHomeId && (
 									hasExistingShifts
-										? (assignmentCount > 0 || timesChanged || modifiedCustomCount > 0)
+										? (assignmentCount > 0 || updatedCount > 0 || timesChanged || modifiedCustomCount > 0)
 										: assignmentCount > 0
 								);
 								const parts = [];
 								if (assignmentCount > 0) parts.push(`${assignmentCount} new`);
+								if (updatedCount > 0) parts.push(`${updatedCount} updated`);
 								if (affectedDayCount > 0) parts.push(`${affectedDayCount}D re-timed`);
 								if (affectedNightCount > 0) parts.push(`${affectedNightCount}N re-timed`);
 								if (modifiedCustomCount > 0) parts.push(`${modifiedCustomCount}C re-timed`);
@@ -1279,7 +1290,11 @@ export default function ShiftBuilderPage() {
 														>
 															<ShiftCell
 																assignment={asgn}
-																isExisting={false}
+																isExisting={
+																	!!asgn?.existing &&
+																	!(asgn?.type === "day" && dayTimesChanged) &&
+																	!(asgn?.type === "night" && nightTimesChanged)
+																}
 																isPast={isPast}
 																dayStart={dayStart}
 																dayEnd={dayEnd}
