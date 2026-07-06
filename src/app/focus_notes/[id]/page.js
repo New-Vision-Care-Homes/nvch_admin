@@ -55,7 +55,7 @@ export default function FocusNoteDetailPage() {
 	// ── Fetch single note by its own ID
 	const { data: fetchedNote, isLoading, isFetching, error: fetchError } = useQuery({
 		queryKey: ["focusNote", focusNoteId],
-		queryFn: () => focusNoteService.getByShiftNoteId(focusNoteId),
+		queryFn: () => focusNoteService.getById(focusNoteId),
 		enabled: !!focusNoteId,
 	});
 
@@ -128,18 +128,21 @@ export default function FocusNoteDetailPage() {
 			{/* ═══════ PAGE HEADER */}
 			<div className={styles.pageHeader}>
 				<div className={styles.headerLeft}>
-					<div className={styles.headerMeta}>
-						<FileText size={15} className={styles.headerIcon} />
+					<div className={styles.eyebrow}>
+						<FileText size={13} className={styles.headerIcon} />
 						<span className={styles.headerLabel}>Focus Note</span>
 					</div>
-					<h1>Focus Note Detail</h1>
-					<p className={styles.noteId}>ID: {note._id}</p>
-					{clientName && (
-						<p className={styles.clientLink}>
-							Client: <strong>{clientName}</strong>
-							{note.client?.clientId && <span className={styles.clientIdPill}>{note.client.clientId}</span>}
-						</p>
-					)}
+					<h1 className={styles.clientTitle}>{clientName || "Unknown Client"}</h1>
+					<div className={styles.metaRow}>
+						{note.client?.clientId && (
+							<span className={styles.clientIdPill}>{note.client.clientId}</span>
+						)}
+						{shiftStatus && (
+							<span className={`${styles.statusBadge} ${SHIFT_STATUS_CLASS[shiftStatus] || ""}`}>
+								{shiftStatus.replace(/_/g, " ")}
+							</span>
+						)}
+					</div>
 				</div>
 
 				<div className={styles.headerActions}>

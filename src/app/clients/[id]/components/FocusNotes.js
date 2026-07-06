@@ -6,7 +6,7 @@ import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import ErrorState from "@components/UI/ErrorState";
 import { Table2, Table2Pagination } from "@components/UI/Table";
-import { FileText, Download, Search, ExternalLink } from "lucide-react";
+import { FileText, Download, ExternalLink, X } from "lucide-react";
 import styles from "./FocusNotes.module.css";
 
 
@@ -47,21 +47,18 @@ export default function FocusNotes() {
 	const { id } = useParams();
 	const router = useRouter();
 
-	// ── Filter + search state
-	const [search, setSearch] = useState("");
-	const [roleFilter, setRoleFilter] = useState("all");
-	const [statusFilter, setStatusFilter] = useState("all");
+	// ── Filter state
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
 	const [page, setPage] = useState(1);
 
 	// Build query parameters to send to the backend
 	const queryParams = useMemo(() => {
 		const params = { page, limit: PAGE_SIZE };
-		// Pass filters only if they are being used
-		if (search) params.search = search;
-		if (roleFilter !== "all") params.role = roleFilter;
-		if (statusFilter !== "all") params.status = statusFilter;
+		if (startDate) params.startDate = startDate;
+		if (endDate) params.endDate = endDate;
 		return params;
-	}, [page, search, roleFilter, statusFilter]);
+	}, [page, startDate, endDate]);
 
 	// Fetch data from the backend using the dynamic query parameters
 	const {
@@ -79,9 +76,9 @@ export default function FocusNotes() {
 	const totalItems = pagination?.totalItems || pageNotes.length;
 
 	// When filters change, reset to page 1
-	const handleSearchChange = (e) => { setSearch(e.target.value); setPage(1); };
-	const handleRoleChange = (e) => { setRoleFilter(e.target.value); setPage(1); };
-	const handleStatusChange = (e) => { setStatusFilter(e.target.value); setPage(1); };
+	const handleStartDateChange = (e) => { setStartDate(e.target.value); setPage(1); };
+	const handleEndDateChange = (e) => { setEndDate(e.target.value); setPage(1); };
+	const handleClearDates = () => { setStartDate(""); setEndDate(""); setPage(1); };
 
 	if (isFocusNotesOfClientLoading || fetchError) {
 		return <ErrorState isLoading={isFocusNotesOfClientLoading} errorMessage={fetchError} />;
@@ -178,7 +175,7 @@ export default function FocusNotes() {
 					<span className={styles.countBadge}>{totalItems}</span>
 				</div>
 				<div className={styles.toolbarRight}>
-					{/* Export buttons — logic wired later */}
+					{/* Export buttons — hidden until export feature is implemented
 					<button className={styles.exportBtn} disabled title="Coming soon">
 						<Download size={13} />
 						Export Excel
@@ -187,34 +184,36 @@ export default function FocusNotes() {
 						<Download size={13} />
 						Export PDF
 					</button>
+					*/}
 				</div>
 			</div>
 
 			{/* ── Filter bar ──────────────────────────────────────── */}
 			<div className={styles.filterBar}>
-				<div className={styles.searchWrap}>
-					<Search size={14} className={styles.searchIcon} />
+				<div className={styles.dateRangeWrap}>
+					<label className={styles.dateLabel}>From</label>
 					<input
-						className={styles.searchInput}
-						placeholder="Search by author or note content…"
-						value={search}
-						onChange={handleSearchChange}
+						type="date"
+						className={styles.dateInput}
+						value={startDate}
+						onChange={handleStartDateChange}
 					/>
 				</div>
-				<select className={styles.filterSelect} value={roleFilter} onChange={handleRoleChange}>
-					<option value="all">All Roles</option>
-					<option value="caregiver">Caregiver</option>
-					<option value="supervisor">Supervisor</option>
-					<option value="admin">Admin</option>
-				</select>
-				<select className={styles.filterSelect} value={statusFilter} onChange={handleStatusChange}>
-					<option value="all">All Shift Statuses</option>
-					<option value="scheduled">Scheduled</option>
-					<option value="in_progress">In Progress</option>
-					<option value="completed">Completed</option>
-					<option value="cancelled">Cancelled</option>
-					<option value="missed">Missed</option>
-				</select>
+				<div className={styles.dateRangeWrap}>
+					<label className={styles.dateLabel}>To</label>
+					<input
+						type="date"
+						className={styles.dateInput}
+						value={endDate}
+						onChange={handleEndDateChange}
+					/>
+				</div>
+				{(startDate || endDate) && (
+					<button className={styles.clearBtn} onClick={handleClearDates}>
+						<X size={13} />
+						Clear
+					</button>
+				)}
 			</div>
 
 			{/* ── Table ───────────────────────────────────────────── */}
