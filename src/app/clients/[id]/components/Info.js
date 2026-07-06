@@ -28,6 +28,7 @@ import { canManageTarget } from "@/utils/permissions";
 import { useHomes } from "@/hooks/useHomes";
 import ClientConflictModal from "@/components/UI/ClientConflictModal";
 import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
+import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 
 const splitName = (full) => {
 	const parts = full?.split(" ") || [];
@@ -68,7 +69,7 @@ const cleanFetchedData = (apiData) => {
 	return {
 		firstName: apiData.firstName || "",
 		lastName: apiData.lastName || "",
-		birth: apiData.dateOfBirth?.split("T")[0] || "",
+		birth: utcToDateString(apiData.dateOfBirth, "America/Halifax"),
 		region: apiData.region || "",
 		maritalStatus: apiData.maritalStatus || "",
 		levelOfSupport: apiData.levelOfSupport ?? "",
@@ -84,7 +85,7 @@ const cleanFetchedData = (apiData) => {
 		pinCode: apiData.address?.pinCode || "",
 		unit: apiData.address?.unit || "",
 		healthCardNumber: apiData.healthCard?.number || "",
-		healthCardExpiryDate: apiData.healthCard?.expiryDate?.split("T")[0] || "",
+		healthCardExpiryDate: utcToDateString(apiData.healthCard?.expiryDate, "America/Halifax"),
 		emergencyFName: ecName.first,
 		emergencyLName: ecName.last,
 		emergencyPhone: ec.phone || "",
@@ -303,7 +304,7 @@ export default function Info() {
 		firstName: data.firstName,
 		lastName: data.lastName,
 		phone: data.phone,
-		dateOfBirth: data.birth,
+		dateOfBirth: localDateToUtc(data.birth, "America/Halifax"),
 		region: data.region,
 		maritalStatus: data.maritalStatus || null,
 		levelOfSupport: data.levelOfSupport || null,
@@ -323,7 +324,7 @@ export default function Info() {
 		},
 		healthCard: {
 			number: data.healthCardNumber || null,
-			expiryDate: data.healthCardExpiryDate || null,
+			expiryDate: localDateToUtc(data.healthCardExpiryDate, "America/Halifax"),
 		},
 		emergencyContact: {
 			name: fullName(data.emergencyFName, data.emergencyLName),
@@ -486,7 +487,7 @@ export default function Info() {
 											<div className={styles.contact_detail}>
 												<div className={styles.contact_label}>Date of Birth</div>
 												<div className={d.dateOfBirth ? styles.contact_value : styles.contact_value_empty}>
-													{d.dateOfBirth?.split("T")[0] || "Not provided"}
+													{utcToDateString(d.dateOfBirth, "America/Halifax") || "Not provided"}
 												</div>
 											</div>
 										</div>
@@ -547,7 +548,7 @@ export default function Info() {
 												</div>
 												{d.healthCard?.expiryDate && (
 													<div className={styles.contact_meta}>
-														Expires {d.healthCard.expiryDate.split("T")[0]}
+														Expires {utcToDateString(d.healthCard.expiryDate, "America/Halifax")}
 													</div>
 												)}
 											</div>

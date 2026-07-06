@@ -137,5 +137,6 @@ export const useCaregivers = (options = {}) => {
 		deleteCaregiver: deleteMutation.mutate,
 		toggleCaregiverStatus: toggleStatusMutation.mutate,
 		refetch: caregiversQuery.refetch,
+		refetchDetail: caregiverDetailQuery.refetch,
 	};
 };

@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   Focus Note Detail / Edit Page
+   Focus Note Detail
    ───────────────────────────────────────────────────────────────────────── */
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -7,69 +7,91 @@
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
-	gap: 1rem;
-	padding-bottom: 1rem;
 	border-bottom: 1px solid #e5e7eb;
-	margin-bottom: 1.5rem;
-	flex-wrap: wrap;
+	padding-bottom: 1.25rem;
+	margin-bottom: 2rem;
+	gap: 1rem;
 }
 
 .headerLeft {
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
+	gap: 0;
 }
 
-.headerMeta {
+/* Eyebrow — small icon + label above the title */
+.eyebrow {
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	margin-bottom: 2px;
+	gap: 5px;
+	margin-bottom: 6px;
 }
 
 .headerIcon {
-	color: #1c4a6e;
+	color: #9ca3af;
 }
 
 .headerLabel {
-	font-size: 0.72rem;
+	font-size: 0.7rem;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.07em;
+	letter-spacing: 0.08em;
+	color: #9ca3af;
+}
+
+/* Client name — main title */
+.clientTitle {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary);
+	margin: 0 0 2px;
+	line-height: 1.1;
+	letter-spacing: -0.025em;
+}
+
+/* "Focus Note Detail" — subtitle */
+.subtitle {
+	font-size: 0.9rem;
+	font-weight: 500;
 	color: #6b7280;
+	margin: 0 0 10px;
 }
 
-.mockBadge {
-	background: #fef3c7;
-	color: #92400e;
-	border: 1px solid #fde68a;
-	border-radius: 6px;
-	padding: 1px 8px;
-	font-size: 0.68rem;
-	font-weight: 700;
-}
-
-.pageHeader h1 {
-	font-size: 1.5rem;
-	font-weight: 700;
-	color: #111827;
-	margin: 0;
+/* Meta row — ID pill + client ID + shift status badge */
+.metaRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
 }
 
 .noteId {
 	font-family: ui-monospace, "Cascadia Code", monospace;
-	font-size: 0.76rem;
+	font-size: 0.72rem;
 	color: #9ca3af;
-	margin: 0;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 2px 8px;
+}
+
+.clientIdPill {
+	font-family: ui-monospace, monospace;
+	font-size: 0.7rem;
+	background: #eff6ff;
+	color: #1d4ed8;
+	border: 1px solid #bfdbfe;
+	border-radius: 999px;
+	padding: 2px 8px;
+	font-weight: 600;
 }
 
 .headerActions {
 	display: flex;
-	align-items: center;
-	gap: 8px;
+	gap: 10px;
 	flex-shrink: 0;
+	align-items: center;
 	padding-top: 4px;
-	flex-wrap: wrap;
 }
 
 /* ── Status / banner messages ────────────────────────────────────────────── */
@@ -91,76 +113,87 @@
 	margin-bottom: 1.25rem;
 }
 
-/* ── Two-column grid ─────────────────────────────────────────────────────── */
+/* ── Main 2-column layout ────────────────────────────────────────────────── */
 .mainGrid {
-	display: grid;
-	grid-template-columns: 1fr 1.6fr;
+	display: flex;
 	gap: 1.5rem;
 	align-items: flex-start;
 }
 
-.colLeft,
-.colRight {
+.colLeft {
+	flex: 1;
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
 	gap: 1.25rem;
+}
+
+.colRight {
+	flex: 1.6;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Inner grid ──────────────────────────────────────────────────────────── */
+.metaGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.9rem 1.5rem;
 }
 
 /* ── Card title inner span (icon + text) ─────────────────────────────────── */
 .cardTitle {
 	display: flex;
 	align-items: center;
-	gap: 7px;
-}
-
-/* ── Meta info grid inside left cards ────────────────────────────────────── */
-.metaGrid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 1rem 1.5rem;
+	gap: 8px;
 }
 
 /* ── Typography ──────────────────────────────────────────────────────────── */
 .boldVal {
 	font-weight: 700;
-	font-size: 0.92rem;
+	font-size: 1rem;
 	color: #111827;
 	margin: 0;
 	line-height: 1.4;
 }
 
 .tzNote {
-	font-size: 0.7rem;
+	font-size: 0.72rem;
 	color: #9ca3af;
 	margin: 2px 0 0;
 }
 
 .noteText {
-	font-size: 0.9rem;
-	color: #1f2937;
+	color: #4b5563;
 	line-height: 1.7;
+	font-size: 0.9rem;
 	margin: 0;
 	white-space: pre-wrap;
 }
 
 .emptyText {
-	font-style: italic;
 	color: #9ca3af;
+	font-size: 0.86rem;
+	font-style: italic;
+	margin: 0;
 }
 
 /* ── Textarea (edit mode) ────────────────────────────────────────────────── */
 .textarea {
 	width: 100%;
-	padding: 10px 12px;
+	padding: 8px 11px;
 	border: 1px solid #d1d5db;
 	border-radius: 8px;
-	font-size: 0.88rem;
+	font-size: 0.875rem;
 	color: #111827;
 	background: #fff;
 	font-family: inherit;
-	line-height: 1.65;
-	resize: vertical;
 	transition: border-color 0.15s, box-shadow 0.15s;
+	margin-top: 4px;
+	resize: vertical;
+	line-height: 1.65;
 }
 
 .textarea:focus {
@@ -172,39 +205,47 @@
 /* ── Role badge ──────────────────────────────────────────────────────────── */
 .roleBadge {
 	display: inline-block;
-	padding: 3px 10px;
+	padding: 3px 12px;
 	border-radius: 999px;
-	font-size: 0.7rem;
+	font-size: 0.72rem;
 	font-weight: 700;
 	text-transform: capitalize;
 	letter-spacing: 0.03em;
 }
 
-.roleCaregiver { background: #ede9fe; color: #6d28d9; }
-.roleAdmin     { background: #dbeafe; color: #1d4ed8; }
-.roleSupervisor{ background: #fef3c7; color: #92400e; }
-.roleDefault   { background: #f3f4f6; color: #374151; }
+.roleCaregiver  { background: #ede9fe; color: #6d28d9; }
+.roleAdmin      { background: #dbeafe; color: #1d4ed8; }
+.roleSupervisor { background: #fef3c7; color: #92400e; }
+.roleDefault    { background: #f3f4f6; color: #374151; }
 
 /* ── Shift status badge ──────────────────────────────────────────────────── */
 .statusBadge {
-	display: inline-block;
-	padding: 3px 10px;
-	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 10px;
+	border-radius: 9999px;
 	font-size: 0.7rem;
 	font-weight: 700;
-	text-transform: capitalize;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
-.statusScheduled   { background: #e0f2fe; color: #0369a1; }
-.statusInProgress  { background: #fef3c7; color: #92400e; }
-.statusCompleted   { background: #dcfce7; color: #166534; }
-.statusCancelled   { background: #fee2e2; color: #991b1b; }
-.statusMissed      { background: #f3f4f6; color: #374151; }
+.statusScheduled  { background: #e0f2fe; color: #0369a1; }
+.statusInProgress { background: #fef3c7; color: #92400e; }
+.statusCompleted  { background: #dcfce7; color: #166534; }
+.statusCancelled  { background: #fee2e2; color: #991b1b; }
+.statusMissed     { background: #f3f4f6; color: #374151; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
 	.mainGrid {
-		grid-template-columns: 1fr;
+		flex-direction: column;
+	}
+
+	.colLeft,
+	.colRight {
+		flex: 1 1 100%;
+		width: 100%;
 	}
 
 	.metaGrid {
@@ -214,6 +255,7 @@
 	.pageHeader {
 		flex-direction: column;
 		align-items: flex-start;
+		gap: 0.75rem;
 	}
 
 	.headerActions {
@@ -227,7 +269,36 @@
 		grid-template-columns: 1fr;
 	}
 
-	.pageHeader h1 {
-		font-size: 1.25rem;
+	.clientTitle {
+		font-size: 1.5rem;
+	}
+
+	.headerActions {
+		flex-wrap: wrap;
+	}
+}
+
+@media (max-width: 480px) {
+	.pageHeader {
+		gap: 0.5rem;
+	}
+
+	.clientTitle {
+		font-size: 1.3rem;
+	}
+
+	.headerActions {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.headerActions > * {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.noteId {
+		font-size: 0.65rem;
+		word-break: break-all;
 	}
 }

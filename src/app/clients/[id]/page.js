@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
@@ -8,7 +8,7 @@ import { Card, CardHeader } from "@components/UI/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
-import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
+import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Home, Pencil, Undo2, Upload, X } from "lucide-react";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import Modal from "@components/UI/Modal";
 import { useParams } from "next/navigation";
@@ -67,10 +67,17 @@ export default function Page() {
 	const [hoursSaving, setHoursSaving] = useState(false);
 	const [hoursError, setHoursError] = useState(null);
 	const [hoursSuccess, setHoursSuccess] = useState(null);
+	const hoursInitialized = useRef(false);
 
+	// Initialize once when clientDetail first loads. Using a ref instead of a
+	// dependency-tracked effect prevents background refetches from silently
+	// overwriting a value the user is actively typing.
 	useEffect(() => {
-		setHoursValue(clientDetail?.allowableHours ?? "");
-	}, [clientDetail?.allowableHours]);
+		if (clientDetail && !hoursInitialized.current) {
+			setHoursValue(clientDetail.allowableHours ?? "");
+			hoursInitialized.current = true;
+		}
+	}, [clientDetail]);
 
 
 
@@ -226,7 +233,11 @@ export default function Page() {
 		);
 	}
 
-
+	const homeObj = typeof clientDetail.home === "object" && clientDetail.home ? clientDetail.home : null;
+	const hasHome = !!clientDetail.home; // true whether the ref is populated or a bare string ID
+	const homeName = homeObj?.name ?? null;
+	const homeType = homeObj?.homeType ?? null;
+	const showAllowableHours = !hasHome || homeType === "ILS" || homeType === "IF";
 
 	return (
 		<>
@@ -297,6 +308,12 @@ export default function Page() {
 								<span className={`${styles.statusPill} ${clientDetail.isActive ? styles.statusActive : styles.statusInactive}`}>
 									{clientDetail.isActive ? "Active" : "Inactive"}
 								</span>
+								{homeName && (
+									<div className={styles.homeLine}>
+										<Home size={12} />
+										{homeName}
+									</div>
+								)}
 							</div>
 
 							<div className={styles.timestamps}>
@@ -316,7 +333,7 @@ export default function Page() {
 								</div>
 							</div>
 
-							<div className={styles.hoursSection}>
+							{showAllowableHours && <div className={styles.hoursSection}>
 								<div className={styles.hoursCardLabel}>
 									<AlarmClockCheck size={13} />
 									<span>Allowable Hours</span>
@@ -362,7 +379,7 @@ export default function Page() {
 									</div>
 								)}
 								{hoursSuccess && <div className={styles.hoursFeedbackSuccess}>{hoursSuccess}</div>}
-							</div>
+							</div>}
 						</div>
 					</div>
 				</Card>

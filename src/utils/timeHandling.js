@@ -45,3 +45,30 @@ export function utcToInputDateTime(utcString, timeZone) {
         .setZone(timeZone)
         .toFormat("yyyy-MM-dd'T'HH:mm");
 }
+
+// For <input type="date"> pre-filling ("YYYY-MM-DD") in a given timezone
+// Converts a UTC ISO string to the local date in the given timezone.
+export function utcToDateString(utcString, timeZone) {
+    if (!utcString) return "";
+    return DateTime.fromISO(utcString, { zone: "utc" })
+        .setZone(timeZone)
+        .toFormat("yyyy-MM-dd");
+}
+
+// For form submission: treat a "YYYY-MM-DD" date string as midnight in the
+// given timezone and return the equivalent UTC ISO string for the backend.
+export function localDateToUtc(dateString, timeZone) {
+    if (!dateString) return null;
+    return DateTime.fromISO(dateString, { zone: timeZone }).toUTC().toISO();
+}
+
+// Returns a Luxon DateTime set to the Halifax (Atlantic) timezone.
+export function getHalifaxNow() {
+    return DateTime.now().setZone("America/Halifax");
+}
+
+// Returns today's date as "yyyy-MM-dd" in the Halifax timezone.
+export function getTodayInHalifax() {
+    const now = getHalifaxNow();
+    return now.toFormat("yyyy-MM-dd");
+}

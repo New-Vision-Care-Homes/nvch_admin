@@ -889,3 +889,206 @@
 		margin-left: 0;
 	}
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Casual worker rows
+══════════════════════════════════════════════════════════════ */
+
+.casualSeparatorRow td {
+	padding: 0;
+}
+
+.casualSeparatorCell {
+	padding: 5px 12px 4px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #7c3aed;
+	background: #f5f3ff;
+	border-top: 1.5px dashed #c4b5fd;
+	border-bottom: 1px solid #ede9fe;
+}
+
+.casualRow {
+	background: #fdf8ff;
+}
+
+.casualRow:hover {
+	background: #f5f0ff;
+}
+
+.casualRow .tdName { background: #fdf8ff; }
+.casualRow:hover .tdName { background: #f5f0ff !important; }
+
+.casualBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 6px;
+	border-radius: 99px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	background: #ede9fe;
+	color: #6d28d9;
+	border: 1px solid #c4b5fd;
+	flex-shrink: 0;
+}
+
+.removeCasualBtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 1px solid #e5e7eb;
+	background: transparent;
+	color: #9ca3af;
+	cursor: pointer;
+	margin-left: auto;
+	flex-shrink: 0;
+	transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.removeCasualBtn:hover {
+	background: #fee2e2;
+	color: #dc2626;
+	border-color: #fca5a5;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Casual worker search row
+══════════════════════════════════════════════════════════════ */
+
+.casualSearchRow td {
+	padding: 0;
+}
+
+.casualSearchCell {
+	border-top: 1.5px dashed #e5e7eb;
+	background: #fafafa;
+}
+
+.casualSearchInner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 7px 12px;
+}
+
+.casualSearchIcon {
+	color: #9ca3af;
+	flex-shrink: 0;
+}
+
+.casualSearchInput {
+	flex: 1;
+	min-width: 0;
+	padding: 5px 8px;
+	font-size: 13px;
+	color: #374151;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	outline: none;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	font-family: inherit;
+}
+
+.casualSearchInput::placeholder {
+	color: #d1d5db;
+}
+
+.casualSearchInput:focus {
+	border-color: #a78bfa;
+	box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+.casualSearchSpinner {
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	border: 2px solid #e5e7eb;
+	border-top-color: #7c3aed;
+	animation: casualSpin 0.7s linear infinite;
+	flex-shrink: 0;
+}
+
+@keyframes casualSpin {
+	to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Casual worker search dropdown (position: fixed)
+══════════════════════════════════════════════════════════════ */
+
+.casualDropdown {
+	position: fixed;
+	z-index: 9999;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+	overflow: hidden;
+	max-height: 280px;
+	overflow-y: auto;
+}
+
+.casualDropdownItem {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 9px 13px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.1s;
+}
+
+.casualDropdownItem:hover {
+	background: #f5f3ff;
+}
+
+.casualDropdownAvatar {
+	border-radius: 50%;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
+.casualDropdownInfo {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.casualDropdownName {
+	font-size: 13px;
+	font-weight: 600;
+	color: #111827;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.casualDropdownSub {
+	font-size: 11px;
+	color: #9ca3af;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.casualDropdownAddIcon {
+	color: #a78bfa;
+	flex-shrink: 0;
+	transition: color 0.1s;
+}
+
+.casualDropdownItem:hover .casualDropdownAddIcon {
+	color: #6d28d9;
+}

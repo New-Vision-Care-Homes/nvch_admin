@@ -17,6 +17,7 @@ import {
 	CircleOff,
 	CheckCheck,
 	ExternalLink,
+	ClipboardCheck,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,12 +57,13 @@ function groupByDate(items) {
 
 /** Maps each notification type to an icon component + colour palette. */
 const TYPE_CONFIG = {
-	shift_missed:           { Icon: AlertTriangle, color: "#dc2626", bg: "#fef2f2" },
-	shift_late_start:       { Icon: Clock,         color: "#d97706", bg: "#fffbeb" },
-	shift_missed_reporting: { Icon: AlertTriangle, color: "#ea580c", bg: "#fff7ed" },
-	shift_late_reporting:   { Icon: Clock,         color: "#d97706", bg: "#fffbeb" },
-	shift_auto_ended:       { Icon: CircleOff,     color: "#6b7280", bg: "#f3f4f6" },
-	broadcast:              { Icon: Megaphone,     color: "#dc2626", bg: "#fef2f2" },
+	shift_missed:           { Icon: AlertTriangle,   color: "#dc2626", bg: "#fef2f2" },
+	shift_late_start:       { Icon: Clock,           color: "#d97706", bg: "#fffbeb" },
+	shift_missed_reporting: { Icon: AlertTriangle,   color: "#ea580c", bg: "#fff7ed" },
+	shift_late_reporting:   { Icon: Clock,           color: "#d97706", bg: "#fffbeb" },
+	shift_auto_ended:       { Icon: CircleOff,       color: "#6b7280", bg: "#f3f4f6" },
+	broadcast:              { Icon: Megaphone,       color: "#dc2626", bg: "#fef2f2" },
+	approval_requested:     { Icon: ClipboardCheck,  color: "#7c3aed", bg: "#f5f3ff" },
 };
 
 /**
@@ -77,13 +79,17 @@ const SHIFT_TYPES = new Set([
 	"shift_auto_ended",
 ]);
 
+/** Approval notification types that deep-link to the approval detail page. */
+const APPROVAL_TYPES = new Set(["approval_requested"]);
+
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
 function NotificationCard({ notification: n, onClick }) {
 	const { Icon, color, bg } = TYPE_CONFIG[n.type] ?? {
 		Icon: Bell, color: "#6b7280", bg: "#f9fafb",
 	};
-	const isShiftLink = SHIFT_TYPES.has(n.type);
+	const isShiftLink    = SHIFT_TYPES.has(n.type);
+	const isApprovalLink = APPROVAL_TYPES.has(n.type);
 
 	return (
 		<div
@@ -106,14 +112,17 @@ function NotificationCard({ notification: n, onClick }) {
 					{n.type === "broadcast" && (
 						<span className={styles.broadcastBadge}>Broadcast</span>
 					)}
+					{isApprovalLink && (
+						<span className={styles.approvalBadge}>Needs Review</span>
+					)}
 				</div>
 				{n.body && <p className={styles.bodyText}>{n.body}</p>}
 			</div>
 
-			{/* Time + shift deep-link hint */}
+			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{isShiftLink && <ExternalLink size={13} className={styles.linkIcon} />}
+				{(isShiftLink || isApprovalLink) && <ExternalLink size={13} className={styles.linkIcon} />}
 			</div>
 		</div>
 	);
@@ -178,9 +187,15 @@ export default function NotificationsPage() {
 		if (!n.isRead) await markRead(n._id).catch(() => {});
 
 		// Shift-related notifications → go to the shift detail page.
-		// The shiftId lives in data.shiftId per the notification shape.
 		if (SHIFT_TYPES.has(n.type) && n.data?.shiftId) {
 			router.push(`/scheduling/${n.data.shiftId}`);
+			return;
+		}
+
+		// Approval notifications → go to the approval detail page.
+		if (APPROVAL_TYPES.has(n.type) && n.data?.approvalId) {
+			router.push(`/approvals/${n.data.approvalId}`);
+			return;
 		}
 		// broadcast and other non-tappable types: no navigation, just mark read.
 	};

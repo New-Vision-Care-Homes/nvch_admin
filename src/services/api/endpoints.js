@@ -80,6 +80,16 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/focus-notes/${id}`,
 	},
 
+	/* All related endpoints for approvals */
+	APPROVALS: {
+		BASE: '/api/approvals',
+		MINE: '/api/approvals/mine',
+		BY_ID: (id) => `/api/approvals/${id}`,
+		APPROVE: (id) => `/api/approvals/${id}/approve`,
+		REJECT: (id) => `/api/approvals/${id}/reject`,
+		CANCEL: (id) => `/api/approvals/${id}/cancel`,
+	},
+
 	/* All related endpoints for notifications */
 	NOTIFICATIONS: {
 		BASE: '/api/notifications',

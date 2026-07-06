@@ -10,6 +10,7 @@ import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
 import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
+import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
@@ -33,11 +34,11 @@ const cleanFetchedData = (apiData) => {
 	const cleanData = {
 		firstName: apiData.firstName || "",
 		lastName: apiData.lastName || "",
-		birth: apiData.dateOfBirth?.split('T')[0] || "",
+		birth: utcToDateString(apiData.dateOfBirth, "America/Halifax"),
 		phone: apiData.phone || "",
 		email: apiData.email || "",
 		maxHours: apiData.biWeeklyWorkCapacity?.maxHours || 84,
-		employeeStartDate: apiData.employeeStartDate?.split('T')[0] || "",
+		employeeStartDate: utcToDateString(apiData.employeeStartDate, "America/Halifax"),
 		street: apiData.address?.street || "",
 		city: apiData.address?.city || "",
 		state: apiData.address?.state || "",
@@ -140,8 +141,8 @@ export default function Info() {
 			firstName: data.firstName,
 			lastName: data.lastName,
 			phone: data.phone || null,
-			dateOfBirth: data.birth || null,
-			employeeStartDate: data.employeeStartDate ? new Date(data.employeeStartDate).toISOString() : null,
+			dateOfBirth: localDateToUtc(data.birth, "America/Halifax"),
+			employeeStartDate: localDateToUtc(data.employeeStartDate, "America/Halifax"),
 			regions: data.regions,
 			employmentStatus: data.employmentStatus || null,
 			address: {
@@ -171,6 +172,12 @@ export default function Info() {
 
 	const handleCancel = () => {
 		reset(cleanFetchedData(caregiverDetail));
+		const coords = caregiverDetail?.address?.gpsCoordinates;
+		setGpsCoordinates(
+			coords?.latitude != null
+				? { latitude: coords.latitude, longitude: coords.longitude }
+				: { latitude: 44.6476, longitude: -63.5728 }
+		);
 		setStatus(null);
 		setIsEditing(false);
 	};
@@ -212,7 +219,7 @@ export default function Info() {
 										<div className={styles.contact_detail}>
 											<div className={styles.contact_label}>Date of Birth</div>
 											<div className={d.dateOfBirth ? styles.contact_value : styles.contact_value_empty}>
-												{d.dateOfBirth?.split('T')[0] || "Not provided"}
+												{utcToDateString(d.dateOfBirth, "America/Halifax") || "Not provided"}
 											</div>
 										</div>
 									</div>
@@ -230,7 +237,7 @@ export default function Info() {
 										<div className={styles.contact_detail}>
 											<div className={styles.contact_label}>Employee Start Date</div>
 											<div className={d.employeeStartDate ? styles.contact_value : styles.contact_value_empty}>
-												{d.employeeStartDate?.split('T')[0] || "Not provided"}
+												{utcToDateString(d.employeeStartDate, "America/Halifax") || "Not provided"}
 											</div>
 										</div>
 									</div>

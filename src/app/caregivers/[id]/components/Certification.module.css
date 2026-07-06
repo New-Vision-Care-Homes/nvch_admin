@@ -131,7 +131,14 @@
     border: 1px solid #fca5a5;
 }
 
-/* 
+/* ── Approval action buttons in table ─────────────────────────── */
+.approvalActions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/*
 ==========================================
  MODAL
 ==========================================
@@ -154,6 +161,91 @@
 
 .modal_buttons button {
     min-width: 80px;
+}
+
+.approveModalIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #059669;
+    margin: 0 auto 4px;
+}
+
+.rejectModalIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    margin: 0 auto 4px;
+}
+
+.approveModalDesc {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.approveReasonField {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.approveReasonLabel {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: #374151;
+    text-align: left;
+}
+
+.approveReasonTextarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #111827;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 70px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.approveReasonTextarea:focus {
+    outline: none;
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
+.rejectTextareaError {
+    border-color: #f87171;
+}
+
+.rejectErrorMsg {
+    font-size: 0.8rem;
+    color: #dc2626;
+    text-align: left;
+}
+
+.spinnerIcon {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
   
   

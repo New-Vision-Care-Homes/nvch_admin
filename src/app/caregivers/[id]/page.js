@@ -110,7 +110,7 @@ export default function Page() {
 			lastName:            cd.lastName,
 			phone:               cd.phone || null,
 			dateOfBirth:         cd.dateOfBirth || null,
-			employeeStartDate:   cd.employeeStartDate ? new Date(cd.employeeStartDate).toISOString() : null,
+			employeeStartDate:   cd.employeeStartDate || null,
 			regions:             cd.regions,
 			employmentStatus:    cd.employmentStatus || null,
 			address: {

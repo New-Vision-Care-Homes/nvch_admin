@@ -21,8 +21,11 @@ export default function Tabs() {
 		 */
 	];
 
+	const activeComponent = tabs.find((tab) => tab.id === activeTab)?.component;
+
 	return (
 		<div>
+			{/* Desktop: horizontal pill buttons */}
 			<div className={styles.tabsList}>
 				{tabs.map((tab) => (
 					<button
@@ -35,8 +38,21 @@ export default function Tabs() {
 				))}
 			</div>
 
+			{/* Mobile: dropdown */}
+			<div className={styles.tabsDropdownWrap}>
+				<select
+					className={styles.tabsDropdown}
+					value={activeTab}
+					onChange={(e) => setActiveTab(e.target.value)}
+				>
+					{tabs.map((tab) => (
+						<option key={tab.id} value={tab.id}>{tab.label}</option>
+					))}
+				</select>
+			</div>
+
 			<div className={styles.tabContent}>
-				{tabs.find((tab) => tab.id === activeTab)?.component}
+				{activeComponent}
 			</div>
 		</div>
 	);
