@@ -387,6 +387,10 @@ export default function ShiftBuilderPage() {
 	const [showCasualDropdown,  setShowCasualDropdown]   = useState(false);
 	const [casualDropdownPos,   setCasualDropdownPos]    = useState({ top: 0, left: 0, width: 0 });
 	const casualSearchRef = useRef(null);
+	// Tracks IDs that the admin explicitly added via search (vs auto-detected from shifts).
+	// Auto-detected workers are removed when navigating to a period where they have no shifts;
+	// manually-added workers are always kept so the admin can still assign shifts to them.
+	const manuallyAddedCasualIds = useRef(new Set());
 
 	// ── Data fetching ─────────────────────────────────────────────────────────
 
@@ -491,8 +495,15 @@ export default function ShiftBuilderPage() {
 		}
 
 		setAddedCasualWorkers((prev) => {
-			// Strip out anyone who turned out to be a permanent home caregiver
-			const cleaned = prev.filter((w) => !homeCgIds.has((w._id || w.id)?.toString()));
+			// Strip out anyone who:
+			// - is now a permanent home caregiver, OR
+			// - has no shifts this period AND was not manually added via search
+			const cleaned = prev.filter((w) => {
+				const id = (w._id || w.id)?.toString();
+				if (homeCgIds.has(id)) return false;
+				if (manuallyAddedCasualIds.current.has(id)) return true;
+				return !!extraMap[id];
+			});
 			// Add genuinely extra workers not already in the list
 			const cleanedIds = new Set(cleaned.map((w) => (w._id || w.id)?.toString()));
 			const toAdd = Object.values(extraMap).filter((w) => !cleanedIds.has((w._id || w.id)?.toString()));
@@ -732,6 +743,7 @@ export default function ShiftBuilderPage() {
 		setBulkResult(null);
 		setSubmitError(null);
 		setAddedCasualWorkers([]);
+		manuallyAddedCasualIds.current.clear();
 		setCasualSearch("");
 		setShowCasualDropdown(false);
 	}, []);
@@ -749,6 +761,10 @@ export default function ShiftBuilderPage() {
 		setAssignments({});
 		setBulkResult(null);
 		setSubmitError(null);
+		// Manually-added casual workers are period-specific — clear so they don't
+		// bleed into the new period. The auto-detection effect will re-add any who
+		// have actual shifts in the new period.
+		manuallyAddedCasualIds.current.clear();
 	}, [periodOffset]);
 
 	// ─ Drag-to-reorder: home caregivers ────────────────────────────────────────
@@ -831,8 +847,9 @@ export default function ShiftBuilderPage() {
 	// openCasualDropdown positions the fixed dropdown relative to the search input.
 
 	const handleAddCasualWorker = useCallback((caregiver) => {
+		const id = (caregiver._id || caregiver.id)?.toString();
+		manuallyAddedCasualIds.current.add(id);
 		setAddedCasualWorkers((prev) => {
-			const id = (caregiver._id || caregiver.id)?.toString();
 			if (prev.some((cg) => (cg._id || cg.id)?.toString() === id)) return prev;
 			return [...prev, caregiver];
 		});
@@ -841,6 +858,7 @@ export default function ShiftBuilderPage() {
 	}, []);
 
 	const handleRemoveCasualWorker = useCallback((caregiverId) => {
+		manuallyAddedCasualIds.current.delete(caregiverId);
 		setAddedCasualWorkers((prev) =>
 			prev.filter((cg) => (cg._id || cg.id)?.toString() !== caregiverId)
 		);

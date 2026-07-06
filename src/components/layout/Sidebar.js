@@ -89,6 +89,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 
 	const [hoveredTabId, setHoveredTabId] = useState(null);
 	const [flyoutPos, setFlyoutPos] = useState({ top: 0, left: 0 });
+	const [mobileExpandedId, setMobileExpandedId] = useState(null);
 	const leaveTimer = useRef(null);
 
 	const openFlyout = useCallback((tabId, rect) => {
@@ -115,7 +116,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 	}, [pathname]);
 
 	useEffect(() => {
-		if (!open) return;
+		if (!open) { setMobileExpandedId(null); return; }
 		const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
@@ -140,6 +141,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 					const isActive = tab.id === activeTab;
 
 					if (tab.hasFlyout) {
+						const isExpanded = mobileExpandedId === tab.id;
 						return (
 							<div
 								key={tab.id}
@@ -150,12 +152,50 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 								<Link
 									href={tab.href}
 									className={`${styles.tab} ${styles.tabFlyout} ${isActive ? styles.activeTab : ""}`}
-									onClick={() => handleTabClick(tab.id)}
+									onClick={(e) => {
+										if (open) {
+											e.preventDefault();
+											setMobileExpandedId(isExpanded ? null : tab.id);
+										} else {
+											handleTabClick(tab.id);
+										}
+									}}
 								>
 									<div className={styles.iconWrapper}><Icon size={24} /></div>
 									<div className={styles.tabLabel}>{tab.label}</div>
-									<ChevronRight size={14} className={styles.flyoutArrow} />
+									<ChevronRight
+										size={14}
+										className={`${styles.flyoutArrow} ${isExpanded ? styles.flyoutArrowDown : ""}`}
+									/>
 								</Link>
+
+								{/* Mobile inline dropdown */}
+								{isExpanded && flyoutMenus[tab.id] && (
+									<div className={styles.mobileSubMenu}>
+										{flyoutMenus[tab.id].map(item => {
+											const ItemIcon = item.icon;
+											return (
+												<Link
+													key={item.href}
+													href={item.href}
+													className={styles.mobileSubItem}
+													onClick={() => { handleTabClick(tab.id); setMobileExpandedId(null); }}
+												>
+													<ItemIcon size={15} className={styles.flyoutItemIcon} />
+													<div>
+														<div className={styles.flyoutItemLabel}>
+															{item.label}
+															{flyoutBadges[item.href] > 0 && (
+																<span className={styles.flyoutBadge}>{flyoutBadges[item.href]}</span>
+															)}
+														</div>
+														<div className={styles.flyoutItemDesc}>{item.desc}</div>
+													</div>
+												</Link>
+											);
+										})}
+									</div>
+								)}
 							</div>
 						);
 					}
