@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
+import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
@@ -35,6 +36,13 @@ function joinAddress(addr) {
 	if (typeof addr === "string") return addr;
 	return [addr.unit, addr.street, addr.city, addr.state || addr.province, addr.pinCode || addr.postalCode, addr.country]
 		.filter(Boolean).join(", ") || null;
+}
+
+function AdminName({ adminId }) {
+	const { adminDetail } = useAdmins(adminId || "");
+	if (!adminId) return null;
+	if (!adminDetail) return adminId;
+	return personName(adminDetail);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -427,22 +435,39 @@ export default function ShiftDetailPage() {
 							<span className={styles.cardTitleInner}><History size={15} /> Hours Adjustments</span>
 						</CardHeader>
 						<CardContent>
+
+							{/* Current actual times */}
+							<div className={styles.actualTimesRow}>
+								<div className={styles.actualTimeCard}>
+									<span className={styles.actualTimeCardLabel}><LogIn size={12} /> Actual Start</span>
+									<span className={styles.actualTimeCardVal}>
+										{shift.actualStartTime ? utcToFullDisplay(shift.actualStartTime, "America/Halifax") : "—"}
+									</span>
+									<span className={styles.actualTimeCardTz}>Atlantic Time (Halifax)</span>
+								</div>
+								<div className={styles.actualTimeSep}>→</div>
+								<div className={styles.actualTimeCard}>
+									<span className={styles.actualTimeCardLabel}><LogOut size={12} /> Actual End</span>
+									<span className={styles.actualTimeCardVal}>
+										{shift.actualEndTime ? utcToFullDisplay(shift.actualEndTime, "America/Halifax") : "—"}
+									</span>
+									<span className={styles.actualTimeCardTz}>Atlantic Time (Halifax)</span>
+								</div>
+							</div>
+
+							{/* Change history */}
+							<div className={styles.changeLogHeader}>
+								<span>Change History</span>
+								<span className={styles.changeLogCount}>
+									{shift.hoursAdjustments.length} change{shift.hoursAdjustments.length !== 1 ? "s" : ""}
+								</span>
+							</div>
+
 							<div className={styles.adjustmentList}>
 								{shift.hoursAdjustments.map((adj, i) => (
-									<div key={i} className={styles.adjustmentRow}>
+									<div key={adj._id || i} className={styles.adjustmentRow}>
 										<div className={styles.adjustmentIndex}>{i + 1}</div>
 										<div className={styles.adjustmentBody}>
-											<div className={styles.adjustmentTimes}>
-												<div className={styles.adjustmentTimeBlock}>
-													<span className={styles.adjustmentTimeLabel}>Actual Start</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualStartTime ? utcToFullDisplay(adj.actualStartTime, "America/Halifax") : "—"}</span>
-												</div>
-												<div className={styles.adjustmentArrow}>→</div>
-												<div className={styles.adjustmentTimeBlock}>
-													<span className={styles.adjustmentTimeLabel}>Actual End</span>
-													<span className={styles.adjustmentTimeVal}>{adj.actualEndTime ? utcToFullDisplay(adj.actualEndTime, "America/Halifax") : "—"}</span>
-												</div>
-											</div>
 											{adj.reason && (
 												<p className={styles.adjustmentReason}>
 													<span className={styles.adjustmentReasonLabel}>Reason: </span>
@@ -451,14 +476,16 @@ export default function ShiftDetailPage() {
 											)}
 											{adj.adjustedAt && (
 												<p className={styles.adjustmentMeta}>
-													Recorded {utcToFullDisplay(adj.adjustedAt, "America/Halifax")}
-													{adj.adjustedBy ? ` · by ${adj.adjustedBy}` : ""}
+													<Clock size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
+													{utcToFullDisplay(adj.adjustedAt, "America/Halifax")}
+													{adj.adjustedBy && <> · by <AdminName adminId={adj.adjustedBy} /></>}
 												</p>
 											)}
 										</div>
 									</div>
 								))}
 							</div>
+
 						</CardContent>
 					</Card>
 				</div>

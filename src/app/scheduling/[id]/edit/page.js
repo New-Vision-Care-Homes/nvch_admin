@@ -63,7 +63,7 @@ const completedSchema = yup.object({
 			const start = DateTime.fromISO(this.parent.actualStartTime, { zone: HALIFAX_TZ });
 			return end.isValid && start.isValid && end > start;
 		}),
-	reason: shortTextRule.required("Please provide a reason for the adjustment"),
+	reason: longTextRule.required("Please provide a reason for the adjustment"),
 });
 
 
