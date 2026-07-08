@@ -1,5 +1,5 @@
 import { format, addDays } from "date-fns";
-import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
 import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
 const HALIFAX_TZ       = "America/Halifax";
@@ -66,15 +66,25 @@ export async function exportScheduleToExcel({ homeName, homeId, payPeriodStart, 
 		caregiverNames[cgId] = [shift.caregiver?.firstName, shift.caregiver?.lastName]
 			.filter(Boolean).join(" ") || "Unknown";
 
-		const startLocal  = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-		const endLocal    = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
-		const dateStr     = format(startLocal, "yyyy-MM-dd");
-		const timeRange   = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
-		const isOvernight = format(startLocal, "yyyy-MM-dd") !== format(endLocal, "yyyy-MM-dd");
+		const startLocal = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+		const endLocal   = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+		const fullRange  = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
 
-		if (!shiftMap[cgId]) shiftMap[cgId] = {};
-		if (!shiftMap[cgId][dateStr]) shiftMap[cgId][dateStr] = [];
-		shiftMap[cgId][dateStr].push({ timeRange, isOvernight });
+		// A multi-day shift occupies every day it spans. Show the full range on a
+		// single-day shift; on a span, use arrows so each day's cell reads clearly.
+		expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ).forEach((seg) => {
+			const multiDay    = seg.spanDays > 1;
+			const isOvernight = multiDay;
+			const timeRange   = !multiDay
+				? fullRange
+				: seg.isFirst ? `${format(startLocal, "H:mm")}→`
+				: seg.isLast  ? `→${format(endLocal, "H:mm")}`
+				:               "24h";
+
+			if (!shiftMap[cgId]) shiftMap[cgId] = {};
+			if (!shiftMap[cgId][seg.dateStr]) shiftMap[cgId][seg.dateStr] = [];
+			shiftMap[cgId][seg.dateStr].push({ timeRange, isOvernight });
+		});
 	});
 
 	const sortedCgIds = Object.keys(caregiverNames).sort((a, b) =>

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
-import { utcToDate, utcToWeekday, utcToDisplayTime, utcToInputDateTime } from "@/utils/timeHandling";
+import { utcToDate, utcToWeekday, utcToDisplayTime, expandShiftDays } from "@/utils/timeHandling";
 import { DateTime } from "luxon";
 import Button from "@components/UI/Button";
 import PageLayout from "@components/layout/PageLayout";
@@ -29,14 +29,14 @@ export default function ShiftDayPage() {
 	});
 	const { profile } = useProfile();
 
-	// Client-side filter to strictly only show shifts on this specific day
+	// Show every shift that OVERLAPS this day — not just shifts that start on it —
+	// so a multi-day shift appears on each day it spans (matching the calendar).
 	const shifts = useMemo(() => {
 		if (!dateParam || !rawShifts.length) return [];
-		return rawShifts.filter(shift => {
-			// Convert shift time to Halifax, then extract just the YYYY-MM-DD part
-			const shiftDateStr = utcToInputDateTime(shift.startTime, profile?.timezone || "America/Halifax").split("T")[0];
-			return shiftDateStr === dateParam;
-		});
+		const tz = profile?.timezone || "America/Halifax";
+		return rawShifts.filter((shift) =>
+			expandShiftDays(shift.startTime, shift.endTime, tz).some((seg) => seg.dateStr === dateParam)
+		);
 	}, [rawShifts, dateParam, profile?.timezone]);
 
 	const statusClass = (status) =>

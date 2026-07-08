@@ -15,6 +15,7 @@ import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
+import Modal from "@components/UI/Modal";
 import cardStyles from "@components/UI/Card.module.css";
 import {
 	Clock, MapPin, FileText, Save, X, Plus, Trash2,
@@ -89,6 +90,19 @@ export default function EditShiftPage() {
 	} = useShifts(id);
 
 	const [showInProgressModal, setShowInProgressModal] = useState(false);
+
+	// ── Long-shift (>12h) confirmation ─────────────────────────────────────
+	// Shifts longer than 12 hours are allowed but unusual, so we warn before
+	// saving rather than blocking. The pending submit runs once confirmed.
+	const [showLongShiftModal, setShowLongShiftModal] = useState(false);
+	const [longShiftHours, setLongShiftHours] = useState(0);
+	const pendingSubmitRef = useRef(null);
+
+	const hoursBetween = (startISO, endISO) => {
+		const s = DateTime.fromISO(startISO, { zone: HALIFAX_TZ });
+		const e = DateTime.fromISO(endISO,   { zone: HALIFAX_TZ });
+		return s.isValid && e.isValid ? e.diff(s, "hours").hours : 0;
+	};
 
 	// ── Determine mode from status ────────────────────────────────────────
 	const status = shiftDetail?.status;
@@ -234,7 +248,7 @@ export default function EditShiftPage() {
 	// ── Submit: scheduled ─────────────────────────────────────────────────
 	// This function handles the form submission when editing a "scheduled" shift.
 	// It gathers all the data from the form, formats it for the backend, and sends the update request.
-	async function onSubmitScheduled(data) {
+	async function doSubmitScheduled(data) {
 		// 1. Build the base payload with common shift fields
 		const payload = {
 			caregiverId: data.caregiverId, // The ID of the assigned caregiver
@@ -277,13 +291,24 @@ export default function EditShiftPage() {
 			await updateUpcommingShift({ id: shiftDetail._id, data: payload });
 			// On success, redirect the user back to the shift detail page
 			router.push(`/scheduling/${id}`);
-		} catch (err) { 
+		} catch (err) {
 			// Any errors are handled automatically by the useShifts hook and displayed as an ActionMessage
 		}
 	}
 
+	function onSubmitScheduled(data) {
+		const h = hoursBetween(data.startTime, data.endTime);
+		if (h > 12) {
+			pendingSubmitRef.current = () => doSubmitScheduled(data);
+			setLongShiftHours(h);
+			setShowLongShiftModal(true);
+			return;
+		}
+		doSubmitScheduled(data);
+	}
+
 	// ── Submit: completed ─────────────────────────────────────────────────
-	async function onSubmitCompleted(data) {
+	async function doSubmitCompleted(data) {
 		const actualStart = DateTime.fromISO(data.actualStartTime, { zone: HALIFAX_TZ });
 		const actualEnd = DateTime.fromISO(data.actualEndTime, { zone: HALIFAX_TZ });
 		const payload = {
@@ -297,6 +322,17 @@ export default function EditShiftPage() {
 		} catch (err) { }
 	}
 
+	function onSubmitCompleted(data) {
+		const h = hoursBetween(data.actualStartTime, data.actualEndTime);
+		if (h > 12) {
+			pendingSubmitRef.current = () => doSubmitCompleted(data);
+			setLongShiftHours(h);
+			setShowLongShiftModal(true);
+			return;
+		}
+		doSubmitCompleted(data);
+	}
+
 	// ── Guards ────────────────────────────────────────────────────────────
 	if (isShiftLoading || fetchShiftError || !shiftDetail) return (
 		<PageLayout>
@@ -306,6 +342,35 @@ export default function EditShiftPage() {
 
 	const nowLocal = DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm");
 	const statusClass = shiftStyles[`status_${status}`] || shiftStyles.status_default;
+
+	// Warning before saving a shift longer than 12 hours (allowed, not blocked).
+	// Rendered in both the completed and scheduled forms below.
+	const longShiftModal = (
+		<Modal isOpen={showLongShiftModal} onClose={() => { pendingSubmitRef.current = null; setShowLongShiftModal(false); }}>
+			<div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "1rem 0.5rem" }}>
+				<h2 style={{ margin: 0, fontSize: "1.2rem", color: "var(--color-primary)" }}>Long shift warning</h2>
+				<p style={{ marginTop: "0.75rem", color: "#4b5563", lineHeight: 1.5 }}>
+					This shift is <strong>{Math.round(longShiftHours * 10) / 10} hours</strong> long, which is more than 12 hours.
+					Are you sure you want to save it?
+				</p>
+				<div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.5rem" }}>
+					<Button
+						variant="primary"
+						disabled={isShiftActionPending}
+						onClick={() => {
+							const run = pendingSubmitRef.current;
+							pendingSubmitRef.current = null;
+							setShowLongShiftModal(false);
+							if (run) run();
+						}}
+					>
+						Yes, save shift
+					</Button>
+					<Button variant="secondary" onClick={() => { pendingSubmitRef.current = null; setShowLongShiftModal(false); }}>Cancel</Button>
+				</div>
+			</div>
+		</Modal>
+	);
 
 	// ── In-progress modal ─────────────────────────────────────────────────
 	if (showInProgressModal) return (
@@ -390,6 +455,7 @@ export default function EditShiftPage() {
 						</CardContent>
 					</Card>
 				</div>
+				{longShiftModal}
 			</PageLayout>
 		);
 	}
@@ -639,6 +705,7 @@ export default function EditShiftPage() {
 					</Card>
 				</div>
 			</form>
+			{longShiftModal}
 		</PageLayout>
 	);
 }
