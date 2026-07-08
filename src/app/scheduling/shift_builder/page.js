@@ -49,11 +49,13 @@ import {
 import { addDays, format, parseISO } from "date-fns";
 import { DateTime } from "luxon";
 import Image from "next/image";
+import { expandShiftDays } from "@/utils/timeHandling";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
+import Modal from "@components/UI/Modal";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
@@ -89,6 +91,26 @@ function getTodayInHalifax() {
 	return format(new Date(now.year, now.month - 1, now.day), "yyyy-MM-dd");
 }
 
+/** "HH:mm" → minutes since midnight. */
+function hhmmToMinutes(hhmm) {
+	if (!hhmm) return null;
+	const [h, m] = hhmm.split(":").map(Number);
+	return h * 60 + (m || 0);
+}
+
+/**
+ * Duration in hours of a shift window given HH:mm start/end, matching the
+ * backend rule: when end <= start the window crosses midnight (end==start → 24h).
+ * Returns 0 if either bound is missing.
+ */
+function windowHours(startHHMM, endHHMM) {
+	const s = hhmmToMinutes(startHHMM);
+	const e = hhmmToMinutes(endHHMM);
+	if (s == null || e == null) return 0;
+	const mins = e > s ? e - s : 1440 - s + e;
+	return mins / 60;
+}
+
 /**
  * Classifies an existing API shift as "day", "night", or "custom" by
  * checking what hour it starts in Halifax time.
@@ -114,6 +136,10 @@ function classifyShift(shift) {
  */
 function buildAssignmentsFromShifts(shifts) {
 	const map = {};
+	// Continuation markers are placed in a second pass so a real start-day cell
+	// always wins the cell over another shift's continuation on the same day.
+	const continuations = [];
+
 	for (const shift of shifts) {
 		// caregiver may be a populated object { _id, ... } or a raw string ID.
 		// Newly-created shifts are often returned un-populated (string only).
@@ -123,21 +149,50 @@ function buildAssignmentsFromShifts(shifts) {
 		)?.toString();
 		if (!caregiverId) continue;
 
+		const segments = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
+		if (segments.length === 0) continue;
+
 		const startHfx = DateTime.fromISO(shift.startTime).setZone(HALIFAX_TZ);
 		const endHfx   = DateTime.fromISO(shift.endTime).setZone(HALIFAX_TZ);
-		const dateStr  = startHfx.toFormat("yyyy-MM-dd");
 		const type     = classifyShift(shift);
+		const shiftId  = shift._id || shift.id; // needed for PUT /api/shifts/bulk
+		const rangeLabel = `${startHfx.toFormat("HH:mm")}–${endHfx.toFormat("HH:mm")}`;
 
 		if (!map[caregiverId]) map[caregiverId] = {};
-		map[caregiverId][dateStr] = {
+		// Day 1 — the editable representation of the shift.
+		map[caregiverId][segments[0].dateStr] = {
 			type,
 			// For custom shifts, capture the actual times so the cell can display them
 			customStart: type === "custom" ? startHfx.toFormat("HH:mm") : "",
 			customEnd:   type === "custom" ? endHfx.toFormat("HH:mm")   : "",
 			existing:    true,
-			shiftId:     shift._id || shift.id, // needed for PUT /api/shifts/bulk
+			shiftId,
+			spanDays:    segments.length,
 		};
+
+		// Day 2+ — read-only continuation markers tied to the same shift. They carry
+		// no `type`, so every count/payload filter skips them; only the start-day
+		// cell is editable or published.
+		for (let i = 1; i < segments.length; i++) {
+			continuations.push({
+				caregiverId,
+				dateStr: segments[i].dateStr,
+				marker: {
+					continuation: true,
+					existing:     true,
+					shiftId,
+					rangeLabel,
+					isLast:       segments[i].isLast,
+				},
+			});
+		}
 	}
+
+	for (const { caregiverId, dateStr, marker } of continuations) {
+		if (!map[caregiverId]) map[caregiverId] = {};
+		if (!map[caregiverId][dateStr]) map[caregiverId][dateStr] = marker;
+	}
+
 	return map;
 }
 
@@ -169,6 +224,28 @@ function ShiftCell({
 	const type = assignment?.type;
 	const existingClass = isExisting ? ` ${styles.cellExisting}` : "";
 	const pastClass     = isPast     ? ` ${styles.cellPast}`     : "";
+	const spanNote      = assignment?.spanDays > 1 ? ` · ${assignment.spanDays}-day shift` : "";
+
+	// Read-only continuation of a multi-day shift that started on an earlier day.
+	// It belongs to a shift edited via its start-day cell, so this cell is inert.
+	if (assignment?.continuation) {
+		return (
+			<div
+				className={`${styles.cellExisting}${pastClass}`}
+				style={{
+					display: "flex", alignItems: "center", justifyContent: "center",
+					minHeight: 34, borderRadius: 6, cursor: "default",
+					border: "1px dashed #cbd5e1", color: "#64748b",
+					fontSize: 12, fontWeight: 700,
+					background:
+						"repeating-linear-gradient(45deg,#eef2f7,#eef2f7 6px,#e3e9f1 6px,#e3e9f1 12px)",
+				}}
+				title={`Part of a multi-day shift · ${assignment.rangeLabel}${assignment.isLast ? " · ends today" : " · continues"}`}
+			>
+				{assignment.isLast ? "→|" : "→"}
+			</div>
+		);
+	}
 
 	// Empty cell
 	if (!type) {
@@ -190,7 +267,7 @@ function ShiftCell({
 				className={`${styles.cellDay}${existingClass}${pastClass}`}
 				onClick={isPast ? undefined : onCycle}
 				disabled={isPast}
-				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Day · ${dayStart}–${dayEnd}\nClick to change`}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Day · ${dayStart}–${dayEnd}${spanNote}\nClick to change`}
 			>
 				<Sun size={11} className={styles.cellIcon} />
 				<span className={styles.cellLetter}>D</span>
@@ -206,7 +283,7 @@ function ShiftCell({
 				className={`${styles.cellNight}${existingClass}${pastClass}`}
 				onClick={isPast ? undefined : onCycle}
 				disabled={isPast}
-				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Night · ${nightStart}–${nightEnd}\nClick to change`}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Night · ${nightStart}–${nightEnd}${spanNote}\nClick to change`}
 			>
 				<Moon size={11} className={styles.cellIcon} />
 				<span className={styles.cellLetter}>N</span>
@@ -222,7 +299,7 @@ function ShiftCell({
 				className={styles.cellCustomBadge}
 				onClick={isPast ? undefined : onCycle}
 				disabled={isPast}
-				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Custom shift · click to change`}
+				title={isPast ? "Past date — read only" : `${isExisting ? "Existing · " : ""}Custom shift${spanNote} · click to change`}
 			>
 				C
 			</button>
@@ -393,6 +470,12 @@ export default function ShiftBuilderPage() {
 	// ── Submission feedback ───────────────────────────────────────────────────
 	const [bulkResult,  setBulkResult]  = useState(null);
 	const [submitError, setSubmitError] = useState(null);
+
+	// ── Long-shift (>12h) confirmation ────────────────────────────────────────
+	// Shifts longer than 12 hours are allowed but unusual, so publishing/saving
+	// warns first rather than blocking.
+	const [showLongShiftModal, setShowLongShiftModal] = useState(false);
+	const [longShiftCount, setLongShiftCount] = useState(0);
 
 	// ── Drag-to-reorder ───────────────────────────────────────────────────────
 	const [caregiverOrder, setCaregiverOrder] = useState([]);
@@ -575,6 +658,9 @@ export default function ShiftBuilderPage() {
 		setAssignments((prev) => {
 			const caregiverMap = { ...(prev[caregiverId] || {}) };
 			const current      = caregiverMap[dateStr];
+			// Continuation markers belong to a multi-day shift edited via its
+			// start-day cell — they are read-only here.
+			if (current?.continuation) return prev;
 			// Preserve shiftId across cycles so PUT can target the right record
 			const shiftId = current?.shiftId;
 
@@ -703,7 +789,43 @@ export default function ShiftBuilderPage() {
 	 *   cycled from existing, with shiftId so the backend updates not duplicates),
 	 *   plus any existing Day/Night cells if the global times changed.
 	 */
-	const handleSubmit = async () => {
+	// Counts cells that WILL be written and whose duration exceeds 12 hours, so we
+	// can warn before publishing. Mirrors the payload filters in doSubmit().
+	const countLongShifts = () => {
+		let count = 0;
+		for (const dateMap of Object.values(assignments)) {
+			for (const [d, v] of Object.entries(dateMap)) {
+				if (!dateSet.has(d) || !v?.type) continue;
+				const willWrite = !v.existing || (
+					v.existing && (
+						(v.type === "day" && dayTimesChanged) ||
+						(v.type === "night" && nightTimesChanged)
+					)
+				);
+				if (!willWrite) continue;
+				const hrs = v.type === "day"   ? windowHours(dayStart, dayEnd)
+				          : v.type === "night" ? windowHours(nightStart, nightEnd)
+				          :                      windowHours(v.customStart, v.customEnd);
+				if (hrs > 12) count++;
+			}
+		}
+		return count;
+	};
+
+	// Gate: warn on any >12h shift, then run the real submit once confirmed.
+	const handleSubmit = () => {
+		if (!selectedHomeId) return;
+		if (isBulkPending || isSaveBulkPending) return;
+		const longCount = countLongShifts();
+		if (longCount > 0) {
+			setLongShiftCount(longCount);
+			setShowLongShiftModal(true);
+			return;
+		}
+		doSubmit();
+	};
+
+	const doSubmit = async () => {
 		if (!selectedHomeId) return;
 		const isSubmitting = isBulkPending || isSaveBulkPending;
 		if (isSubmitting) return;
@@ -899,6 +1021,27 @@ export default function ShiftBuilderPage() {
 
 					{/* ── Success / failure summary after publishing ─────────── */}
 					<BulkResultBanner result={bulkResult} />
+
+					{/* ── Warning before saving a schedule with >12h shifts ──── */}
+					<Modal isOpen={showLongShiftModal} onClose={() => setShowLongShiftModal(false)}>
+						<div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "1rem 0.5rem" }}>
+							<h2 style={{ margin: 0, fontSize: "1.2rem", color: "var(--color-primary)" }}>Long shift warning</h2>
+							<p style={{ marginTop: "0.75rem", color: "#4b5563", lineHeight: 1.5 }}>
+								<strong>{longShiftCount} shift{longShiftCount !== 1 ? "s" : ""}</strong> in this schedule {longShiftCount !== 1 ? "are" : "is"} longer than 12 hours.
+								Are you sure you want to save the schedule?
+							</p>
+							<div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.5rem" }}>
+								<Button
+									icon={<Zap size={15} />}
+									disabled={isBulkPending || isSaveBulkPending}
+									onClick={() => { setShowLongShiftModal(false); doSubmit(); }}
+								>
+									Yes, save schedule
+								</Button>
+								<Button variant="secondary" onClick={() => setShowLongShiftModal(false)}>Cancel</Button>
+							</div>
+						</div>
+					</Modal>
 
 					{/* ── Schedule grid ─────────────────────────────────────── */}
 					{!selectedHomeId ? (

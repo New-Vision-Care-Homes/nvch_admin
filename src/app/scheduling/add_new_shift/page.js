@@ -372,7 +372,14 @@ export default function AddNewShiftPage() {
 
 	const { addShift, isShiftActionPending, actionShiftError } = useShifts();
 
-	function onSubmit(data) {
+	// ── Long-shift (>12h) confirmation ─────────────────────────────────────────
+	// Shifts longer than 12 hours are allowed but unusual, so we warn before
+	// saving rather than blocking. The submit is stashed until the user confirms.
+	const [showLongShiftModal, setShowLongShiftModal] = useState(false);
+	const [longShiftHours, setLongShiftHours] = useState(0);
+	const pendingSubmitRef = useRef(null);
+
+	function buildAndSubmit(data) {
 		const shiftData = {
 			caregiverId: data.caregiverId,
 			startTime: data.startTime,
@@ -407,6 +414,21 @@ export default function AddNewShiftPage() {
 				router.push("/scheduling");
 			}
 		});
+	}
+
+	function onSubmit(data) {
+		const start = DateTime.fromISO(data.startTime, { zone: HALIFAX_TZ });
+		const end   = DateTime.fromISO(data.endTime,   { zone: HALIFAX_TZ });
+		const durationHours = start.isValid && end.isValid ? end.diff(start, "hours").hours : 0;
+
+		if (durationHours > 12) {
+			pendingSubmitRef.current = data;
+			setLongShiftHours(durationHours);
+			setShowLongShiftModal(true);
+			return;
+		}
+
+		buildAndSubmit(data);
 	}
 
 	// ── Min values for time pickers (recalculate each render) ─────────────────
@@ -796,6 +818,32 @@ export default function AddNewShiftPage() {
 							Yes, add past shift
 						</Button>
 						<Button variant="secondary" onClick={() => setShowPastShiftModal(false)}>Cancel</Button>
+					</div>
+				</div>
+			</Modal>
+
+			{/* Warning before saving a shift longer than 12 hours (allowed, not blocked) */}
+			<Modal isOpen={showLongShiftModal} onClose={() => setShowLongShiftModal(false)}>
+				<div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "1rem 0.5rem" }}>
+					<h2 style={{ margin: 0, fontSize: "1.2rem", color: "var(--color-primary)" }}>Long shift warning</h2>
+					<p style={{ marginTop: "0.75rem", color: "#4b5563", lineHeight: 1.5 }}>
+						This shift is <strong>{Math.round(longShiftHours * 10) / 10} hours</strong> long, which is more than 12 hours.
+						Are you sure you want to create it?
+					</p>
+					<div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.5rem" }}>
+						<Button
+							variant="primary"
+							disabled={isShiftActionPending}
+							onClick={() => {
+								const data = pendingSubmitRef.current;
+								pendingSubmitRef.current = null;
+								setShowLongShiftModal(false);
+								if (data) buildAndSubmit(data);
+							}}
+						>
+							Yes, create shift
+						</Button>
+						<Button variant="secondary" onClick={() => { pendingSubmitRef.current = null; setShowLongShiftModal(false); }}>Cancel</Button>
 					</div>
 				</div>
 			</Modal>
