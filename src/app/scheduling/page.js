@@ -72,7 +72,7 @@ import { useShifts } from "@/hooks//useShifts";
 import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
-import { utcToZonedDateObject } from "@/utils/timeHandling";
+import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
 import { exportScheduleToExcel } from "@/utils/exportSchedule";
 import { formatPayPeriodLabel } from "@/utils/payPeriod";
 import logoImg from "@/assets/logo/nv.png";
@@ -373,18 +373,19 @@ export default function SchedulingPage() {
 		if (!shifts?.length) return [];
 
 		// Step 1 — group shifts by their Halifax calendar date ("yyyy-MM-dd").
+		// A multi-day shift is added to every day it spans so it shows on each
+		// day's summary pill, not only the day it starts.
 		const dayGroups = {};
 		shifts.forEach((shift) => {
-			const shiftStart = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-			const dateStr    = format(shiftStart, "yyyy-MM-dd");
-
-			if (!dayGroups[dateStr]) {
-				dayGroups[dateStr] = {
-					shifts:   [],
-					dayStart: startOfDay(shiftStart), // local midnight — safe for the calendar
-				};
-			}
-			dayGroups[dateStr].shifts.push(shift);
+			expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ).forEach((seg) => {
+				if (!dayGroups[seg.dateStr]) {
+					dayGroups[seg.dateStr] = {
+						shifts:   [],
+						dayStart: seg.dayStart, // local midnight — safe for the calendar
+					};
+				}
+				dayGroups[seg.dateStr].shifts.push(shift);
+			});
 		});
 
 		// Step 2 — turn each group into one react-big-calendar event object.
@@ -413,11 +414,14 @@ export default function SchedulingPage() {
 	// We merge them: same start + same end → one event block with a "+N" badge.
 	// Grouping key format: "yyyy-MM-dd HH:mm_HH:mm"  (e.g. "2025-04-24 09:00_17:00")
 	//
-	// Overnight shifts cross midnight and confuse react-big-calendar (it would
-	// place them in the "all-day" row). We split them into two segments:
-	//   Part 1 — original start → 23:59:59 of the start day
-	//   Part 2 — 00:00:00 of the end day → original end
-	// Both parts carry _originalStart/_originalEnd so the tooltip shows the real hours.
+	// Shifts that cross midnight confuse react-big-calendar's time grid (it clips
+	// events at the day boundary). We split any multi-day shift into ONE segment
+	// per calendar day it spans:
+	//   First day  — original start → 23:59:59
+	//   Middle day — 00:00:00 → 23:59:59 (full day)
+	//   Last day   — 00:00:00 → original end
+	// Every segment carries _originalStart/_originalEnd so the tooltip shows the
+	// real hours, and _isOvernight{Start,Middle,End} so the seams render flush.
 	const weekDayEvents = useMemo(() => {
 		if (!shifts?.length) return [];
 
@@ -426,46 +430,36 @@ export default function SchedulingPage() {
 		shifts.forEach((shift) => {
 			const start = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
 			const end   = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+			const sid   = shift.id || shift._id;
+			const segments = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
 
-			const isOvernight = format(start, "yyyy-MM-dd") !== format(end, "yyyy-MM-dd");
-
-			if (isOvernight) {
-				const baseKey  = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "yyyy-MM-dd HH:mm")}`;
-				const day1End  = endOfDay(start);
-				const day2Start = startOfDay(end);
-
-				const key1 = `${baseKey}_p1`;
-				if (!groups[key1]) {
-					groups[key1] = {
-						id: `${shift.id || shift._id}_p1`,
-						start, end: day1End, shifts: [shift],
-						_isOvernightStart: true,
-						_originalStart: start, _originalEnd: end,
-					};
-				} else {
-					groups[key1].shifts.push(shift);
-				}
-
-				const key2 = `${baseKey}_p2`;
-				if (!groups[key2]) {
-					groups[key2] = {
-						id: `${shift.id || shift._id}_p2`,
-						start: day2Start, end, shifts: [shift],
-						_isOvernightEnd: true,
-						_originalStart: start, _originalEnd: end,
-					};
-				} else {
-					groups[key2].shifts.push(shift);
-				}
-
-			} else {
+			if (segments.length <= 1) {
+				// Single-day shift: merge shifts sharing the exact same start+end into
+				// one block with a "+N" badge so identical slots don't stack.
 				const key = `${format(start, "yyyy-MM-dd HH:mm")}_${format(end, "HH:mm")}`;
 				if (!groups[key]) {
-					groups[key] = { id: shift.id || shift._id, start, end, shifts: [shift] };
+					groups[key] = { id: sid, start, end, shifts: [shift] };
 				} else {
 					groups[key].shifts.push(shift);
 				}
+				return;
 			}
+
+			// Multi-day shift: one block per spanned calendar day.
+			segments.forEach((seg) => {
+				const key = `${sid}_seg${seg.index}`;
+				groups[key] = {
+					id: key,
+					start: seg.segStart,
+					end:   seg.segEnd,
+					shifts: [shift],
+					_isOvernightStart:  seg.isFirst,
+					_isOvernightEnd:    seg.isLast,
+					_isOvernightMiddle: !seg.isFirst && !seg.isLast,
+					_originalStart: start,
+					_originalEnd:   end,
+				};
+			});
 		});
 
 		return Object.values(groups).map((g) => {
@@ -489,33 +483,39 @@ export default function SchedulingPage() {
 		if (!shifts?.length) return [];
 
 		// Sort unique date strings so palette colors follow calendar order,
-		// not API response order (which was causing the colour mix-up).
-		const uniqueDates = [...new Set(shifts.map((s) => {
-			const start = utcToZonedDateObject(s.startTime, HALIFAX_TZ);
-			return format(start, "yyyy-MM-dd");
-		}))].sort();
+		// not API response order (which was causing the colour mix-up). A
+		// multi-day shift contributes every day it spans.
+		const uniqueDates = [...new Set(
+			shifts.flatMap((s) =>
+				expandShiftDays(s.startTime, s.endTime, HALIFAX_TZ).map((seg) => seg.dateStr)
+			)
+		)].sort();
 		const dateColorMap = Object.fromEntries(
 			uniqueDates.map((d, i) => [d, PALETTE[i % PALETTE.length]])
 		);
 
-		return shifts.map((shift) => {
-			const start   = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
-			const end     = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
-			const dateStr = format(start, "yyyy-MM-dd");
-			// Cap overnight shifts at end-of-day so the event only appears under
-			// its start date in the agenda view (the real end is still in _shift).
-			const agendaEnd = format(end, "yyyy-MM-dd") !== dateStr ? endOfDay(start) : end;
-			return {
-				id:        shift.id || shift._id,
-				title:     `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim(),
-				start,
-				end:       agendaEnd,
-				_shift:    shift,
-				_dateStr:  dateStr,
-				_color:    dateColorMap[dateStr],
-				_isAgenda: true,
-			};
+		// One agenda row per spanned day. Each row is clamped to a single day so
+		// react-big-calendar lists it under that day; a multi-day shift therefore
+		// appears once under every day it covers, marked "(cont.)" after day one.
+		const rows = [];
+		shifts.forEach((shift) => {
+			const name     = `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim();
+			const sid      = shift.id || shift._id;
+			const segments = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
+			segments.forEach((seg) => {
+				rows.push({
+					id:        segments.length > 1 ? `${sid}_seg${seg.index}` : sid,
+					title:     seg.isFirst ? name : `${name} (cont.)`,
+					start:     seg.segStart,
+					end:       seg.segEnd,
+					_shift:    shift,
+					_dateStr:  seg.dateStr,
+					_color:    dateColorMap[seg.dateStr],
+					_isAgenda: true,
+				});
+			});
 		});
+		return rows;
 	}, [shifts]);
 
 
@@ -596,7 +596,7 @@ export default function SchedulingPage() {
 	const WeekDayEventComponent = ({ event }) => {
 		const color      = getCaregiverColor(event._caregiverId);
 		const multi      = event.count > 1;
-		const isOvernight = event._isOvernightStart || event._isOvernightEnd;
+		const isOvernight = event._isOvernightStart || event._isOvernightEnd || event._isOvernightMiddle;
 
 		// Overnight segments: show the original full time range in the tooltip,
 		// not the midnight-split range used for positioning.
@@ -688,8 +688,9 @@ export default function SchedulingPage() {
 		// halves look like one continuous block across adjacent day columns.
 		const color = getCaregiverColor(event._caregiverId);
 		let borderRadius = "10px";
-		if (event._isOvernightStart) borderRadius = "10px 10px 0 0"; // flat bottom edge
-		if (event._isOvernightEnd)   borderRadius = "0 0 10px 10px"; // flat top edge
+		if (event._isOvernightStart)  borderRadius = "10px 10px 0 0"; // flat bottom edge
+		if (event._isOvernightEnd)    borderRadius = "0 0 10px 10px"; // flat top edge
+		if (event._isOvernightMiddle) borderRadius = "0";            // full-day middle: flat both ends
 
 		return {
 			style: {
@@ -979,14 +980,35 @@ export default function SchedulingPage() {
 
 				const startLocal = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
 				const endLocal   = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
-				const ds         = format(startLocal, "yyyy-MM-dd");
-				const timeRange  = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
-				const isNight    = startLocal.getHours() >= 18 ||
-				                   format(endLocal, "yyyy-MM-dd") !== ds;
+				const id         = shift._id || shift.id;
+				const fullRange  = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
 
-				if (!map[cgId])     map[cgId]     = {};
-				if (!map[cgId][ds]) map[cgId][ds] = [];
-				map[cgId][ds].push({ timeRange, status: shift.status, id: shift._id || shift.id, isNight });
+				// A multi-day shift must appear on every day it spans, not just its
+				// start day. expandShiftDays yields one entry per Halifax calendar day.
+				expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ).forEach((seg) => {
+					const multiDay = seg.spanDays > 1;
+					// Any shift that crosses midnight reads as a "night"/overnight chip.
+					const isNight  = multiDay || startLocal.getHours() >= 18;
+					// Per-day label: full range on a single day; directional arrows on a
+					// multi-day span so each cell shows where the shift enters/leaves the day.
+					const timeRange = !multiDay
+						? fullRange
+						: seg.isFirst ? `${format(startLocal, "H:mm")} →`
+						: seg.isLast  ? `→ ${format(endLocal, "H:mm")}`
+						:               "24h";
+
+					if (!map[cgId])              map[cgId]              = {};
+					if (!map[cgId][seg.dateStr]) map[cgId][seg.dateStr] = [];
+					map[cgId][seg.dateStr].push({
+						timeRange,
+						fullRange,
+						status: shift.status,
+						id,
+						isNight,
+						spanDays: seg.spanDays,
+						isContinuation: !seg.isFirst,
+					});
+				});
 			});
 
 			const ids = Object.keys(names).sort((a, b) => names[a].localeCompare(names[b]));
@@ -1108,7 +1130,9 @@ export default function SchedulingPage() {
 									{sortedCgIds.map((cgId, idx) => {
 										const color       = getCaregiverColor(cgId);
 										const allEntries  = Object.values(shiftMap[cgId] || {}).flat();
-										const totalShifts = allEntries.length;
+										// Count distinct shifts — a multi-day shift spans several cells
+										// but is still one shift, so dedupe on id for the badge.
+										const totalShifts = new Set(allEntries.map((e) => e.id)).size;
 										const statusSet   = new Set(allEntries.map((e) => e.status));
 										const dominant    = STATUS_PRIORITY.find((s) => statusSet.has(s)) || "completed";
 										const badgeStyle  = STATUS_BADGE_COLORS[dominant];
@@ -1140,7 +1164,7 @@ export default function SchedulingPage() {
 																	key={i}
 																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled}`}
 																	onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
-																	title={`${cgNames[cgId]} · ${entry.timeRange} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
+																	title={`${cgNames[cgId]} · ${entry.fullRange}${entry.spanDays > 1 ? ` · ${entry.spanDays}-day shift${entry.isContinuation ? " (continues)" : ""}` : ""} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
 																>
 																	{entry.isNight
 																		? <Moon size={9} style={{ flexShrink: 0 }} />
