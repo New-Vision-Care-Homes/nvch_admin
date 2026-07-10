@@ -431,6 +431,50 @@
 	flex: 1;
 }
 
+/* ── Certificate Dates card ───────────────────────────────────────────────── */
+
+.datesEditGrid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.dateField {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.dateFieldLabel {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.dateFieldOptional {
+	font-weight: 400;
+	color: #9ca3af;
+}
+
+.dateInput {
+	width: 100%;
+	padding: 8px 10px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.dateInput:focus {
+	outline: none;
+	border-color: #a78bfa;
+	box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
 /* ── Spinner ──────────────────────────────────────────────────────────────── */
 
 .spinnerIcon {
@@ -441,18 +485,7 @@
 	to { transform: rotate(360deg); }
 }
 
-/* ── Certificate File card ────────────────────────────────────────────────── */
-
-.fileCard {
-	margin-bottom: 1.25rem;
-}
-
-.fileCardHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	width: 100%;
-}
+/* ── Certificate file preview (pending state) ────────────────────────────── */
 
 .fileViewFullLink {
 	display: inline-flex;
@@ -478,6 +511,7 @@
 	border-radius: 10px;
 	overflow: hidden;
 	cursor: zoom-in;
+	margin-top: 14px;
 }
 
 .fileImage {
@@ -524,6 +558,7 @@
 	border-radius: 10px;
 	border: 1px dashed #e5e7eb;
 	text-align: center;
+	margin-top: 14px;
 }
 
 .fileFallbackText {
@@ -596,6 +631,127 @@
 .decidedBannerMsg {
 	font-size: 0.83rem;
 	color: #6b7280;
+}
+
+/* ── Caregiver profile link (shown after approval) ───────────────────────── */
+
+.caregiverProfileLink {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 14px 16px;
+	background: #f5f3ff;
+	border: 1.5px solid #c4b5fd;
+	border-radius: 12px;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.caregiverProfileLink:hover {
+	background: #ede9fe;
+	border-color: #a78bfa;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12);
+}
+
+.caregiverProfileLinkIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	background: #ede9fe;
+	flex-shrink: 0;
+}
+
+.caregiverProfileLinkBody {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	flex: 1;
+}
+
+.caregiverProfileLinkName {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #111827;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.caregiverProfileLinkHint {
+	font-size: 0.78rem;
+	color: #7c3aed;
+}
+
+.caregiverProfileLinkArrow {
+	flex-shrink: 0;
+	color: #a78bfa;
+	transition: transform 0.15s ease;
+}
+
+.caregiverProfileLink:hover .caregiverProfileLinkArrow {
+	transform: translateX(3px);
+}
+
+/* ── Approve modal dates check ────────────────────────────────────────────── */
+
+.approveModalDatesCheck {
+	width: 100%;
+	text-align: left;
+	background: #fffbeb;
+	border: 1px solid #fcd34d;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.approveModalDatesCheckHeader {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	background: #fef3c7;
+	border-bottom: 1px solid #fcd34d;
+	font-size: 0.76rem;
+	font-weight: 700;
+	color: #92400e;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.approveModalDatesCheckGrid {
+	display: flex;
+	flex-direction: column;
+}
+
+.approveModalDatesCheckRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 7px 14px;
+	border-bottom: 1px solid #fef3c7;
+}
+
+.approveModalDatesCheckRow:last-child {
+	border-bottom: none;
+}
+
+.approveModalDatesCheckLabel {
+	font-size: 0.82rem;
+	color: #6b7280;
+	font-weight: 500;
+}
+
+.approveModalDatesCheckValue {
+	font-size: 0.82rem;
+	color: #111827;
+	font-weight: 600;
 }
 
 /* ── Responsive header ────────────────────────────────────────────────────── */

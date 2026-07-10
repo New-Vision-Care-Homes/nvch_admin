@@ -89,6 +89,8 @@
     text-decoration: none;
     font-size: 13px;
     font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: all 0.2s ease;
     border: 1px solid #cce4ff;
 }
@@ -247,5 +249,165 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
-  
-  
+
+/* ── Approve modal date check ─────────────────────────────────────────────── */
+
+.approveDatesCheck {
+    width: 100%;
+    text-align: left;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 14px;
+}
+
+.approveDatesCheckHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: #fef3c7;
+    border-bottom: 1px solid #fcd34d;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #92400e;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.approveDatesInputGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+}
+
+@media (max-width: 480px) {
+    .approveDatesInputGrid {
+        grid-template-columns: 1fr;
+    }
+    .approveDateInputFullWidth {
+        grid-column: 1;
+    }
+}
+
+.approveDateInputField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.approveDateInputFullWidth {
+    grid-column: 1 / -1;
+}
+
+.approveDateInputLabel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #92400e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.approveDateInputOptional {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #b45309;
+}
+
+.approveDateInput {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+    color: #111827;
+    background: #fffde7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.approveDateInput:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+
+/* ── Mobile responsive ──────────────────────────────────────────────────────── */
+
+/* Desktop: show table, hide cards */
+.desktopTable { display: block; }
+.mobileCards  { display: none; }
+
+/* Mobile: hide table, show cards */
+@media (max-width: 768px) {
+    .desktopTable { display: none; }
+    .mobileCards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+.certCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.certCardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.certCardName {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #111827;
+    flex: 1;
+    min-width: 0;
+}
+
+.certCardDates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.certCardDateField {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.certCardDateLabel {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.certCardDateValue {
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.certCardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}

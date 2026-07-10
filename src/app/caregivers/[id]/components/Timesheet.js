@@ -299,8 +299,7 @@ export default function Timesheet() {
 								<span>Work Capacity</span>
 							</div>
 							<Button
-								variant="ghost"
-								className={styles.headerBtn}
+								variant="ghostPill"
 								icon={<SquarePen size={14} />}
 								onClick={() => setIsHoursModalOpen(true)}
 							>

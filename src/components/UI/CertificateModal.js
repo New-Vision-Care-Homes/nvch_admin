@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 // Import our custom validation rules from the utilities file to keep validation consistent across the app
-import { dateRule, longTextRule } from "@/utils/validation";
+import { dateRule, dateRuleOptional, longTextRule } from "@/utils/validation";
 // Import our custom hook that interacts with the backend for certificates
 import { useCertificates } from "@/hooks/useCertificates";
 import { CERTIFICATE_OPTIONS } from "@/utils/dropdown_list";
@@ -30,6 +30,7 @@ const schema = yup.object({
 				return new Date(value) > new Date(issueDate);
 			}
 		),
+	renewalDate: dateRuleOptional,
 	// Validate the file input. `yup.mixed()` is used because it's a FileList object, not a simple string or number.
 	file: yup.mixed()
 		.test("required", "Please upload a document", (value) => {
@@ -114,6 +115,9 @@ export default function CertificateModal({ isOpen, onClose, userId, onSuccess })
 				<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
 					<InputField label="Issue Date" type="date" name="issueDate" register={register} control={control} error={errors.issueDate} />
 					<InputField label="Expiry Date" type="date" name="expiryDate" register={register} control={control} error={errors.expiryDate} />
+				</div>
+				<div style={{ marginTop: '16px' }}>
+					<InputField label="Renewal Date (optional)" type="date" name="renewalDate" register={register} control={control} error={errors.renewalDate} />
 				</div>
 
 				{/* Custom UI for the File Upload Dropzone */}

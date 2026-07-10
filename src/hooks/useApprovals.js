@@ -51,7 +51,14 @@ export const useApprovals = (options = {}) => {
 
 	// ── Approve ─────────────────────────────────────────────────────────────────
 	const approveMutation = useMutation({
-		mutationFn: ({ id, reason }) => approvalService.approve(id, reason ? { reason } : {}),
+		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate }) => {
+			const body = {};
+			if (reason)      body.reason      = reason;
+			if (startDate)   body.startDate   = startDate;
+			if (expiryDate)  body.expiryDate  = expiryDate;
+			if (renewalDate) body.renewalDate  = renewalDate;
+			return approvalService.approve(id, body);
+		},
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", variables.id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });

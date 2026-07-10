@@ -39,12 +39,10 @@ export const certService = {
 		const dbPayload = {
 			userId,
 			fileKey,
-			name: formData.name,
-			// Format dates to ISO strings for database consistency
-			startDate: new Date(formData.issueDate).toISOString(),
-			expiryDate: new Date(formData.expiryDate).toISOString(),
-			// Auto-calculate renewal date (1 month before expiry)
-			renewalDate: new Date(new Date(formData.expiryDate).setMonth(new Date(formData.expiryDate).getMonth() - 1)).toISOString()
+			name:        formData.name,
+			startDate:   formData.issueDate,
+			expiryDate:  formData.expiryDate,
+			renewalDate: formData.renewalDate || null,
 		};
 
 		return axiosClient.post(API_ENDPOINTS.UPLOAD.CERTIFICATE, dbPayload);
