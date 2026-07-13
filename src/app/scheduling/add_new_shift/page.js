@@ -25,23 +25,12 @@ import styles from "./add_new_shift.module.css";
 import cardStyles from "@components/UI/Card.module.css";
 
 import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@/utils/validation";
+import { formatAddress } from "@/utils/formatting";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const HALIFAX_TZ = "America/Halifax";
-
-function joinAddress(addressObj) {
-	if (!addressObj) return "";
-	if (typeof addressObj === "string") return addressObj;
-	return [
-		addressObj.unit,
-		addressObj.street,
-		addressObj.city,
-		addressObj.state || addressObj.province,
-		addressObj.pinCode || addressObj.postalCode,
-	].filter(Boolean).join(", ");
-}
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -522,7 +511,7 @@ export default function AddNewShiftPage() {
 											<div className={styles.card_row_1}>
 												<div style={{ backgroundColor: "#f3f4f6", borderRadius: "6px", border: "1px solid #dee1e6", padding: "0.55rem 0.75rem", fontSize: "0.875rem", color: "#6b7280" }}>
 													<span style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--color-primary)", marginBottom: "0.2rem" }}>Client Address</span>
-													{joinAddress(selectedClient.address) || "—"}
+													{formatAddress(selectedClient.address) || "—"}
 												</div>
 											</div>
 										</>
@@ -580,7 +569,7 @@ export default function AddNewShiftPage() {
 											<div className={styles.card_row_1}>
 												<div style={{ backgroundColor: "#f3f4f6", borderRadius: "6px", border: "1px solid #dee1e6", padding: "0.55rem 0.75rem", fontSize: "0.875rem", color: "#6b7280" }}>
 													<span style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--color-primary)", marginBottom: "0.2rem" }}>Home Address</span>
-													{joinAddress(selectedHome.address) || "—"}
+													{formatAddress(selectedHome.address) || "—"}
 												</div>
 											</div>
 										</>

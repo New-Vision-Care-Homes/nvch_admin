@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
 import { Table2, Table2Pagination } from "@components/UI/Table";
 import { FileText, Download, ExternalLink, X } from "lucide-react";
@@ -14,11 +15,6 @@ const TZ = "America/Halifax";
 const PAGE_SIZE = 10;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function personName(obj) {
-	if (!obj) return "—";
-	return `${obj.firstName || ""} ${obj.lastName || ""}`.trim() || obj.email || "—";
-}
 
 function truncate(str, n = 60) {
 	if (!str) return <span className={styles.cellEmpty}>—</span>;

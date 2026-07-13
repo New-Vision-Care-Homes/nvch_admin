@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
@@ -24,19 +25,6 @@ import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdow
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function personName(obj) {
-	if (!obj) return "—";
-	const full = `${obj.firstName || ""} ${obj.lastName || ""}`.trim();
-	return full || obj.email || "—";
-}
-
-function joinAddress(addr) {
-	if (!addr) return null;
-	if (typeof addr === "string") return addr;
-	return [addr.unit, addr.street, addr.city, addr.state || addr.province, addr.pinCode || addr.postalCode, addr.country]
-		.filter(Boolean).join(", ") || null;
-}
 
 function AdminName({ adminId }) {
 	const { adminDetail } = useAdmins(adminId || "");

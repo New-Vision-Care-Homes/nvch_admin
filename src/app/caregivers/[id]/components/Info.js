@@ -12,6 +12,7 @@ import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { getLabel } from "@/utils/formatting";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -26,8 +27,6 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 	{ label: "Casual", value: "casual" },
 	{ label: "Term", value: "term" },
 ];
-
-const getLabel = (options, value) => options.find(o => o.value === value)?.label || value || "—";
 
 const cleanFetchedData = (apiData) => {
 	if (!apiData) return {};

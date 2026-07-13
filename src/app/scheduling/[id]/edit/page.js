@@ -7,6 +7,7 @@ import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
 import { utcToInputDateTime } from "@utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PageLayout from "@components/layout/PageLayout";
@@ -67,12 +68,6 @@ const completedSchema = yup.object({
 	reason: longTextRule.required("Please provide a reason for the adjustment"),
 });
 
-
-function personName(obj) {
-	if (!obj) return "—";
-	const full = `${obj.firstName || ""} ${obj.lastName || ""}`.trim();
-	return full || obj.email || "—";
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function EditShiftPage() {

@@ -27,6 +27,7 @@ import {
 	addressComponentRule,
 } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { joinName } from "@/utils/formatting";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -161,9 +162,6 @@ const schema = yup.object({
 	otherInstructions: longTextRule,
 });
 
-const fullName = (first, last) =>
-	`${first || ""} ${last || ""}`.trim() || null;
-
 export default function Page() {
 	const router = useRouter();
 	const { addClient, isActionPending, actionError } = useClients();
@@ -255,49 +253,49 @@ export default function Page() {
 			},
 
 			emergencyContact: {
-				name: fullName(data.emergencyFName, data.emergencyLName),
+				name: joinName(data.emergencyFName, data.emergencyLName),
 				phone: data.emergencyPhone || null,
 				relationship: data.relationship || null,
 			},
 
 			nextOfKin: {
-				name: fullName(data.nokFName, data.nokLName),
+				name: joinName(data.nokFName, data.nokLName),
 				phone: data.nokPhone || null,
 				email: data.nokEmail || null,
 			},
 
 			statutoryDecisionMaker: {
-				name: fullName(data.sdmFName, data.sdmLName),
+				name: joinName(data.sdmFName, data.sdmLName),
 				phoneNumber: data.sdmPhone || null,
 				email: data.sdmEmail || null,
 			},
 
 			careCoordinatorOrDspCaseManager: {
-				name: fullName(data.careCoordinatorFName, data.careCoordinatorLName),
+				name: joinName(data.careCoordinatorFName, data.careCoordinatorLName),
 				phone: data.careCoordinatorPhone || null,
 				email: data.careCoordinatorEmail || null,
 			},
 
 			powerOfAttorney: {
-				name: fullName(data.poaFName, data.poaLName),
+				name: joinName(data.poaFName, data.poaLName),
 				phone: data.poaPhone || null,
 				email: data.poaEmail || null,
 			},
 
 			personalDirective: {
-				name: fullName(data.pdFName, data.pdLName),
+				name: joinName(data.pdFName, data.pdLName),
 				phone: data.pdPhone || null,
 				email: data.pdEmail || null,
 			},
 
 			legalGuardianship: {
-				name: fullName(data.lgFName, data.lgLName),
+				name: joinName(data.lgFName, data.lgLName),
 				phone: data.lgPhone || null,
 				email: data.lgEmail || null,
 			},
 
 			adultProtectionOrPublicTrustee: {
-				name: fullName(data.aptFName, data.aptLName),
+				name: joinName(data.aptFName, data.aptLName),
 				phone: data.aptPhone || null,
 				email: data.aptEmail || null,
 			},

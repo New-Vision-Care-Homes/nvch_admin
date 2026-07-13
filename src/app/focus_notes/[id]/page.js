@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { focusNoteService } from "@/services/api/services/focusNoteService";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import PageLayout from "@components/layout/PageLayout";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
@@ -22,11 +23,6 @@ import styles from "./focus_note_detail.module.css";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 const TZ = "America/Halifax";
-
-function personName(obj) {
-	if (!obj) return "—";
-	return `${obj.firstName || ""} ${obj.lastName || ""}`.trim() || obj.email || "—";
-}
 
 const SHIFT_STATUS_CLASS = {
 	scheduled: styles.statusScheduled,

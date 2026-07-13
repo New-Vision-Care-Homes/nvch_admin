@@ -66,6 +66,7 @@ import { usePayPeriod } from "@/hooks/usePayPeriods";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 
 import styles from "./shift_builder.module.css";
+import { fullName } from "@/utils/formatting";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -1287,7 +1288,7 @@ export default function ShiftBuilderPage() {
 												(d) => dateSet.has(d) && !!caregiverAssignments[d]?.type && !caregiverAssignments[d].existing
 											).length;
 
-											const fullName     = [caregiver.firstName, caregiver.lastName].filter(Boolean).join(" ") || "Unknown";
+											const cgName       = fullName(caregiver, "Unknown");
 											const isDragTarget = dragOverId === caregiverId;
 
 											return (
@@ -1314,12 +1315,12 @@ export default function ShiftBuilderPage() {
 															/>
 															<Image
 																src={caregiver.profilePictureUrl || defaultAvatar}
-																alt={fullName}
+																alt={cgName}
 																width={28}
 																height={28}
 																className={styles.cgAvatar}
 															/>
-															<span className={styles.tdNameText}>{fullName}</span>
+															<span className={styles.tdNameText}>{cgName}</span>
 															{newCount > 0 && (
 																<button
 																	className={styles.clearRowBtn}
@@ -1386,7 +1387,7 @@ export default function ShiftBuilderPage() {
 										const newCount = Object.keys(caregiverAssignments).filter(
 											(d) => dateSet.has(d) && !!caregiverAssignments[d]?.type && !caregiverAssignments[d].existing
 										).length;
-										const fullName = [caregiver.firstName, caregiver.lastName].filter(Boolean).join(" ") || "Unknown";
+										const cgName = fullName(caregiver, "Unknown");
 										// Renamed: outer hasExistingShifts is a period-level check; this is per-caregiver
 										const casualHasShifts = Object.keys(baseAssignments.current[caregiverId] || {}).length > 0;
 										return (
@@ -1412,12 +1413,12 @@ export default function ShiftBuilderPage() {
 														/>
 														<Image
 															src={caregiver.profilePictureUrl || defaultAvatar}
-															alt={fullName}
+															alt={cgName}
 															width={28}
 															height={28}
 															className={styles.cgAvatar}
 														/>
-														<span className={styles.tdNameText}>{fullName}</span>
+														<span className={styles.tdNameText}>{cgName}</span>
 														{newCount > 0 && (
 															<button
 																className={styles.clearRowBtn}
