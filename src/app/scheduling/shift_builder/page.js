@@ -463,7 +463,7 @@ function CapacityExceededModal({
 						<h2 className={styles.capacityModalTitle}>Overtime Decision Required</h2>
 						<p className={styles.capacityModalSubtitle}>
 							{failures.length} shift{failures.length !== 1 ? "s" : ""}{" "}
-							exceed{failures.length === 1 ? "s" : ""} the caregiver's bi-weekly
+							exceed{failures.length === 1 ? "s" : ""} the caregiver&apos;s bi-weekly
 							capacity. Choose how to handle each one before resubmitting.
 						</p>
 					</div>
