@@ -1,0 +1,190 @@
+/* ── Hours / dollars breakdown grid ──────────────────────────────────────── */
+
+.summaryGrid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+}
+
+@media (max-width: 768px) {
+	.summaryGrid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 480px) {
+	.summaryGrid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ── Individual summary item card ─────────────────────────────────────────── */
+
+.summaryItem {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 1rem;
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 10px;
+}
+
+/* ── Item label ───────────────────────────────────────────────────────────── */
+
+.summaryItemLabel {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9ca3af;
+}
+
+/* ── Item value ───────────────────────────────────────────────────────────── */
+
+.summaryItemValue {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+/* ── Total hours value — displayed large and prominently ──────────────────── */
+
+.summaryTotalValue {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary, #1c4a6e);
+}
+
+/* ── Caregiver info card ──────────────────────────────────────────────────── */
+
+.caregiverCard {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 14px;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	margin-bottom: 1rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Caregiver name ───────────────────────────────────────────────────────── */
+
+.caregiverName {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+/* ── Caregiver info (name + meta) — grows to fill available space ─────────── */
+
+.caregiverInfo {
+	flex: 1;
+}
+
+/* ── Caregiver metadata (employee ID, status, etc.) ──────────────────────── */
+
+.caregiverMeta {
+	font-size: 0.82rem;
+	color: #6b7280;
+}
+
+/* ── Period badge cluster — pinned to the right of the caregiver card ─────── */
+
+.caregiverPeriod {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.caregiverPeriodYear {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #6b7280;
+	letter-spacing: 0.04em;
+}
+
+.caregiverPeriodBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background: #eef4fb;
+	color: #1c4a6e;
+	font-size: 0.78rem;
+	font-weight: 700;
+	border-radius: 20px;
+	letter-spacing: 0.02em;
+}
+
+/* ── Manual entries list ──────────────────────────────────────────────────── */
+
+.entriesCount {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	background: #1c4a6e;
+	color: #fff;
+	font-size: 0.7rem;
+	font-weight: 700;
+	border-radius: 10px;
+}
+
+.entriesEmpty {
+	font-size: 0.875rem;
+	color: #9ca3af;
+	text-align: center;
+	padding: 1rem 0;
+	margin: 0;
+}
+
+.entriesList {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.entryRow {
+	padding: 0.75rem 0;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.entryRow:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.entryBody {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.entryType {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #111827;
+	text-transform: capitalize;
+}
+
+.entryMeta {
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.entryNote {
+	width: 100%;
+	font-size: 0.8rem;
+	color: #6b7280;
+	font-style: italic;
+	margin-top: 2px;
+}

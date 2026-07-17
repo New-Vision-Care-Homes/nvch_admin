@@ -155,7 +155,7 @@ export const useShifts = (options = {}) => {
 		actionShiftError: actionError ? getErrorMessage(actionError) : null,
 
 		// Exposed Methods
-		addShift: createMutation.mutate,
+		addShift: createMutation.mutateAsync,
 		updateUpcommingShift: updateUpcommingShift.mutateAsync,
 		updateCompletedShift: updateCompletedShift.mutateAsync,
 		deleteShift: deleteMutation.mutateAsync,

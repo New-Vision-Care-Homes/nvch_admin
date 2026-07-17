@@ -90,6 +90,14 @@ export const API_ENDPOINTS = {
 		CANCEL: (id) => `/api/approvals/${id}/cancel`,
 	},
 
+	/* All related endpoints for payroll */
+	PAYROLL: {
+		COVER_SHEET:       '/api/payroll/cover-sheet',
+		EXCEPTIONS:        '/api/payroll/exceptions',
+		STAT_RECOMPUTE:    '/api/payroll/stat/recompute',
+		CAREGIVER_SUMMARY: (caregiverId) => `/api/payroll/caregivers/${caregiverId}/summary`,
+	},
+
 	/* All related endpoints for notifications */
 	NOTIFICATIONS: {
 		BASE: '/api/notifications',

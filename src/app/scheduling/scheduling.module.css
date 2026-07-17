@@ -298,6 +298,26 @@
 	white-space: nowrap;
 }
 
+/* Stacks the status badge and overtime-pending badge vertically inside the cell */
+.payrollStatusCell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.payrollOvertimePending {
+	display: inline-block;
+	padding: 2px 9px;
+	border-radius: 20px;
+	font-size: 0.68rem;
+	font-weight: 600;
+	white-space: nowrap;
+	background: #fff7ed;
+	color: #c2410c;
+	border: 1px solid #fed7aa;
+}
+
 .payrollEmpty {
 	text-align: center;
 	color: #94a3b8;

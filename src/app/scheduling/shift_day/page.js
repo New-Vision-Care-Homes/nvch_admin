@@ -163,10 +163,16 @@ export default function ShiftDayPage() {
 									)}
 								</div>
 
-								{/* Status badge */}
-								<span className={`${styles.statusBadge} ${statusClass(shift.status)}`}>
-									{shift.status?.replace(/_/g, " ") || "—"}
-								</span>
+								{/* Status badge — plus a secondary indicator when a voluntary overtime
+								    acknowledgment is still pending from the caregiver */}
+								<div className={styles.statusBadgeGroup}>
+									<span className={`${styles.statusBadge} ${statusClass(shift.status)}`}>
+										{shift.status?.replace(/_/g, " ") || "—"}
+									</span>
+									{shift.extraHours?.ackStatus === "pending" && (
+										<span className={styles.overtimePendingBadge}>Overtime Pending</span>
+									)}
+								</div>
 
 								{/* View button */}
 								<button

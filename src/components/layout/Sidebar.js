@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare, DollarSign, FileSpreadsheet, ClipboardList } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -17,6 +17,7 @@ const tabs = [
 	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes", "view_home"] },
 	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true, requiredSlugs: ["view_shifts"] },
 	{ id: 6.5, label: "Notifications", icon: Bell, href: "/notification", hasFlyout: true },
+	{ id: 6.8, label: "Payroll", icon: DollarSign, href: "/payroll", hasFlyout: true, requiredSlugs: ["manage_payroll"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
@@ -36,6 +37,10 @@ const flyoutMenus = {
 		{ label: "All Messages", href: "/notification", icon: MessageSquare, desc: "View all notifications" },
 		{ label: "Approvals", href: "/approvals", icon: ClipboardCheck, desc: "Pending certificate approvals" },
 	],
+	6.8: [
+		{ label: "Overview", href: "/payroll", icon: FileSpreadsheet, desc: "Cover sheet & hours breakdown" },
+		{ label: "Manual Entries", href: "/payroll/manual_entries", icon: ClipboardList, desc: "Per-caregiver manual entry view" },
+	],
 };
 
 // Map keywords to specific tab ids
@@ -50,7 +55,8 @@ const keywordToTabMap = {
 	"/scheduling": 6,     // any path containing "/scheduling" -> Scheduling tab
 	"/notification": 6.5, // any path containing "/notification" -> Notifications tab
 	"/approvals": 6.5,    // any path containing "/approvals" -> Notifications tab
-	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
+	"/payroll": 6.8,      // any path containing "/payroll" -> Payroll tab
+	"/billing": 7,        // any path containing "/billing" -> Billing tab (updated ID)
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
 

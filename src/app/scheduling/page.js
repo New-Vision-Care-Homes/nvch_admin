@@ -902,12 +902,17 @@ export default function SchedulingPage() {
 													{shift.hoursWorked != null ? `${shift.hoursWorked} h` : `${dur} h`}
 												</td>
 												<td>
-													<span
-														className={styles.payrollStatus}
-														style={{ background: sc.bg, color: sc.color }}
-													>
-														{sc.label}
-													</span>
+													<div className={styles.payrollStatusCell}>
+														<span
+															className={styles.payrollStatus}
+															style={{ background: sc.bg, color: sc.color }}
+														>
+															{sc.label}
+														</span>
+														{shift.extraHours?.ackStatus === "pending" && (
+															<span className={styles.payrollOvertimePending}>Overtime Pending</span>
+														)}
+													</div>
 												</td>
 											</tr>
 										);
@@ -1074,32 +1079,33 @@ export default function SchedulingPage() {
 									{label}
 								</span>
 							))}
-							<button
-								type="button"
-								className={styles.exportBtn}
-								style={{ marginLeft: "auto" }}
-								disabled={!payrollPeriod}
-								onClick={async () => {
-									if (!payrollPeriod) return;
-									const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
-									const homeName = selectedHome
-										? (selectedHome.name || selectedHome.homeName)
-										: "All Homes";
-									await exportScheduleToExcel({
-										homeName,
-										homeId:         selectedHomeId || null,
-										payPeriodStart: payrollPeriod.start,
-										payPeriodEnd:   payrollPeriod.end,
-										payYear:        payrollPeriod.payYear,
-										periodNumber:   payrollPeriod.periodNumber,
-										shifts:         payrollShifts,
-										logoUrl:        logoImg.src,
-									});
-								}}
-							>
-								<Download size={14} />
-								Export Schedule
-							</button>
+							<div style={{ marginLeft: "auto" }}>
+								<Button
+									variant="excel"
+									size="sm"
+									icon={<Download size={14} />}
+									disabled={!payrollPeriod}
+									onClick={async () => {
+										if (!payrollPeriod) return;
+										const selectedHome = homes.find((h) => (h._id || h.id) === selectedHomeId);
+										const homeName = selectedHome
+											? (selectedHome.name || selectedHome.homeName)
+											: "All Homes";
+										await exportScheduleToExcel({
+											homeName,
+											homeId:         selectedHomeId || null,
+											payPeriodStart: payrollPeriod.start,
+											payPeriodEnd:   payrollPeriod.end,
+											payYear:        payrollPeriod.payYear,
+											periodNumber:   payrollPeriod.periodNumber,
+											shifts:         payrollShifts,
+											logoUrl:        logoImg.src,
+										});
+									}}
+								>
+									Export Schedule
+								</Button>
+							</div>
 						</div>
 
 						{/* Roster grid */}

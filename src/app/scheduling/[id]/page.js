@@ -78,6 +78,10 @@ export default function ShiftDetailPage() {
 						<span className={`${styles.statusBadge} ${statusClass}`}>
 							{shift.status?.replace(/_/g, " ")}
 						</span>
+						{/* Secondary badge when a voluntary overtime acknowledgment is still pending */}
+						{shift.extraHours?.ackStatus === "pending" && (
+							<span className={styles.overtimePendingBadge}>Overtime Pending</span>
+						)}
 					</div>
 					<h1>Shift Details</h1>
 					<p className={styles.shiftId}>ID: {shift._id}</p>

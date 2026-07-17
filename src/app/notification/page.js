@@ -18,6 +18,7 @@ import {
 	CheckCheck,
 	ExternalLink,
 	ClipboardCheck,
+	BadgeCheck,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,6 +65,8 @@ const TYPE_CONFIG = {
 	shift_auto_ended:       { Icon: CircleOff,       color: "#6b7280", bg: "#f3f4f6" },
 	broadcast:              { Icon: Megaphone,       color: "#dc2626", bg: "#fef2f2" },
 	approval_requested:     { Icon: ClipboardCheck,  color: "#7c3aed", bg: "#f5f3ff" },
+	// Teal-green: signals a completed/resolved action rather than a pending one
+	approval_decided:       { Icon: BadgeCheck,      color: "#0891b2", bg: "#ecfeff" },
 };
 
 /**
@@ -79,8 +82,8 @@ const SHIFT_TYPES = new Set([
 	"shift_auto_ended",
 ]);
 
-/** Approval notification types that deep-link to the approval detail page. */
-const APPROVAL_TYPES = new Set(["approval_requested"]);
+/** Approval notification types — both route to /approvals/[id]. */
+const APPROVAL_TYPES = new Set(["approval_requested", "approval_decided"]);
 
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
@@ -112,8 +115,11 @@ function NotificationCard({ notification: n, onClick }) {
 					{n.type === "broadcast" && (
 						<span className={styles.broadcastBadge}>Broadcast</span>
 					)}
-					{isApprovalLink && (
+					{n.type === "approval_requested" && (
 						<span className={styles.approvalBadge}>Needs Review</span>
+					)}
+					{n.type === "approval_decided" && (
+						<span className={styles.decidedBadge}>Reviewed</span>
 					)}
 				</div>
 				{n.body && <p className={styles.bodyText}>{n.body}</p>}
@@ -122,7 +128,9 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink) && <ExternalLink size={13} className={styles.linkIcon} />}
+				{(isShiftLink || isApprovalLink) && (
+					<ExternalLink size={13} className={styles.linkIcon} />
+				)}
 			</div>
 		</div>
 	);
@@ -181,6 +189,7 @@ export default function NotificationsPage() {
 		isActionPending,
 		fetchNotificationError,
 	} = useNotifications({ params, fetchList: true });
+	console.log(notifications);
 
 	const handleNotificationClick = async (n) => {
 		// Always mark as read first
@@ -192,7 +201,7 @@ export default function NotificationsPage() {
 			return;
 		}
 
-		// Approval notifications → go to the approval detail page.
+		// Approval notifications (requested + decided) → approval detail page.
 		if (APPROVAL_TYPES.has(n.type) && n.data?.approvalId) {
 			router.push(`/approvals/${n.data.approvalId}`);
 			return;

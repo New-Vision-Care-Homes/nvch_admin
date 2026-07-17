@@ -394,6 +394,174 @@ function BulkResultBanner({ result }) {
 	);
 }
 
+// ─── Sub-component: CapacityExceededModal ─────────────────────────────────────
+
+/**
+ * Shown after a bulk publish when one or more cells fail with CAPACITY_EXCEEDED.
+ *
+ * WHY THIS EXISTS
+ * ───────────────
+ * The backend blocks any shift that pushes a caregiver past their bi-weekly
+ * hour cap unless the request includes an `overageDecision` field.  The 409
+ * (or bulk failure row) comes back with a `details` payload giving the exact
+ * hours breakdown — those numbers populate the cards below.
+ *
+ * TWO PATHS the admin can choose per shift
+ * ─────────────────────────────────────────
+ * "mandated"  — Management-mandated overtime.  The overage pays at 1.5× (handled
+ *               by the payroll company; this system tracks hours only).  No
+ *               caregiver action is required.  The shift is created immediately.
+ *
+ * "voluntary" — The caregiver chose to work extra.  A bank-or-pay acknowledgment
+ *               approval is pushed to the caregiver's mobile app.  Until they
+ *               respond, the shift shows a "Pending" badge in the grid and
+ *               clock-in is blocked.  Once acknowledged, the overage goes into
+ *               hours_banked (if they elected to bank) or other (straight time).
+ *
+ * FLOW after confirming
+ * ─────────────────────
+ * 1. doResubmitWithDecisions rebuilds a payload of only the failed cells with
+ *    overageDecision attached per cell.
+ * 2. The same bulk endpoint is called (POST or PUT, matching the original submit).
+ * 3. The query invalidates, the grid reloads.  Voluntary shifts come back with
+ *    extraHours.ackStatus: "pending" — the "Overtime Pending" badge is shown on
+ *    the shift detail page (scheduling/[id]) until the caregiver acknowledges.
+ * 4. Once the caregiver acknowledges on mobile, ackStatus becomes "acknowledged"
+ *    and the badge disappears — the shift is a regular scheduled shift.
+ *
+ * Props:
+ *   failures          — CAPACITY_EXCEEDED failure objects from the bulk API response
+ *   allCaregivers     — combined home roster + added casuals (for name lookup)
+ *   decisions         — { [caregiverId_date]: "mandated"|"voluntary" }
+ *   onDecisionChange  — (key, value) => void — updates one decision in parent state
+ *   onConfirm         — () => void — fires doResubmitWithDecisions
+ *   onCancel          — () => void — closes modal without resubmitting
+ *   isSubmitting      — disables the confirm button while the API call is in-flight
+ */
+function CapacityExceededModal({
+	failures,
+	allCaregivers,
+	decisions,
+	onDecisionChange,
+	onConfirm,
+	onCancel,
+	isSubmitting,
+}) {
+	// The confirm button stays disabled until every failure has a decision.
+	const allDecided =
+		failures.length > 0 &&
+		failures.every((f) => decisions[`${f.caregiverId}_${f.date}`]);
+
+	return (
+		<Modal isOpen onClose={onCancel}>
+			<div className={styles.capacityModalBody}>
+
+				{/* Header */}
+				<div className={styles.capacityModalHeader}>
+					<AlertCircle size={22} className={styles.capacityModalIcon} />
+					<div>
+						<h2 className={styles.capacityModalTitle}>Overtime Decision Required</h2>
+						<p className={styles.capacityModalSubtitle}>
+							{failures.length} shift{failures.length !== 1 ? "s" : ""}{" "}
+							exceed{failures.length === 1 ? "s" : ""} the caregiver's bi-weekly
+							capacity. Choose how to handle each one before resubmitting.
+						</p>
+					</div>
+				</div>
+
+				{/* One card per CAPACITY_EXCEEDED failure */}
+				<div className={styles.capacityFailureList}>
+					{failures.map((failure) => {
+						// Unique key for this caregiver+date combination
+						const key = `${failure.caregiverId}_${failure.date}`;
+						const {
+							maxHours,
+							committedHours,
+							shiftHours,
+							projectedTotal,
+							overageHours,
+						} = failure.details ?? {};
+
+						// Look up display name from the combined caregiver list
+						const cg = allCaregivers.find(
+							(c) => (c._id || c.id)?.toString() === failure.caregiverId
+						);
+						const cgName = cg ? fullName(cg, "Unknown") : failure.caregiverId;
+
+						// Human-readable date (falls back to ISO string on parse error)
+						let displayDate = failure.date;
+						try { displayDate = format(parseISO(failure.date), "MMM d, yyyy"); } catch {}
+
+						const chosen = decisions[key];
+
+						return (
+							<div key={key} className={styles.capacityFailureItem}>
+
+								{/* Caregiver name + date */}
+								<div className={styles.capacityFailureName}>
+									<strong>{cgName}</strong>
+									<span className={styles.capacityFailureDate}>{displayDate}</span>
+								</div>
+
+								{/* Hours breakdown chips — mirrors the 409 details payload */}
+								<div className={styles.capacityStatsRow}>
+									<span className={styles.capacityStatChip}>Max {maxHours}h</span>
+									<span className={styles.capacityStatChip}>Committed {committedHours}h</span>
+									<span className={styles.capacityStatChip}>This shift {shiftHours}h</span>
+									<span className={styles.capacityStatChip}>Total {projectedTotal}h</span>
+									<span className={`${styles.capacityStatChip} ${styles.capacityStatOver}`}>
+										+{overageHours}h over
+									</span>
+								</div>
+
+								{/*
+								 * Decision buttons — one click selects a choice (no submit needed
+								 * per card; the main Confirm button is gated on allDecided).
+								 *
+								 * "Mandate"   → overageDecision: "mandated"
+								 * "Voluntary" → overageDecision: "voluntary"
+								 */}
+								<div className={styles.capacityDecisionRow}>
+									<button
+										className={`${styles.capacityDecisionBtn}${chosen === "mandated" ? ` ${styles.capacityDecisionBtnActive}` : ""}`}
+										onClick={() => onDecisionChange(key, "mandated")}
+									>
+										<strong>Mandate overtime</strong>
+										<span>Overtime pay · no caregiver action needed</span>
+									</button>
+									<button
+										className={`${styles.capacityDecisionBtn}${chosen === "voluntary" ? ` ${styles.capacityDecisionBtnActive}` : ""}`}
+										onClick={() => onDecisionChange(key, "voluntary")}
+									>
+										<strong>Voluntary</strong>
+										<span>Caregiver acknowledges bank-or-pay via app</span>
+									</button>
+								</div>
+
+							</div>
+						);
+					})}
+				</div>
+
+				{/* Action row — Confirm is disabled until every card has a decision */}
+				<div className={styles.capacityModalActions}>
+					<Button
+						icon={<Zap size={15} />}
+						onClick={onConfirm}
+						disabled={!allDecided || isSubmitting}
+					>
+						{isSubmitting ? "Resubmitting…" : "Confirm & Resubmit"}
+					</Button>
+					<Button variant="secondary" onClick={onCancel}>
+						Cancel
+					</Button>
+				</div>
+
+			</div>
+		</Modal>
+	);
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ShiftBuilderPage() {
@@ -456,6 +624,17 @@ export default function ShiftBuilderPage() {
 	// warns first rather than blocking.
 	const [showLongShiftModal, setShowLongShiftModal] = useState(false);
 	const [longShiftCount, setLongShiftCount] = useState(0);
+
+	// ── Capacity-exceeded overage decision modal ──────────────────────────────
+	// Populated when the bulk API returns one or more CAPACITY_EXCEEDED failures.
+	// Holds:
+	//   failures        — the failed cells from result.failed (code === "CAPACITY_EXCEEDED")
+	//   decisions       — { [caregiverId_date]: "mandated"|"voluntary" } — filled by admin
+	//   originalPayload — the caregiverPayload we sent, needed to resubmit only the failed cells
+	//   sharedBody      — the endpoint params (dates, homeId, timezone, shift times)
+	//   mode            — "create" (POST, empty period) | "save" (PUT, period has existing shifts)
+	// null = modal is closed.
+	const [capacityModalData, setCapacityModalData] = useState(null);
 
 	// ── Drag-to-reorder ───────────────────────────────────────────────────────
 	const [caregiverOrder, setCaregiverOrder] = useState([]);
@@ -1043,6 +1222,24 @@ export default function ShiftBuilderPage() {
 			try {
 				const result = await createBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
 				setBulkResult(result);
+
+				// If any cells failed because they push the caregiver past their bi-weekly
+				// capacity, open the overage-decision modal.  The admin picks "mandated" or
+				// "voluntary" per shift, then hits Confirm — doResubmitWithDecisions sends
+				// only those cells back with overageDecision attached.
+				// Other error codes (e.g. conflicts) are already visible in the result banner.
+				const capacityFailures = (result.failed ?? []).filter(
+					(f) => f.code === "CAPACITY_EXCEEDED"
+				);
+				if (capacityFailures.length > 0) {
+					setCapacityModalData({
+						failures:        capacityFailures,
+						decisions:       {},               // admin fills this in the modal
+						originalPayload: caregiverPayload, // needed to reconstruct the cells on resubmit
+						sharedBody,                        // dates, homeId, timezone, shift times
+						mode:            "create",         // POST endpoint — period had no prior shifts
+					});
+				}
 			} catch (err) {
 				setSubmitError(err?.response?.data?.error || "An unexpected error occurred");
 			}
@@ -1080,11 +1277,124 @@ export default function ShiftBuilderPage() {
 			try {
 				const result = await saveBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
 				setBulkResult(result);
+
+				// Same CAPACITY_EXCEEDED handling as the POST path above, but for the
+				// PUT (save) endpoint when the period already has existing shifts.
+				const capacityFailures = (result.failed ?? []).filter(
+					(f) => f.code === "CAPACITY_EXCEEDED"
+				);
+				if (capacityFailures.length > 0) {
+					setCapacityModalData({
+						failures:        capacityFailures,
+						decisions:       {},
+						originalPayload: caregiverPayload,
+						sharedBody,
+						mode:            "save",           // PUT endpoint — period already had shifts
+					});
+				}
 			} catch (err) {
 				setSubmitError(err?.response?.data?.error || "An unexpected error occurred");
 			}
 		}
 	};
+
+	// ── Resubmit with overage decisions ──────────────────────────────────────
+
+	/**
+	 * Called when the admin confirms the CapacityExceededModal.
+	 *
+	 * WHAT IT DOES
+	 * ─────────────
+	 * Rebuilds a minimal payload containing only the cells that failed with
+	 * CAPACITY_EXCEEDED, each with the admin's overageDecision attached, then
+	 * calls the same bulk endpoint that was used in the original submit.
+	 *
+	 * WHY "only those cells"
+	 * ──────────────────────
+	 * Every other cell from the original submit either already succeeded (now an
+	 * existing shift in the grid) or failed for a different reason (already shown
+	 * in the result banner).  Re-sending them would risk duplicates or unintended
+	 * updates.
+	 *
+	 * RESULT MERGING
+	 * ──────────────
+	 * The resubmission result is merged into the existing result banner so the
+	 * admin sees the full picture in one place.  The CAPACITY_EXCEEDED entries
+	 * that were showing in the banner are replaced by whatever this call returns
+	 * (success or a new error).
+	 *
+	 * VOLUNTARY SHIFTS AFTER SUCCESS
+	 * ────────────────────────────────
+	 * The query invalidates → the grid reloads → voluntary shifts come back with
+	 * extraHours.ackStatus: "pending" → the "Overtime Pending" badge is shown on
+	 * the shift detail page (scheduling/[id]).  Once the caregiver acknowledges on
+	 * mobile (bank or pay), ackStatus becomes "acknowledged" and the badge clears.
+	 */
+	const doResubmitWithDecisions = useCallback(async () => {
+		if (!capacityModalData) return;
+		const { failures, decisions, originalPayload, sharedBody, mode } = capacityModalData;
+
+		// Build a payload of only the previously-failed cells with overageDecision added.
+		const resubmitPayload = [];
+		for (const failure of failures) {
+			const decision = decisions[`${failure.caregiverId}_${failure.date}`];
+			if (!decision) continue; // guarded by allDecided in modal, but safety-first
+
+			// Recover the original cell we sent (type, customTime, shiftId for updates)
+			const cgEntry      = originalPayload.find((p) => p.caregiverId === failure.caregiverId);
+			const originalCell = cgEntry?.assignments?.find((a) => a.date === failure.date);
+			if (!originalCell) continue;
+
+			// Append to the right caregiver bucket in the resubmit payload
+			let resubCg = resubmitPayload.find((p) => p.caregiverId === failure.caregiverId);
+			if (!resubCg) {
+				resubCg = { caregiverId: failure.caregiverId, assignments: [] };
+				resubmitPayload.push(resubCg);
+			}
+			// Spread the original cell so type/customTime/shiftId are preserved,
+			// then attach the admin's decision for the backend gate.
+			resubCg.assignments.push({ ...originalCell, overageDecision: decision });
+		}
+
+		if (resubmitPayload.length === 0) {
+			setCapacityModalData(null);
+			return;
+		}
+
+		// Close the modal before the async call so the UI doesn't appear frozen
+		setCapacityModalData(null);
+
+		try {
+			// Use the same endpoint (POST for new period, PUT for existing)
+			const apiCall = mode === "save" ? saveBulkShifts : createBulkShifts;
+			const result  = await apiCall({ ...sharedBody, caregivers: resubmitPayload });
+
+			// Merge the resubmission result into the existing result banner.
+			// The CAPACITY_EXCEEDED entries are removed from both the failed list
+			// AND the summary count — they were resolved by this resubmit, so they
+			// should no longer appear as failures.
+			setBulkResult((prev) => {
+				if (!prev) return result;
+				const resolvedCount = (prev.failed ?? []).filter(
+					(f) => f.code === "CAPACITY_EXCEEDED"
+				).length;
+				return {
+					...result,
+					summary: {
+						created: (prev.summary?.created ?? 0) + (result.summary?.created ?? 0),
+						updated: (prev.summary?.updated ?? 0) + (result.summary?.updated ?? 0),
+						failed:  (prev.summary?.failed  ?? 0) - resolvedCount + (result.summary?.failed ?? 0),
+					},
+					failed: [
+						...(prev.failed ?? []).filter((f) => f.code !== "CAPACITY_EXCEEDED"),
+						...(result.failed ?? []),
+					],
+				};
+			});
+		} catch (err) {
+			setSubmitError(err?.response?.data?.error || "An unexpected error occurred");
+		}
+	}, [capacityModalData, saveBulkShifts, createBulkShifts]);
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
@@ -1230,6 +1540,48 @@ export default function ShiftBuilderPage() {
 							</div>
 						</div>
 					</Modal>
+
+					{/*
+					 * ── Capacity-exceeded overage decision modal ──────────────
+					 *
+					 * Opens automatically after a publish that has CAPACITY_EXCEEDED
+					 * failures.  The admin sees one card per over-capacity shift with
+					 * the hours breakdown and picks a decision:
+					 *
+					 *   Mandate overtime — shift created immediately as overtime pay.
+					 *                      No caregiver action required.
+					 *
+					 *   Voluntary        — an acknowledgment approval is sent to the
+					 *                      caregiver's mobile app.  The shift is created
+					 *                      with ackStatus: "pending".  The "Overtime Pending"
+					 *                      badge appears on the shift detail page until the
+					 *                      caregiver responds (bank or pay).  Clock-in is
+					 *                      blocked until acknowledged.
+					 *
+					 * Once all cards have a decision the "Confirm & Resubmit" button
+					 * enables — doResubmitWithDecisions sends only those failed cells
+					 * back with overageDecision attached per cell.
+					 *
+					 * Cancelling closes the modal without resubmitting.  The CAPACITY_
+					 * EXCEEDED cells remain unscheduled; the admin can re-publish them
+					 * (which will reopen this modal) or leave them out of the schedule.
+					 */}
+					{capacityModalData && (
+						<CapacityExceededModal
+							failures={capacityModalData.failures}
+							allCaregivers={[...caregivers, ...addedCasualWorkers]}
+							decisions={capacityModalData.decisions}
+							onDecisionChange={(key, val) =>
+								setCapacityModalData((prev) => ({
+									...prev,
+									decisions: { ...prev.decisions, [key]: val },
+								}))
+							}
+							onConfirm={doResubmitWithDecisions}
+							onCancel={() => setCapacityModalData(null)}
+							isSubmitting={isBulkPending || isSaveBulkPending}
+						/>
+					)}
 
 					{/* ── Schedule grid ─────────────────────────────────────── */}
 					{!selectedHomeId ? (

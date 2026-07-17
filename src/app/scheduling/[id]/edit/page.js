@@ -29,6 +29,8 @@ import * as yup from "yup";
 import { DateTime } from "luxon";
 import { shortTextRule, longTextRule, IdRule } from "@/utils/validation";
 import styles from "./edit_shift.module.css";
+import CapacityExceededModal from "../../_components/CapacityExceededModal";
+import VoluntaryPendingModal from "../../_components/VoluntaryPendingModal";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 const SCHEDULED_STATUSES = ["scheduled"];
@@ -92,6 +94,13 @@ export default function EditShiftPage() {
 	const [showLongShiftModal, setShowLongShiftModal] = useState(false);
 	const [longShiftHours, setLongShiftHours] = useState(0);
 	const pendingSubmitRef = useRef(null);
+
+	// ── Capacity-exceeded overage decision ──────────────────────────────────
+	// When updateUpcommingShift throws 409 CAPACITY_EXCEEDED, we open the modal
+	// to collect the admin's mandate/voluntary decision, then resubmit.
+	const [capacityData,          setCapacityData]          = useState(null);
+	const [capacityDecision,      setCapacityDecision]      = useState(null);
+	const [voluntaryPendingShift, setVoluntaryPendingShift] = useState(null);
 
 	const hoursBetween = (startISO, endISO) => {
 		const s = DateTime.fromISO(startISO, { zone: HALIFAX_TZ });
@@ -241,54 +250,74 @@ export default function EditShiftPage() {
 	}, [scheduledForm]);
 
 	// ── Submit: scheduled ─────────────────────────────────────────────────
-	// This function handles the form submission when editing a "scheduled" shift.
-	// It gathers all the data from the form, formats it for the backend, and sends the update request.
-	async function doSubmitScheduled(data) {
-		// 1. Build the base payload with common shift fields
+	// `overageDecision` is null on first attempt and "mandated"|"voluntary" on resubmit
+	// after the admin dismisses the CAPACITY_EXCEEDED modal.
+	async function doSubmitScheduled(data, overageDecision = null) {
 		const payload = {
-			caregiverId: data.caregiverId, // The ID of the assigned caregiver
-			startTime: data.startTime,     // When the shift is scheduled to begin
-			endTime: data.endTime,         // When the shift is scheduled to end
-			timezone: HALIFAX_TZ,          // Explicitly set the timezone to Halifax
-			notes: data.notes || undefined, // Any optional notes for the shift
-			// Map over the tasks array to ensure they have the correct structure (description and completed status)
-			tasks: tasks.map(t => ({ description: t.description || t.title || "", completed: t.completed || false })),
+			caregiverId: data.caregiverId,
+			startTime:   data.startTime,
+			endTime:     data.endTime,
+			timezone:    HALIFAX_TZ,
+			notes:       data.notes || undefined,
+			tasks:       tasks.map(t => ({ description: t.description || t.title || "", completed: t.completed || false })),
 		};
 
-		// 2. Handle Shift Target (Client vs. Home)
-		// A shift can only belong to ONE target: a Client OR a Home. It cannot be both.
-		// When switching from a Home to a Client (or vice versa), we must explicitly set
-		// the previous target's ID to `null`. This tells the backend to remove the old link.
-		// If we don't send `null`, the backend might keep the old ID, causing a conflict 
-		// because the shift would incorrectly have both a clientId and a homeId.
+		// A shift belongs to exactly one target; sending only the active one lets
+		// the backend clear the other side automatically.
 		if (targetType === "client" && data.clientId) {
-			payload.clientId = data.clientId; // Set the new client ID
-			// We intentionally do not include homeId to let the backend clear it automatically
+			payload.clientId = data.clientId;
 		} else if (targetType === "home" && data.homeId) {
-			payload.homeId = data.homeId;     // Set the new home ID
-			// We intentionally do not include clientId to let the backend clear it automatically
+			payload.homeId = data.homeId;
 		}
 
-		// 3. Handle Geofencing (Location data for the mobile app)
-		// If coordinates were selected via the map or address autocomplete, include them in the payload
 		if (geofenceCoords) {
-			payload.geofence = { 
-				center: geofenceCoords, // The latitude and longitude coordinates
-				radius: 100,            // The radius in meters around the center
-				shape: "circle",        // The shape of the geofence
-				address: geofenceAddress || undefined // The human-readable address string
+			payload.geofence = {
+				center:  geofenceCoords,
+				radius:  100,
+				shape:   "circle",
+				address: geofenceAddress || undefined,
 			};
 		}
 
-		// 4. Send the Request
+		// Attach the overage decision on resubmit so the backend creates the shift
+		// as mandated overtime or sends a voluntary bank-or-pay acknowledgment.
+		if (overageDecision) payload.overageDecision = overageDecision;
+
 		try {
-			// Call the hook function to update the shift in the backend
-			await updateUpcommingShift({ id: shiftDetail._id, data: payload });
-			// On success, redirect the user back to the shift detail page
-			router.push(`/scheduling/${id}`);
+			const shift = await updateUpcommingShift({ id: shiftDetail._id, data: payload });
+
+			if (overageDecision === "voluntary") {
+				// Show pending confirmation instead of redirecting — the caregiver must
+				// acknowledge (bank or pay) on mobile before clock-in is allowed.
+				setVoluntaryPendingShift({
+					caregiverName:       selectedCaregiver ? personName(selectedCaregiver) : "the caregiver",
+					approvalId:          shift?.extraHours?.approvalId          ?? null,
+					plannedOverageHours: shift?.extraHours?.plannedOverageHours ?? null,
+				});
+			} else {
+				router.push(`/scheduling/${id}`);
+			}
 		} catch (err) {
-			// Any errors are handled automatically by the useShifts hook and displayed as an ActionMessage
+			if (err?.response?.data?.code === "CAPACITY_EXCEEDED") {
+				// Store the form data so we can resubmit it with overageDecision attached.
+				setCapacityData({
+					details:     err.response.data.details,
+					pendingData: data,
+				});
+				setCapacityDecision(null);
+			}
+			// All other errors are surfaced via actionShiftError from the hook.
 		}
+	}
+
+	// Called when the admin confirms a decision in the capacity modal.
+	function handleCapacityDecision() {
+		if (!capacityDecision || !capacityData) return;
+		const decision    = capacityDecision;
+		const { pendingData } = capacityData;
+		setCapacityData(null);
+		setCapacityDecision(null);
+		doSubmitScheduled(pendingData, decision);
 	}
 
 	function onSubmitScheduled(data) {
@@ -463,7 +492,7 @@ export default function EditShiftPage() {
 	return (
 		<PageLayout>
 			<Header onSave={sSubmit(onSubmitScheduled)} />
-			{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
+			{actionShiftError && !capacityData && !voluntaryPendingShift && <ActionMessage variant="error" message={actionShiftError} />}
 
 			<form onSubmit={sSubmit(onSubmitScheduled)}>
 				{/* ═══════════════════ ROW 1: 2-column — left wider */}
@@ -701,6 +730,23 @@ export default function EditShiftPage() {
 				</div>
 			</form>
 			{longShiftModal}
+			<CapacityExceededModal
+				isOpen={!!capacityData}
+				onClose={() => { setCapacityData(null); setCapacityDecision(null); }}
+				caregiverName={selectedCaregiver ? personName(selectedCaregiver) : "This caregiver"}
+				details={capacityData?.details ?? {}}
+				decision={capacityDecision}
+				onDecisionChange={setCapacityDecision}
+				onConfirm={handleCapacityDecision}
+				isSaving={isShiftActionPending}
+			/>
+			<VoluntaryPendingModal
+				isOpen={!!voluntaryPendingShift}
+				onClose={() => router.push(`/scheduling/${id}`)}
+				caregiverName={voluntaryPendingShift?.caregiverName}
+				plannedOverageHours={voluntaryPendingShift?.plannedOverageHours}
+				approvalId={voluntaryPendingShift?.approvalId}
+			/>
 		</PageLayout>
 	);
 }

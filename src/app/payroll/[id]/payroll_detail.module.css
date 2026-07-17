@@ -1,0 +1,347 @@
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.pageHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1.75rem;
+}
+
+.headerActions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* ── Back button ──────────────────────────────────────────────────────────── */
+
+.backBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #475569;
+	background: #f1f5f9;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+	text-decoration: none;
+	margin-bottom: 1.25rem;
+}
+
+.backBtn:hover {
+	background: #e2e8f0;
+	color: #1e293b;
+}
+
+/* ── Home info card ───────────────────────────────────────────────────────── */
+
+.homeCard {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 1.25rem 1.5rem;
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	margin-bottom: 1rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.homeCardIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	flex-shrink: 0;
+}
+
+.homeCardBody {
+	flex: 1;
+	min-width: 0;
+}
+
+.homeCardName {
+	font-size: 1.2rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0 0 6px;
+	line-height: 1.25;
+}
+
+.homeCardMeta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.homeCardPill {
+	display: inline-block;
+	padding: 0.18rem 0.6rem;
+	border-radius: 999px;
+	border: 1.5px solid;
+	font-size: 0.74rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+}
+
+.homeCardAddress {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.82rem;
+	color: #64748b;
+}
+
+/* ── Period + status strip ────────────────────────────────────────────────── */
+
+.periodStrip {
+	display: flex;
+	align-items: stretch;
+	gap: 1px;
+	background: #e8eef4;
+	border: 1.5px solid #e8eef4;
+	border-radius: 10px;
+	overflow: hidden;
+	margin-bottom: 1.5rem;
+}
+
+.periodItem {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	padding: 12px 20px;
+	background: #fff;
+	flex: 1;
+}
+
+.periodItem:not(:last-child) {
+	border-right: 1px solid #e8eef4;
+}
+
+.periodItemLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #94a3b8;
+}
+
+.periodItemValue {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #1e293b;
+}
+
+/* ── Payroll status pills ─────────────────────────────────────────────────── */
+
+.statusPill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 0.78rem;
+	font-weight: 700;
+	border: 1.5px solid;
+	white-space: nowrap;
+	width: fit-content;
+}
+
+.statusPill::before {
+	content: "";
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: currentColor;
+	flex-shrink: 0;
+}
+
+/* Draft */
+.statusDraft {
+	color: #64748b;
+	background: #f1f5f9;
+	border-color: #cbd5e1;
+}
+
+/* Pending review */
+.statusPending {
+	color: #1d4ed8;
+	background: #dbeafe;
+	border-color: #93c5fd;
+}
+
+/* Supervisor approved */
+.statusSupervisorApproved {
+	color: #0f766e;
+	background: #ccfbf1;
+	border-color: #5eead4;
+}
+
+/* Fully approved */
+.statusApproved {
+	color: #065f46;
+	background: #d1fae5;
+	border-color: #6ee7b7;
+}
+
+/* Locked */
+.statusLocked {
+	color: #92400e;
+	background: #fffbeb;
+	border-color: #fcd34d;
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+
+.tabs {
+	display: flex;
+	gap: 2px;
+	border-bottom: 1px solid #e5e7eb;
+	margin-bottom: 0.75rem;
+}
+
+.tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 10px 18px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #6b7280;
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+	font-family: inherit;
+	white-space: nowrap;
+}
+
+.tab:hover {
+	color: #374151;
+}
+
+.tabActive {
+	color: var(--color-primary, #1c4a6e);
+	border-bottom-color: var(--color-primary, #1c4a6e);
+	font-weight: 600;
+}
+
+/* ── Export button row ────────────────────────────────────────────────────── */
+/* Sits below the tab strip; aligns the excel Button to the right edge. */
+.exportBtnRow {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 1.25rem;
+}
+
+/* ── Empty / loading states ───────────────────────────────────────────────── */
+
+.emptyState {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 3.5rem 1.5rem;
+	text-align: center;
+}
+
+.emptyStateIcon {
+	color: #d1d5db;
+}
+
+.emptyStateTitle {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #374151;
+	margin: 0;
+}
+
+.emptyStateBody {
+	font-size: 0.875rem;
+	color: #9ca3af;
+	margin: 0;
+}
+
+/* ── Exception banner ──────────────────────────────────────────────────────── */
+
+.exceptionBanner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	background: #fef2f2;
+	border: 1.5px solid #fca5a5;
+	border-radius: 10px;
+	cursor: pointer;
+	text-align: left;
+	margin-bottom: 1rem;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.exceptionBanner:hover {
+	background: #fee2e2;
+	border-color: #f87171;
+}
+
+.exceptionBannerIcon {
+	color: #dc2626;
+	flex-shrink: 0;
+}
+
+.exceptionBannerText {
+	flex: 1;
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: #991b1b;
+}
+
+.exceptionBannerCta {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #dc2626;
+	white-space: nowrap;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+	.homeCard {
+		padding: 1rem;
+	}
+
+	.homeCardName {
+		font-size: 1.05rem;
+	}
+
+	.periodStrip {
+		flex-wrap: wrap;
+	}
+
+	.periodItem {
+		flex: 1 1 calc(50% - 1px);
+	}
+
+	.tab {
+		padding: 10px 12px;
+		font-size: 0.82rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.periodItem {
+		flex: 1 1 100%;
+	}
+}

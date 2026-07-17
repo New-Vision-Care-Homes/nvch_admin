@@ -1,0 +1,147 @@
+/* ══════════════════════════════════════════════════════════════
+   Capacity-exceeded modal
+   Rendered inside the shared Modal wrapper component.
+══════════════════════════════════════════════════════════════ */
+
+/* Outer column — constrains height so the modal doesn't overflow the viewport */
+.capModalBody {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0.25rem 0 0.25rem;
+}
+
+/* Icon + title row */
+.capModalHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.capModalIcon {
+    color: #ef4444;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.capModalTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-primary, #1c4a6e);
+}
+
+.capModalSubtitle {
+    margin: 4px 0 0;
+    font-size: 0.84rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+/* 5-cell stats grid: cap / committed / shift / projected / over */
+.capStatsGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.capStat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+}
+
+.capStatLabel {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.capStatValue {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+}
+
+/* "Over by" cell uses red tones to draw attention */
+.capStatOverage {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.capStatOverage .capStatLabel { color: #b91c1c; }
+.capStatOverage .capStatValue { color: #b91c1c; }
+
+/* Pay period line: "PP15 · Jul 7 – Jul 20, 2026" */
+.capPPLabel {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Two decision buttons side-by-side */
+.capDecisionRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.capDecisionBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 9px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.13s ease, background 0.13s ease;
+}
+
+.capDecisionBtn strong {
+    font-size: 0.84rem;
+    color: #1e293b;
+}
+
+.capDecisionBtn span {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.capDecisionBtn:hover {
+    border-color: var(--color-primary, #1c4a6e);
+    background: #f0f7ff;
+}
+
+/* Highlighted state when a decision is selected */
+.capDecisionBtnActive {
+    border-color: var(--color-primary, #1c4a6e) !important;
+    background: #eff6ff !important;
+}
+
+.capDecisionBtnActive strong {
+    color: var(--color-primary, #1c4a6e) !important;
+}
+
+/* Confirm + Cancel buttons row */
+.capModalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}

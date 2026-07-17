@@ -203,6 +203,33 @@
 	box-shadow: none;
 }
 
+/* ── Excel ───────────────────────────────────────────────────────────────── */
+/*
+ * Use this variant for any "Export to Excel / spreadsheet" action.
+ *
+ * Light green tint — same visual pattern as `soft` (light blue) but in green
+ * so export actions are immediately recognisable without being visually heavy.
+ *
+ * Always pair with icon={<Download size={14} />} from lucide-react:
+ *   <Button variant="excel" icon={<Download size={14} />}>Export Sheet</Button>
+ */
+.excel {
+	color: #166534;
+	background: #f0fdf4;
+	border: 1.5px solid #bbf7d0;
+	font-weight: 600;
+}
+
+.excel:hover:not(:disabled) {
+	background: #dcfce7;
+	border-color: #86efac;
+}
+
+.excel:active:not(:disabled) {
+	background: #bbf7d0;
+	border-color: #4ade80;
+}
+
 /* ── Disabled ────────────────────────────────────────────────────────────── */
 .btn:disabled {
 	opacity: 0.45;

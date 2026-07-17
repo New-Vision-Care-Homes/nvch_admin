@@ -126,6 +126,20 @@
 	color: #374151;
 }
 
+/* Shown inside .badgeRow when extraHours.ackStatus === "pending" */
+.overtimePendingBadge {
+	padding: 3px 10px;
+	border-radius: 9999px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
+	background: #fff7ed;
+	color: #c2410c;
+	border: 1px solid #fed7aa;
+}
+
 /* ── Main 2-column layout ────────────────────────────────────────────────── */
 .mainRow {
 	display: flex;

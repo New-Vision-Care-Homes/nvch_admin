@@ -37,6 +37,24 @@
 	border-radius: 999px;
 }
 
+.subjectTypePillOrange {
+	color: #d97706;
+	background: #fffbeb;
+	border-color: #fcd34d;
+}
+
+.subjectTypePillRed {
+	color: #dc2626;
+	background: #fef2f2;
+	border-color: #fca5a5;
+}
+
+.subjectTypePillGreen {
+	color: #059669;
+	background: #f0fdf4;
+	border-color: #6ee7b7;
+}
+
 .headerMeta {
 	display: flex;
 	align-items: center;
@@ -473,6 +491,37 @@
 	outline: none;
 	border-color: #a78bfa;
 	box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+}
+
+/* ── Reject warning (overtime_mandate) ───────────────────────────────────── */
+
+.rejectWarn {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 10px 12px;
+	background: #fffbeb;
+	border: 1px solid #fcd34d;
+	border-radius: 8px;
+	font-size: 0.82rem;
+	color: #92400e;
+	line-height: 1.5;
+}
+
+/* ── Waiver statement (overtime_acknowledgment) ───────────────────────────── */
+
+.waiverText {
+	font-size: 0.875rem;
+	color: #374151;
+	line-height: 1.65;
+	margin: 0 0 8px;
+	font-style: italic;
+}
+
+.waiverVersion {
+	font-size: 0.75rem;
+	color: #9ca3af;
+	font-weight: 500;
 }
 
 /* ── Spinner ──────────────────────────────────────────────────────────────── */
