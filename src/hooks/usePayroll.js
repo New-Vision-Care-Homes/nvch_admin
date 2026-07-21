@@ -158,7 +158,7 @@ export const useCaregiverPayrollSummary = ({ params = {}, enabled = true } = {})
 
 	return {
 		summary:    query.data   ?? null,
-		isLoading:  query.isLoading || query.isFetching,
+		isLoading:  query.isLoading,
 		fetchError: query.error  ? getErrorMessage(query.error) : null,
 		refetch:    query.refetch,
 	};

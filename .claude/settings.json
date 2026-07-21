@@ -1,7 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3)"
+      "Bash(python3)",
+      "Bash(mkdir -p /Users/irisliu/Desktop/nvch_admin/src/app/payroll/_components /Users/irisliu/Desktop/nvch_admin/src/app/payroll/\\\\[id\\\\])",
+      "Bash(mkdir -p /Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]/_utils && ls /Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]/)",
+      "Bash(mkdir -p \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]/_utils\" && ls \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]/\")",
+      "Bash(mkdir -p \"/Users/irisliu/Desktop/nvch_admin/src/app/approvals/[id]/_components\" && echo \"done\")",
+      "Bash(mkdir -p \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]/exceptions\")",
+      "Bash(mkdir -p /Users/irisliu/Desktop/nvch_admin/src/app/payroll/entries/\\\\[id\\\\])",
+      "Bash(mkdir -p \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/entries/[id]\")",
+      "Bash(mkdir -p \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/caregivers/[id]/entries/[entryId]\")",
+      "Bash(cp \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/entries/[id]/entry_detail.module.css\" \"/Users/irisliu/Desktop/nvch_admin/src/app/payroll/caregivers/[id]/entries/[entryId]/entry_detail.module.css\")",
+      "Bash(git -C /Users/irisliu/Desktop/nvch_admin status)",
+      "Bash(git -C /Users/irisliu/Desktop/nvch_admin diff src/app/payroll/caregivers/\\\\[id\\\\]/page.js src/app/payroll/caregivers/\\\\[id\\\\]/caregiver_summary.module.css src/components/layout/Sidebar.js src/hooks/usePayroll.js src/services/api/endpoints.js src/services/api/services/payrollService.js)",
+      "Bash(git -C /Users/irisliu/Desktop/nvch_admin log --oneline -5)"
+    ],
+    "additionalDirectories": [
+      "/Users/irisliu/Desktop/nvch_admin/src/app/payroll",
+      "/Users/irisliu/Desktop/nvch_admin/src/app/payroll/[id]",
+      "/Users/irisliu/Desktop/nvch_admin/src/app/approvals/[id]",
+      "/Users/irisliu/Desktop/nvch_admin/src/app/payroll/entries",
+      "/Users/irisliu/Desktop/nvch_admin/src/app/payroll/entries/[id]"
     ]
   }
 }

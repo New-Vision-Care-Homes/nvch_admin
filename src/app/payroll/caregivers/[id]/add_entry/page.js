@@ -108,19 +108,23 @@ export default function AddCaregiverEntryPage() {
         event.preventDefault();
         resetCreate();
 
-        await createEntry({
-            category,
-            amount:       Number(amount),
-            payYear:      Number(selectedYear),
-            periodNumber: Number(selectedPeriod),
-            reason,
-            ...(note           && { note }),
-            ...(selectedHomeId && { homeId: selectedHomeId }),
-        });
+        try {
+            await createEntry({
+                category,
+                amount:       Number(amount),
+                payYear:      Number(selectedYear),
+                periodNumber: Number(selectedPeriod),
+                reason,
+                homeId:       selectedHomeId || null,
+                ...(note && { note }),
+            });
 
-        router.push(
-            `/payroll/caregivers/${caregiverId}?payYear=${selectedYear}&periodNumber=${selectedPeriod}`
-        );
+            router.push(
+                `/payroll/caregivers/${caregiverId}?payYear=${selectedYear}&periodNumber=${selectedPeriod}`
+            );
+        } catch {
+            // createError is surfaced via the hook's state
+        }
     };
 
     /** Navigate back to the caregiver summary page. */

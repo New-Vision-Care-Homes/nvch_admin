@@ -18,10 +18,12 @@ export default function Button({
 	type = "button",
 	className = "",
 	icon = null,
+	form,
 }) {
 	return (
 		<button
 			type={type}
+			form={form}
 			className={`${styles.btn} ${styles[variant]} ${styles[size]} ${className}`}
 			disabled={disabled}
 			onClick={onClick}
