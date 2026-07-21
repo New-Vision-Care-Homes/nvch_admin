@@ -165,6 +165,82 @@ export const useCaregiverPayrollSummary = ({ params = {}, enabled = true } = {})
 };
 
 /**
+ * Mutation hook for creating a manual payroll entry for a caregiver.
+ * Invalidates the caregiver summary query on success so the entries list refreshes.
+ *
+ * Requires manage_payroll permission — enforce in the calling component.
+ *
+ * @param {string} caregiverId - The caregiver's database ID.
+ */
+export const useCreateCaregiverEntry = (caregiverId) => {
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: (body) => payrollService.createEntry({ caregiverId, body }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["payroll", "caregiverSummary"] });
+		},
+	});
+
+	return {
+		createEntry:    mutation.mutateAsync,
+		isCreating:     mutation.isPending,
+		createResult:   mutation.data  ?? null,
+		createError:    mutation.error ? getErrorMessage(mutation.error) : null,
+		resetCreate:    mutation.reset,
+	};
+};
+
+/**
+ * Fetches a single manual payroll entry by its ID.
+ * Used on the entry detail page.
+ *
+ * @param {string} entryId - The entry's database ID.
+ */
+export const useEntry = (entryId) => {
+	const query = useQuery({
+		queryKey: ["payroll", "entry", entryId],
+		queryFn:  () => payrollService.getEntry(entryId),
+		enabled:  !!entryId,
+	});
+	return {
+		entry:      query.data   ?? null,
+		isLoading:  query.isLoading || query.isFetching,
+		fetchError: query.error  ? getErrorMessage(query.error) : null,
+		refetch:    query.refetch,
+	};
+};
+
+/**
+ * Mutation hook for voiding a manual payroll entry.
+ * Invalidates the entry query and the caregiver summary on success so
+ * both the detail page and the summary list reflect the voided status.
+ *
+ * Requires manage_payroll permission — enforce in the calling component.
+ *
+ * @param {string} entryId - The entry's database ID.
+ */
+export const useVoidEntry = (entryId) => {
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: (body) => payrollService.voidEntry({ entryId, body }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["payroll", "entry", entryId] });
+			queryClient.invalidateQueries({ queryKey: ["payroll", "caregiverSummary"] });
+		},
+	});
+
+	return {
+		voidEntry:  mutation.mutateAsync,
+		isVoiding:  mutation.isPending,
+		voidResult: mutation.data  ?? null,
+		voidError:  mutation.error ? getErrorMessage(mutation.error) : null,
+		resetVoid:  mutation.reset,
+	};
+};
+
+/**
  * Mutation hook for forcing a payroll stat recompute for a pay period.
  * Automatically invalidates all coverSheet queries on success so every
  * home row in the overview refreshes with the recomputed data.

@@ -96,6 +96,9 @@ export const API_ENDPOINTS = {
 		EXCEPTIONS:        '/api/payroll/exceptions',
 		STAT_RECOMPUTE:    '/api/payroll/stat/recompute',
 		CAREGIVER_SUMMARY: (caregiverId) => `/api/payroll/caregivers/${caregiverId}/summary`,
+		CAREGIVER_ENTRIES: (caregiverId) => `/api/payroll/caregivers/${caregiverId}/entries`,
+		ENTRY_BY_ID:       (id) => `/api/payroll/entries/${id}`,
+		ENTRY_VOID:        (id) => `/api/payroll/entries/${id}/void`,
 	},
 
 	/* All related endpoints for notifications */

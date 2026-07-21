@@ -122,6 +122,14 @@
 	letter-spacing: 0.02em;
 }
 
+/* ── Card stack — consistent vertical gap between all section cards ────────── */
+
+.cardStack {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
 /* ── Manual entries list ──────────────────────────────────────────────────── */
 
 .entriesCount {
@@ -146,45 +154,113 @@
 	margin: 0;
 }
 
-.entriesList {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-}
+/* ── Entries table ────────────────────────────────────────────────────────── */
 
-.entryRow {
-	padding: 0.75rem 0;
-	border-bottom: 1px solid #f3f4f6;
-}
-
-.entryRow:last-child {
-	border-bottom: none;
-	padding-bottom: 0;
-}
-
-.entryBody {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px;
-}
-
-.entryType {
+.entriesTable {
+	width: 100%;
+	border-collapse: collapse;
 	font-size: 0.875rem;
+}
+
+.entriesTable thead th {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9ca3af;
+	padding: 0.5rem 0.75rem;
+	text-align: left;
+	border-bottom: 2px solid #f3f4f6;
+	white-space: nowrap;
+}
+
+.entriesThNum {
+	text-align: right !important;
+}
+
+.entryTableRow td {
+	padding: 1rem 0.75rem;
+	border-bottom: 1.5px solid #f3f4f6;
+	vertical-align: middle;
+}
+
+.entryTableRow:last-child td {
+	border-bottom: none;
+}
+
+.entryTableRow:hover td {
+	background: #f9fafb;
+}
+
+.entryCategory {
 	font-weight: 600;
 	color: #111827;
+}
+
+.entryMuted {
+	font-size: 0.82rem;
+	color: #6b7280;
+	white-space: nowrap;
+}
+
+.entryAmount {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background: #eef4fb;
+	color: #1c4a6e;
+	font-size: 0.82rem;
+	font-weight: 700;
+	border-radius: 20px;
+	white-space: nowrap;
+}
+
+.entryActionsCell {
+	text-align: right;
+	width: 40px;
+}
+
+.entryViewBtn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #6b7280;
+	padding: 4px;
+	border-radius: 6px;
+	display: inline-flex;
+	align-items: center;
+	transition: color 0.15s, background 0.15s;
+}
+
+.entryViewBtn:hover {
+	color: #1c4a6e;
+	background: #eef4fb;
+}
+
+/* ── Entry status badge ───────────────────────────────────────────────────── */
+
+.entryStatusBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.72rem;
+	font-weight: 700;
 	text-transform: capitalize;
 }
 
-.entryMeta {
-	font-size: 0.8rem;
-	color: #6b7280;
+.entryStatus_approved {
+	background: #d1fae5;
+	color: #065f46;
 }
 
-.entryNote {
-	width: 100%;
-	font-size: 0.8rem;
-	color: #6b7280;
-	font-style: italic;
-	margin-top: 2px;
+.entryStatus_pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.entryStatus_voided,
+.entryStatus_reversed {
+	background: #fee2e2;
+	color: #dc2626;
 }

@@ -48,6 +48,7 @@ const flyoutMenus = {
 const keywordToTabMap = {
 	"/client": 2,       // any path containing "/client" -> Clients tab
 	"/focus_notes": 2,  // focus note detail lives under the Clients tab
+	"/payroll/caregiver": 6.8, // payroll caregiver pages must match before the generic /caregiver rule
 	"/caregiver": 3,    // any path containing "/caregiver" -> Caregivers tab
 	"/admin": 4,        // any path containing "/admin" -> Admins tab
 	"/permission": 4.5, // any path containing "/permission" -> Permissions tab

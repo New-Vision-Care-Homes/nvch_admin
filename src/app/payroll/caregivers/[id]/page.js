@@ -5,13 +5,14 @@
 // ============================================================
 
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { Undo2, User, ClipboardList }  from "lucide-react";
+import { Undo2, User, ClipboardList, Plus, Eye } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState from "@components/UI/ErrorState";
 import Button     from "@components/UI/Button";
 import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { useCaregiverPayrollSummary } from "@/hooks/usePayroll";
-import { formatDateOnly } from "@/utils/dates";
+import { useProfile } from "@/hooks/useProfile";
+import { formatDateOnly, formatDateTime } from "@/utils/dates";
 import styles       from "./caregiver_summary.module.css";
 import detailStyles from "../../[id]/payroll_detail.module.css";
 
@@ -19,6 +20,27 @@ import detailStyles from "../../[id]/payroll_detail.module.css";
 // ============================================================
 // SECTION: Constants
 // ============================================================
+
+/** Maps raw API category keys to human-readable labels for the entries table. */
+const CATEGORY_LABELS = {
+    retro_bonus: "Retro Bonus",
+    bereavement: "Bereavement",
+};
+
+const STATUS_LABELS = {
+    approved: "Approved",
+    pending:  "Pending",
+    reversed: "Voided",
+};
+
+/**
+ * Returns a human-readable label for an entry category.
+ * Falls back to the raw category string if no label is defined.
+ *
+ * @param {string} category
+ * @returns {string}
+ */
+const formatCategory = (category) => CATEGORY_LABELS[category] ?? category;
 
 /**
  * Hour type definitions for the breakdown grid.
@@ -51,6 +73,10 @@ export default function CaregiverPayrollSummaryPage() {
     const periodNumber = searchParams.get("periodNumber");
 
 
+    // ── Permissions ───────────────────────────────────────────────────────────
+    const { profile } = useProfile();
+    const canManage = profile?.permissionSlugs?.includes("manage_payroll") ?? false;
+
     // ── Data ──────────────────────────────────────────────────────────────────
     const { summary, isLoading, fetchError, refetch } = useCaregiverPayrollSummary({
         params: {
@@ -61,8 +87,8 @@ export default function CaregiverPayrollSummaryPage() {
         enabled: !!(caregiverId && payYear && periodNumber),
     });
 
+    console.log(summary)
 
-    console.log(summary);
     // ── Derived values ────────────────────────────────────────────────────────
     const caregiverFullName =
         [summary?.caregiver?.firstName, summary?.caregiver?.lastName]
@@ -82,6 +108,16 @@ export default function CaregiverPayrollSummaryPage() {
             <div className={detailStyles.pageHeader}>
                 <h1>Caregiver Payroll Summary</h1>
                 <div className={detailStyles.headerActions}>
+                    {canManage && (
+                        <Button
+                            icon={<Plus size={15} />}
+                            onClick={() => router.push(
+                                `/payroll/caregivers/${caregiverId}/add_entry?payYear=${payYear}&periodNumber=${periodNumber}`
+                            )}
+                        >
+                            Add Entries
+                        </Button>
+                    )}
                     <Button
                         variant="secondary"
                         icon={<Undo2 size={15} />}
@@ -96,7 +132,7 @@ export default function CaregiverPayrollSummaryPage() {
             <ErrorState isLoading={isLoading} errorMessage={fetchError} onRetry={refetch} />
 
             {!isLoading && !fetchError && (
-                <>
+                <div className={styles.cardStack}>
                     {/* ── Caregiver info card ──────────────────────────────── */}
                     <div className={styles.caregiverCard}>
                         <User size={22} style={{ color: "var(--color-primary, #1c4a6e)", flexShrink: 0 }} />
@@ -212,30 +248,63 @@ export default function CaregiverPayrollSummaryPage() {
                             {entries.length === 0 ? (
                                 <p className={styles.entriesEmpty}>No manual entries for this period.</p>
                             ) : (
-                                <div className={styles.entriesList}>
-                                    {entries.map((entry, index) => (
-                                        <div key={entry.id ?? index} className={styles.entryRow}>
-                                            <div className={styles.entryBody}>
-                                                {entry.type && (
-                                                    <span className={styles.entryType}>{entry.type}</span>
-                                                )}
-                                                {entry.hours != null && (
-                                                    <span className={styles.entryMeta}>{entry.hours} hrs</span>
-                                                )}
-                                                {entry.date && (
-                                                    <span className={styles.entryMeta}>{formatDateOnly(entry.date)}</span>
-                                                )}
-                                                {entry.note && (
-                                                    <span className={styles.entryNote}>{entry.note}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <table className={styles.entriesTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>Home</th>
+                                            <th>Created By</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {entries.map((entry) => (
+                                            <tr key={entry.id} className={styles.entryTableRow}>
+                                                <td className={styles.entryCategory}>
+                                                    {formatCategory(entry.category)}
+                                                </td>
+                                                <td>
+                                                    <span className={styles.entryAmount}>
+                                                        {entry.amount} {entry.unit}
+                                                    </span>
+                                                </td>
+                                                <td className={styles.entryMuted}>
+                                                    {entry.home?.name ?? "—"}
+                                                </td>
+                                                <td className={styles.entryMuted}>
+                                                    {[entry.createdBy?.firstName, entry.createdBy?.lastName]
+                                                        .filter(Boolean).join(" ") || "—"}
+                                                </td>
+                                                <td className={styles.entryMuted}>
+                                                    {entry.createdAt ? formatDateTime(entry.createdAt) : "—"}
+                                                </td>
+                                                <td>
+                                                    <span className={`${styles.entryStatusBadge} ${styles[`entryStatus_${entry.status}`]}`}>
+                                                        {STATUS_LABELS[entry.status] ?? entry.status}
+                                                    </span>
+                                                </td>
+                                                <td className={styles.entryActionsCell}>
+                                                    <button
+                                                        className={styles.entryViewBtn}
+                                                        onClick={() => router.push(
+                                                            `/payroll/caregivers/${caregiverId}/entries/${entry.id}?payYear=${payYear}&periodNumber=${periodNumber}`
+                                                        )}
+                                                        title="View entry details"
+                                                    >
+                                                        <Eye size={15} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             )}
                         </CardContent>
                     </Card>
-                </>
+                </div>
             )}
 
         </PageLayout>

@@ -55,6 +55,47 @@ export const payrollService = {
 	},
 
 	/**
+	 * Create a manual payroll entry for a caregiver.
+	 *
+	 * @param {Object} params
+	 * @param {string}  params.caregiverId
+	 * @param {Object}  params.body  - { category, amount, payYear, periodNumber, reason, note?, homeId? }
+	 * @returns {Promise<Object>}
+	 */
+	createEntry: async ({ caregiverId, body }) => {
+		const { data } = await axiosClient.post(
+			API_ENDPOINTS.PAYROLL.CAREGIVER_ENTRIES(caregiverId),
+			body
+		);
+		return data?.data;
+	},
+
+	/**
+	 * Fetch a single manual payroll entry by its ID.
+	 *
+	 * @param {string} entryId - The entry's database ID.
+	 * @returns {Promise<Object>}
+	 */
+	getEntry: async (entryId) => {
+		const { data } = await axiosClient.get(API_ENDPOINTS.PAYROLL.ENTRY_BY_ID(entryId));
+		return data?.data;
+	},
+
+	/**
+	 * Void a manual payroll entry.
+	 * The entry must currently be in "approved" status.
+	 *
+	 * @param {Object} params
+	 * @param {string}  params.entryId  - The entry's database ID.
+	 * @param {Object}  params.body     - { reason: string }
+	 * @returns {Promise<Object>}
+	 */
+	voidEntry: async ({ entryId, body }) => {
+		const { data } = await axiosClient.post(API_ENDPOINTS.PAYROLL.ENTRY_VOID(entryId), body);
+		return data?.data;
+	},
+
+	/**
 	 * Force a stat recompute for a given pay period.
 	 * Returns counts and a per-staff qualification audit.
 	 *

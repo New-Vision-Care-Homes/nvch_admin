@@ -1,0 +1,313 @@
+/* ── Page body — vertical stack with gap ──────────────────────────────────── */
+
+.pageBody {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+/* ── Hero card ────────────────────────────────────────────────────────────── */
+
+.heroCard {
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 14px;
+	padding: 1.75rem 2rem;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.heroLeft {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.heroCategoryLabel {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #9ca3af;
+	margin: 0;
+}
+
+.heroAmount {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary, #1c4a6e);
+	margin: 0;
+	line-height: 1.1;
+}
+
+.heroCategoryName {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #6b7280;
+	margin: 0;
+}
+
+/* ── Status badge ─────────────────────────────────────────────────────────── */
+
+.statusBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 14px;
+	border-radius: 20px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	text-transform: capitalize;
+	flex-shrink: 0;
+}
+
+.statusApproved { background: #d1fae5; color: #065f46; }
+.statusPending  { background: #fef3c7; color: #92400e; }
+.statusVoided   { background: #fee2e2; color: #dc2626; }
+
+/* ── Two-column detail section ────────────────────────────────────────────── */
+
+.detailColumns {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+}
+
+@media (max-width: 640px) {
+	.detailColumns {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ── Detail card ──────────────────────────────────────────────────────────── */
+
+.detailCard {
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	padding: 1.25rem 1.5rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.detailSectionTitle {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--color-primary, #1c4a6e);
+	margin: 0 0 1.25rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 2px solid rgba(28, 74, 110, 0.12);
+}
+
+.detailFieldList {
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.detailField {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.detailFieldLabel {
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #9ca3af;
+}
+
+.detailFieldValue {
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #111827;
+}
+
+.detailFieldMuted {
+	font-size: 0.82rem;
+	color: #6b7280;
+	text-transform: capitalize;
+}
+
+/* ── Reason / Note full-width text block ──────────────────────────────────── */
+
+.textBlock {
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	padding: 1.25rem 1.5rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.textBlockLabel {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--color-primary, #1c4a6e);
+	margin: 0 0 0.75rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 2px solid rgba(28, 74, 110, 0.12);
+}
+
+.textBlockContent {
+	font-size: 0.9rem;
+	color: #374151;
+	line-height: 1.6;
+	margin: 0;
+}
+
+/* ── Void button in header ────────────────────────────────────────────────── */
+
+.voidHeaderBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0.5rem 1rem;
+	background: #fff;
+	color: #dc2626;
+	border: 1.5px solid #fca5a5;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	font-family: inherit;
+}
+
+.voidHeaderBtn:hover {
+	background: #fef2f2;
+	border-color: #dc2626;
+}
+
+/* ── Modal overlay ────────────────────────────────────────────────────────── */
+
+.modalOverlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 1rem;
+}
+
+/* ── Modal card ───────────────────────────────────────────────────────────── */
+
+.modalCard {
+	background: #fff;
+	border-radius: 16px;
+	padding: 2rem;
+	max-width: 460px;
+	width: 100%;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.modalIcon {
+	width: 44px;
+	height: 44px;
+	background: #fef2f2;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 1rem;
+}
+
+.modalTitle {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: #111827;
+	margin: 0 0 0.375rem;
+	text-align: center;
+}
+
+.modalSubtitle {
+	font-size: 0.875rem;
+	color: #6b7280;
+	line-height: 1.55;
+	margin: 0 0 1.25rem;
+}
+
+.modalInputLabel {
+	display: block;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #374151;
+	margin-bottom: 6px;
+}
+
+.modalInput {
+	width: 100%;
+	padding: 0.625rem 0.875rem;
+	font-size: 0.875rem;
+	border: 1.5px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	margin-bottom: 1.25rem;
+	box-sizing: border-box;
+	color: #111827;
+}
+
+.modalInput:focus {
+	border-color: #dc2626;
+	box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* ── Modal action buttons ─────────────────────────────────────────────────── */
+
+.modalActions {
+	display: flex;
+	gap: 0.75rem;
+	justify-content: flex-end;
+}
+
+.modalCancelBtn {
+	padding: 0.5rem 1.25rem;
+	background: #f3f4f6;
+	color: #374151;
+	border: none;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background 0.15s;
+}
+
+.modalCancelBtn:hover {
+	background: #e5e7eb;
+}
+
+.modalCancelBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.modalConfirmBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0.5rem 1.25rem;
+	background: #dc2626;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background 0.15s;
+}
+
+.modalConfirmBtn:hover {
+	background: #b91c1c;
+}
+
+.modalConfirmBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
