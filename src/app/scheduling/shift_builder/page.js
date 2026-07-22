@@ -73,6 +73,13 @@ import { fullName } from "@/utils/formatting";
 const HALIFAX_TZ = "America/Halifax";
 const MAX_DAYS   = 42; // safety cap to prevent runaway renders on bad date ranges
 
+// The builder only cares about shifts that actually occupy a slot. Cancelled and
+// missed shifts are void, so we ask the backend (GET /api/shifts?status=…, which
+// accepts a comma-separated list) to exclude them rather than pulling every shift
+// and filtering client-side. This unblocks creating a new shift in a cell that
+// previously held a cancelled/missed one.
+const BUILDER_SHIFT_STATUSES = "scheduled,in_progress,completed";
+
 // Every 30-minute slot from 00:00 → 23:30, used in Custom cell dropdowns and the
 // legend's Day / Night hour pickers.
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -217,20 +224,37 @@ function ShiftCell({
 	const pastClass     = isPast     ? ` ${styles.cellPast}`     : "";
 	const spanNote      = assignment?.spanDays > 1 ? ` · ${assignment.spanDays}-day shift` : "";
 
-	// Read-only continuation of a multi-day shift that started on an earlier day.
-	// It belongs to a shift edited via its start-day cell, so this cell is inert.
+	// Continuation of a multi-day shift that started on an earlier day; it belongs
+	// to a shift edited via its start-day cell.
+	// The LAST day ends partway through (e.g. a night shift ending 07:00), so it can
+	// still host a NEW shift for the rest of that day — this unblocks back-to-back
+	// night shifts. Full intermediate days (and past days) stay inert.
 	if (assignment?.continuation) {
+		const continuationStyle = {
+			display: "flex", alignItems: "center", justifyContent: "center",
+			minHeight: 34, borderRadius: 6,
+			border: "1px dashed #cbd5e1", color: "#64748b",
+			fontSize: 12, fontWeight: 700,
+			background:
+				"repeating-linear-gradient(45deg,#eef2f7,#eef2f7 6px,#e3e9f1 6px,#e3e9f1 12px)",
+		};
+		if (assignment.isLast && !isPast) {
+			return (
+				<button
+					type="button"
+					className={styles.cellExisting}
+					onClick={onCycle}
+					style={{ ...continuationStyle, width: "100%", cursor: "pointer" }}
+					title={`Ends here from a multi-day shift · ${assignment.rangeLabel}\nClick to schedule a new shift for the rest of this day`}
+				>
+					→|
+				</button>
+			);
+		}
 		return (
 			<div
 				className={`${styles.cellExisting}${pastClass}`}
-				style={{
-					display: "flex", alignItems: "center", justifyContent: "center",
-					minHeight: 34, borderRadius: 6, cursor: "default",
-					border: "1px dashed #cbd5e1", color: "#64748b",
-					fontSize: 12, fontWeight: 700,
-					background:
-						"repeating-linear-gradient(45deg,#eef2f7,#eef2f7 6px,#e3e9f1 6px,#e3e9f1 12px)",
-				}}
+				style={{ ...continuationStyle, cursor: "default" }}
 				title={`Part of a multi-day shift · ${assignment.rangeLabel}${assignment.isLast ? " · ends today" : " · continues"}`}
 			>
 				{assignment.isLast ? "→|" : "→"}
@@ -676,10 +700,21 @@ export default function ShiftBuilderPage() {
 		params: {
 			startDate,
 			endDate,
+			status: BUILDER_SHIFT_STATUSES,
 			...(selectedHomeId ? { homeId: selectedHomeId } : {}),
 			limit: 1000,
 		},
 	});
+
+	// The query already excludes cancelled/missed shifts server-side (see
+	// BUILDER_SHIFT_STATUSES); this is a belt-and-suspenders filter so a stray
+	// cancelled shift can never pre-fill the grid, flag casual workers, or flip the
+	// period into PUT (save) mode. Kept as `undefined` while loading so the pre-fill
+	// effect's `if (!activeShifts) return` guard still short-circuits.
+	const activeShifts = useMemo(
+		() => existingShifts?.filter((s) => s.status !== "cancelled"),
+		[existingShifts]
+	);
 
 	// Casual workers for the selected home's region
 	const homeRegion = homeDetail?.region ?? null;
@@ -714,8 +749,8 @@ export default function ShiftBuilderPage() {
 	// edits those times, `timesChanged` becomes true and the PUT payload will
 	// include the existing Day/Night cells so their times get updated too.
 	useEffect(() => {
-		if (!existingShifts) return;
-		const base = buildAssignmentsFromShifts(existingShifts);
+		if (!activeShifts) return;
+		const base = buildAssignmentsFromShifts(activeShifts);
 		baseAssignments.current = base;
 		originalTimes.current = { dayStart, dayEnd, nightStart, nightEnd };
 		setAssignments(base);
@@ -726,7 +761,7 @@ export default function ShiftBuilderPage() {
 	// dayStart/dayEnd/nightStart/nightEnd are intentionally omitted from deps —
 	// we only want to snapshot them at the moment shifts load, not re-run on every time change.
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [existingShifts]);
+	}, [activeShifts]);
 
 	// Auto-detect casual workers who have shifts in this home/period but aren't in
 	// the home's permanent roster. Runs whenever existingShifts or homeDetail.caregivers
@@ -745,8 +780,8 @@ export default function ShiftBuilderPage() {
 
 		// Build the set of genuinely extra workers from shift data
 		const extraMap = {};
-		if (existingShifts?.length) {
-			for (const shift of existingShifts) {
+		if (activeShifts?.length) {
+			for (const shift of activeShifts) {
 				const cg = shift.caregiver;
 				if (!cg || typeof cg === "string") continue;
 				const id = (cg._id || cg.id)?.toString();
@@ -772,7 +807,7 @@ export default function ShiftBuilderPage() {
 			return toAdd.length > 0 ? [...cleaned, ...toAdd] : cleaned;
 		});
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [existingShifts, homeDetail?.caregivers]);
+	}, [activeShifts, homeDetail?.caregivers]);
 
 	// Close the casual worker search dropdown when the user clicks anywhere outside it.
 	useEffect(() => {
@@ -876,7 +911,7 @@ export default function ShiftBuilderPage() {
 
 	// True when the selected period already has shifts from the server.
 	// Determines POST (create-only) vs PUT (create + update) mode.
-	const hasExistingShifts = (existingShifts?.length ?? 0) > 0;
+	const hasExistingShifts = (activeShifts?.length ?? 0) > 0;
 
 	// ─ Time-change tracking ─────────────────────────────────────────────────────
 	// When the user edits the Day/Night hour pickers after shifts have loaded, PUT
@@ -933,11 +968,15 @@ export default function ShiftBuilderPage() {
 		setAssignments((prev) => {
 			const caregiverMap = { ...(prev[caregiverId] || {}) };
 			const current      = caregiverMap[dateStr];
-			// Continuation markers belong to a multi-day shift edited via its
-			// start-day cell — they are read-only here.
-			if (current?.continuation) return prev;
-			// Preserve shiftId across cycles so PUT can target the right record
-			const shiftId = current?.shiftId;
+			// A continuation marker belongs to a multi-day shift owned by an
+			// earlier day's cell. Only its LAST day — which ends partway through
+			// (e.g. a night shift ending 07:00) — can still host a NEW shift for
+			// the rest of that day. Full intermediate days stay locked.
+			if (current?.continuation && !current.isLast) return prev;
+			// Never carry a continuation's shiftId onto the new shift — that id
+			// targets the earlier day's shift, not this one (it would make PUT
+			// mutate the wrong shift). New shifts on a continuation day are creates.
+			const shiftId = current?.continuation ? undefined : current?.shiftId;
 
 			if (!current || current.existing) {
 				caregiverMap[dateStr] = { type: "day", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
@@ -949,8 +988,12 @@ export default function ShiftBuilderPage() {
 				// Existing shift: custom → Day (DNC loop — no blank state for updates)
 				caregiverMap[dateStr] = { type: "day", customStart: "", customEnd: "", shiftId };
 			} else {
-				// New shift: custom → clear
-				delete caregiverMap[dateStr];
+				// New shift: custom → clear. If this cell was originally a
+				// continuation marker, restore it so the multi-day reference stays
+				// visible instead of leaving the cell blank.
+				const base = baseAssignments.current[caregiverId]?.[dateStr];
+				if (base?.continuation) caregiverMap[dateStr] = base;
+				else delete caregiverMap[dateStr];
 			}
 
 			return { ...prev, [caregiverId]: caregiverMap };
