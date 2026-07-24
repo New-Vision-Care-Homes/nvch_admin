@@ -19,7 +19,7 @@
 
 import { useMemo } from "react";
 import styles from "../payroll.module.css";
-import { fmtDayHeader } from "./tableHelpers";
+import { fmtDayHeader, buildNoteItems } from "./tableHelpers";
 
 
 // ============================================================
@@ -36,7 +36,7 @@ import { fmtDayHeader } from "./tableHelpers";
 //   `daily` array: [{ date: "YYYY-MM-DD", hours: number }, ...].
 //
 // Columns:
-//   Name | <day 1> | <day 2> | ... | <day N> | Regular | Total
+//   Name | <day 1> | <day 2> | ... | <day N> | Regular | Total | Notes
 //
 //   Day columns are generated dynamically from the dates in
 //   staff[0].daily (all caregivers share the same period dates).
@@ -67,6 +67,39 @@ import { fmtDayHeader } from "./tableHelpers";
  *                                  Each must have a populated `daily` array
  *                                  (requires { detail: "daily" } query param).
  */
+// ─── NotesCell ────────────────────────────────────────────────────────────────
+//
+// Shows a compact "{N} items" badge; hovering reveals a dark popup listing
+// every non-zero supplemental field. Empty rows show a muted dash.
+// Popup uses CSS :hover so no JS state is needed, and position: absolute
+// keeps it from expanding the row height.
+
+function NotesCell({ staffRow }) {
+    const items = buildNoteItems(staffRow);
+
+    if (items.length === 0) {
+        return <td className={`${styles.td} ${styles.tdNotes}`}><span className={styles.notesEmpty}>—</span></td>;
+    }
+
+    const label = items.length === 1 ? "1 item" : `${items.length} items`;
+
+    return (
+        <td className={`${styles.td} ${styles.tdNotes}`}>
+            <div className={styles.notesWrap}>
+                <span className={styles.notesBadge}>{label}</span>
+                <div className={styles.notesPopup}>
+                    {items.map(({ label: fieldLabel, value }) => (
+                        <div key={fieldLabel} className={styles.notesPopupItem}>
+                            <span className={styles.notesPopupLabel}>{fieldLabel}:</span> {value}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </td>
+    );
+}
+
+
 export default function DailyTable({ staff }) {
 
     // ── Day column headers ────────────────────────────────────────────────────
@@ -118,6 +151,9 @@ export default function DailyTable({ staff }) {
                         <th className={styles.th}>Regular</th>
 
                         <th className={`${styles.th} ${styles.thTotal}`}>Total</th>
+
+                        {/* Non-zero supplemental fields (all hours except regular, plus dollars) */}
+                        <th className={`${styles.th} ${styles.thNotes}`}>Notes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -144,6 +180,10 @@ export default function DailyTable({ staff }) {
 
                             <td className={styles.td}>{s.hours?.regular ?? "—"}</td>
                             <td className={`${styles.td} ${styles.tdTotal}`}>{s.totalHours ?? "—"}</td>
+
+                            {/* Notes cell — shows non-zero supplemental fields.
+                                Truncated inline; full list appears on hover via CSS tooltip. */}
+                            <NotesCell staffRow={s} />
                         </tr>
                     ))}
 
@@ -156,6 +196,7 @@ export default function DailyTable({ staff }) {
                         ))}
                         <td className={styles.td}>{totals.totalRegular}</td>
                         <td className={`${styles.td} ${styles.tdTotal}`}>{totals.grandTotal}</td>
+                        <td className={styles.td}></td>
                     </tr>
                 </tbody>
             </table>

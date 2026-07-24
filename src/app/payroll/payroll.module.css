@@ -206,6 +206,11 @@
 
 /* ── Table rows ───────────────────────────────────────────────────────────── */
 
+/* Fixed height keeps every row uniform regardless of Notes content */
+.tr {
+	height: 44px;
+}
+
 .tr:nth-child(even) td,
 .tr:nth-child(even) .stickyCol {
 	background: #fafafa;
@@ -260,6 +265,84 @@
 .tdTotal {
 	font-weight: 700;
 	color: var(--color-primary, #1c4a6e);
+}
+
+/* ── Notes column ─────────────────────────────────────────────────────────── */
+
+.thNotes {
+	min-width: 120px;
+	text-align: left;
+}
+
+.tdNotes {
+	min-width: 120px;
+	text-align: left;
+}
+
+/* Muted dash when a row has no supplemental data */
+.notesEmpty {
+	color: #9ca3af;
+}
+
+/*
+ * Hover-popup pattern:
+ *   .notesWrap    — relative container; triggers popup on :hover
+ *   .notesBadge   — compact pill showing field count (always visible)
+ *   .notesPopup   — dark tooltip box, shown on .notesWrap:hover
+ *   .notesPopupItem / .notesPopupLabel — rows inside the popup
+ */
+.notesWrap {
+	position: relative;
+	display: inline-block;
+	cursor: default;
+}
+
+.notesBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: #1c4a6e;
+	background: #e8f0f7;
+	border: 1px solid #b8cfe0;
+	border-radius: 999px;
+	white-space: nowrap;
+	letter-spacing: 0.01em;
+}
+
+.notesPopup {
+	position: absolute;
+	bottom: calc(100% + 6px);
+	left: 0;
+	background: #1e293b;
+	color: #f1f5f9;
+	padding: 9px 14px;
+	border-radius: 8px;
+	z-index: 50;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.15s ease, visibility 0.15s ease;
+	pointer-events: none;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+	min-width: 160px;
+	white-space: nowrap;
+}
+
+.notesWrap:hover .notesPopup {
+	opacity: 1;
+	visibility: visible;
+}
+
+.notesPopupItem {
+	font-size: 0.78rem;
+	line-height: 1.8;
+	color: #cbd5e1;
+}
+
+.notesPopupLabel {
+	font-weight: 600;
+	color: #f1f5f9;
 }
 
 /* ── Total / footer row ───────────────────────────────────────────────────── */
@@ -483,62 +566,6 @@
 	margin-bottom: 1px;
 }
 
-/* ── Overview table ───────────────────────────────────────────────────────── */
-
-.overviewTableWrap {
-	overflow-x: auto;
-	border: 1.5px solid #e8eef4;
-	border-radius: 12px;
-	-webkit-overflow-scrolling: touch;
-}
-
-.overviewTable {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.92rem;
-	min-width: 820px;
-}
-
-.overviewTable thead th {
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #94a3b8;
-	padding: 11px 16px;
-	border-bottom: 1.5px solid #e8eef4;
-	background: #fafbfc;
-	text-align: left;
-	white-space: nowrap;
-}
-
-.overviewThNum {
-	text-align: right !important;
-}
-
-/* ── Overview rows ────────────────────────────────────────────────────────── */
-
-.overviewRow td {
-	padding: 15px 16px;
-	color: #1e293b;
-	vertical-align: middle;
-	border-bottom: 1px solid #e8eef4;
-	background: #fff;
-	transition: background 0.12s ease;
-}
-
-.overviewRow:last-child td {
-	border-bottom: none;
-}
-
-.overviewRowEven td {
-	background: #f8fafc;
-}
-
-.overviewRow:hover td,
-.overviewRowEven:hover td {
-	background: #eff6ff !important;
-}
 
 /* ── Overview cells ───────────────────────────────────────────────────────── */
 
@@ -596,13 +623,6 @@
 
 .overviewStatusDash {
 	color: #94a3b8;
-}
-
-.overviewEmptyCell {
-	text-align: center;
-	padding: 3rem 1rem !important;
-	color: #9ca3af;
-	font-size: 0.875rem;
 }
 
 /* ── Unresolved / resolved badges ────────────────────────────────────────── */

@@ -201,14 +201,14 @@ export function addFooter(ws, totalCols) {
  * All cells are locked by default in Excel; this enforces that lock.
  * Users can scroll and select cells but cannot edit, format, or insert rows.
  *
- * A fixed internal password is used intentionally — payroll exports are
- * official records and must not be modified after generation. Recipients
- * cannot unlock the sheet from within Excel.
+ * A random UUID is generated per export and immediately discarded — it is
+ * never stored or logged anywhere. This means each sheet has a unique,
+ * non-recoverable password, so recipients cannot unprotect it from within Excel.
  *
  * @param {import("exceljs").Worksheet} ws
  */
 export async function lockSheet(ws) {
-    await ws.protect("NVCH_READONLY", {
+    await ws.protect(crypto.randomUUID(), {
         selectLockedCells:   true,   // allow scrolling/reading
         selectUnlockedCells: false,
         formatCells:         false,

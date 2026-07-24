@@ -60,7 +60,8 @@ const groupAvailabilityByDay = (availabilityArray) => {
 export default function Timesheet() {
 
 	// ── Route Params & Navigation ───────────────────────────────────────────
-	const { id } = useParams(); // Caregiver ID from the URL.
+	const { id } = useParams();
+	const router = useRouter();
 	const [status, setStatus] = useState(null); // { variant, text }
 
 	// =========================================================================
@@ -468,27 +469,50 @@ export default function Timesheet() {
 						<TableCell>Other Hours</TableCell>
 					</TableHeader>
 
-					{hours?.payPeriods && hours.payPeriods.length > 0 ? (
-						hours.payPeriods.map((period, idx) => (
-							<TableContent key={idx}>
-								<TableCell>{formatPayPeriodLabel(period) || "—"}</TableCell>
-								<TableCell>{utcToFullDisplay(period.periodStart, profile?.timezone || "America/Halifax")}</TableCell>
-								<TableCell>{utcToFullDisplay(period.periodEnd, profile?.timezone || "America/Halifax")}</TableCell>
-								<TableCell>
-									<span className={styles.hoursNum}>{period.totalHours ?? "—"}</span>
-									<span className={styles.hoursUnit}> hrs</span>
-								</TableCell>
-								<TableCell>
-									<span className={styles.hoursNum}>{period.hours ?? "—"}</span>
-									<span className={styles.hoursUnit}> hrs</span>
-								</TableCell>
-								<TableCell>
-									<span className={styles.hoursNum}>{period.otherHours ?? "—"}</span>
-									<span className={styles.hoursUnit}> hrs</span>
-								</TableCell>
-							</TableContent>
-						))
-					) : (
+					{hours?.payPeriods && hours.payPeriods.length > 0 ? (() => {
+						// Current period first, then remaining periods most-recent first
+						const currentYear   = hours.currentPeriod?.payYear;
+						const currentNumber = hours.currentPeriod?.periodNumber;
+						const sorted = [...hours.payPeriods].sort((a, b) => {
+							const aIsCurrent = a.payYear === currentYear && a.periodNumber === currentNumber;
+							const bIsCurrent = b.payYear === currentYear && b.periodNumber === currentNumber;
+							if (aIsCurrent) return -1;
+							if (bIsCurrent) return  1;
+							if (a.payYear !== b.payYear) return b.payYear - a.payYear;
+							return b.periodNumber - a.periodNumber;
+						});
+						return sorted.map((period) => {
+							const isCurrent = period.payYear === currentYear && period.periodNumber === currentNumber;
+							return (
+								<TableContent
+									key={`${period.payYear}-${period.periodNumber}`}
+									style={{ cursor: "pointer" }}
+									onClick={() => router.push(`/payroll/caregivers/${id}?payYear=${period.payYear}&periodNumber=${period.periodNumber}`)}
+								>
+									<TableCell>
+										<span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											{formatPayPeriodLabel(period) || "—"}
+											{isCurrent && <span className={styles.ongoingBadge}>Ongoing</span>}
+										</span>
+									</TableCell>
+									<TableCell>{utcToFullDisplay(period.periodStart, profile?.timezone || "America/Halifax")}</TableCell>
+									<TableCell>{utcToFullDisplay(period.periodEnd, profile?.timezone || "America/Halifax")}</TableCell>
+									<TableCell>
+										<span className={styles.hoursNum}>{period.totalHours ?? "—"}</span>
+										<span className={styles.hoursUnit}> hrs</span>
+									</TableCell>
+									<TableCell>
+										<span className={styles.hoursNum}>{period.hours ?? "—"}</span>
+										<span className={styles.hoursUnit}> hrs</span>
+									</TableCell>
+									<TableCell>
+										<span className={styles.hoursNum}>{period.otherHours ?? "—"}</span>
+										<span className={styles.hoursUnit}> hrs</span>
+									</TableCell>
+								</TableContent>
+							);
+						});
+					})() : (
 						<TableContent>
 							<TableCell colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
 								No pay periods found for this caregiver.

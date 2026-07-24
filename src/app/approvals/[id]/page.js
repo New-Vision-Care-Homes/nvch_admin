@@ -6,13 +6,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
-import Modal from "@components/UI/Modal";
 import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
+import { useShifts } from "@/hooks/useShifts";
 import {
     Undo2,
     ClipboardCheck,
@@ -25,17 +25,18 @@ import {
     Loader,
     ShieldCheck,
     Ban,
-    AlertTriangle,
     Timer,
     Scale,
     Banknote,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
-import { formatDateTime, formatDateOnly, toDateInput } from "@/utils/dates";
+import { formatDateTime, toDateInput } from "@/utils/dates";
 import AcknowledgmentDecision from "./_components/AcknowledgmentDecision";
 import CertificateApproval   from "./_components/CertificateApproval";
 import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
+import ApproveModal           from "./_components/ApproveModal";
+import MandateRejectModal     from "./_components/MandateRejectModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,20 +50,6 @@ import BankedHoursPayout      from "./_components/BankedHoursPayout";
 function formatCertName(raw) {
     if (!raw) return "—";
     return raw.replace(/-/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-/**
- * Format a pay period object as a human-readable date range string.
- * Also used in the approve modal's payout summary (BankedHoursPayout has its own copy).
- *
- * @param {{ start: string, end: string }|null|undefined} payPeriod
- * @returns {string}
- */
-function formatPayPeriod(payPeriod) {
-    if (!payPeriod) return "—";
-    const startDate = payPeriod.start ? formatDateOnly(payPeriod.start) : "";
-    const endDate   = payPeriod.end   ? formatDateOnly(payPeriod.end)   : "";
-    return startDate && endDate ? `${startDate} – ${endDate}` : startDate || endDate || "—";
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -115,15 +102,22 @@ function getBannerMeta(status, subjectType) {
  * ApprovalDetailPage  —  /approvals/[id]
  *
  * Renders the full detail view for a single approval request, regardless of type.
- * The left column shows type-specific context cards delegated to sub-components in
- * ./_components/. The right column shows the decision outcome and, for pending
- * approvals the current admin can act on, an inline action panel.
+ * Layout: two-column grid with a left column for request context and a right column
+ * for the decision outcome and, on pending approvals the admin can act on, an
+ * inline action panel.
  *
- * Supported subject types:
- *   • caregiver_certificate    → CertificateApproval
- *   • overtime_acknowledgment  → AcknowledgmentDecision
- *   • overtime_mandate         → OvertimeMandate
- *   • banked_hours_payout      → BankedHoursPayout
+ * The left column delegates all type-specific content to sub-components in
+ * ./_components/ — the page is only responsible for orchestration, state, and modals.
+ *
+ * Supported subject types and their sub-components:
+ *   caregiver_certificate   → CertificateApproval    (document preview, editable dates)
+ *   overtime_acknowledgment → AcknowledgmentDecision (shift info, waiver statement)
+ *   overtime_mandate        → OvertimeMandate         (shift link, overage context)
+ *   banked_hours_payout     → BankedHoursPayout       (requested hours, pay period)
+ *
+ * Modals are extracted as sub-components as well:
+ *   ApproveModal        — confirmation for Approve / Mandate / Approve Payout
+ *   MandateRejectModal  — reassign + remove flow for overtime_mandate rejections
  */
 export default function ApprovalDetailPage() {
 
@@ -134,18 +128,23 @@ export default function ApprovalDetailPage() {
 
     // ── UI state ──────────────────────────────────────────────────────────────
 
+    // Approve modal — note / reason is managed inside ApproveModal itself
     const [showApproveModal, setShowApproveModal] = useState(false);
-    const [approveReason,    setApproveReason]    = useState("");
 
+    // Inline reject form — used for caregiver_certificate and banked_hours_payout.
+    // overtime_mandate uses the MandateRejectModal instead (requires caregiver reassignment).
     const [showRejectForm,  setShowRejectForm]  = useState(false);
     const [rejectReason,    setRejectReason]    = useState("");
     const [rejectReasonErr, setRejectReasonErr] = useState("");
 
-    // "approved" | "rejected" | null — drives the post-action success banner.
+    // Mandate reject modal — all form state lives inside MandateRejectModal
+    const [showMandateRejectModal, setShowMandateRejectModal] = useState(false);
+
+    // "approved" | "rejected" | null — drives the post-action success banner
     const [actionSuccess, setActionSuccess] = useState(null);
 
-    // Date-editing state lives here (not in CertificateApproval) so the approve
-    // modal can read the draft values before the admin confirms.
+    // Date-editing state lives here (not inside CertificateApproval) so that
+    // ApproveModal can read the draft values before the admin confirms.
     const [isEditingDates, setIsEditingDates] = useState(false);
     const [draftDates,     setDraftDates]     = useState({ startDate: "", expiryDate: "", renewalDate: "" });
 
@@ -170,7 +169,7 @@ export default function ApprovalDetailPage() {
 
     const rawSubjectType = approval?.subjectType;
 
-    // Each approval type maps to a different permission slug.
+    // Each approval type maps to a different permission slug
     const canDecide = rawSubjectType === "overtime_mandate"
         ? permissionSlugs.includes("update_shifts")
         : rawSubjectType === "banked_hours_payout"
@@ -178,13 +177,25 @@ export default function ApprovalDetailPage() {
         : permissionSlugs.includes("approve_all_certificates") ||
           permissionSlugs.includes("approve_assigned_certificates");
 
-    // Must be called unconditionally (React Hooks rule) before any early return.
-    // The `enabled` flag suppresses the network call when there is no admin to look
-    // up — overtime_acknowledgment decisions are made by the caregiver on mobile.
+    // Must be called unconditionally before any early return (React Hooks rule).
+    // `enabled` suppresses the network call when there is no admin to look up —
+    // overtime_acknowledgment decisions are made by the caregiver on mobile.
     const decidedById = approval?.decision?.decidedBy;
     const { adminDetail: decidedByAdmin } = useAdmins({
         adminId: decidedById,
         enabled: !!decidedById && approval?.subjectType !== "overtime_acknowledgment",
+    });
+
+    // Fetch the shift so MandateRejectModal can build the reassignment payload.
+    // Only runs for overtime_mandate approvals (shiftId is undefined otherwise).
+    const {
+        shiftDetail,
+        updateUpcommingShift: updateShift,
+        isShiftActionPending,
+        cancelShift,
+        isCancelPending,
+    } = useShifts({
+        shiftId: approval?.subjectType === "overtime_mandate" ? approval?.subjectId : undefined,
     });
 
     // ── Loading / error guard ─────────────────────────────────────────────────
@@ -216,8 +227,8 @@ export default function ApprovalDetailPage() {
     const fileUrl         = subjectContext.fileUrl ?? null;
     const canViewFile     = !!fileUrl && (approval.status === "pending" || approval.status === "approved");
 
-    // overtime_acknowledgment is decided by the caregiver on mobile — use their
-    // name from context rather than looking up an admin record.
+    // overtime_acknowledgment is decided by the caregiver on mobile — use their name
+    // from context rather than looking up an admin record.
     const decidedByName = subjectType === "overtime_acknowledgment"
         ? caregiverName
         : decidedByAdmin
@@ -243,10 +254,13 @@ export default function ApprovalDetailPage() {
     };
 
     /**
-     * Submit the approve action. If the admin edited certificate dates, appends
-     * those overrides to the payload so the API records the corrected values.
+     * Submit the approve action. If the admin edited certificate dates, those draft
+     * values are sent as overrides so the API records the corrected dates.
+     * Called by ApproveModal's onConfirm with the note reason the admin typed.
+     *
+     * @param {string} reason — optional note from the admin
      */
-    const handleApprove = async () => {
+    const handleApprove = async (reason) => {
         try {
             const overrides = {};
             if (isEditingDates) {
@@ -254,20 +268,20 @@ export default function ApprovalDetailPage() {
                 if (draftDates.expiryDate)  overrides.expiryDate  = draftDates.expiryDate;
                 if (draftDates.renewalDate) overrides.renewalDate = draftDates.renewalDate;
             }
-            await approve({ id, reason: approveReason.trim() || undefined, ...overrides });
+            await approve({ id, reason: reason || undefined, ...overrides });
             setShowApproveModal(false);
-            setApproveReason("");
             setIsEditingDates(false);
             setDraftDates({ startDate: "", expiryDate: "", renewalDate: "" });
             setActionSuccess("approved");
         } catch (_) {
-            // approveError is populated by React Query and rendered inside the modal.
+            // approveError is populated by React Query and rendered inside ApproveModal.
         }
     };
 
     /**
      * Validate the reject reason and submit the reject action.
-     * A written reason is always required before the request goes through.
+     * Used for caregiver_certificate and banked_hours_payout types only.
+     * overtime_mandate rejections go through MandateRejectModal instead.
      */
     const handleReject = async () => {
         if (!rejectReason.trim()) {
@@ -340,7 +354,9 @@ export default function ApprovalDetailPage() {
                 </div>
             </div>
 
-            {/* ── Post-action success feedback ───────────────────────────── */}
+            {/* ── Post-action banners ────────────────────────────────────── */}
+
+            {/* Success banner — shown after a successful approve or reject */}
             <ActionMessage
                 variant="success"
                 message={
@@ -349,8 +365,8 @@ export default function ApprovalDetailPage() {
                         subjectType === "banked_hours_payout" ? "Payout approved."                 :
                         "Certificate approved successfully."
                     ) : actionSuccess === "rejected" ? (
-                        subjectType === "overtime_mandate"    ? "Caregiver removed from the shift." :
-                        subjectType === "banked_hours_payout" ? "Payout request rejected."          :
+                        subjectType === "overtime_mandate"    ? "Caregiver removed and shift reassigned." :
+                        subjectType === "banked_hours_payout" ? "Payout request rejected."               :
                         "Certificate rejected."
                     ) : null
                 }
@@ -503,8 +519,8 @@ export default function ApprovalDetailPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Actions — only visible to admins with the required permission on pending approvals.
-                        overtime_acknowledgment is decided by the caregiver on mobile — no admin action here. */}
+                    {/* Actions — only visible to admins with the required permission on pending
+                        approvals. overtime_acknowledgment is decided by the caregiver on mobile. */}
                     {isPending && canDecide && subjectType !== "overtime_acknowledgment" && (
                         <Card>
                             <CardHeader>
@@ -538,33 +554,29 @@ export default function ApprovalDetailPage() {
                                             <Button
                                                 variant="danger"
                                                 icon={<XCircle size={15} />}
-                                                onClick={() => setShowRejectForm(true)}
+                                                onClick={() => subjectType === "overtime_mandate"
+                                                    ? setShowMandateRejectModal(true)
+                                                    : setShowRejectForm(true)
+                                                }
                                             >
                                                 {subjectType === "overtime_mandate" ? "Remove from Shift" : "Reject"}
                                             </Button>
                                         </div>
                                     )}
 
-                                    {/* Inline reject form */}
+                                    {/* Inline reject form — caregiver_certificate and banked_hours_payout only.
+                                        overtime_mandate uses MandateRejectModal (requires caregiver reassignment). */}
                                     {showRejectForm && (
                                         <div className={styles.rejectForm}>
                                             <label className={styles.rejectLabel}>
-                                                {subjectType === "overtime_mandate" ? "Reason for removal" : "Reason for rejection"}
+                                                Reason for rejection
                                                 <span>*</span>
                                             </label>
-                                            {subjectType === "overtime_mandate" && (
-                                                <div className={styles.rejectWarn}>
-                                                    <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-                                                    The caregiver will be automatically unassigned from this shift.
-                                                </div>
-                                            )}
                                             <textarea
                                                 className={`${styles.rejectTextarea} ${rejectReasonErr ? styles.rejectTextareaError : ""}`}
                                                 rows={3}
                                                 placeholder={
-                                                    subjectType === "overtime_mandate"
-                                                        ? "Explain why the caregiver is being removed from this shift…"
-                                                        : subjectType === "banked_hours_payout"
+                                                    subjectType === "banked_hours_payout"
                                                         ? "Explain why this payout request is being rejected…"
                                                         : "Explain why this certificate is being rejected…"
                                                 }
@@ -599,11 +611,7 @@ export default function ApprovalDetailPage() {
                                                     disabled={isRejectPending}
                                                     onClick={handleReject}
                                                 >
-                                                    {isRejectPending
-                                                        ? "Submitting…"
-                                                        : subjectType === "overtime_mandate"
-                                                        ? "Confirm Remove"
-                                                        : "Confirm Reject"}
+                                                    {isRejectPending ? "Submitting…" : "Confirm Reject"}
                                                 </Button>
                                             </div>
                                         </div>
@@ -617,132 +625,40 @@ export default function ApprovalDetailPage() {
             </div>
 
             {/* ── Approve confirmation modal ─────────────────────────────── */}
-            <Modal isOpen={showApproveModal} onClose={() => { setShowApproveModal(false); setApproveReason(""); }}>
-                <div className={styles.approveModal}>
-                    <div className={styles.approveModalIcon}>
-                        <CheckCircle2 size={28} strokeWidth={1.5} />
-                    </div>
-                    <h2 className={styles.approveModalTitle}>
-                        {subjectType === "overtime_mandate"    ? "Mandate Overtime" :
-                         subjectType === "banked_hours_payout" ? "Approve Payout"   :
-                         "Approve Certificate"}
-                    </h2>
-                    <p className={styles.approveModalDesc}>
-                        {subjectType === "overtime_mandate"
-                            ? `${caregiverName} will remain assigned to the shift. Their overage will be recorded as overtime pay and clock-in will unblock.`
-                            : subjectType === "banked_hours_payout"
-                            ? "The requested hours will be paid out in the specified pay period."
-                            : "Are you sure you want to approve this? Please verify the issue and expiry dates are correct before confirming."}
-                    </p>
+            {/* Handles Approve / Mandate / Approve Payout for all non-mandate types.
+                Cert dates and payout summary are shown inside the modal for final review. */}
+            <ApproveModal
+                isOpen={showApproveModal}
+                onClose={() => setShowApproveModal(false)}
+                onConfirm={handleApprove}
+                subjectType={subjectType}
+                caregiverName={caregiverName}
+                subjectContext={subjectContext}
+                isEditingDates={isEditingDates}
+                draftDates={draftDates}
+                isApprovePending={isApprovePending}
+                approveError={approveError}
+            />
 
-                    {/* caregiver_certificate — verify dates before confirming; drafts shown if admin edited them */}
-                    {subjectType === "caregiver_certificate" && (
-                        <div className={styles.approveModalDatesCheck}>
-                            <div className={styles.approveModalDatesCheckHeader}>
-                                <AlertTriangle size={13} />
-                                Certificate Dates
-                            </div>
-                            <div className={styles.approveModalDatesCheckGrid}>
-                                <div className={styles.approveModalDatesCheckRow}>
-                                    <span className={styles.approveModalDatesCheckLabel}>Issue Date</span>
-                                    <span className={styles.approveModalDatesCheckValue}>
-                                        {isEditingDates && draftDates.startDate
-                                            ? formatDateOnly(draftDates.startDate)
-                                            : formatDateOnly(subjectContext.startDate)}
-                                    </span>
-                                </div>
-                                <div className={styles.approveModalDatesCheckRow}>
-                                    <span className={styles.approveModalDatesCheckLabel}>Expiry Date</span>
-                                    <span className={styles.approveModalDatesCheckValue}>
-                                        {isEditingDates && draftDates.expiryDate
-                                            ? formatDateOnly(draftDates.expiryDate)
-                                            : formatDateOnly(subjectContext.expiryDate)}
-                                    </span>
-                                </div>
-                                {(isEditingDates ? draftDates.renewalDate : subjectContext.renewalDate) && (
-                                    <div className={styles.approveModalDatesCheckRow}>
-                                        <span className={styles.approveModalDatesCheckLabel}>Renewal Date</span>
-                                        <span className={styles.approveModalDatesCheckValue}>
-                                            {isEditingDates && draftDates.renewalDate
-                                                ? formatDateOnly(draftDates.renewalDate)
-                                                : formatDateOnly(subjectContext.renewalDate)}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* banked_hours_payout — confirm the amount and target period before approving */}
-                    {subjectType === "banked_hours_payout" && (
-                        <div className={styles.approveModalDatesCheck}>
-                            <div className={styles.approveModalDatesCheckHeader}>
-                                <Banknote size={13} />
-                                Payout Summary
-                            </div>
-                            <div className={styles.approveModalDatesCheckGrid}>
-                                <div className={styles.approveModalDatesCheckRow}>
-                                    <span className={styles.approveModalDatesCheckLabel}>Requested Hours</span>
-                                    <span className={styles.approveModalDatesCheckValue}>
-                                        {subjectContext.requestedHours != null ? `${subjectContext.requestedHours} h` : "—"}
-                                    </span>
-                                </div>
-                                <div className={styles.approveModalDatesCheckRow}>
-                                    <span className={styles.approveModalDatesCheckLabel}>Pay Period</span>
-                                    <span className={styles.approveModalDatesCheckValue}>
-                                        {formatPayPeriod(subjectContext.payPeriod)}
-                                    </span>
-                                </div>
-                                <div className={styles.approveModalDatesCheckRow}>
-                                    <span className={styles.approveModalDatesCheckLabel}>Balance at Request</span>
-                                    <span className={styles.approveModalDatesCheckValue}>
-                                        {subjectContext.currentBalance != null ? `${subjectContext.currentBalance} h` : "—"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <ActionMessage variant="error" message={approveError} />
-
-                    <div className={styles.approveReasonField}>
-                        <label className={styles.approveReasonLabel}>
-                            Note (optional)
-                        </label>
-                        <textarea
-                            className={styles.approveReasonTextarea}
-                            rows={2}
-                            placeholder="Add an optional note…"
-                            value={approveReason}
-                            onChange={(e) => setApproveReason(e.target.value)}
-                        />
-                    </div>
-
-                    <div className={styles.approveModalActions}>
-                        <Button
-                            variant="secondary"
-                            onClick={() => { setShowApproveModal(false); setApproveReason(""); }}
-                            disabled={isApprovePending}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            icon={isApprovePending
-                                ? <Loader size={14} className={styles.spinnerIcon} />
-                                : <CheckCircle2 size={14} />
-                            }
-                            disabled={isApprovePending}
-                            onClick={handleApprove}
-                        >
-                            {isApprovePending ? "Submitting…"  :
-                             subjectType === "overtime_mandate"    ? "Confirm Mandate" :
-                             subjectType === "banked_hours_payout" ? "Confirm Payout"  :
-                             "Confirm Approve"}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
+            {/* ── Mandate reject modal ───────────────────────────────────── */}
+            {/* overtime_mandate only: caregiver typeahead + reason form + two-step
+                reject + shift reassignment logic lives entirely inside this component. */}
+            <MandateRejectModal
+                isOpen={showMandateRejectModal}
+                onClose={() => setShowMandateRejectModal(false)}
+                onSuccess={() => setActionSuccess("rejected")}
+                caregiverName={caregiverName}
+                approvalId={id}
+                approvalSubjectId={approval.subjectId}
+                shiftDetail={shiftDetail}
+                reject={reject}
+                updateShift={updateShift}
+                cancelShift={cancelShift}
+                isRejectPending={isRejectPending}
+                isShiftActionPending={isShiftActionPending}
+                isCancelPending={isCancelPending}
+                rejectError={rejectError}
+            />
 
         </PageLayout>
     );

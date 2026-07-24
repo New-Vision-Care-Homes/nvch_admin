@@ -556,6 +556,21 @@
 	letter-spacing: 0.03em;
 }
 
+/* Inline badge shown beside the label for the current (in-progress) pay period */
+.ongoingBadge {
+	display: inline-block;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #065f46;
+	background: #d1fae5;
+	border: 1px solid #6ee7b7;
+	padding: 0.1rem 0.5rem;
+	border-radius: 9999px;
+	white-space: nowrap;
+}
+
 /* ─── Scrollable Table Wrapper (5 rows + sticky header) ─────── */
 /*
   The Table component uses divs. .header has padding: 1rem 8px ≈ 52px.

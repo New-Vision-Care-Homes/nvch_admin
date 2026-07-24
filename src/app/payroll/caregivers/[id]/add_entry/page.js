@@ -115,8 +115,8 @@ export default function AddCaregiverEntryPage() {
                 payYear:      Number(selectedYear),
                 periodNumber: Number(selectedPeriod),
                 reason,
-                homeId:       selectedHomeId || null,
-                ...(note && { note }),
+                ...(note           && { note }),
+                ...(selectedHomeId && { homeId: selectedHomeId }),
             });
 
             router.push(

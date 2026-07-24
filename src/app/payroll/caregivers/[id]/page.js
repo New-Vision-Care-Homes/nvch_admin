@@ -121,7 +121,7 @@ export default function CaregiverPayrollSummaryPage() {
                     <Button
                         variant="secondary"
                         icon={<Undo2 size={15} />}
-                        onClick={() => router.back()}
+                        onClick={() => router.push("/payroll/manual_entries")}
                     >
                         Back
                     </Button>

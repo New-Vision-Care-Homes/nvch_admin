@@ -3,6 +3,7 @@ import {
     thinSide, medSide, solidFill,
     addHeader, addFooter, lockSheet, downloadWorkbook,
 } from "./excelHelpers";
+import { buildNoteItems, formatNoteText } from "../../_components/tableHelpers";
 
 // ============================================================
 // SECTION: exportPayrollHoursToExcel
@@ -13,7 +14,7 @@ import {
 //   plus a Regular summary column and a Total column.
 //
 // Columns:
-//   Staff Name | <M/D> | … | <M/D> | Regular | Total
+//   Staff Name | <M/D> | … | <M/D> | Regular | Total | Notes
 //   (day columns are derived from staff[0].daily)
 //
 // API field mapping:
@@ -55,8 +56,8 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
     // All caregivers in a period share the same set of dates.
     const days = staff[0]?.daily?.map((d) => d.date) ?? [];
 
-    // Name col + one col per day + Regular + Total
-    const totalCols = 1 + days.length + 2;
+    // Name col + one col per day + Regular + Total + Notes
+    const totalCols = 1 + days.length + 3;
 
     // ── Workbook & worksheet ───────────────────────────────────────────────────
     const wb = new ExcelJS.Workbook();
@@ -72,6 +73,7 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
         ...days.map(() => ({ width: 7 })), // one narrow col per day
         { width: 10 },                    // Regular
         { width: 10 },                    // Total
+        { width: 36 },                    // Notes (wider to fit multiple fields)
     ];
 
     // ── Header section (title + info card with logo) ───────────────────────────
@@ -87,7 +89,7 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
         const dt = new Date(d);
         return `${dt.getUTCMonth() + 1}/${dt.getUTCDate()}`;
     });
-    const headerRow  = ws.addRow(["Staff Name", ...dayHeaders, "Regular", "Total"]);
+    const headerRow  = ws.addRow(["Staff Name", ...dayHeaders, "Regular", "Total", "Notes"]);
     headerRow.height = 28;
     headerRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
         if (colNum > totalCols) return;
@@ -118,11 +120,16 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
                 return entry?.hours ?? 0;
             });
 
+            // Build notes text — non-zero supplemental hours/dollar fields
+            const noteItems = buildNoteItems(s);
+            const notesText = noteItems.length > 0 ? formatNoteText(noteItems) : "";
+
             const row = ws.addRow([
                 `${s.caregiver?.firstName ?? ""} ${s.caregiver?.lastName ?? ""}`.trim(),
                 ...dayCells,
                 s.hours?.regular ?? 0,
                 s.totalHours     ?? 0,
+                notesText,
             ]);
             row.height = 20;
 
@@ -133,7 +140,13 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
                 const isDayCol  = colNum > 1 && colNum <= days.length + 1;
                 const cellVal   = isDayCol ? (dayCells[colNum - 2] ?? 0) : 0;
 
-                cell.alignment = { horizontal: isNameCol ? "left" : "center", vertical: "middle", indent: isNameCol ? 1 : 0 };
+                const isNotesCol = colNum === totalCols;
+                cell.alignment = {
+                    horizontal: (isNameCol || isNotesCol) ? "left" : "center",
+                    vertical:   "middle",
+                    wrapText:   isNotesCol,
+                    indent:     (isNameCol || isNotesCol) ? 1 : 0,
+                };
                 cell.border    = {
                     top:    thinSide(),
                     bottom: isLast ? medSide() : thinSide(),
@@ -146,9 +159,9 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
                     : isDayCol && cellVal > 0 ? "FFB8D8F8"  // active day — light blue
                     : rowBg
                 );
-                cell.font = isNameCol
-                    ? { bold: true, size: 10, color: { argb: C_NAVY }, name: "Calibri" }
-                    : { size: 10,              color: { argb: C_NAVY }, name: "Calibri" };
+                cell.font = (isNameCol)
+                    ? { bold: true, size: 10, color: { argb: C_NAVY },    name: "Calibri" }
+                    : { size: 9,              color: { argb: "FF475569" }, name: "Calibri" };
             });
         });
 
@@ -165,6 +178,7 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
             ...dayTotals,
             staff.reduce((acc, s) => acc + (s.hours?.regular ?? 0), 0),
             staff.reduce((acc, s) => acc + (s.totalHours     ?? 0), 0),
+            "", // Notes column — no total
         ]);
         totalsRow.height = 22;
         totalsRow.eachCell({ includeEmpty: true }, (cell, colNum) => {

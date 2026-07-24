@@ -22,6 +22,7 @@ import { useRouter }    from "next/navigation";
 import { Eye, Loader2 } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState from "@components/UI/ErrorState";
+import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
 import { useCoverSheet } from "@/hooks/usePayroll";
 import { useHomes }      from "@/hooks/useHomes";
 import { usePayPeriod }  from "@/hooks/usePayPeriods";
@@ -308,81 +309,79 @@ export default function PayrollManualEntriesPage() {
 
                     {/* ── Staff table ──────────────────────────────────────── */}
                     {!isLoading && !fetchError && filtersComplete && (
-                        <div className={styles.overviewTableWrap}>
-                            <table className={styles.overviewTable}>
-                                <thead>
-                                    <tr>
-                                        <th>Staff Name</th>
-                                        <th className={styles.overviewThNum}>Regular Salary</th>
-                                        <th className={styles.overviewThNum}>Retro Bonus</th>
-                                        <th className={styles.overviewThNum}>Vacation Pay</th>
-                                        <th className={styles.overviewThNum}>Holiday Pay</th>
-                                        <th className={styles.overviewThNum}>Total Hours</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {staff.length > 0 ? (
-                                        <>
-                                            {staff.map((staffMember, idx) => (
-                                                <tr
-                                                    key={staffMember.caregiver?.id}
-                                                    className={`${styles.overviewRow} ${idx % 2 !== 0 ? styles.overviewRowEven : ""}`}
-                                                >
-                                                    <td>
-                                                        {staffMember.caregiver?.firstName} {staffMember.caregiver?.lastName}
-                                                    </td>
-                                                    <td className={styles.overviewNumCell}>
-                                                        {formatNumeric(staffMember.dollars?.regular_salary)}
-                                                    </td>
-                                                    <td className={styles.overviewNumCell}>
-                                                        {formatNumeric(staffMember.dollars?.retro_bonus)}
-                                                    </td>
-                                                    <td className={styles.overviewNumCell}>
-                                                        {formatNumeric(staffMember.dollars?.vacation_pay)}
-                                                    </td>
-                                                    <td className={styles.overviewNumCell}>
-                                                        {formatNumeric(staffMember.hours?.stat_pay)}
-                                                    </td>
-                                                    <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum}`}>
-                                                        {formatNumeric(staffMember.totalHours)}
-                                                    </td>
-                                                    <td className={styles.overviewActionsCell}>
-                                                        <button
-                                                            className={styles.overviewViewBtn}
-                                                            onClick={() => handleViewCaregiver(staffMember.caregiver?.id)}
-                                                            title="View caregiver payroll summary"
-                                                            disabled={!staffMember.caregiver?.id}
-                                                        >
-                                                            <Eye size={15} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-
-                                            {/* Totals footer row */}
-                                            <tr className={styles.totalRow}>
-                                                <td>Totals:</td>
-                                                <td className={styles.overviewNumCell}>{formatNumeric(totals.regularSalary)}</td>
-                                                <td className={styles.overviewNumCell}>{formatNumeric(totals.retroBonus)}</td>
-                                                <td className={styles.overviewNumCell}>{formatNumeric(totals.vacationPay)}</td>
-                                                <td className={styles.overviewNumCell}>{formatNumeric(totals.holidayPay)}</td>
-                                                <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum}`}>
-                                                    {formatNumeric(totals.totalHours)}
+                        <PageTable>
+                            <thead>
+                                <tr>
+                                    <th>Staff Name</th>
+                                    <PageTableHeadCell align="right">Regular Salary</PageTableHeadCell>
+                                    <PageTableHeadCell align="right">Retro Bonus</PageTableHeadCell>
+                                    <PageTableHeadCell align="right">Vacation Pay</PageTableHeadCell>
+                                    <PageTableHeadCell align="right">Holiday Pay</PageTableHeadCell>
+                                    <PageTableHeadCell align="right">Total Hours</PageTableHeadCell>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {staff.length > 0 ? (
+                                    <>
+                                        {staff.map((staffMember, idx) => (
+                                            <PageTableRow
+                                                key={staffMember.caregiver?.id}
+                                                isEven={idx % 2 !== 0}
+                                            >
+                                                <td>
+                                                    {staffMember.caregiver?.firstName} {staffMember.caregiver?.lastName}
                                                 </td>
-                                                <td></td>
-                                            </tr>
-                                        </>
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={7} className={styles.overviewEmptyCell}>
-                                                No staff found for this pay period.
+                                                <td className={styles.overviewNumCell}>
+                                                    {formatNumeric(staffMember.dollars?.regular_salary)}
+                                                </td>
+                                                <td className={styles.overviewNumCell}>
+                                                    {formatNumeric(staffMember.dollars?.retro_bonus)}
+                                                </td>
+                                                <td className={styles.overviewNumCell}>
+                                                    {formatNumeric(staffMember.dollars?.vacation_pay)}
+                                                </td>
+                                                <td className={styles.overviewNumCell}>
+                                                    {formatNumeric(staffMember.hours?.stat_pay)}
+                                                </td>
+                                                <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum}`}>
+                                                    {formatNumeric(staffMember.totalHours)}
+                                                </td>
+                                                <td className={styles.overviewActionsCell}>
+                                                    <button
+                                                        className={styles.overviewViewBtn}
+                                                        onClick={() => handleViewCaregiver(staffMember.caregiver?.id)}
+                                                        title="View caregiver payroll summary"
+                                                        disabled={!staffMember.caregiver?.id}
+                                                    >
+                                                        <Eye size={15} />
+                                                    </button>
+                                                </td>
+                                            </PageTableRow>
+                                        ))}
+
+                                        {/* Totals footer row */}
+                                        <PageTableRow className={styles.totalRow}>
+                                            <td>Totals:</td>
+                                            <td className={styles.overviewNumCell}>{formatNumeric(totals.regularSalary)}</td>
+                                            <td className={styles.overviewNumCell}>{formatNumeric(totals.retroBonus)}</td>
+                                            <td className={styles.overviewNumCell}>{formatNumeric(totals.vacationPay)}</td>
+                                            <td className={styles.overviewNumCell}>{formatNumeric(totals.holidayPay)}</td>
+                                            <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum}`}>
+                                                {formatNumeric(totals.totalHours)}
                                             </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                            <td></td>
+                                        </PageTableRow>
+                                    </>
+                                ) : (
+                                    <tr>
+                                        <PageTableCell isEmpty colSpan={7}>
+                                            No staff found for this pay period.
+                                        </PageTableCell>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </PageTable>
                     )}
 
                 </div>

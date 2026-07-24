@@ -240,60 +240,6 @@
 }
 
 /* ── Table area ── */
-.tableWrap {
-	overflow-x: auto;
-	border: 1.5px solid #e8eef4;
-	border-radius: 12px;
-}
-
-.homesTable {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.92rem;
-}
-
-.homesTable thead th {
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #94a3b8;
-	padding: 11px 16px;
-	border-bottom: 1.5px solid #e8eef4;
-	background: #fafbfc;
-	text-align: left;
-	white-space: nowrap;
-	position: sticky;
-	top: 0;
-	z-index: 1;
-}
-
-.homeRow {
-	cursor: pointer;
-}
-
-.homeRow:last-child td {
-	border-bottom: none;
-}
-
-.homeRow td {
-	padding: 15px 16px;
-	color: #1e293b;
-	vertical-align: middle;
-	border-bottom: 1px solid #e8eef4;
-	background: #fff;
-	transition: background 0.12s ease;
-}
-
-/* Alternating rows — same pattern as scheduling overview */
-.homeRowEven td {
-	background: #f8fafc;
-}
-
-.homeRow:hover td,
-.homeRowEven:hover td {
-	background: #eff6ff !important;
-}
 
 .homeNameCell {
 	white-space: nowrap;

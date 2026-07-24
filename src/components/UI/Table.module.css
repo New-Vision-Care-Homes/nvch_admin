@@ -208,3 +208,69 @@
 .t2PageBtnActive:hover {
 	background: #1c4a6e !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PageTable — bordered wrapper / striped rows / sticky header
+   Shared by Homes, Payroll Overview, and any other full-width list table.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ptWrap {
+	overflow-x: auto;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	-webkit-overflow-scrolling: touch;
+}
+
+.ptTable {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+
+.ptTable thead th {
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #94a3b8;
+	padding: 11px 16px;
+	border-bottom: 1.5px solid #e8eef4;
+	background: #fafbfc;
+	text-align: left;
+	white-space: nowrap;
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.ptRow td {
+	padding: 15px 16px;
+	color: #1e293b;
+	vertical-align: middle;
+	border-bottom: 1px solid #e8eef4;
+	background: #fff;
+	transition: background 0.12s ease;
+}
+
+.ptRow:last-child td {
+	border-bottom: none;
+}
+
+.ptRowEven td {
+	background: #f8fafc;
+}
+
+.ptRowClickable {
+	cursor: pointer;
+}
+
+.ptRowClickable:hover td {
+	background: #eff6ff !important;
+}
+
+.ptCellEmpty {
+	text-align: center;
+	padding: 3rem 1rem !important;
+	color: #9ca3af;
+	font-size: 0.875rem;
+}

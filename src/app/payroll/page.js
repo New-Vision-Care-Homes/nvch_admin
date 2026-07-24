@@ -27,6 +27,7 @@ import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
+import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
 import styles        from "./payroll.module.css";
 import { usePayPeriod }                          from "@/hooks/usePayPeriods";
 import { usePayrollOverview, useRecomputeStats } from "@/hooks/usePayroll";
@@ -342,16 +343,15 @@ export default function PayrollOverviewPage() {
                     <ErrorState isLoading={homesLoading} errorMessage={homesError} onRetry={refetchHomes} />
 
                     {!homesLoading && !homesError && (
-                        <div className={styles.overviewTableWrap}>
-                            <table className={styles.overviewTable}>
+                        <PageTable minWidth="820px">
                                 <thead>
                                     <tr>
                                         <th>Home</th>
                                         <th>Type</th>
                                         <th>Region</th>
                                         <th>Address</th>
-                                        <th className={styles.overviewThNum}>Regular Hrs</th>
-                                        <th className={styles.overviewThNum}>Total Hrs</th>
+                                        <PageTableHeadCell align="right">Regular Hrs</PageTableHeadCell>
+                                        <PageTableHeadCell align="right">Total Hrs</PageTableHeadCell>
                                         <th>Unresolved</th>
                                         <th>Status</th>
                                         <th></th>
@@ -363,9 +363,9 @@ export default function PayrollOverviewPage() {
                                         const typeColor   = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
                                         const regionColor = REGION_COLORS[home.region]       || COLOR_FALLBACK;
                                         return (
-                                            <tr
+                                            <PageTableRow
                                                 key={homeId}
-                                                className={`${styles.overviewRow} ${idx % 2 !== 0 ? styles.overviewRowEven : ""}`}
+                                                isEven={idx % 2 !== 0}
                                             >
                                                 {/* Home name — left accent border colour matches home type */}
                                                 <td
@@ -452,20 +452,19 @@ export default function PayrollOverviewPage() {
                                                         <Eye size={15} />
                                                     </button>
                                                 </td>
-                                            </tr>
+                                            </PageTableRow>
                                         );
                                     })}
 
                                     {rows.length === 0 && (
                                         <tr>
-                                            <td colSpan={9} className={styles.overviewEmptyCell}>
+                                            <PageTableCell isEmpty colSpan={9}>
                                                 No homes found.
-                                            </td>
+                                            </PageTableCell>
                                         </tr>
                                     )}
                                 </tbody>
-                            </table>
-                        </div>
+                        </PageTable>
                     )}
                 </div>
             </div>

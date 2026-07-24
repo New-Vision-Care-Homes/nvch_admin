@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import Modal from "@components/UI/Modal";
+import { PageTable, PageTableRow } from "@components/UI/Table";
 import {
 	HOME_TYPE_OPTIONS,
 	HOME_TYPE_COLORS,
@@ -185,34 +186,32 @@ export default function Homes() {
 						{!isLoading && !fetchError && (
 							<>
 								{homes && homes.length > 0 ? (
-									<div className={styles.tableWrap}>
-										<table className={styles.homesTable}>
-											<thead>
-												<tr>
-													<th>Home</th>
-													<th>Type</th>
-													<th>Region</th>
-													<th>Address</th>
-													<th>Caregivers</th>
-													<th>Admins</th>
-													<th>Clients</th>
-													<th>Status</th>
-													<th>Opened</th>
-													{canDelete && <th></th>}
-												</tr>
-											</thead>
-											<tbody>
-												{homes.map((home, idx) => {
-													const homeId = home.id || home._id;
-													const typeColor = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
-													const regionColor = REGION_COLORS[home.region] || COLOR_FALLBACK;
-													const isEven = idx % 2 !== 0;
-													return (
-														<tr
-															key={homeId}
-															className={`${styles.homeRow} ${isEven ? styles.homeRowEven : ""}`}
-															onClick={() => router.push(`/homes/${homeId}`)}
-														>
+									<PageTable>
+										<thead>
+											<tr>
+												<th>Home</th>
+												<th>Type</th>
+												<th>Region</th>
+												<th>Address</th>
+												<th>Caregivers</th>
+												<th>Admins</th>
+												<th>Clients</th>
+												<th>Status</th>
+												<th>Opened</th>
+												{canDelete && <th></th>}
+											</tr>
+										</thead>
+										<tbody>
+											{homes.map((home, idx) => {
+												const homeId = home.id || home._id;
+												const typeColor = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
+												const regionColor = REGION_COLORS[home.region] || COLOR_FALLBACK;
+												return (
+													<PageTableRow
+														key={homeId}
+														isEven={idx % 2 !== 0}
+														onClick={() => router.push(`/homes/${homeId}`)}
+													>
 															<td
 																className={styles.homeNameCell}
 																style={{ borderLeft: `4px solid ${typeColor.border}` }}
@@ -275,12 +274,11 @@ export default function Homes() {
 																	<Trash2 size={15} className={styles.deleteIcon} onClick={() => handleDeleteClick(homeId)} />
 																</td>
 															)}
-														</tr>
+														</PageTableRow>
 													);
 												})}
 											</tbody>
-										</table>
-									</div>
+										</PageTable>
 								) : (
 									<EmptyState title="No homes found" message="Try adjusting your search or filters." />
 								)}
