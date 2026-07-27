@@ -98,6 +98,30 @@ export const PERMISSION_SCHEMAS = [
 			"approve_all_certificates",
 			"approve_assigned_certificates"
 		]
+	},
+	{
+		module: "Notification",
+		slugs: [
+			"broadcast_to_all_caregivers",
+			"broadcast_to_all_admins",
+			"broadcast_to_regions",
+			"broadcast_to_homes",
+			"broadcast_to_individuals"
+		]
+	},
+	{
+		module: "Payroll",
+		slugs: [
+			"view_payroll",
+			"manage_payroll"
+		]
+	},
+	{
+		module: "Holidays",
+		slugs: [
+			"view_holidays",
+			"manage_holidays"
+		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit
 	// for every authenticated user (backend IMPLICIT_SELF_SLUGS) — they are not

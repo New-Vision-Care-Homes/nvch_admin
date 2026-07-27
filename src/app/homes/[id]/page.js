@@ -11,7 +11,7 @@ import IconButton from "@components/UI/IconButton";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import GeofenceMap from "@/components/UI/GeofenceMap";
-import { Edit, Search, Eye } from "lucide-react";
+import { Edit, Search, Eye, Undo2 } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
 import ErrorState from "@components/UI/ErrorState";
@@ -94,7 +94,7 @@ export default function HomeDetailPage() {
 			<div className={styles.header}>
 				<h1>{home.name}</h1>
 				<div className={styles.buttons}>
-					<Button variant="secondary" onClick={() => router.push("/homes")}>Back</Button>
+					<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.push("/homes")}>Back</Button>
 					{canEdit && (
 						<Link href={`/homes/${id}/edit`}>
 							<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>

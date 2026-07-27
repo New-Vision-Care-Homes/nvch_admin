@@ -181,7 +181,6 @@ export default function PayrollDetailPage() {
         },
         enabled: !!(homeId && payYear && periodNumber),
     });
-    console.log(coverSheet);
 
     // Convenience aliases into the cover-sheet response.
     const home         = coverSheet?.home  ?? null;

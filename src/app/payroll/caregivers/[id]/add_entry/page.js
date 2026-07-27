@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { Undo2, Save, User } from "lucide-react";
+import { Undo2, User } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import Button        from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -146,7 +146,6 @@ export default function AddCaregiverEntryPage() {
                     <Button
                         type="submit"
                         form="addEntryForm"
-                        icon={<Save size={15} />}
                         disabled={isCreating}
                     >
                         {isCreating ? "Saving…" : "Save Entry"}

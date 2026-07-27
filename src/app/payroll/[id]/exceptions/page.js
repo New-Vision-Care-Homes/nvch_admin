@@ -106,7 +106,6 @@ export default function PayrollExceptionsPage() {
         fetchError,
         refetch,
     } = usePayrollExceptions({ params: queryParams, enabled: queryEnabled });
-    console.log(unresolvedOverage);
 
 
     // ── Back-navigation URL ───────────────────────────────────────────────────

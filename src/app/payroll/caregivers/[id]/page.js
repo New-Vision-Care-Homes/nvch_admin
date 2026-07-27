@@ -87,8 +87,6 @@ export default function CaregiverPayrollSummaryPage() {
         enabled: !!(caregiverId && payYear && periodNumber),
     });
 
-    console.log(summary)
-
     // ── Derived values ────────────────────────────────────────────────────────
     const caregiverFullName =
         [summary?.caregiver?.firstName, summary?.caregiver?.lastName]

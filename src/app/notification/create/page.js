@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import {
-	ArrowLeft, Megaphone, Users, Building2, MapPin,
+	Undo2, Megaphone, Users, Building2, MapPin,
 	User, X, Search, Loader2, Send, CheckCircle2,
 } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
@@ -36,6 +39,30 @@ const TARGET_TYPES = [
 	{ value: "homes",          label: "By Home",        Icon: Building2, color: "#10b981", slug: "broadcast_to_homes"          },
 	{ value: "users",          label: "Specific Users", Icon: Users,     color: "#ec4899", slug: "broadcast_to_individuals"    },
 ];
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
+
+const schema = yup.object({
+	title:           yup.string().trim().required("Title is required"),
+	body:            yup.string().optional(),
+	sendPush:        yup.boolean().optional(),
+	targetType:      yup.string().required(),
+	selectedRegions: yup.array().when("targetType", {
+		is: "regions",
+		then:      (s) => s.min(1, "Select at least one region").required(),
+		otherwise: (s) => s.optional(),
+	}),
+	selectedHomes: yup.array().when("targetType", {
+		is: "homes",
+		then:      (s) => s.min(1, "Select at least one home").required(),
+		otherwise: (s) => s.optional(),
+	}),
+	selectedUsers: yup.array().when("targetType", {
+		is: "users",
+		then:      (s) => s.min(1, "Select at least one user").required(),
+		otherwise: (s) => s.optional(),
+	}),
+});
 
 // ─── UserSearch — multi-select caregivers + admins ────────────────────────────
 
@@ -221,56 +248,59 @@ export default function CreateNotificationPage() {
 	const { sendBroadcast, isBroadcastPending, broadcastError } = useNotifications({ fetchList: false });
 
 	const { profile } = useProfile();
-	const permissionSlugs = profile?.permissionSlugs ?? [];
+	const permissionSlugs    = profile?.permissionSlugs ?? [];
 	const allowedTargetTypes = TARGET_TYPES.filter(t => permissionSlugs.includes(t.slug));
 
-	const [title,           setTitle]           = useState("");
-	const [body,            setBody]            = useState("");
-	const [sendPush,        setSendPush]        = useState(false);
-	const [targetType,      setTargetType]      = useState("all_caregivers");
-	const [selectedRegions, setSelectedRegions] = useState([]);
-	const [selectedHomes,   setSelectedHomes]   = useState([]);
-	const [selectedUsers,   setSelectedUsers]   = useState([]);
-	const [formErrors,      setFormErrors]      = useState({});
-	const [success,         setSuccess]         = useState(false);
+	const [success, setSuccess] = useState(false);
 
-	// ── Validation ────────────────────────────────────────────────────────────
+	const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+		resolver: yupResolver(schema),
+		defaultValues: {
+			title:           "",
+			body:            "",
+			sendPush:        false,
+			targetType:      "all_caregivers",
+			selectedRegions: [],
+			selectedHomes:   [],
+			selectedUsers:   [],
+		},
+	});
 
-	function validate() {
-		const errs = {};
-		if (!title.trim()) errs.title = "Title is required";
-		if (targetType === "regions" && selectedRegions.length === 0) errs.target = "Select at least one region";
-		if (targetType === "homes"   && selectedHomes.length   === 0) errs.target = "Select at least one home";
-		if (targetType === "users"   && selectedUsers.length   === 0) errs.target = "Select at least one user";
-		setFormErrors(errs);
-		return Object.keys(errs).length === 0;
-	}
+	const sendPush        = watch("sendPush");
+	const targetType      = watch("targetType");
+	const selectedRegions = watch("selectedRegions") ?? [];
+	const selectedHomes   = watch("selectedHomes")   ?? [];
+	const selectedUsers   = watch("selectedUsers")   ?? [];
+	const bodyValue       = watch("body") ?? "";
+
+	const targetError =
+		targetType === "regions" ? errors.selectedRegions?.message :
+		targetType === "homes"   ? errors.selectedHomes?.message   :
+		targetType === "users"   ? errors.selectedUsers?.message   :
+		null;
 
 	// ── Submit ────────────────────────────────────────────────────────────────
 
-	async function handleSubmit(e) {
-		e.preventDefault();
-		if (!validate()) return;
-
-		const target = { type: targetType };
-		if (targetType === "regions") target.regions = selectedRegions;
-		if (targetType === "homes")   target.ids     = selectedHomes.map(h => h._id);
-		if (targetType === "users")   target.ids     = selectedUsers.map(u => u._id);
+	const onSubmit = async (data) => {
+		const target = { type: data.targetType };
+		if (data.targetType === "regions") target.regions = data.selectedRegions;
+		if (data.targetType === "homes")   target.ids     = data.selectedHomes.map(h => h._id);
+		if (data.targetType === "users")   target.ids     = data.selectedUsers.map(u => u._id);
 
 		try {
-			await sendBroadcast({ title: title.trim(), body: body.trim() || undefined, sendPush, target });
+			await sendBroadcast({ title: data.title.trim(), body: data.body?.trim() || undefined, sendPush: data.sendPush, target });
 			setSuccess(true);
 			setTimeout(() => router.push("/notification"), 1500);
 		} catch {
 			// broadcastError from the hook surfaces the error message below
 		}
-	}
+	};
 
-	function toggleRegion(r) {
-		setSelectedRegions(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
-		setFormErrors(prev => ({ ...prev, target: undefined }));
-	}
-
+	const toggleRegion = (r) =>
+		setValue("selectedRegions", selectedRegions.includes(r)
+			? selectedRegions.filter(x => x !== r)
+			: [...selectedRegions, r]
+		);
 
 	return (
 		<PageLayout>
@@ -289,7 +319,7 @@ export default function CreateNotificationPage() {
 					</div>
 					<Button
 						variant="secondary"
-						icon={<ArrowLeft size={15} />}
+						icon={<Undo2 size={15} />}
 						onClick={() => router.push("/notification")}
 					>
 						Back
@@ -297,7 +327,7 @@ export default function CreateNotificationPage() {
 				</div>
 			</div>
 
-			<form onSubmit={handleSubmit} className={styles.form}>
+			<form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
 
 				{/* ── Message ──────────────────────────────────────────────────── */}
 				<section className={styles.card}>
@@ -309,16 +339,12 @@ export default function CreateNotificationPage() {
 						</label>
 						<input
 							type="text"
-							className={`${styles.input} ${formErrors.title ? styles.inputError : ""}`}
-							value={title}
-							onChange={e => {
-								setTitle(e.target.value);
-								if (formErrors.title) setFormErrors(prev => ({ ...prev, title: undefined }));
-							}}
+							className={`${styles.input} ${errors.title ? styles.inputError : ""}`}
 							placeholder="e.g. Office closed Monday"
 							maxLength={100}
+							{...register("title")}
 						/>
-						{formErrors.title && <p className={styles.errorText}>{formErrors.title}</p>}
+						{errors.title && <p className={styles.errorText}>{errors.title.message}</p>}
 					</div>
 
 					<div className={styles.field}>
@@ -327,13 +353,12 @@ export default function CreateNotificationPage() {
 						</label>
 						<textarea
 							className={styles.textarea}
-							value={body}
-							onChange={e => setBody(e.target.value)}
 							placeholder="Add more context or instructions…"
 							rows={3}
 							maxLength={500}
+							{...register("body")}
 						/>
-						<p className={styles.charCount}>{body.length} / 500</p>
+						<p className={styles.charCount}>{bodyValue.length} / 500</p>
 					</div>
 
 					<div className={styles.toggleRow}>
@@ -350,7 +375,7 @@ export default function CreateNotificationPage() {
 							role="switch"
 							aria-pressed={sendPush}
 							className={`${styles.toggle} ${sendPush ? styles.toggleOn : ""}`}
-							onClick={() => setSendPush(v => !v)}
+							onClick={() => setValue("sendPush", !sendPush)}
 						>
 							<span className={styles.toggleThumb} />
 						</button>
@@ -369,10 +394,7 @@ export default function CreateNotificationPage() {
 								type="button"
 								className={`${styles.typeOption} ${targetType === value ? styles.typeOptionActive : ""}`}
 								style={targetType === value ? { borderColor: color, background: `${color}0d` } : {}}
-								onClick={() => {
-									setTargetType(value);
-									setFormErrors(prev => ({ ...prev, target: undefined }));
-								}}
+								onClick={() => setValue("targetType", value)}
 							>
 								<span
 									className={styles.typeIconBox}
@@ -425,8 +447,8 @@ export default function CreateNotificationPage() {
 					{targetType === "homes" && (
 						<HomeSearch
 							selected={selectedHomes}
-							onAdd={h => setSelectedHomes(prev => [...prev, h])}
-							onRemove={id => setSelectedHomes(prev => prev.filter(h => h._id !== id))}
+							onAdd={h  => setValue("selectedHomes", [...selectedHomes, h])}
+							onRemove={id => setValue("selectedHomes", selectedHomes.filter(h => h._id !== id))}
 						/>
 					)}
 
@@ -434,13 +456,13 @@ export default function CreateNotificationPage() {
 					{targetType === "users" && (
 						<UserSearch
 							selected={selectedUsers}
-							onAdd={u => setSelectedUsers(prev => [...prev, u])}
-							onRemove={id => setSelectedUsers(prev => prev.filter(u => u._id !== id))}
+							onAdd={u  => setValue("selectedUsers", [...selectedUsers, u])}
+							onRemove={id => setValue("selectedUsers", selectedUsers.filter(u => u._id !== id))}
 						/>
 					)}
 
-					{formErrors.target && (
-						<p className={`${styles.errorText} ${styles.targetError}`}>{formErrors.target}</p>
+					{targetError && (
+						<p className={`${styles.errorText} ${styles.targetError}`}>{targetError}</p>
 					)}
 				</section>
 

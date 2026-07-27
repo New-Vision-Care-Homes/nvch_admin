@@ -5,6 +5,7 @@ import PageLayout from "@components/layout/PageLayout";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@components/UI/Button";
+import { Undo2, Pencil } from "lucide-react";
 import { Card, CardHeader, CardContent, InputField, InfoField } from "@components/UI/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
@@ -128,9 +129,9 @@ export default function PermissionGroupDetailPage() {
 							</h1>
 							{!isEditing && (
 								<div style={{ display: 'flex', gap: '10px' }}>
-									<Button variant="secondary" onClick={() => router.back()}>Back</Button>
+									<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.back()}>Back</Button>
 									{canUpdate && (
-										<Button variant="primary" onClick={() => { setIsEditing(true); setSuccessMessage(null); }}>Edit</Button>
+										<Button variant="primary" icon={<Pencil size={16} />} onClick={() => { setIsEditing(true); setSuccessMessage(null); }}>Edit</Button>
 									)}
 								</div>
 							)}

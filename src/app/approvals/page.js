@@ -118,8 +118,6 @@ export default function ApprovalsPage() {
 		fetchQueue: true,
 	});
 
-	console.log(approvals);
-
 	return (
 		<PageLayout>
 

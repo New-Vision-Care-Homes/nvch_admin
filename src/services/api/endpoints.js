@@ -101,6 +101,12 @@ export const API_ENDPOINTS = {
 		ENTRY_VOID:        (id) => `/api/payroll/entries/${id}/void`,
 	},
 
+	/* All related endpoints for stat holidays */
+	HOLIDAYS: {
+		BASE:    '/api/holidays',
+		BY_ID:   (id) => `/api/holidays/${id}`,
+	},
+
 	/* All related endpoints for notifications */
 	NOTIFICATIONS: {
 		BASE: '/api/notifications',

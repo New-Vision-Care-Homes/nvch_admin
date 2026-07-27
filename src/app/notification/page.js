@@ -189,7 +189,6 @@ export default function NotificationsPage() {
 		isActionPending,
 		fetchNotificationError,
 	} = useNotifications({ params, fetchList: true });
-	console.log(notifications);
 
 	const handleNotificationClick = async (n) => {
 		// Always mark as read first
