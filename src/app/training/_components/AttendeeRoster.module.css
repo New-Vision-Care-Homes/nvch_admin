@@ -1,0 +1,44 @@
+/* ── Column widths ────────────────────────────────────────────────────────── */
+
+.colName    { flex: 1.4; min-width: 130px; }
+.colStatus  { flex: 0.9; min-width: 100px; }
+.colNotes   { flex: 1.6; min-width: 140px; }
+.colDate    { flex: 1; min-width: 100px; }
+.colDecided { flex: 1.6; min-width: 160px; }
+.colActions { flex: 0.7; min-width: 90px; }
+
+/* ── Status pill ──────────────────────────────────────────────────────────── */
+
+.statusPill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 0.74rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.statusPending   { background: #f3f4f6; color: #6b7280; border: 1.5px solid #d1d5db; }
+.statusAttended  { background: #dbeafe; color: #1d4ed8; border: 1.5px solid #93c5fd; }
+.statusCompleted { background: #d1fae5; color: #065f46; border: 1.5px solid #6ee7b7; }
+.statusRetake    { background: #fef3c7; color: #92400e; border: 1.5px solid #fcd34d; }
+.statusFailed    { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }
+
+/* ── Misc ─────────────────────────────────────────────────────────────────── */
+
+.emptyNote {
+	font-size: 0.85rem;
+	color: #9ca3af;
+	font-style: italic;
+}
+
+.decidedNote {
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
+.actionsRow {
+	display: flex;
+	gap: 6px;
+}

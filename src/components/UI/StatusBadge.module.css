@@ -1,0 +1,46 @@
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* ── Size variants ────────────────────────────────────────────────────────── */
+
+.pill {
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 0.74rem;
+}
+
+.detail {
+	padding: 3px 12px;
+	border-radius: 9999px;
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.tag {
+	padding: 4px 11px;
+	border-radius: 8px;
+	font-size: 0.65rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+/* ── Tone variants ────────────────────────────────────────────────────────── */
+
+.success { background: #d1fae5; color: #065f46; }
+.info    { background: #dbeafe; color: #1d4ed8; }
+.neutral { background: #f3f4f6; color: #6b7280; }
+.warning { background: #fef3c7; color: #92400e; }
+.danger  { background: #fee2e2; color: #991b1b; }
+
+.pill.success { border: 1.5px solid #6ee7b7; }
+.pill.info    { border: 1.5px solid #93c5fd; }
+.pill.neutral { border: 1.5px solid #d1d5db; }
+.pill.warning { border: 1.5px solid #fcd34d; }
+.pill.danger  { border: 1.5px solid #fca5a5; }

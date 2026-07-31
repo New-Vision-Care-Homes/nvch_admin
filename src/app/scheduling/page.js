@@ -73,7 +73,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
 import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
-import { exportScheduleToExcel } from "@/utils/exportSchedule";
+import { exportScheduleToExcel } from "@/utils/excelExport/scheduleSheet";
 import { formatPayPeriodLabel } from "@/utils/payPeriod";
 import logoImg from "@/assets/logo/nv.png";
 

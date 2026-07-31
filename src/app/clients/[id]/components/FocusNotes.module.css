@@ -295,23 +295,6 @@
 	color: #374151;
 }
 
-/* ── Shift status badge ───────────────────────────────────────────────────── */
-.statusBadge {
-	display: inline-block;
-	padding: 2px 9px;
-	border-radius: 999px;
-	font-size: 0.68rem;
-	font-weight: 700;
-	text-transform: capitalize;
-	white-space: nowrap;
-}
-
-.statusScheduled   { background: #e0f2fe; color: #0369a1; }
-.statusInProgress  { background: #fef3c7; color: #92400e; }
-.statusCompleted   { background: #dcfce7; color: #166534; }
-.statusCancelled   { background: #fee2e2; color: #991b1b; }
-.statusMissed      { background: #f3f4f6; color: #374151; }
-
 /* ── View detail button ───────────────────────────────────────────────────── */
 .viewBtn {
 	display: inline-flex;

@@ -9,6 +9,7 @@ import { phoneRule, shortTextRule } from "@/utils/validation";
 
 import { Card, CardHeader, InfoField, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
+import StatusBadge from "@components/UI/StatusBadge";
 import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
@@ -148,9 +149,11 @@ export default function ProfilePage() {
 								<div className={styles.infoGrid}>
 									<InfoField label="Status">
 										<div className={styles.paddingVal}>
-											<span className={`${styles.statusBadge} ${profile.isActive ? styles.active : styles.inactive}`}>
-												{profile.isActive ? "Active" : "Inactive"}
-											</span>
+											<StatusBadge
+												label={profile.isActive ? "Active" : "Inactive"}
+												tone={profile.isActive ? "success" : "neutral"}
+												size="detail"
+											/>
 										</div>
 									</InfoField>
 

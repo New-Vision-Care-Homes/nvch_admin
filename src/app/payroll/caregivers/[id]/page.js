@@ -9,6 +9,7 @@ import { Undo2, User, ClipboardList, Plus, Eye } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState from "@components/UI/ErrorState";
 import Button     from "@components/UI/Button";
+import IconButton  from "@components/UI/IconButton";
 import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useProfile } from "@/hooks/useProfile";
@@ -119,7 +120,7 @@ export default function CaregiverPayrollSummaryPage() {
                     <Button
                         variant="secondary"
                         icon={<Undo2 size={15} />}
-                        onClick={() => router.push("/payroll/manual_entries")}
+                        onClick={() => router.back()}
                     >
                         Back
                     </Button>
@@ -285,15 +286,14 @@ export default function CaregiverPayrollSummaryPage() {
                                                     </span>
                                                 </td>
                                                 <td className={styles.entryActionsCell}>
-                                                    <button
-                                                        className={styles.entryViewBtn}
+                                                    <IconButton
                                                         onClick={() => router.push(
                                                             `/payroll/caregivers/${caregiverId}/entries/${entry.id}?payYear=${payYear}&periodNumber=${periodNumber}`
                                                         )}
                                                         title="View entry details"
                                                     >
                                                         <Eye size={15} />
-                                                    </button>
+                                                    </IconButton>
                                                 </td>
                                             </tr>
                                         ))}

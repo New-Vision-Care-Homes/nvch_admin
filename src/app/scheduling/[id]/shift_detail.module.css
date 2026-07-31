@@ -91,41 +91,6 @@
 	flex-shrink: 0;
 }
 
-/* ── Status badge ────────────────────────────────────────────────────────── */
-.statusBadge {
-	padding: 3px 12px;
-	border-radius: 9999px;
-	font-size: 0.72rem;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.status_scheduled {
-	background: #e0f2fe;
-	color: #0369a1;
-}
-
-.status_in_progress {
-	background: #fef3c7;
-	color: #92400e;
-}
-
-.status_completed {
-	background: #dcfce7;
-	color: #166534;
-}
-
-.status_cancelled {
-	background: #fee2e2;
-	color: #991b1b;
-}
-
-.status_default {
-	background: #f3f4f6;
-	color: #374151;
-}
-
 /* Shown inside .badgeRow when extraHours.ackStatus === "pending" */
 .overtimePendingBadge {
 	padding: 3px 10px;

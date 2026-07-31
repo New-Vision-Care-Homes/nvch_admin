@@ -5,7 +5,9 @@ import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
 import { utcToDisplayTime, utcToWeekday, utcToDate } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
+import StatusBadge from "@components/UI/StatusBadge";
 import PageLayout from "@components/layout/PageLayout";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe, AlertTriangle } from "lucide-react";
 import styles from "./shift_list.module.css";
 import Link from "next/link";
@@ -41,9 +43,6 @@ export default function ShiftListPage() {
 		startParam && endParam
 			? `${utcToDisplayTime(startParam, profile?.timezone || "America/Halifax")} – ${utcToDisplayTime(endParam, profile?.timezone || "America/Halifax")}`
 			: "";
-
-	const statusClass = (status) =>
-		styles[`status_${status}`] || styles.status_default;
 
 	return (
 		<PageLayout>
@@ -157,9 +156,11 @@ export default function ShiftListPage() {
 								{/* Status badge — plus a secondary indicator when a voluntary overtime
 								    acknowledgment is still pending from the caregiver */}
 								<div className={styles.statusBadgeGroup}>
-									<span className={`${styles.statusBadge} ${statusClass(shift.status)}`}>
-										{shift.status?.replace(/_/g, " ") || "—"}
-									</span>
+									<StatusBadge
+										label={shift.status?.replace(/_/g, " ") || "—"}
+										tone={SHIFT_STATUS_TONE[shift.status] || "neutral"}
+										size="tag"
+									/>
 									{shift.extraHours?.ackStatus === "pending" && (
 										<span className={styles.overtimePendingBadge}>Overtime Pending</span>
 									)}

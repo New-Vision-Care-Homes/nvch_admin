@@ -1,0 +1,130 @@
+/* ── Search field ─────────────────────────────────────────────────────────── */
+
+.searchField {
+	position: relative;
+}
+
+.searchInputRow {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.searchIcon {
+	position: absolute;
+	left: 10px;
+	color: #9ca3af;
+	pointer-events: none;
+	flex-shrink: 0;
+}
+
+.searchInput {
+	width: 100%;
+	padding: 9px 36px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #111827;
+	outline: none;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.searchInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.searchSpinner {
+	position: absolute;
+	right: 10px;
+	color: #9ca3af;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.searchDropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+	z-index: 50;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.searchEmpty {
+	padding: 12px 14px;
+	font-size: 0.875rem;
+	color: #9ca3af;
+	text-align: center;
+	margin: 0;
+}
+
+.searchOption {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 9px 14px;
+	text-align: left;
+	background: none;
+	border: none;
+	cursor: pointer;
+	font-size: 0.875rem;
+	color: #374151;
+	transition: background 0.1s;
+	font-family: inherit;
+}
+
+.searchOption:hover {
+	background: #f9fafb;
+}
+
+/* ── Selected chips ───────────────────────────────────────────────────────── */
+
+.chipList {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 8px 4px 10px;
+	background: #f3f4f6;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	color: #374151;
+}
+
+.chipRemove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #9ca3af;
+	padding: 0;
+	margin-left: 1px;
+	border-radius: 3px;
+	line-height: 1;
+	transition: color 0.1s;
+}
+
+.chipRemove:hover {
+	color: #dc2626;
+}

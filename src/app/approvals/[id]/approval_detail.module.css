@@ -80,44 +80,6 @@
 	flex-shrink: 0;
 }
 
-/* ── Status badge ──────────────────────────────────────────────────────────── */
-
-.statusBadge {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 4px 12px;
-	font-size: 0.78rem;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	border-radius: 999px;
-	white-space: nowrap;
-}
-
-.status_pending {
-	color: #92400e;
-	background: #fef3c7;
-	border: 1px solid #fcd34d;
-}
-
-.status_approved {
-	color: #065f46;
-	background: #d1fae5;
-	border: 1px solid #6ee7b7;
-}
-
-.status_rejected {
-	color: #991b1b;
-	background: #fee2e2;
-	border: 1px solid #fca5a5;
-}
-
-.status_cancelled {
-	color: #374151;
-	background: #f3f4f6;
-	border: 1px solid #d1d5db;
-}
-
 /* ── Main grid ────────────────────────────────────────────────────────────── */
 
 .mainGrid {

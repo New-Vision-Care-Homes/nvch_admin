@@ -1,0 +1,90 @@
+// ============================================================
+// trainingService.js
+// ------------------------------------------------------------
+// HTTP layer for admin-scheduled trainings (e.g. UMAB).
+//
+// All methods unwrap axios's `data.data` so callers receive
+// the backend payload directly (no nesting).
+//
+// Permissions required by the backend:
+//   Read  — view_trainings OR view_payroll (either is sufficient)
+//   Write — manage_trainings
+// ============================================================
+
+import axiosClient from '../axiosClient';
+import { API_ENDPOINTS } from '../endpoints';
+
+export const trainingService = {
+
+    // ── Read ──────────────────────────────────────────────────────────────────
+
+    /**
+     * List trainings.
+     * Params: { from?, to?, type? } — from/to filter on startTime, type is an
+     * exact trainingType match. All optional and combinable.
+     * Response shape: { trainings: Training[] }
+     */
+    getAll: async (params = {}) => {
+        const { data } = await axiosClient.get(API_ENDPOINTS.TRAININGS.BASE, { params });
+        return data?.data;
+    },
+
+    /**
+     * Fetch a single training by ID.
+     * Response shape: { training: Training }
+     */
+    getById: async (id) => {
+        const { data } = await axiosClient.get(API_ENDPOINTS.TRAININGS.BY_ID(id));
+        return data?.data;
+    },
+
+    // ── Write ─────────────────────────────────────────────────────────────────
+
+    /** Create a new training. Returns { training } on success (201). */
+    create: async (body) => {
+        const { data } = await axiosClient.post(API_ENDPOINTS.TRAININGS.BASE, body);
+        return data?.data;
+    },
+
+    /**
+     * Partial update — only send fields to change.
+     * Sending site, trainers, or payRules replaces the whole value.
+     */
+    update: async (id, body) => {
+        const { data } = await axiosClient.put(API_ENDPOINTS.TRAININGS.BY_ID(id), body);
+        return data?.data;
+    },
+
+    /** Cancel a training (soft — sets status: "cancelled", keeps the record). */
+    cancel: async (id) => {
+        const { data } = await axiosClient.delete(API_ENDPOINTS.TRAININGS.BY_ID(id));
+        return data?.data;
+    },
+
+    // ── Attendees ────────────────────────────────────────────────────────────
+
+    /**
+     * Add attendees (sequential, partial-success).
+     * Response shape: { training, summary: { total, added, failed }, failed: [] }
+     */
+    addAttendees: async (id, caregiverIds) => {
+        const { data } = await axiosClient.post(API_ENDPOINTS.TRAININGS.ATTENDEES(id), { caregiverIds });
+        return data?.data;
+    },
+
+    /** Remove an attendee. Response shape: { training } */
+    removeAttendee: async (id, caregiverId) => {
+        const { data } = await axiosClient.delete(API_ENDPOINTS.TRAININGS.ATTENDEE_BY_ID(id, caregiverId));
+        return data?.data;
+    },
+
+    /**
+     * Set an attendee's status.
+     * body: { status, retakeDate?, notes? }
+     * Response shape: { training }
+     */
+    setAttendeeStatus: async (id, caregiverId, body) => {
+        const { data } = await axiosClient.put(API_ENDPOINTS.TRAININGS.ATTENDEE_BY_ID(id, caregiverId), body);
+        return data?.data;
+    },
+};

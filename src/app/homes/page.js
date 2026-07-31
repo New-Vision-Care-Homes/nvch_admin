@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./homes.module.css";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import Pagination from "@components/UI/Pagination";
 import Link from "next/link";
-import { Building2, Trash2, Plus, Users, User, MapPin, Search, X } from "lucide-react";
+import { Building2, Trash2, Eye, Plus, Users, User, MapPin, Search, X } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -25,7 +25,6 @@ import {
 } from "@/utils/dropdown_list";
 
 export default function Homes() {
-	const router = useRouter();
 	const { profile } = useProfile();
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_home");
@@ -198,7 +197,7 @@ export default function Homes() {
 												<th>Clients</th>
 												<th>Status</th>
 												<th>Opened</th>
-												{canDelete && <th></th>}
+												<th></th>
 											</tr>
 										</thead>
 										<tbody>
@@ -210,7 +209,6 @@ export default function Homes() {
 													<PageTableRow
 														key={homeId}
 														isEven={idx % 2 !== 0}
-														onClick={() => router.push(`/homes/${homeId}`)}
 													>
 															<td
 																className={styles.homeNameCell}
@@ -269,11 +267,18 @@ export default function Homes() {
 															<td className={styles.dateCell}>
 																{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 															</td>
-															{canDelete && (
-																<td className={styles.actionsCell} onClick={(e) => e.stopPropagation()}>
-																	<Trash2 size={15} className={styles.deleteIcon} onClick={() => handleDeleteClick(homeId)} />
-																</td>
-															)}
+															<td className={styles.actionsCell}>
+																<div className={styles.actionsRow}>
+																	<IconButton href={`/homes/${homeId}`} title="View home">
+																		<Eye size={15} />
+																	</IconButton>
+																	{canDelete && (
+																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(homeId)}>
+																			<Trash2 size={15} />
+																		</IconButton>
+																	)}
+																</div>
+															</td>
 														</PageTableRow>
 													);
 												})}

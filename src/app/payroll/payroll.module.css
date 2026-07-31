@@ -668,31 +668,6 @@
 	width: 52px;
 }
 
-.overviewViewBtn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 30px;
-	height: 30px;
-	border-radius: 7px;
-	border: 1.5px solid #e2e8f0;
-	background: #f8fafc;
-	color: #475569;
-	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.overviewViewBtn:hover:not(:disabled) {
-	background: var(--color-primary, #1c4a6e);
-	border-color: var(--color-primary, #1c4a6e);
-	color: #fff;
-}
-
-.overviewViewBtn:disabled {
-	opacity: 0.4;
-	cursor: not-allowed;
-}
-
 /* ── Spin animation ───────────────────────────────────────────────────────── */
 
 .spin {

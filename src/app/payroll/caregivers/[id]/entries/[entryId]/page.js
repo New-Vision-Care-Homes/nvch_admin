@@ -11,6 +11,7 @@ import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import Button        from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
+import StatusBadge from "@components/UI/StatusBadge";
 import { useCaregiverPayrollSummary, useVoidEntry } from "@/hooks/usePayroll";
 import { useProfile }                              from "@/hooks/useProfile";
 import { formatDateTime } from "@/utils/dates";
@@ -31,6 +32,12 @@ const STATUS_LABELS = {
     approved: "Approved",
     pending:  "Pending",
     reversed: "Voided",
+};
+
+const STATUS_TONE = {
+    approved: "success",
+    pending:  "warning",
+    reversed: "danger",
 };
 
 const formatCategory = (category) => CATEGORY_LABELS[category] ?? category;
@@ -160,13 +167,11 @@ export default function EntryDetailPage() {
                             <p className={styles.heroAmount}>{entry.amount} {entry.unit}</p>
                             <p className={styles.heroCategoryName}>{formatCategory(entry.category)}</p>
                         </div>
-                        <span className={`${styles.statusBadge} ${
-                            entry.status === "approved" ? styles.statusApproved :
-                            entry.status === "pending"  ? styles.statusPending  :
-                            entry.status === "reversed" ? styles.statusVoided   : ""
-                        }`}>
-                            {STATUS_LABELS[entry.status] ?? entry.status}
-                        </span>
+                        <StatusBadge
+                            label={STATUS_LABELS[entry.status] ?? entry.status}
+                            tone={STATUS_TONE[entry.status] || "neutral"}
+                            size="pill"
+                        />
                     </div>
 
                     {/* ── Two-column detail section ─────────────────────────── */}

@@ -1,0 +1,149 @@
+/* ── Fields ───────────────────────────────────────────────────────────────── */
+
+.fieldRow {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.fieldLabel {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.fieldRequired {
+	color: #ef4444;
+	margin-left: 2px;
+}
+
+.fieldInput {
+	padding: 9px 12px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fieldInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.fieldInputError {
+	border-color: #ef4444;
+}
+
+.fieldInputError:focus {
+	border-color: #ef4444;
+	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.fieldError {
+	font-size: 0.78rem;
+	color: #ef4444;
+}
+
+/* ── Rules list ───────────────────────────────────────────────────────────── */
+
+.rulesList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ruleCard {
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	position: relative;
+	background: #fafafa;
+}
+
+/* Left accent per employment type */
+.ruleCardFullTime { border-left: 3px solid #1c4a6e; }
+.ruleCardCasual   { border-left: 3px solid #d97706; }
+.ruleCardTerm     { border-left: 3px solid #64748b; }
+.ruleCardNew      { border-left: 3px solid #d1d5db; }
+
+.ruleRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+	align-items: end;
+}
+
+.ruleRowThree {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 14px;
+	align-items: end;
+}
+
+.ruleRemoveBtn {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: none;
+	background: none;
+	border-radius: 6px;
+	color: #9ca3af;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+}
+
+.ruleRemoveBtn:hover {
+	background: #fee2e2;
+	color: #ef4444;
+}
+
+/* ── Add rule button ──────────────────────────────────────────────────────── */
+
+.addRuleBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 18px;
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--color-primary, #1c4a6e);
+	background: #e8f0f7;
+	border: 1.5px dashed #b8cfe0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.12s, border-color 0.12s;
+	font-family: inherit;
+}
+
+.addRuleBtn:hover:not(:disabled) {
+	background: #d4e6f1;
+	border-color: #93c5d4;
+}
+
+.addRuleBtn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 560px) {
+	.ruleRow,
+	.ruleRowThree {
+		grid-template-columns: 1fr;
+	}
+}

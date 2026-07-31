@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare, DollarSign, FileSpreadsheet, ClipboardList, Sun } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare, DollarSign, FileSpreadsheet, ClipboardList, Sun, GraduationCap } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -19,6 +19,7 @@ const tabs = [
 	{ id: 6.5, label: "Notifications", icon: Bell, href: "/notification", hasFlyout: true },
 	{ id: 6.8, label: "Payroll", icon: DollarSign, href: "/payroll", hasFlyout: true, requiredSlugs: ["view_payroll", "manage_payroll"] },
 	{ id: 6.85, label: "Holidays", icon: Sun, href: "/holidays", requiredSlugs: ["view_holidays", "view_payroll"] },
+	{ id: 6.86, label: "Training", icon: GraduationCap, href: "/training", requiredSlugs: ["view_trainings", "view_payroll"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
@@ -59,6 +60,7 @@ const keywordToTabMap = {
 	"/approvals": 6.5,    // any path containing "/approvals" -> Notifications tab
 	"/payroll": 6.8,      // any path containing "/payroll" -> Payroll tab
 	"/holidays": 6.85,    // any path containing "/holidays" -> Holidays tab
+	"/training": 6.86,    // any path containing "/training" -> Training tab
 	"/billing": 7,        // any path containing "/billing" -> Billing tab (updated ID)
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };

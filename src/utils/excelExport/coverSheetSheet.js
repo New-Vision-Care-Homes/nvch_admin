@@ -2,15 +2,16 @@ import {
     C_NAVY, C_WHITE, C_ROW_EVEN, C_ROW_ALT, C_NAME_COL, C_TOTALS,
     thinSide, medSide, solidFill,
     addHeader, addFooter, lockSheet, downloadWorkbook,
-} from "./excelHelpers";
+} from "./helpers";
 
 // ============================================================
-// SECTION: exportCoverSheetToExcel
+// SECTION: buildCoverSheetSheet
 // ------------------------------------------------------------
 // Purpose:
-//   Generates the "Payroll Cover Sheet" Excel file — one row per
+//   Adds the "Payroll Cover Sheet" worksheet — one row per
 //   caregiver showing period totals across all hour types, plus
-//   a totals row. Matches the columns in the printed payroll template.
+//   a totals row — to an ALREADY-CREATED workbook. Matches the
+//   columns in the printed payroll template.
 //
 // Columns:
 //   Staff Name | Regular | Other | Holiday | Training |
@@ -25,23 +26,18 @@ import {
 //   Total            ← totalHours
 //
 // Relationship:
-//   Called from PayrollDetailPage (payroll/[id]/page.js) when the
-//   user clicks "Export Payroll Cover Sheet" on the Summary tab.
-//   Requires coverSheet.staff from useCoverSheet.
-//
-// Flow:
-//   Receive staff + period metadata
-//        ↓
-//   Build workbook → title + info card (logo) → column headers
-//        ↓
-//   Data rows (one per caregiver) → totals row
-//        ↓
-//   Footer → lock sheet (NVCH_READONLY) → trigger browser download
+//   Called both by exportCoverSheetToExcel (standalone, single-sheet
+//   download) and by exportPayrollWorkbook (combined 3-tab payroll
+//   package) in payrollWorkbook.js — the workbook itself, and when to
+//   lock/download it, is the caller's responsibility so this function
+//   can be reused inside a larger workbook.
 // ============================================================
 
 /**
- * Exports the payroll cover-sheet summary as a read-only Excel file.
+ * Builds the "Payroll Cover Sheet" worksheet inside the given workbook.
  *
+ * @param {import("exceljs").Workbook} wb - Workbook to add the sheet to.
+ * @param {Object}   params
  * @param {string}   params.homeName      - Home display name.
  * @param {number}   params.payYear
  * @param {number}   params.periodNumber
@@ -49,10 +45,9 @@ import {
  * @param {string}   params.periodEnd     - ISO timestamp from coverSheet.payPeriod.
  * @param {Object[]} params.staff         - From coverSheet.staff.
  * @param {string}   [params.logoUrl]     - Next.js static image .src string.
+ * @returns {Promise<import("exceljs").Worksheet>} The worksheet that was added.
  */
-export async function exportCoverSheetToExcel({ homeName, payYear, periodNumber, periodStart, periodEnd, staff, logoUrl }) {
-    const ExcelJS = (await import("exceljs")).default;
-
+export async function buildCoverSheetSheet(wb, { homeName, payYear, periodNumber, periodStart, periodEnd, staff, logoUrl }) {
     // Column definitions — order matches SummaryTable and the printed template
     const HEADERS = [
         "Staff Name", "Regular", "Other", "Holiday", "Training",
@@ -61,12 +56,7 @@ export async function exportCoverSheetToExcel({ homeName, payYear, periodNumber,
     ];
     const totalCols = HEADERS.length; // 12
 
-    // ── Workbook & worksheet ───────────────────────────────────────────────────
-    const wb = new ExcelJS.Workbook();
-    wb.creator = "NVCH Admin";
-    wb.created = new Date();
-
-    const ws = wb.addWorksheet("Payroll Cover Sheet", {
+    const ws = wb.addWorksheet("Cover Sheet", {
         pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, paperSize: 9 },
     });
 
@@ -181,8 +171,33 @@ export async function exportCoverSheetToExcel({ homeName, payYear, periodNumber,
         });
     }
 
-    // ── Footer, lock, download ─────────────────────────────────────────────────
     addFooter(ws, totalCols);
+    return ws;
+}
+
+
+// ============================================================
+// SECTION: exportCoverSheetToExcel
+// ------------------------------------------------------------
+// Purpose:
+//   Standalone single-sheet download — builds its own workbook
+//   around buildCoverSheetSheet, locks it read-only, and triggers
+//   the browser download. Kept for any call site that only needs
+//   the cover sheet on its own (the combined payroll package uses
+//   buildCoverSheetSheet directly instead — see payrollWorkbook.js).
+// ============================================================
+
+/**
+ * Exports the payroll cover-sheet summary as a read-only Excel file.
+ * See buildCoverSheetSheet for the param shapes.
+ */
+export async function exportCoverSheetToExcel(params) {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "NVCH Admin";
+    wb.created = new Date();
+
+    const ws = await buildCoverSheetSheet(wb, params);
     await lockSheet(ws);
-    await downloadWorkbook(wb, `payroll_cover_sheet_${homeName || "home"}_${payYear}_period${periodNumber}.xlsx`);
+    await downloadWorkbook(wb, `payroll_cover_sheet_${params.homeName || "home"}_${params.payYear}_period${params.periodNumber}.xlsx`);
 }

@@ -6,6 +6,7 @@ import PageLayout               from "@components/layout/PageLayout";
 import ErrorState               from "@components/UI/ErrorState";
 import Button                   from "@components/UI/Button";
 import ConfirmDeleteModal        from "@components/UI/ConfirmDeleteModal";
+import StatusBadge               from "@components/UI/StatusBadge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useHolidays }          from "@/hooks/useHolidays";
 import { useAdmins }            from "@/hooks/useAdmins";
@@ -38,13 +39,6 @@ function AdminName({ adminId }) {
     return personName(adminDetail);
 }
 
-function StatusBadge({ isActive }) {
-    return (
-        <span className={`${styles.statusBadge} ${isActive ? styles.statusBadgeActive : styles.statusBadgeInactive}`}>
-            {isActive ? "Active" : "Inactive"}
-        </span>
-    );
-}
 
 function AdminLevelChip({ level }) {
     const color = ADMIN_LEVEL_COLORS[level];
@@ -111,7 +105,11 @@ export default function HolidayDetailPage() {
                     <div className={styles.pageHeader}>
                         <div>
                             <div className={styles.badgeRow}>
-                                <StatusBadge isActive={holiday.isActive} />
+                                <StatusBadge
+                                    label={holiday.isActive ? "Active" : "Inactive"}
+                                    tone={holiday.isActive ? "success" : "neutral"}
+                                    size="detail"
+                                />
                             </div>
                             <h1>{holiday.name}</h1>
                             <div className={styles.metaRow}>

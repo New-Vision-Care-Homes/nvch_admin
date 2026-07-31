@@ -1,0 +1,97 @@
+/* Wider variant of the shared Modal. overflow is switched to visible (this
+   modal's own content never needs to scroll) so the caregiver search
+   dropdown can pop out freely instead of being clipped by the modal's
+   default overflow-y: auto boundary. */
+.wideModal {
+	min-width: min(92vw, 560px) !important;
+	overflow: visible !important;
+}
+
+.modalContent {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	text-align: left;
+	gap: 14px;
+	padding: 0.25rem 0;
+	width: 100%;
+}
+
+.modalHeader {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.modalIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	background: #e8f0f7;
+	color: var(--color-primary, #1c4a6e);
+	flex-shrink: 0;
+}
+
+.modalTitle {
+	margin: 0;
+	font-size: 1.1rem;
+	color: #111827;
+}
+
+.modalSubtitle {
+	margin: 3px 0 0;
+	font-size: 0.85rem;
+	color: #6b7280;
+}
+
+.field {
+	width: 100%;
+	text-align: left;
+	position: relative;
+}
+
+.failedList {
+	width: 100%;
+	text-align: left;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 8px;
+	padding: 10px 14px;
+}
+
+.failedTitle {
+	margin: 0 0 4px;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #991b1b;
+}
+
+.failedRow {
+	margin: 0;
+	font-size: 0.8rem;
+	color: #7f1d1d;
+}
+
+.modalButtons {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 1rem;
+	margin-top: 0.5rem;
+}
+
+.modalButtons button {
+	min-width: 80px;
+}
+
+.spin {
+	animation: spinAnim 0.85s linear infinite;
+}
+
+@keyframes spinAnim {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}

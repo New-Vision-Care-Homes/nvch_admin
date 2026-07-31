@@ -141,57 +141,12 @@
 	font-weight: 600;
 }
 
-/* ── Table card ───────────────────────────────────────────────────────────── */
-
-.tableCard {
-	background: #fff;
-	border: 1px solid #e5e7eb;
-	border-radius: 10px;
-	overflow: hidden;
-}
-
-.tableWrapper {
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-}
-
-/* ── Table ────────────────────────────────────────────────────────────────── */
-
-.table {
-	width: 100%;
-	border-collapse: collapse;
-	font-size: 0.875rem;
-	min-width: 680px;
-}
-
-.th {
-	padding: 11px 16px;
-	text-align: left;
-	font-size: 0.73rem;
-	font-weight: 700;
-	color: #374151;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	white-space: nowrap;
-	background: #f9fafb;
-	border-bottom: 2px solid #e5e7eb;
-}
-
-.tr:nth-child(even) td { background: #fafafa; }
-.tr:hover td           { background: #f0f4f8; }
-
-.td {
-	padding: 12px 16px;
-	color: #374151;
-	border-bottom: 1px solid #f3f4f6;
-	vertical-align: middle;
-}
+/* ── Table cell overrides (base table chrome comes from PageTable) ─────────── */
 
 .tdName {
 	font-weight: 600;
 	color: #111827;
 	white-space: nowrap;
-	min-width: 160px;
 }
 
 .tdDate {
@@ -200,75 +155,15 @@
 
 .tdGrant {
 	white-space: nowrap;
-	color: #374151;
 }
 
 .tdStatus {
 	white-space: nowrap;
 }
 
-/* ── Actions column (eye icon) ────────────────────────────────────────────── */
-
-.thActions {
-	width: 52px;
-}
-
-.tdActions {
-	width: 52px;
+.actionsCell {
 	text-align: center;
-}
-
-.viewBtn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 30px;
-	height: 30px;
-	border-radius: 7px;
-	border: 1.5px solid #e2e8f0;
-	background: #f8fafc;
-	color: #475569;
-	cursor: pointer;
-	transition: background 0.15s, border-color 0.15s, color 0.15s;
-	text-decoration: none;
-}
-
-.viewBtn:hover {
-	background: var(--color-primary, #1c4a6e);
-	border-color: var(--color-primary, #1c4a6e);
-	color: #fff;
-}
-
-/* ── Status badge ─────────────────────────────────────────────────────────── */
-
-.statusBadge {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 3px 10px;
-	border-radius: 999px;
-	font-size: 0.74rem;
-	font-weight: 700;
-	white-space: nowrap;
-}
-
-.statusBadgeActive {
-	background: #d1fae5;
-	color: #065f46;
-	border: 1.5px solid #6ee7b7;
-}
-
-.statusBadgeInactive {
-	background: #f3f4f6;
-	color: #6b7280;
-	border: 1.5px solid #d1d5db;
-}
-
-.statusDot {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: currentColor;
+	width: 52px;
 }
 
 /* ── Grant display ────────────────────────────────────────────────────────── */

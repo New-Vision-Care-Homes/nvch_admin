@@ -43,7 +43,7 @@
 
 .homeCard {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: 14px;
 	padding: 1.25rem 1.5rem;
 	background: #fff;
@@ -51,6 +51,19 @@
 	border-radius: 12px;
 	margin-bottom: 1rem;
 	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Pushed to the far right by .homeCardBody's flex:1 — the page's single
+   export action, placed beside the home name for quick access. */
+.homeCardExportBtn {
+	flex-shrink: 0;
+	box-shadow: 0 1px 2px rgba(22, 101, 52, 0.08);
+	transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.homeCardExportBtn:hover:not(:disabled) {
+	box-shadow: 0 4px 10px rgba(22, 101, 52, 0.14);
+	transform: translateY(-1px);
 }
 
 .homeCardIcon {
@@ -238,13 +251,6 @@
 	font-weight: 600;
 }
 
-/* ── Export button row ────────────────────────────────────────────────────── */
-/* Sits below the tab strip; aligns the excel Button to the right edge. */
-.exportBtnRow {
-	display: flex;
-	justify-content: flex-end;
-	margin-bottom: 1.25rem;
-}
 
 /* ── Empty / loading states ───────────────────────────────────────────────── */
 
@@ -341,6 +347,11 @@
 }
 
 @media (max-width: 480px) {
+	.homeCard {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
 	.periodItem {
 		flex: 1 1 100%;
 	}

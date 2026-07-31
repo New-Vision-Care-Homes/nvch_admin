@@ -286,15 +286,11 @@
 	text-align: center;
 }
 
-.deleteIcon {
-	color: #ef4444;
-	cursor: pointer;
-	opacity: 0.7;
-	transition: opacity 0.15s;
-}
-
-.deleteIcon:hover {
-	opacity: 1;
+.actionsRow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
 }
 
 /* Pill style for status */

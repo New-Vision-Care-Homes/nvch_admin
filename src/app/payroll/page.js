@@ -27,6 +27,7 @@ import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
+import IconButton     from "@components/UI/IconButton";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
 import styles        from "./payroll.module.css";
 import { usePayPeriod }                          from "@/hooks/usePayPeriods";
@@ -443,14 +444,13 @@ export default function PayrollOverviewPage() {
 
                                                 {/* View action — navigates to detail page for this home */}
                                                 <td className={styles.overviewActionsCell}>
-                                                    <button
-                                                        className={styles.overviewViewBtn}
+                                                    <IconButton
                                                         onClick={() => handleView(homeId)}
                                                         title="View payroll details"
                                                         disabled={!selectedYear || !selectedPeriod}
                                                     >
                                                         <Eye size={15} />
-                                                    </button>
+                                                    </IconButton>
                                                 </td>
                                             </PageTableRow>
                                         );

@@ -122,6 +122,13 @@ export const PERMISSION_SCHEMAS = [
 			"view_holidays",
 			"manage_holidays"
 		]
+	},
+	{
+		module: "Training",
+		slugs: [
+			"view_trainings",
+			"manage_trainings"
+		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit
 	// for every authenticated user (backend IMPLICIT_SELF_SLUGS) — they are not

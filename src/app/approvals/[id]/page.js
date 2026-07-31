@@ -8,6 +8,7 @@ import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
+import StatusBadge from "@components/UI/StatusBadge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useAdmins } from "@/hooks/useAdmins";
@@ -56,10 +57,10 @@ function formatCertName(raw) {
 
 /** Display metadata keyed by approval status. */
 const STATUS_META = {
-    pending:   { label: "Pending",   className: "status_pending",   Icon: Clock         },
-    approved:  { label: "Approved",  className: "status_approved",  Icon: CheckCircle2  },
-    rejected:  { label: "Rejected",  className: "status_rejected",  Icon: XCircle       },
-    cancelled: { label: "Cancelled", className: "status_cancelled", Icon: Ban           },
+    pending:   { label: "Pending",   tone: "warning", Icon: Clock         },
+    approved:  { label: "Approved",  tone: "success", Icon: CheckCircle2  },
+    rejected:  { label: "Rejected",  tone: "danger",  Icon: XCircle       },
+    cancelled: { label: "Cancelled", tone: "neutral", Icon: Ban           },
 };
 
 /**
@@ -213,7 +214,7 @@ export default function ApprovalDetailPage() {
 
     // ── Derived values ────────────────────────────────────────────────────────
 
-    const { Icon: StatusIcon, label: statusLabel, className: statusClass } =
+    const { Icon: StatusIcon, label: statusLabel, tone: statusTone } =
         STATUS_META[approval.status] ?? STATUS_META.pending;
 
     const isPending   = approval.status === "pending";
@@ -329,10 +330,12 @@ export default function ApprovalDetailPage() {
                                 Certificate Approval
                             </span>
                         )}
-                        <span className={`${styles.statusBadge} ${styles[statusClass]}`}>
-                            <StatusIcon size={12} />
-                            {statusLabel}
-                        </span>
+                        <StatusBadge
+                            label={statusLabel}
+                            tone={statusTone}
+                            size="pill"
+                            icon={<StatusIcon size={12} />}
+                        />
                     </div>
                     <h1>Approval Request</h1>
                     <div className={styles.headerMeta}>

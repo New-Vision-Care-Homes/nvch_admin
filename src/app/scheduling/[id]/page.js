@@ -12,7 +12,9 @@ import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
 import ActionMessage from "@components/UI/ActionMessage";
+import StatusBadge from "@components/UI/StatusBadge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
@@ -66,8 +68,6 @@ export default function ShiftDetailPage() {
 	// Build address display string from geofence address or home/client address
 	const geofenceAddressStr = shift.geofence?.address || null;
 
-	const statusClass = styles[`status_${shift.status}`] || styles.status_default;
-
 	return (
 		<PageLayout>
 
@@ -75,9 +75,11 @@ export default function ShiftDetailPage() {
 			<div className={styles.pageHeader}>
 				<div>
 					<div className={styles.badgeRow}>
-						<span className={`${styles.statusBadge} ${statusClass}`}>
-							{shift.status?.replace(/_/g, " ")}
-						</span>
+						<StatusBadge
+							label={shift.status?.replace(/_/g, " ")}
+							tone={SHIFT_STATUS_TONE[shift.status] || "neutral"}
+							size="detail"
+						/>
 						{/* Secondary badge when a voluntary overtime acknowledgment is still pending */}
 						{shift.extraHours?.ackStatus === "pending" && (
 							<span className={styles.overtimePendingBadge}>Overtime Pending</span>

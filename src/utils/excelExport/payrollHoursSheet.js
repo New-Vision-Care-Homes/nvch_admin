@@ -2,45 +2,39 @@ import {
     C_NAVY, C_WHITE, C_ROW_EVEN, C_ROW_ALT, C_NAME_COL, C_TOTALS,
     thinSide, medSide, solidFill,
     addHeader, addFooter, lockSheet, downloadWorkbook,
-} from "./excelHelpers";
-import { buildNoteItems, formatNoteText } from "../../_components/tableHelpers";
+} from "./helpers";
+import { buildNoteItems, formatNoteText } from "@/app/payroll/_components/tableHelpers";
 
 // ============================================================
-// SECTION: exportPayrollHoursToExcel
+// SECTION: buildPayrollHoursSheet
 // ------------------------------------------------------------
 // Purpose:
-//   Generates the "Payroll Hours" Excel file — one row per caregiver
-//   with a dynamic column for each calendar day in the pay period,
-//   plus a Regular summary column and a Total column.
+//   Adds the "Hour Sheet" worksheet — one row per caregiver with
+//   a dynamic column for each calendar day in the pay period, plus
+//   a Regular summary column and a Total column — to an ALREADY-
+//   CREATED workbook.
 //
 // Columns:
 //   Staff Name | <M/D> | … | <M/D> | Regular | Total | Notes
 //   (day columns are derived from staff[0].daily)
 //
 // API field mapping:
-//   Day columns ← daily[n].hours  (requires { detail: "daily" } query param)
+//   Day columns ← daily[n].hours  (requires { detail: "daily" } query param
+//                                   on the cover-sheet request that supplied `staff`)
 //   Regular     ← hours.regular
 //   Total       ← totalHours
 //
 // Relationship:
-//   Called from PayrollDetailPage (payroll/[id]/page.js) when the
-//   user clicks "Export Payroll Hour" on the Daily tab.
-//   Requires coverSheet.staff with .daily arrays populated — the
-//   cover-sheet query must have been made with { detail: "daily" }.
-//
-// Flow:
-//   Derive day list from staff[0].daily
-//        ↓
-//   Build workbook → title + info card (logo) → dynamic column headers
-//        ↓
-//   Data rows (one per caregiver, active day cells highlighted)
-//        ↓
-//   Totals row → footer → lock sheet (NVCH_READONLY) → browser download
+//   Called both by exportPayrollHoursToExcel (standalone, single-sheet
+//   download) and by exportPayrollWorkbook (combined 3-tab payroll
+//   package) in payrollWorkbook.js.
 // ============================================================
 
 /**
- * Exports the payroll daily-hours breakdown as a read-only Excel file.
+ * Builds the "Hour Sheet" worksheet inside the given workbook.
  *
+ * @param {import("exceljs").Workbook} wb - Workbook to add the sheet to.
+ * @param {Object}   params
  * @param {string}   params.homeName      - Home display name.
  * @param {number}   params.payYear
  * @param {number}   params.periodNumber
@@ -48,10 +42,9 @@ import { buildNoteItems, formatNoteText } from "../../_components/tableHelpers";
  * @param {string}   params.periodEnd     - ISO timestamp from coverSheet.payPeriod.
  * @param {Object[]} params.staff         - From coverSheet.staff (must include .daily array).
  * @param {string}   [params.logoUrl]     - Next.js static image .src string.
+ * @returns {Promise<import("exceljs").Worksheet>} The worksheet that was added.
  */
-export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumber, periodStart, periodEnd, staff, logoUrl }) {
-    const ExcelJS = (await import("exceljs")).default;
-
+export async function buildPayrollHoursSheet(wb, { homeName, payYear, periodNumber, periodStart, periodEnd, staff, logoUrl }) {
     // Derive day list from the first staff member's daily array.
     // All caregivers in a period share the same set of dates.
     const days = staff[0]?.daily?.map((d) => d.date) ?? [];
@@ -59,12 +52,7 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
     // Name col + one col per day + Regular + Total + Notes
     const totalCols = 1 + days.length + 3;
 
-    // ── Workbook & worksheet ───────────────────────────────────────────────────
-    const wb = new ExcelJS.Workbook();
-    wb.creator = "NVCH Admin";
-    wb.created = new Date();
-
-    const ws = wb.addWorksheet("Payroll Hours", {
+    const ws = wb.addWorksheet("Hour Sheet", {
         pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, paperSize: 9 },
     });
 
@@ -195,8 +183,33 @@ export async function exportPayrollHoursToExcel({ homeName, payYear, periodNumbe
         });
     }
 
-    // ── Footer, lock, download ─────────────────────────────────────────────────
     addFooter(ws, totalCols);
+    return ws;
+}
+
+
+// ============================================================
+// SECTION: exportPayrollHoursToExcel
+// ------------------------------------------------------------
+// Purpose:
+//   Standalone single-sheet download — builds its own workbook
+//   around buildPayrollHoursSheet, locks it read-only, and triggers
+//   the browser download. Kept for any call site that only needs the
+//   hours sheet on its own (the combined payroll package uses
+//   buildPayrollHoursSheet directly instead — see payrollWorkbook.js).
+// ============================================================
+
+/**
+ * Exports the payroll daily-hours breakdown as a read-only Excel file.
+ * See buildPayrollHoursSheet for the param shapes.
+ */
+export async function exportPayrollHoursToExcel(params) {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "NVCH Admin";
+    wb.created = new Date();
+
+    const ws = await buildPayrollHoursSheet(wb, params);
     await lockSheet(ws);
-    await downloadWorkbook(wb, `payroll_hours_${homeName || "home"}_${payYear}_period${periodNumber}.xlsx`);
+    await downloadWorkbook(wb, `payroll_hours_${params.homeName || "home"}_${params.payYear}_period${params.periodNumber}.xlsx`);
 }

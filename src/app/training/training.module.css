@@ -1,0 +1,123 @@
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+
+.pageContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.pageHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	border-bottom: 1px solid #e8eef4;
+	padding-bottom: 1.25rem;
+	margin-bottom: 1.5rem;
+}
+
+.headerActions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+/* ── Add button (manage_trainings only) ──────────────────────────────────── */
+
+.addButton {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 18px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--color-primary, #1c4a6e);
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	white-space: nowrap;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+
+.addButton:hover {
+	background: #163d5c;
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+
+.filterBar {
+	display: flex;
+	align-items: flex-end;
+	gap: 1rem;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	margin-bottom: 1.5rem;
+	flex-wrap: wrap;
+}
+
+.filterGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.filterLabel {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #6b7280;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.filterSelect {
+	padding: 8px 10px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	font-family: inherit;
+	min-width: 150px;
+}
+
+.filterSelect:hover  { border-color: #9ca3af; }
+.filterSelect:focus  { border-color: var(--color-primary, #1c4a6e); box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1); }
+
+/* ── Table cell overrides (base table chrome comes from PageTable) ─────────── */
+
+.tdName {
+	font-weight: 600;
+	color: #111827;
+	white-space: nowrap;
+}
+
+.tdDate {
+	white-space: nowrap;
+}
+
+.actionsCell {
+	text-align: center;
+	width: 52px;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+	.filterBar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.filterSelect {
+		width: 100%;
+	}
+}

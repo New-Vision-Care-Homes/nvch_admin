@@ -17,7 +17,9 @@ import IconButton from "@components/UI/IconButton";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
+import StatusBadge from "@components/UI/StatusBadge";
 import cardStyles from "@components/UI/Card.module.css";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Clock, MapPin, FileText, Save, X, Plus, Trash2,
 	CheckCircle2, AlertTriangle, Loader, User, Search,
@@ -365,7 +367,6 @@ export default function EditShiftPage() {
 	);
 
 	const nowLocal = DateTime.now().setZone(HALIFAX_TZ).toFormat("yyyy-MM-dd'T'HH:mm");
-	const statusClass = shiftStyles[`status_${status}`] || shiftStyles.status_default;
 
 	// Warning before saving a shift longer than 12 hours (allowed, not blocked).
 	// Rendered in both the completed and scheduled forms below.
@@ -420,9 +421,11 @@ export default function EditShiftPage() {
 		<div className={shiftStyles.pageHeader}>
 			<div>
 				<div className={shiftStyles.badgeRow}>
-					<span className={`${shiftStyles.statusBadge} ${statusClass}`}>
-						{status?.replace(/_/g, " ")}
-					</span>
+					<StatusBadge
+						label={status?.replace(/_/g, " ")}
+						tone={SHIFT_STATUS_TONE[status] || "neutral"}
+						size="detail"
+					/>
 					<span className={styles.editModeBadge}>
 						{isCompleted ? "Editing Timesheet" : "Editing Shift"}
 					</span>

@@ -16,10 +16,14 @@
 //   - SummaryTable and DailyTable render the two tab views.
 //   - HOME_TYPE_COLORS / REGION_COLORS provide colour tokens
 //     for the home type and region pills in the home card.
+//   - exportPayrollWorkbook (src/utils/excelExport/) builds the
+//     combined 3-tab Cover Sheet + Hour Sheet + Schedule package
+//     downloaded by the single "Export Payroll Package" button.
 // ============================================================
 
 import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { format } from "date-fns";
 import {
     Undo2, Building2,
     FileSpreadsheet, Clock, Download, Loader2, AlertTriangle,
@@ -30,6 +34,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import styles        from "./payroll_detail.module.css";
 import tableStyles   from "../payroll.module.css";
 import { useCoverSheet, usePayrollExceptions } from "@/hooks/usePayroll";
+import { useShifts } from "@/hooks/useShifts";
 import SummaryTable from "../_components/SummaryTable";
 import DailyTable   from "../_components/DailyTable";
 import {
@@ -37,8 +42,7 @@ import {
     REGION_COLORS,
     COLOR_FALLBACK,
 } from "@/utils/dropdown_list";
-import { exportCoverSheetToExcel }  from "./_utils/exportCoverSheet";
-import { exportPayrollHoursToExcel } from "./_utils/exportPayrollHours";
+import { exportPayrollWorkbook } from "@/utils/excelExport/payrollWorkbook";
 import Button   from "@components/UI/Button";
 import logoImg  from "@/assets/logo/nv.png";
 
@@ -187,36 +191,62 @@ export default function PayrollDetailPage() {
     const displayStaff = coverSheet?.staff ?? [];
 
 
+    // ── Data: Export package ─────────────────────────────────────────────────
+    // The combined export always needs the daily-hours breakdown for the Hour
+    // Sheet tab, regardless of which tab (summary/daily) the user currently
+    // has open on screen — so this is a second, independent fetch (its own
+    // query key, since { detail: "daily" } differs from the summary-tab
+    // request above) rather than reusing/mutating the page's main data flow.
+    const { coverSheet: exportCoverSheet } = useCoverSheet({
+        params: {
+            homeId,
+            payYear:      payYear      ? Number(payYear)      : undefined,
+            periodNumber: periodNumber ? Number(periodNumber) : undefined,
+            detail:       "daily",
+        },
+        enabled: !!(homeId && payYear && periodNumber),
+    });
+
+    // Shifts for the Schedule tab, scoped to this home and the exact pay-period
+    // date range — same { homeId, startDate, endDate } shape the Scheduling
+    // calendar page uses for its own "Export Schedule" button.
+    const exportPeriod = exportCoverSheet?.payPeriod;
+    const { shifts: exportShifts } = useShifts({
+        params: {
+            homeId,
+            startDate: exportPeriod ? format(new Date(exportPeriod.periodStart), "yyyy-MM-dd") : undefined,
+            endDate:   exportPeriod ? format(new Date(exportPeriod.periodEnd),   "yyyy-MM-dd") : undefined,
+        },
+        enabled: !!(homeId && exportPeriod),
+    });
+
+
     // ── Export handler ────────────────────────────────────────────────────────
     /**
-     * Triggers an Excel download for the active tab.
-     *   "summary" → exportCoverSheetToExcel  (SummaryTable columns)
-     *   "daily"   → exportPayrollHoursToExcel (per-day columns)
+     * Downloads the combined payroll package — one workbook, three tabs
+     * (Cover Sheet, Hour Sheet, Schedule) — via exportPayrollWorkbook.
      *
-     * The exported file is always read-only — the sheet is password-locked
+     * The exported file is always read-only — every sheet is password-locked
      * inside the export utility so recipients cannot edit the payroll data.
      *
      * Side effects: sets isExporting to true while the async export runs,
      *               then resets it so the button becomes clickable again.
      */
     const handleExport = async () => {
-        if (!coverSheet || isExporting) return;
+        if (!exportCoverSheet || isExporting) return;
         setIsExporting(true);
         try {
-            const params = {
-                homeName:     coverSheet.home?.name,
+            await exportPayrollWorkbook({
+                homeName:     exportCoverSheet.home?.name,
+                homeId,
                 payYear:      Number(payYear),
                 periodNumber: Number(periodNumber),
-                periodStart:  coverSheet.payPeriod?.periodStart,
-                periodEnd:    coverSheet.payPeriod?.periodEnd,
-                staff:        displayStaff,
+                periodStart:  exportCoverSheet.payPeriod?.periodStart,
+                periodEnd:    exportCoverSheet.payPeriod?.periodEnd,
+                staff:        exportCoverSheet.staff ?? [],
+                shifts:       exportShifts,
                 logoUrl:      logoImg.src,
-            };
-            if (activeTab === "daily") {
-                await exportPayrollHoursToExcel(params);
-            } else {
-                await exportCoverSheetToExcel(params);
-            }
+            });
         } finally {
             setIsExporting(false);
         }
@@ -339,6 +369,19 @@ export default function PayrollDetailPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Single combined-package export action, aligned to the far
+                            right of the home card — replaces the old per-tab buttons
+                            that used to sit in their own row below the tab strip. */}
+                        <Button
+                            className={styles.homeCardExportBtn}
+                            variant="excel"
+                            icon={isExporting ? <Loader2 size={15} className={tableStyles.spin} /> : <Download size={15} />}
+                            onClick={handleExport}
+                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0}
+                        >
+                            {isExporting ? "Exporting…" : "Export Payroll Package"}
+                        </Button>
                     </div>
                 )}
 
@@ -399,20 +442,6 @@ export default function PayrollDetailPage() {
                             {label}
                         </button>
                     ))}
-                </div>
-
-                {/* ── Export button ─────────────────────────────────────────── */}
-                {/* Sits below the tab strip; disabled while loading or if no data yet. */}
-                <div className={styles.exportBtnRow}>
-                    <Button
-                        variant="excel"
-                        size="sm"
-                        icon={isExporting ? <Loader2 size={14} className={tableStyles.spin} /> : <Download size={14} />}
-                        onClick={handleExport}
-                        disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0}
-                    >
-                        {activeTab === "daily" ? "Export Payroll Hour" : "Export Payroll Cover Sheet"}
-                    </Button>
                 </div>
 
                 {/* ── Table area ───────────────────────────────────────────── */}

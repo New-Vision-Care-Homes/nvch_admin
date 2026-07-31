@@ -22,4 +22,19 @@ axiosClient.interceptors.request.use((config) => {
 	return config;
 }, (error) => Promise.reject(error));
 
+// Response Interceptor: Normalize 403 errors into a consistent user-facing message.
+// Permission slugs on the JWT are only refreshed on sign-in, so a 403 after a
+// permission reassignment means the user must log out and back in to activate the change.
+axiosClient.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		if (error?.response?.status === 403) {
+			error.response.data = {
+				error: "Insufficient permission. Please try logging out and signing in again.",
+			};
+		}
+		return Promise.reject(error);
+	}
+);
+
 export default axiosClient;

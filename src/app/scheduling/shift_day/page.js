@@ -7,7 +7,9 @@ import { useProfile } from "@/hooks/useProfile";
 import { utcToDate, utcToWeekday, utcToDisplayTime, expandShiftDays } from "@/utils/timeHandling";
 import { DateTime } from "luxon";
 import Button from "@components/UI/Button";
+import StatusBadge from "@components/UI/StatusBadge";
 import PageLayout from "@components/layout/PageLayout";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, CalendarDays, Globe, AlertTriangle } from "lucide-react";
 import styles from "./shift_day.module.css";
 import Link from "next/link";
@@ -38,9 +40,6 @@ export default function ShiftDayPage() {
 			expandShiftDays(shift.startTime, shift.endTime, tz).some((seg) => seg.dateStr === dateParam)
 		);
 	}, [rawShifts, dateParam, profile?.timezone]);
-
-	const statusClass = (status) =>
-		styles[`status_${status}`] || styles.status_default;
 
 	// Parse the dateParam directly without timezone shifting (since it's already a localized string like "2026-05-06")
 	const displayDate = dateParam ? DateTime.fromFormat(dateParam, "yyyy-MM-dd").toFormat("MMMM d, yyyy") : "—";
@@ -166,9 +165,11 @@ export default function ShiftDayPage() {
 								{/* Status badge — plus a secondary indicator when a voluntary overtime
 								    acknowledgment is still pending from the caregiver */}
 								<div className={styles.statusBadgeGroup}>
-									<span className={`${styles.statusBadge} ${statusClass(shift.status)}`}>
-										{shift.status?.replace(/_/g, " ") || "—"}
-									</span>
+									<StatusBadge
+										label={shift.status?.replace(/_/g, " ") || "—"}
+										tone={SHIFT_STATUS_TONE[shift.status] || "neutral"}
+										size="tag"
+									/>
 									{shift.extraHours?.ackStatus === "pending" && (
 										<span className={styles.overtimePendingBadge}>Overtime Pending</span>
 									)}

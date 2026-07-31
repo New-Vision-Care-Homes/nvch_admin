@@ -9,6 +9,9 @@ import Link from "next/link";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
+import StatusBadge from "@/components/UI/StatusBadge";
+import IconButton  from "@/components/UI/IconButton";
+import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useHolidays }    from "@/hooks/useHolidays";
 import { usePayPeriod }   from "@/hooks/usePayPeriods";
 import { useProfile }     from "@/hooks/useProfile";
@@ -27,17 +30,6 @@ const PERIOD_OPTIONS = Array.from({ length: 26 }, (_, i) => i + 1);
 // ============================================================
 // SECTION: Sub-components
 // ============================================================
-
-// ── StatusBadge ───────────────────────────────────────────────────────────────
-
-function StatusBadge({ isActive }) {
-    return (
-        <span className={`${styles.statusBadge} ${isActive ? styles.statusBadgeActive : styles.statusBadgeInactive}`}>
-            <span className={styles.statusDot} />
-            {isActive ? "Active" : "Inactive"}
-        </span>
-    );
-}
 
 // ── GrantCell ─────────────────────────────────────────────────────────────────
 // Human-readable grant summary replacing the old Caregiver Rules column.
@@ -214,48 +206,43 @@ export default function HolidaysPage() {
                             message="No holidays have been created for this period yet."
                         />
                     ) : (
-                        <div className={styles.tableCard}>
-                            <div className={styles.tableWrapper}>
-                                <table className={styles.table}>
-                                    <thead>
-                                        <tr>
-                                            <th className={styles.th}>Name</th>
-                                            <th className={styles.th}>Date</th>
-                                            <th className={styles.th}>Grant</th>
-                                            <th className={styles.th}>Status</th>
-                                            <th className={`${styles.th} ${styles.thActions}`} />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {holidays.map((holiday) => (
-                                            <tr key={holiday.id} className={styles.tr}>
-                                                <td className={`${styles.td} ${styles.tdName}`}>
-                                                    {holiday.name}
-                                                </td>
-                                                <td className={`${styles.td} ${styles.tdDate}`}>
-                                                    {formatDateOnly(holiday.date)}
-                                                </td>
-                                                <td className={`${styles.td} ${styles.tdGrant}`}>
-                                                    <GrantCell holiday={holiday} />
-                                                </td>
-                                                <td className={`${styles.td} ${styles.tdStatus}`}>
-                                                    <StatusBadge isActive={holiday.isActive} />
-                                                </td>
-                                                <td className={`${styles.td} ${styles.tdActions}`}>
-                                                    <Link
-                                                        href={`/holidays/${holiday.id}`}
-                                                        className={styles.viewBtn}
-                                                        title="View details"
-                                                    >
-                                                        <Eye size={16} />
-                                                    </Link>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <PageTable>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Date</th>
+                                    <th>Grant</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {holidays.map((holiday, idx) => (
+                                    <PageTableRow key={holiday.id} isEven={idx % 2 !== 0}>
+                                        <td className={styles.tdName}>
+                                            {holiday.name}
+                                        </td>
+                                        <td className={styles.tdDate}>
+                                            {formatDateOnly(holiday.date)}
+                                        </td>
+                                        <td className={styles.tdGrant}>
+                                            <GrantCell holiday={holiday} />
+                                        </td>
+                                        <td className={styles.tdStatus}>
+                                            <StatusBadge
+                                                label={holiday.isActive ? "Active" : "Inactive"}
+                                                tone={holiday.isActive ? "success" : "neutral"}
+                                            />
+                                        </td>
+                                        <td className={styles.actionsCell}>
+                                            <IconButton href={`/holidays/${holiday.id}`} title="View details">
+                                                <Eye size={15} />
+                                            </IconButton>
+                                        </td>
+                                    </PageTableRow>
+                                ))}
+                            </tbody>
+                        </PageTable>
                     )
                 )}
 

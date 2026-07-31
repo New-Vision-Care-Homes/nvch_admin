@@ -25,11 +25,6 @@
 /* ==========================================
    TABLE WRAPPER
 ========================================== */
-/* Aligns first column with the search bar above (1rem left padding). */
-.firstCol {
-	padding-left: 0.5rem;
-}
-
 .tableWrapper {
 	display: flex;
 	flex-direction: column;

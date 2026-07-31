@@ -22,6 +22,7 @@ import { useRouter }    from "next/navigation";
 import { Eye, Loader2 } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState from "@components/UI/ErrorState";
+import IconButton  from "@components/UI/IconButton";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
 import { useCoverSheet } from "@/hooks/usePayroll";
 import { useHomes }      from "@/hooks/useHomes";
@@ -348,14 +349,13 @@ export default function PayrollManualEntriesPage() {
                                                     {formatNumeric(staffMember.totalHours)}
                                                 </td>
                                                 <td className={styles.overviewActionsCell}>
-                                                    <button
-                                                        className={styles.overviewViewBtn}
+                                                    <IconButton
                                                         onClick={() => handleViewCaregiver(staffMember.caregiver?.id)}
                                                         title="View caregiver payroll summary"
                                                         disabled={!staffMember.caregiver?.id}
                                                     >
                                                         <Eye size={15} />
-                                                    </button>
+                                                    </IconButton>
                                                 </td>
                                             </PageTableRow>
                                         ))}

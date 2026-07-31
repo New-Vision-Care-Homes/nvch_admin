@@ -50,23 +50,6 @@
 	margin: 0;
 }
 
-/* ── Status badge ─────────────────────────────────────────────────────────── */
-
-.statusBadge {
-	display: inline-flex;
-	align-items: center;
-	padding: 5px 14px;
-	border-radius: 20px;
-	font-size: 0.8rem;
-	font-weight: 700;
-	text-transform: capitalize;
-	flex-shrink: 0;
-}
-
-.statusApproved { background: #d1fae5; color: #065f46; }
-.statusPending  { background: #fef3c7; color: #92400e; }
-.statusVoided   { background: #fee2e2; color: #dc2626; }
-
 /* ── Two-column detail section ────────────────────────────────────────────── */
 
 .detailColumns {

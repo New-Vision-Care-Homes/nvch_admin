@@ -11,6 +11,8 @@ import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
+import StatusBadge from "@components/UI/StatusBadge";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Undo2, Edit2, Save, X,
 	User, Clock, FileText,
@@ -23,14 +25,6 @@ import styles from "./focus_note_detail.module.css";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 const TZ = "America/Halifax";
-
-const SHIFT_STATUS_CLASS = {
-	scheduled: styles.statusScheduled,
-	in_progress: styles.statusInProgress,
-	completed: styles.statusCompleted,
-	cancelled: styles.statusCancelled,
-	missed: styles.statusMissed,
-};
 
 const ROLE_CLASS = {
 	caregiver: styles.roleCaregiver,
@@ -134,9 +128,11 @@ export default function FocusNoteDetailPage() {
 							<span className={styles.clientIdPill}>{note.client.clientId}</span>
 						)}
 						{shiftStatus && (
-							<span className={`${styles.statusBadge} ${SHIFT_STATUS_CLASS[shiftStatus] || ""}`}>
-								{shiftStatus.replace(/_/g, " ")}
-							</span>
+							<StatusBadge
+								label={shiftStatus.replace(/_/g, " ")}
+								tone={SHIFT_STATUS_TONE[shiftStatus] || "neutral"}
+								size="detail"
+							/>
 						)}
 					</div>
 				</div>
@@ -270,9 +266,11 @@ export default function FocusNoteDetailPage() {
 								</InfoField>
 								<InfoField label="Shift Status">
 									{shiftStatus ? (
-										<span className={`${styles.statusBadge} ${SHIFT_STATUS_CLASS[shiftStatus] || ""}`}>
-											{shiftStatus.replace(/_/g, " ")}
-										</span>
+										<StatusBadge
+											label={shiftStatus.replace(/_/g, " ")}
+											tone={SHIFT_STATUS_TONE[shiftStatus] || "neutral"}
+											size="detail"
+										/>
 									) : "—"}
 								</InfoField>
 								<InfoField label="Shift ID" value={note.shift?._id || "—"} />

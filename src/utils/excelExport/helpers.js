@@ -5,14 +5,16 @@ import { formatPayPeriodLabel } from "@/utils/payPeriod";
 // SECTION: Palette & Style Constants
 // ------------------------------------------------------------
 // Purpose:
-//   Centralise all colours used by both payroll export functions
-//   so brand/palette changes only need to happen in one place.
+//   Centralise all colours used by every Excel export function in
+//   this folder (cover sheet, payroll hours, schedule) so brand/
+//   palette changes only need to happen in one place.
 //
 // Naming convention: C_ prefix = colour ARGB string.
 //
 // Relationship:
-//   Mirrors the palette in the scheduling export (exportSchedule.js)
-//   so all exported documents share a consistent visual identity.
+//   Shared by coverSheetSheet.js, payrollHoursSheet.js, and
+//   scheduleSheet.js so every exported document — including the
+//   combined 3-tab payroll package — shares one visual identity.
 // ============================================================
 
 export const C_NAVY     = "FF1C4A6E"; // header rows, name column text, outer borders
@@ -53,16 +55,15 @@ export const solidFill = (argb) => ({ type: "pattern", pattern: "solid", fgColor
 // ------------------------------------------------------------
 // Purpose:
 //   Writes a title row followed by a two-row info card (logo +
-//   metadata) at the current position of the worksheet. Called
-//   by both export functions so the document header is consistent.
+//   metadata) at the current position of the worksheet. Called by
+//   every sheet builder in this folder so the document header is
+//   visually consistent across the cover sheet, hours, and schedule
+//   tabs of the combined payroll workbook.
 //
 // Layout:
 //   Row 1: Title row — full-width navy bar with white text
 //   Row 2: Info card row 1 — House name + Pay Period (logo beside it)
 //   Row 3: Info card row 2 — Period date range
-//
-// Relationship:
-//   Mirrors the header in the scheduling export (exportSchedule.js).
 // ============================================================
 
 /**
@@ -76,8 +77,8 @@ export const solidFill = (argb) => ({ type: "pattern", pattern: "solid", fgColor
  * @param {string} opts.homeName      - Home display name for the info card.
  * @param {number} opts.payYear
  * @param {number} opts.periodNumber
- * @param {string} opts.periodStart   - ISO timestamp from coverSheet.payPeriod.
- * @param {string} opts.periodEnd     - ISO timestamp from coverSheet.payPeriod.
+ * @param {string} opts.periodStart   - ISO timestamp for the pay period start.
+ * @param {string} opts.periodEnd     - ISO timestamp for the pay period end.
  * @param {string} [opts.logoUrl]     - Next.js static image .src string.
  * @param {number} opts.totalCols     - Total column count (used for row merges).
  */
