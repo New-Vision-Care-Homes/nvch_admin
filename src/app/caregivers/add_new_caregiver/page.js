@@ -17,7 +17,7 @@ import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
 import { localDateToUtc } from "@/utils/timeHandling";
 

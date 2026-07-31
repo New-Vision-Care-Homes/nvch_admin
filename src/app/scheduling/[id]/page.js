@@ -12,7 +12,7 @@ import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
 import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
@@ -22,7 +22,9 @@ import {
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
-import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -265,7 +267,7 @@ export default function ShiftDetailPage() {
 									<InfoField label="Home Name" value={shift.home.name || "—"} />
 									{shift.home.region && (
 										<InfoField label="Region">
-											{(() => { const c = REGION_COLORS[shift.home.region] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.region}</span>; })()}
+											<ColorPill label={shift.home.region} color={REGION_COLORS[shift.home.region] ?? COLOR_FALLBACK} />
 										</InfoField>
 									)}
 									<InfoField label="Status">
@@ -275,7 +277,7 @@ export default function ShiftDetailPage() {
 									</InfoField>
 									{shift.home.homeType && (
 										<InfoField label="Home Type">
-											{(() => { const c = HOME_TYPE_COLORS[shift.home.homeType] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.homeType}</span>; })()}
+											<ColorPill label={shift.home.homeType} color={HOME_TYPE_COLORS[shift.home.homeType] ?? COLOR_FALLBACK} />
 										</InfoField>
 									)}
 								</div>

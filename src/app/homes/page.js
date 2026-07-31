@@ -16,13 +16,10 @@ import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import Modal from "@components/UI/Modal";
 import { PageTable, PageTableRow } from "@components/UI/Table";
-import {
-	HOME_TYPE_OPTIONS,
-	HOME_TYPE_COLORS,
-	REGION_OPTIONS,
-	REGION_COLORS,
-	COLOR_FALLBACK,
-} from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { HOME_TYPE_OPTIONS, HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function Homes() {
 	const { profile } = useProfile();
@@ -160,24 +157,14 @@ export default function Homes() {
 						{/* Color legend */}
 						<div className={styles.legend}>
 							<span className={styles.legendLabel}>Type:</span>
-							{HOME_TYPE_OPTIONS.map((o) => {
-								const c = HOME_TYPE_COLORS[o.value] || COLOR_FALLBACK;
-								return (
-									<span key={o.value} className={styles.legendChip} style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-										{o.label}
-									</span>
-								);
-							})}
+							{HOME_TYPE_OPTIONS.map((o) => (
+								<ColorPill key={o.value} label={o.label} color={HOME_TYPE_COLORS[o.value] || COLOR_FALLBACK} />
+							))}
 							<span className={styles.legendSep} />
 							<span className={styles.legendLabel}>Region:</span>
-							{REGION_OPTIONS.map((o) => {
-								const c = REGION_COLORS[o.value] || COLOR_FALLBACK;
-								return (
-									<span key={o.value} className={styles.legendChip} style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-										{o.label}
-									</span>
-								);
-							})}
+							{REGION_OPTIONS.map((o) => (
+								<ColorPill key={o.value} label={o.label} color={REGION_COLORS[o.value] || COLOR_FALLBACK} />
+							))}
 						</div>
 
 						<ErrorState isLoading={isLoading} errorMessage={fetchError} onRetry={refetch} />
@@ -220,18 +207,10 @@ export default function Homes() {
 																</div>
 															</td>
 															<td>
-																{home.homeType ? (
-																	<span className={styles.typePill} style={{ background: typeColor.bg, color: typeColor.text, borderColor: typeColor.border }}>
-																		{home.homeType}
-																	</span>
-																) : "—"}
+																{home.homeType ? <ColorPill label={home.homeType} color={typeColor} /> : "—"}
 															</td>
 															<td>
-																{home.region ? (
-																	<span className={styles.typePill} style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}>
-																		{home.region}
-																	</span>
-																) : "—"}
+																{home.region ? <ColorPill label={home.region} color={regionColor} /> : "—"}
 															</td>
 															<td className={styles.addressCell}>
 																{home.address ? (

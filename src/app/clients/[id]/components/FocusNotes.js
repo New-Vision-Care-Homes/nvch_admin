@@ -6,7 +6,7 @@ import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import { Table2, Table2Pagination } from "@components/UI/Table";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import { FileText, Download, ExternalLink, X } from "lucide-react";

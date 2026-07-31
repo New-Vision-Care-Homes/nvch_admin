@@ -27,7 +27,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
 import { useHomes } from "@/hooks/useHomes";
 import ClientConflictModal from "@/components/UI/ClientConflictModal";
-import { REGION_OPTIONS, MARITAL_STATUS_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+import { MARITAL_STATUS_OPTIONS } from "@/utils/dropdownList/maritalStatus";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { splitName, joinName, getLabel } from "@/utils/formatting";
 

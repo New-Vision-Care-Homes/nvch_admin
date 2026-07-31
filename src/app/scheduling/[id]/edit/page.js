@@ -17,7 +17,7 @@ import IconButton from "@components/UI/IconButton";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import cardStyles from "@components/UI/Card.module.css";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {

@@ -44,3 +44,10 @@
 .pill.neutral { border: 1.5px solid #d1d5db; }
 .pill.warning { border: 1.5px solid #fcd34d; }
 .pill.danger  { border: 1.5px solid #fca5a5; }
+
+/* ── ColorPill (dynamic per-value colors — home type, region, etc.) ─────────── */
+
+.colorPill {
+	border: 1.5px solid;
+	letter-spacing: 0.03em;
+}

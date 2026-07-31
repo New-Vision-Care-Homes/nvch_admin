@@ -8,7 +8,7 @@ import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useAdmins } from "@/hooks/useAdmins";

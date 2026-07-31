@@ -9,7 +9,7 @@ import Link from "next/link";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
-import StatusBadge from "@/components/UI/StatusBadge";
+import StatusBadge from "@/components/UI/Badge";
 import IconButton  from "@/components/UI/IconButton";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useHolidays }    from "@/hooks/useHolidays";

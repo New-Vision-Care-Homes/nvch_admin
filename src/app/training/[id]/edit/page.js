@@ -13,6 +13,7 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import GeofenceMap from "@components/UI/GeofenceMap";
 import AddressAutocomplete from "@components/UI/AddressAutocomplete";
 import { useTrainings } from "@/hooks/useTrainings";
+import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
 import PayRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../../_components/PayRulesSection";
 import PersonMultiSelect from "../../_components/PersonMultiSelect";
 import { X, Save, Loader } from "lucide-react";
@@ -103,6 +104,7 @@ export default function EditTrainingPage() {
 
     const { training, isLoading, fetchError, refetch, updateTraining, isActionPending, actionError } =
         useTrainings(id);
+    const { trainingTypeOptions } = useTrainingTypeDropdown();
 
     const { register, handleSubmit, watch, setValue, control, reset, formState: { errors } } = useForm({
         resolver: yupResolver(schema),
@@ -292,7 +294,7 @@ export default function EditTrainingPage() {
                                 <CardContent>
                                     <div className={styles.row2}>
                                         <InputField label="Title" name="title" register={register} error={errors.title} required />
-                                        <InputField label="Training Type" name="trainingType" register={register} error={errors.trainingType} required />
+                                        <InputField label="Training Type" name="trainingType" type="select" register={register} error={errors.trainingType} options={trainingTypeOptions} required />
                                     </div>
                                     <InputField label="Status" name="status" type="select" register={register} error={errors.status} options={STATUS_OPTIONS} />
 

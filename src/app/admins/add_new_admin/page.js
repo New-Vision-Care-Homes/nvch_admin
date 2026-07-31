@@ -13,7 +13,9 @@ import { useAdmins } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
-import { REGION_OPTIONS, ADMIN_LEVEL_OPTIONS, DEPARTMENT_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
+import { DEPARTMENT_OPTIONS } from "@/utils/dropdownList/department";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 
 const TIMEZONE_OPTIONS = [

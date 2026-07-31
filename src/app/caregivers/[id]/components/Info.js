@@ -11,7 +11,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { getLabel } from "@/utils/formatting";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";

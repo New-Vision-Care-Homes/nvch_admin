@@ -29,15 +29,14 @@ import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
 import IconButton     from "@components/UI/IconButton";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
+import { ColorPill } from "@components/UI/Badge";
 import styles        from "./payroll.module.css";
 import { usePayPeriod }                          from "@/hooks/usePayPeriods";
 import { usePayrollOverview, useRecomputeStats } from "@/hooks/usePayroll";
 import { useProfile }                            from "@/hooks/useProfile";
-import {
-    HOME_TYPE_COLORS,
-    REGION_COLORS,
-    COLOR_FALLBACK,
-} from "@/utils/dropdown_list";
+import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 
 // ============================================================
@@ -381,26 +380,12 @@ export default function PayrollOverviewPage() {
 
                                                 {/* Type pill */}
                                                 <td>
-                                                    {home.homeType ? (
-                                                        <span
-                                                            className={styles.overviewPill}
-                                                            style={{ background: typeColor.bg, color: typeColor.text, borderColor: typeColor.border }}
-                                                        >
-                                                            {home.homeType}
-                                                        </span>
-                                                    ) : "—"}
+                                                    {home.homeType ? <ColorPill label={home.homeType} color={typeColor} /> : "—"}
                                                 </td>
 
                                                 {/* Region pill */}
                                                 <td>
-                                                    {home.region ? (
-                                                        <span
-                                                            className={styles.overviewPill}
-                                                            style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
-                                                        >
-                                                            {home.region}
-                                                        </span>
-                                                    ) : "—"}
+                                                    {home.region ? <ColorPill label={home.region} color={regionColor} /> : "—"}
                                                 </td>
 
                                                 {/* Address */}

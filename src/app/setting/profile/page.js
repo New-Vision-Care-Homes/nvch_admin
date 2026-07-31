@@ -9,7 +9,7 @@ import { phoneRule, shortTextRule } from "@/utils/validation";
 
 import { Card, CardHeader, InfoField, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
@@ -17,7 +17,10 @@ import ErrorState from "@components/UI/ErrorState";
 import { Edit, Upload, Save, X } from "lucide-react";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import { REGION_COLORS, DEPARTMENT_COLORS, ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 const schema = yup.object({
 	phone: phoneRule,
@@ -176,10 +179,7 @@ export default function ProfilePage() {
 									)}
 
 									<InfoField label="Region">
-										{profile.region ? (() => {
-											const c = REGION_COLORS[profile.region] ?? COLOR_FALLBACK;
-											return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{profile.region}</span>;
-										})() : <span style={{ color: "#94a3b8" }}>—</span>}
+										{profile.region ? <ColorPill label={profile.region} color={REGION_COLORS[profile.region] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 									</InfoField>
 
 									<InfoField label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : "N/A"} />
@@ -220,16 +220,10 @@ export default function ProfilePage() {
 								<div className={styles.text}>
 									<div className={styles.column}>
 										<InfoField label="Department">
-											{profile.department ? (() => {
-												const c = DEPARTMENT_COLORS[profile.department] ?? COLOR_FALLBACK;
-												return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{profile.department}</span>;
-											})() : <span style={{ color: "#94a3b8" }}>—</span>}
+											{profile.department ? <ColorPill label={profile.department} color={DEPARTMENT_COLORS[profile.department] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 										</InfoField>
 										<InfoField label="Admin Level">
-											{profile.adminLevel ? (() => {
-												const c = ADMIN_LEVEL_COLORS[profile.adminLevel] ?? COLOR_FALLBACK;
-												return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{ADMIN_LEVEL_LABEL[profile.adminLevel] ?? profile.adminLevel}</span>;
-											})() : <span style={{ color: "#94a3b8" }}>—</span>}
+											{profile.adminLevel ? <ColorPill label={ADMIN_LEVEL_LABEL[profile.adminLevel] ?? profile.adminLevel} color={ADMIN_LEVEL_COLORS[profile.adminLevel] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 										</InfoField>
 										<InfoField label="Permissions">
 											{(() => {

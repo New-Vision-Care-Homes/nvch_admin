@@ -5,7 +5,7 @@ import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
 import { utcToDisplayTime, utcToWeekday, utcToDate } from "@/utils/timeHandling";
 import Button from "@components/UI/Button";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import PageLayout from "@components/layout/PageLayout";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import { User, MapPin, ClipboardList, Clock, ChevronRight, Undo2, Globe, AlertTriangle } from "lucide-react";

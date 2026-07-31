@@ -20,7 +20,8 @@ import { Search, X } from "lucide-react";
 import ActionMessage from "@components/UI/ActionMessage";
 import ErrorState from "@components/UI/ErrorState";
 import ClientConflictModal from "@/components/UI/ClientConflictModal";
-import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 
 
 const toBoolean = (value) => {

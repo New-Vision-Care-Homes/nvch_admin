@@ -12,7 +12,7 @@ import * as yup from "yup";
 import { dateRule, dateRuleOptional, longTextRule } from "@/utils/validation";
 // Import our custom hook that interacts with the backend for certificates
 import { useCertificates } from "@/hooks/useCertificates";
-import { CERTIFICATE_OPTIONS } from "@/utils/dropdown_list";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 
 // Define the validation schema for the Certificate Form using Yup.
 // This ensures the user cannot submit the form if required fields are missing or invalid.

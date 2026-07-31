@@ -21,7 +21,8 @@ export const trainingService = {
     /**
      * List trainings.
      * Params: { from?, to?, type? } — from/to filter on startTime, type is an
-     * exact trainingType match. All optional and combinable.
+     * exact trainingType match (must be one of the slugs from getTypes()).
+     * All optional and combinable.
      * Response shape: { trainings: Training[] }
      */
     getAll: async (params = {}) => {
@@ -36,6 +37,15 @@ export const trainingService = {
     getById: async (id) => {
         const { data } = await axiosClient.get(API_ENDPOINTS.TRAININGS.BY_ID(id));
         return data?.data;
+    },
+
+    /**
+     * Fetch the canonical, closed set of training types (slug + display label).
+     * Response shape: { trainingTypes: [{ value, label }] }
+     */
+    getTypes: async () => {
+        const { data } = await axiosClient.get(API_ENDPOINTS.TRAININGS.TYPES);
+        return data?.data?.trainingTypes ?? [];
     },
 
     // ── Write ─────────────────────────────────────────────────────────────────

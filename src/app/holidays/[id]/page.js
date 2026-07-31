@@ -6,14 +6,15 @@ import PageLayout               from "@components/layout/PageLayout";
 import ErrorState               from "@components/UI/ErrorState";
 import Button                   from "@components/UI/Button";
 import ConfirmDeleteModal        from "@components/UI/ConfirmDeleteModal";
-import StatusBadge               from "@components/UI/StatusBadge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useHolidays }          from "@/hooks/useHolidays";
 import { useAdmins }            from "@/hooks/useAdmins";
 import { useProfile }           from "@/hooks/useProfile";
 import { formatDateOnly, formatDateTime } from "@/utils/dates";
 import { personName }           from "@/utils/formatting";
-import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_COLORS } from "@/utils/dropdown_list";
+import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_COLORS } from "@/utils/dropdownList/adminLevel";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 import {
     Edit, Trash2, Undo2, AlertCircle,
     UserCheck, CalendarDays, Clock,
@@ -41,16 +42,8 @@ function AdminName({ adminId }) {
 
 
 function AdminLevelChip({ level }) {
-    const color = ADMIN_LEVEL_COLORS[level];
     const label = ADMIN_LEVEL_LABEL[level] ?? level;
-    return (
-        <span
-            className={styles.chip}
-            style={color ? { background: color.bg, border: `1px solid ${color.border}`, color: color.text } : {}}
-        >
-            {label}
-        </span>
-    );
+    return <ColorPill label={label} color={ADMIN_LEVEL_COLORS[level] ?? COLOR_FALLBACK} />;
 }
 
 function RuleViewCard({ rule }) {

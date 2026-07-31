@@ -33,11 +33,10 @@ import ErrorState  from "@components/UI/ErrorState";
 import Button      from "@components/UI/Button";
 import { usePayrollExceptions, useCoverSheet } from "@/hooks/usePayroll";
 import { formatDateTime } from "@/utils/dates";
-import {
-    HOME_TYPE_COLORS,
-    REGION_COLORS,
-    COLOR_FALLBACK,
-} from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 import styles       from "./exceptions.module.css";
 import detailStyles from "../payroll_detail.module.css";
 
@@ -151,22 +150,8 @@ export default function PayrollExceptionsPage() {
                                 {home.name ?? "—"}
                             </p>
                             <div className={detailStyles.homeCardMeta}>
-                                {home.homeType && (
-                                    <span
-                                        className={detailStyles.homeCardPill}
-                                        style={{ background: typeColor.bg, color: typeColor.text, borderColor: typeColor.border }}
-                                    >
-                                        {home.homeType}
-                                    </span>
-                                )}
-                                {home.region && (
-                                    <span
-                                        className={detailStyles.homeCardPill}
-                                        style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}
-                                    >
-                                        {home.region}
-                                    </span>
-                                )}
+                                {home.homeType && <ColorPill label={home.homeType} color={typeColor} />}
+                                {home.region && <ColorPill label={home.region} color={regionColor} />}
                             </div>
                         </div>
                     </div>

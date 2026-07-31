@@ -16,7 +16,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import styles from "./create.module.css";
 
 // ─── Debounce ──────────────────────────────────────────────────────────────────

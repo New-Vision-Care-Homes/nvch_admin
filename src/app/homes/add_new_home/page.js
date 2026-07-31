@@ -19,7 +19,8 @@ import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
 import ClientConflictModal from "@/components/UI/ClientConflictModal";
-import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 
 
 const schema = yup.object({

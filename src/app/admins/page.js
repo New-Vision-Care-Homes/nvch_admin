@@ -19,7 +19,10 @@ import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { fullName } from "@/utils/formatting";
-import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, DEPARTMENT_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
+import { DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function Admins() {
 	const { profile } = useProfile();
@@ -193,24 +196,14 @@ export default function Admins() {
 												</TableCell>
 												<TableCell><span>{admin.employeeId}</span></TableCell>
 												<TableCell>
-													{admin.adminLevel ? (() => {
-														const c = ADMIN_LEVEL_COLORS[admin.adminLevel] ?? COLOR_FALLBACK;
-														return (
-															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
-																{ADMIN_LEVEL_LABEL[admin.adminLevel] ?? admin.adminLevel}
-															</span>
-														);
-													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+													{admin.adminLevel ? (
+														<ColorPill label={ADMIN_LEVEL_LABEL[admin.adminLevel] ?? admin.adminLevel} color={ADMIN_LEVEL_COLORS[admin.adminLevel] ?? COLOR_FALLBACK} />
+													) : <span style={{ color: "#94a3b8" }}>—</span>}
 												</TableCell>
 												<TableCell>
-													{admin.department ? (() => {
-														const c = DEPARTMENT_COLORS[admin.department] ?? COLOR_FALLBACK;
-														return (
-															<span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>
-																{admin.department}
-															</span>
-														);
-													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+													{admin.department ? (
+														<ColorPill label={admin.department} color={DEPARTMENT_COLORS[admin.department] ?? COLOR_FALLBACK} />
+													) : <span style={{ color: "#94a3b8" }}>—</span>}
 												</TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${admin.isActive ? styles.statusActive : styles.statusInactive}`}>

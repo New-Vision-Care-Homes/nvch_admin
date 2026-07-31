@@ -110,6 +110,7 @@ export const API_ENDPOINTS = {
 	/* All related endpoints for admin-scheduled trainings */
 	TRAININGS: {
 		BASE:           '/api/trainings',
+		TYPES:          '/api/trainings/types',
 		BY_ID:          (id) => `/api/trainings/${id}`,
 		ATTENDEES:      (id) => `/api/trainings/${id}/attendees`,
 		ATTENDEE_BY_ID: (id, caregiverId) => `/api/trainings/${id}/attendees/${caregiverId}`,

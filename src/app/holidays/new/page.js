@@ -7,7 +7,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import { useHolidays }        from "@/hooks/useHolidays";
-import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdown_list";
+import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
 import { AlertCircle, Loader } from "lucide-react";
 import CaregiverRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../_components/CaregiverRulesSection";
 import styles from "./new.module.css";

@@ -7,7 +7,7 @@ import ErrorState from "@components/UI/ErrorState";
 import Button from "@components/UI/Button";
 import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import GeofenceMap from "@components/UI/GeofenceMap";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useProfile } from "@/hooks/useProfile";
@@ -19,6 +19,7 @@ import AttendeeStatusModal from "../_components/AttendeeStatusModal";
 import AddAttendeesModal from "../_components/AddAttendeesModal";
 import CancelTrainingModal from "../_components/CancelTrainingModal";
 import { TRAINING_STATUS_META } from "../_components/statusMeta";
+import { getTrainingTypeColor } from "@/utils/dropdownList/trainingType";
 import {
     Edit, Ban, AlertCircle, UserPlus,
     UserCheck, CalendarDays, Clock, MapPin, Undo2,
@@ -161,7 +162,9 @@ export default function TrainingDetailPage() {
                             <CardHeader>Basic Info</CardHeader>
                             <CardContent>
                                 <div className={styles.infoGrid}>
-                                    <InfoField label="Type" value={training.trainingType} />
+                                    <InfoField label="Type">
+                                        <ColorPill label={training.trainingTypeLabel || training.trainingType} color={getTrainingTypeColor(training.trainingType)} />
+                                    </InfoField>
                                 </div>
 
                                 <p className={styles.sectionDivider}>Schedule</p>

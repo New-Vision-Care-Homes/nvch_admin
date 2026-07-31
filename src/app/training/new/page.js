@@ -12,6 +12,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import GeofenceMap from "@components/UI/GeofenceMap";
 import AddressAutocomplete from "@components/UI/AddressAutocomplete";
 import { useTrainings } from "@/hooks/useTrainings";
+import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
 import PayRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../_components/PayRulesSection";
 import PersonMultiSelect from "../_components/PersonMultiSelect";
 import { X, Save, Loader } from "lucide-react";
@@ -77,6 +78,7 @@ export default function CreateTrainingPage() {
     const router = useRouter();
 
     const { createTraining, isActionPending, actionError } = useTrainings({}, { enabled: false });
+    const { trainingTypeOptions } = useTrainingTypeDropdown();
 
     const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm({
         resolver: yupResolver(schema),
@@ -226,7 +228,7 @@ export default function CreateTrainingPage() {
                         <CardContent>
                             <div className={styles.row2}>
                                 <InputField label="Title" name="title" register={register} error={errors.title} placeholder="e.g. UMAB Training" required />
-                                <InputField label="Training Type" name="trainingType" register={register} error={errors.trainingType} placeholder="e.g. UMAB" required />
+                                <InputField label="Training Type" name="trainingType" type="select" register={register} error={errors.trainingType} options={trainingTypeOptions} required />
                             </div>
 
                             <p className={styles.sectionDivider}>Schedule</p>

@@ -14,7 +14,7 @@ import { formatDateOnly, toDateInput } from "@/utils/dates";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useCertificates } from "@/hooks/useCertificates";
 import { useApprovals } from "@/hooks/useApprovals";
-import { CERTIFICATE_OPTIONS } from "@/utils/dropdown_list";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 import CertificateModal from "@components/UI/CertificateModal";
 
 export default function Certification() {

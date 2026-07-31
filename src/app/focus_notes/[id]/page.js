@@ -11,7 +11,7 @@ import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Undo2, Edit2, Save, X,

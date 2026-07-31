@@ -137,3 +137,22 @@ export const useTrainings = (options = {}, { enabled = true } = {}) => {
         refetchDetail: detailQuery.refetch,
     };
 };
+
+// ── Training types (closed set, backend-driven) ────────────────────────────────
+//
+// The backend is the source of truth for the 3 valid trainingType slugs — this
+// hook fetches them at runtime instead of hardcoding the list, so a new type
+// added server-side shows up here automatically.
+export const useTrainingTypes = () => {
+    const query = useQuery({
+        queryKey:  ["trainingTypes"],
+        queryFn:   trainingService.getTypes,
+        staleTime: 10 * 60 * 1000, // 10 minutes — the type list rarely changes
+    });
+
+    return {
+        trainingTypes:          query.data ?? [], // [{ slug, label }]
+        isTrainingTypesLoading: query.isLoading,
+        trainingTypesError:     query.error ? getErrorMessage(query.error) : null,
+    };
+};

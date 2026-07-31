@@ -96,16 +96,6 @@
 	flex-wrap: wrap;
 }
 
-.homeCardPill {
-	display: inline-block;
-	padding: 0.18rem 0.6rem;
-	border-radius: 999px;
-	border: 1.5px solid;
-	font-size: 0.74rem;
-	font-weight: 700;
-	letter-spacing: 0.03em;
-	white-space: nowrap;
-}
 
 .homeCardAddress {
 	display: flex;

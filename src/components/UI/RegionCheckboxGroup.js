@@ -1,6 +1,6 @@
 "use client";
 
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 
 /**
  * Multi-select region picker rendered as a checkbox group. Controlled:

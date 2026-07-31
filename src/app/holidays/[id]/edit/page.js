@@ -9,7 +9,7 @@ import PageLayout                  from "@components/layout/PageLayout";
 import ErrorState                  from "@components/UI/ErrorState";
 import Button                      from "@components/UI/Button";
 import { useHolidays }             from "@/hooks/useHolidays";
-import { ADMIN_LEVEL_OPTIONS }     from "@/utils/dropdown_list";
+import { ADMIN_LEVEL_OPTIONS }     from "@/utils/dropdownList/adminLevel";
 import { AlertCircle, Loader }     from "lucide-react";
 import CaregiverRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../../_components/CaregiverRulesSection";
 import styles from "./edit.module.css";

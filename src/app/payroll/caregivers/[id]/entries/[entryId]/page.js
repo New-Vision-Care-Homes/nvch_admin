@@ -11,7 +11,7 @@ import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import Button        from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge from "@components/UI/StatusBadge";
+import StatusBadge from "@components/UI/Badge";
 import { useCaregiverPayrollSummary, useVoidEntry } from "@/hooks/usePayroll";
 import { useProfile }                              from "@/hooks/useProfile";
 import { formatDateTime } from "@/utils/dates";

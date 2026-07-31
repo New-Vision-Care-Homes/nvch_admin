@@ -26,7 +26,7 @@ import {
 	birthRule,
 	addressComponentRule,
 } from "@/utils/validation";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { joinName } from "@/utils/formatting";
 
 const TIMEZONE_OPTIONS = [

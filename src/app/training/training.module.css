@@ -92,6 +92,25 @@
 .filterSelect:hover  { border-color: #9ca3af; }
 .filterSelect:focus  { border-color: var(--color-primary, #1c4a6e); box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1); }
 
+/* ── Type color legend ────────────────────────────────────────────────────── */
+
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	flex-wrap: wrap;
+	margin-bottom: 1.25rem;
+}
+
+.legendLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #94a3b8;
+	margin-right: 2px;
+}
+
 /* ── Table cell overrides (base table chrome comes from PageTable) ─────────── */
 
 .tdName {

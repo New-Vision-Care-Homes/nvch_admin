@@ -191,18 +191,6 @@
 	margin-left: auto;
 }
 
-/* ── Type / Region pills ── */
-.typePill {
-	display: inline-block;
-	padding: 0.18rem 0.6rem;
-	border-radius: 999px;
-	border: 1.5px solid;
-	font-size: 0.74rem;
-	font-weight: 700;
-	letter-spacing: 0.03em;
-	white-space: nowrap;
-}
-
 /* ── Legend ── */
 .legend {
 	display: flex;
@@ -220,15 +208,6 @@
 	letter-spacing: 0.08em;
 	color: #94a3b8;
 	margin-right: 2px;
-}
-
-.legendChip {
-	font-size: 0.71rem;
-	font-weight: 700;
-	padding: 2px 9px;
-	border-radius: 999px;
-	border: 1.5px solid;
-	letter-spacing: 0.02em;
 }
 
 .legendSep {
