@@ -92,13 +92,14 @@ export const API_ENDPOINTS = {
 
 	/* All related endpoints for payroll */
 	PAYROLL: {
-		COVER_SHEET:       '/api/payroll/cover-sheet',
-		EXCEPTIONS:        '/api/payroll/exceptions',
-		STAT_RECOMPUTE:    '/api/payroll/stat/recompute',
-		CAREGIVER_SUMMARY: (caregiverId) => `/api/payroll/caregivers/${caregiverId}/summary`,
-		CAREGIVER_ENTRIES: (caregiverId) => `/api/payroll/caregivers/${caregiverId}/entries`,
-		ENTRY_BY_ID:       (id) => `/api/payroll/entries/${id}`,
-		ENTRY_VOID:        (id) => `/api/payroll/entries/${id}/void`,
+		COVER_SHEET:              '/api/payroll/cover-sheet',
+		EXCEPTIONS:               '/api/payroll/exceptions',
+		STAT_RECOMPUTE:           '/api/payroll/stat/recompute',
+		CAREGIVER_SUMMARY:        (caregiverId) => `/api/payroll/caregivers/${caregiverId}/summary`,
+		CAREGIVER_ENTRIES:        (caregiverId) => `/api/payroll/caregivers/${caregiverId}/entries`,
+		ENTRY_BY_ID:              (id) => `/api/payroll/entries/${id}`,
+		ENTRY_VOID:               (id) => `/api/payroll/entries/${id}/void`,
+		OVERTIME_ACKNOWLEDGMENTS: '/api/payroll/overtime/acknowledgments',
 	},
 
 	/* All related endpoints for stat holidays */

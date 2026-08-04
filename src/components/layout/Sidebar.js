@@ -16,7 +16,7 @@ const tabs = [
 	// id 6 (Scheduling / Training) is computed per-profile in the component below —
 	// see schedulingTab — since its label/icon/flyout depend on which of shifts vs
 	// training the user can access, not a simple "has any of these slugs" check.
-	{ id: 6.5, label: "Approvals", icon: ClipboardCheck, href: "/approvals" },
+	{ id: 6.5, label: "Approv / Ack", icon: ClipboardCheck, href: "/approvals" },
 	{ id: 6.8, label: "Payroll", icon: DollarSign, href: "/payroll", hasFlyout: true, requiredSlugs: ["view_payroll", "manage_payroll"] },
 	{ id: 6.85, label: "Holidays", icon: Sun, href: "/holidays", requiredSlugs: ["view_holidays", "view_payroll"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
