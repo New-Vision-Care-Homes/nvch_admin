@@ -24,8 +24,9 @@ import detailStyles from "../../[id]/payroll_detail.module.css";
 
 /** Maps raw API category keys to human-readable labels for the entries table. */
 const CATEGORY_LABELS = {
-    retro_bonus: "Retro Bonus",
-    bereavement: "Bereavement",
+    retro_bonus:  "Retro Bonus",
+    bereavement:  "Bereavement",
+    hours_banked: "Banked Hours Correction",
 };
 
 const STATUS_LABELS = {

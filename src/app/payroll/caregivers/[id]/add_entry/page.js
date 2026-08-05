@@ -4,8 +4,10 @@
 // IMPORTS
 // ============================================================
 
-import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { Undo2, User } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import Button        from "@components/UI/Button";
@@ -21,18 +23,55 @@ import detailStyles  from "../../../[id]/payroll_detail.module.css";
 // SECTION: Constants
 // ============================================================
 
-/**
- * Entry categories accepted by the API with display labels and unit hints.
- * The `unit` drives the Amount field label and live preview.
- */
 const CATEGORY_OPTIONS = [
-    { value: "retro_bonus", label: "Retro Bonus", unit: "dollars" },
-    { value: "bereavement", label: "Bereavement", unit: "hours"   },
+    { value: "retro_bonus",  label: "Retro Bonus",             unit: "dollars" },
+    { value: "bereavement",  label: "Bereavement",             unit: "hours"   },
+    { value: "hours_banked", label: "Banked Hours Correction", unit: "hours"   },
 ];
 
 const CURRENT_YEAR   = new Date().getFullYear();
 const YEAR_OPTIONS   = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
 const PERIOD_OPTIONS = Array.from({ length: 26 }, (_, index) => index + 1);
+
+
+// ============================================================
+// SECTION: Validation schema
+// ============================================================
+
+const schema = yup.object({
+    category: yup
+        .string()
+        .oneOf(CATEGORY_OPTIONS.map((o) => o.value), "Invalid category")
+        .required("Category is required"),
+
+    amount: yup
+        .number()
+        .typeError("Amount must be a number")
+        .required("Amount is required")
+        .when("category", {
+            is:        "hours_banked",
+            then:      (s) => s.notOneOf([0], "Amount cannot be zero"),
+            otherwise: (s) => s.positive("Amount must be greater than zero"),
+        }),
+
+    payYear: yup
+        .number()
+        .typeError("Year is required")
+        .required("Year is required"),
+
+    periodNumber: yup
+        .number()
+        .typeError("Period is required")
+        .required("Period is required"),
+
+    reason: yup
+        .string()
+        .trim()
+        .required("Reason is required"),
+
+    note:   yup.string().optional(),
+    homeId: yup.string().optional(),
+});
 
 
 // ============================================================
@@ -46,8 +85,6 @@ const PERIOD_OPTIONS = Array.from({ length: 26 }, (_, index) => index + 1);
  *   Left column  — form fields: category, amount, reason, note, submit button.
  *   Right column — context panel: caregiver card (cached), pay period selectors,
  *                  home attribution select, live preview chip.
- *
- * Feedback messages (success / error) appear above the two-column body.
  *
  * Route: /payroll/caregivers/[id]/add_entry
  * Query params: payYear, periodNumber (pre-fill selectors; user can change)
@@ -64,20 +101,38 @@ export default function AddCaregiverEntryPage() {
     const periodNumber = searchParams.get("periodNumber") ?? "";
 
 
-    // ── Form state ────────────────────────────────────────────────────────────
-    const [category,       setCategory]       = useState(CATEGORY_OPTIONS[0].value);
-    const [amount,         setAmount]         = useState("");
-    const [selectedYear,   setSelectedYear]   = useState(payYear);
-    const [selectedPeriod, setSelectedPeriod] = useState(periodNumber);
-    const [reason,         setReason]         = useState("");
-    const [note,           setNote]           = useState("");
-    const [selectedHomeId, setSelectedHomeId] = useState("");
+    // ── Form ──────────────────────────────────────────────────────────────────
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+    } = useForm({
+        resolver: yupResolver(schema),
+        defaultValues: {
+            category:     CATEGORY_OPTIONS[0].value,
+            amount:       "",
+            payYear:      payYear      ? Number(payYear)      : "",
+            periodNumber: periodNumber ? Number(periodNumber) : "",
+            reason:       "",
+            note:         "",
+            homeId:       "",
+        },
+    });
+
+    const watchedCategory = watch("category");
+    const watchedYear     = watch("payYear");
+    const watchedPeriod   = watch("periodNumber");
+    const watchedAmount   = watch("amount");
+
+    const selectedCategory = CATEGORY_OPTIONS.find((o) => o.value === watchedCategory);
+    const amountUnit       = selectedCategory?.unit ?? "amount";
+    const isBankedHours    = watchedCategory === "hours_banked";
 
 
     // ── Data ──────────────────────────────────────────────────────────────────
     const { homes, isLoading: homesLoading } = useHomes({ params: { limit: 100 } });
 
-    // Caregiver summary — React Query returns cached data from the previous page visit
     const { summary: caregiverSummary } = useCaregiverPayrollSummary({
         params: {
             caregiverId,
@@ -87,14 +142,11 @@ export default function AddCaregiverEntryPage() {
         enabled: !!(caregiverId && payYear && periodNumber),
     });
 
-    const { createEntry, isCreating, createError, createResult, resetCreate } =
+    const { createEntry, isCreating, createError, resetCreate } =
         useCreateCaregiverEntry(caregiverId);
 
 
     // ── Derived values ────────────────────────────────────────────────────────
-    const selectedCategory = CATEGORY_OPTIONS.find((option) => option.value === category);
-    const amountUnit       = selectedCategory?.unit ?? "amount";
-
     const caregiverFullName =
         [caregiverSummary?.caregiver?.firstName, caregiverSummary?.caregiver?.lastName]
             .filter(Boolean)
@@ -102,35 +154,29 @@ export default function AddCaregiverEntryPage() {
 
 
     // ── Handlers ──────────────────────────────────────────────────────────────
-
-    /** Submit the form, create the entry, then return to the caregiver summary page. */
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const onSubmit = async (data) => {
         resetCreate();
-
         try {
             await createEntry({
-                category,
-                amount:       Number(amount),
-                payYear:      Number(selectedYear),
-                periodNumber: Number(selectedPeriod),
-                reason,
-                ...(note           && { note }),
-                ...(selectedHomeId && { homeId: selectedHomeId }),
+                category:     data.category,
+                amount:       data.amount,
+                payYear:      data.payYear,
+                periodNumber: data.periodNumber,
+                reason:       data.reason,
+                ...(data.note   && { note:   data.note }),
+                ...(data.homeId && { homeId: data.homeId }),
             });
-
             router.push(
-                `/payroll/caregivers/${caregiverId}?payYear=${selectedYear}&periodNumber=${selectedPeriod}`
+                `/payroll/caregivers/${caregiverId}?payYear=${data.payYear}&periodNumber=${data.periodNumber}`
             );
         } catch {
             // createError is surfaced via the hook's state
         }
     };
 
-    /** Navigate back to the caregiver summary page. */
     const handleBack = () => {
         router.push(
-            `/payroll/caregivers/${caregiverId}?payYear=${selectedYear}&periodNumber=${selectedPeriod}`
+            `/payroll/caregivers/${caregiverId}?payYear=${watchedYear}&periodNumber=${watchedPeriod}`
         );
     };
 
@@ -166,7 +212,7 @@ export default function AddCaregiverEntryPage() {
             )}
 
             {/* ── Two-column body ──────────────────────────────────────────── */}
-            <form id="addEntryForm" onSubmit={handleSubmit}>
+            <form id="addEntryForm" onSubmit={handleSubmit(onSubmit)}>
                 <div className={styles.pageBody}>
 
                     {/* ── Left column: entry details form ───────────────── */}
@@ -182,16 +228,17 @@ export default function AddCaregiverEntryPage() {
                                     </label>
                                     <select
                                         className={styles.select}
-                                        value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        required
+                                        {...register("category")}
                                     >
-                                        {CATEGORY_OPTIONS.map((option) => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
+                                        {CATEGORY_OPTIONS.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>
+                                                {opt.label}
                                             </option>
                                         ))}
                                     </select>
+                                    {errors.category && (
+                                        <p className={styles.fieldError}>{errors.category.message}</p>
+                                    )}
                                 </div>
 
                                 {/* Amount */}
@@ -202,13 +249,21 @@ export default function AddCaregiverEntryPage() {
                                     <input
                                         className={styles.input}
                                         type="number"
-                                        min="0"
                                         step="0.01"
-                                        placeholder={amountUnit === "dollars" ? "e.g. 500" : "e.g. 8"}
-                                        value={amount}
-                                        onChange={(e) => setAmount(e.target.value)}
-                                        required
+                                        placeholder={isBankedHours
+                                            ? "e.g. 8 or -8"
+                                            : amountUnit === "dollars" ? "e.g. 500" : "e.g. 8"
+                                        }
+                                        {...register("amount", { valueAsNumber: true })}
                                     />
+                                    {isBankedHours && (
+                                        <p className={styles.fieldHint}>
+                                            Positive adds hours to the balance; negative removes them. Zero is not allowed.
+                                        </p>
+                                    )}
+                                    {errors.amount && (
+                                        <p className={styles.fieldError}>{errors.amount.message}</p>
+                                    )}
                                 </div>
 
                                 {/* Reason */}
@@ -220,10 +275,11 @@ export default function AddCaregiverEntryPage() {
                                         className={styles.input}
                                         type="text"
                                         placeholder="e.g. Q2 retention bonus"
-                                        value={reason}
-                                        onChange={(e) => setReason(e.target.value)}
-                                        required
+                                        {...register("reason")}
                                     />
+                                    {errors.reason && (
+                                        <p className={styles.fieldError}>{errors.reason.message}</p>
+                                    )}
                                 </div>
 
                                 {/* Note */}
@@ -235,8 +291,7 @@ export default function AddCaregiverEntryPage() {
                                         className={styles.textarea}
                                         rows={3}
                                         placeholder="Shown in cover-sheet notes…"
-                                        value={note}
-                                        onChange={(e) => setNote(e.target.value)}
+                                        {...register("note")}
                                     />
                                 </div>
 
@@ -281,15 +336,16 @@ export default function AddCaregiverEntryPage() {
                                         </label>
                                         <select
                                             className={styles.select}
-                                            value={selectedYear}
-                                            onChange={(e) => setSelectedYear(e.target.value)}
-                                            required
+                                            {...register("payYear", { valueAsNumber: true })}
                                         >
                                             <option value="">Select year…</option>
                                             {YEAR_OPTIONS.map((year) => (
                                                 <option key={year} value={year}>{year}</option>
                                             ))}
                                         </select>
+                                        {errors.payYear && (
+                                            <p className={styles.fieldError}>{errors.payYear.message}</p>
+                                        )}
                                     </div>
                                     <div className={styles.fieldGroup}>
                                         <label className={styles.fieldLabel}>
@@ -297,15 +353,16 @@ export default function AddCaregiverEntryPage() {
                                         </label>
                                         <select
                                             className={styles.select}
-                                            value={selectedPeriod}
-                                            onChange={(e) => setSelectedPeriod(e.target.value)}
-                                            required
+                                            {...register("periodNumber", { valueAsNumber: true })}
                                         >
                                             <option value="">Select period…</option>
                                             {PERIOD_OPTIONS.map((period) => (
                                                 <option key={period} value={period}>Period {period}</option>
                                             ))}
                                         </select>
+                                        {errors.periodNumber && (
+                                            <p className={styles.fieldError}>{errors.periodNumber.message}</p>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
@@ -313,13 +370,14 @@ export default function AddCaregiverEntryPage() {
 
                         {/* Home attribution */}
                         <Card>
-                            <CardHeader>Home Attribution <span className={styles.optional}>(optional)</span></CardHeader>
+                            <CardHeader>
+                                Home Attribution <span className={styles.optional}>(optional)</span>
+                            </CardHeader>
                             <CardContent>
                                 <div className={styles.fieldGroup}>
                                     <select
                                         className={styles.select}
-                                        value={selectedHomeId}
-                                        onChange={(e) => setSelectedHomeId(e.target.value)}
+                                        {...register("homeId")}
                                     >
                                         <option value="">
                                             {homesLoading ? "Loading homes…" : "No specific home"}
@@ -341,9 +399,9 @@ export default function AddCaregiverEntryPage() {
                                         {selectedCategory?.label ?? "—"}
                                     </div>
                                     <div className={styles.previewMeta}>
-                                        {amount ? `${amount} ${amountUnit}` : `— ${amountUnit}`}
-                                        {selectedYear && selectedPeriod
-                                            ? ` · Period ${selectedPeriod} · ${selectedYear}`
+                                        {watchedAmount ? `${watchedAmount} ${amountUnit}` : `— ${amountUnit}`}
+                                        {watchedYear && watchedPeriod
+                                            ? ` · Period ${watchedPeriod} · ${watchedYear}`
                                             : ""}
                                     </div>
                                 </div>
