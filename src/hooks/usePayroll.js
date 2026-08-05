@@ -241,6 +241,113 @@ export const useVoidEntry = (entryId) => {
 };
 
 /**
+ * Fetches every house's supervisor/payroll review state for one pay period.
+ * Used by the house-reviews overview page and the payroll overview status columns.
+ *
+ * @param {Object} options
+ * @param {number|string} options.payYear
+ * @param {number|string} options.periodNumber
+ * @param {Object}        [options.params]   - Extra filter params forwarded to the API
+ * @param {boolean}       [options.enabled]
+ */
+export const useHouseReviews = ({ payYear, periodNumber, params = {}, enabled = true } = {}) => {
+	const query = useQuery({
+		queryKey: ["payroll", "houseReviews", { payYear, periodNumber, ...params }],
+		queryFn:  () => payrollService.getHouseReviews({ payYear, periodNumber, params }),
+		enabled:  !!(enabled && payYear && periodNumber),
+		placeholderData: keepPreviousData,
+	});
+
+	const EMPTY_COUNTS = {
+		supervisor: { pending: 0, reviewed: 0 },
+		payroll:    { pending: 0, processing: 0, processed: 0 },
+		overdue: 0, blockedOnSupervisor: 0,
+	};
+
+	return {
+		payPeriod:   query.data?.payPeriod   ?? null,
+		reviewDueAt: query.data?.reviewDueAt ?? null,
+		houses:      query.data?.houses      ?? [],
+		counts:      query.data?.counts      ?? EMPTY_COUNTS,
+		isLoading:   query.isLoading,
+		fetchError:  query.error ? getErrorMessage(query.error) : null,
+		refetch:     query.refetch,
+	};
+};
+
+/**
+ * Fetches one house's full review state and audit history.
+ *
+ * @param {Object} options
+ * @param {string}        options.houseId
+ * @param {number|string} options.payYear
+ * @param {number|string} options.periodNumber
+ * @param {boolean}       [options.enabled]
+ */
+export const useHouseReview = ({ houseId, payYear, periodNumber, enabled = true } = {}) => {
+	const query = useQuery({
+		queryKey: ["payroll", "houseReview", { houseId, payYear, periodNumber }],
+		queryFn:  () => payrollService.getHouseReview({ houseId, payYear, periodNumber }),
+		enabled:  !!(enabled && houseId && payYear && periodNumber),
+	});
+
+	return {
+		payPeriod:  query.data?.payPeriod  ?? null,
+		house:      query.data?.house      ?? null,
+		supervisors: query.data?.supervisors ?? [],
+		review:     query.data?.review     ?? null,
+		activity:   query.data?.activity   ?? null,
+		isLoading:  query.isLoading,
+		fetchError: query.error ? getErrorMessage(query.error) : null,
+		refetch:    query.refetch,
+	};
+};
+
+/**
+ * Mutation hook for updating a house's supervisor review status.
+ * Invalidates both the overview list and any open single-house review queries.
+ */
+export const useUpdateSupervisorReview = () => {
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: ({ houseId, payYear, periodNumber, body }) =>
+			payrollService.updateSupervisorReview({ houseId, payYear, periodNumber, body }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["payroll", "houseReviews"] });
+			queryClient.invalidateQueries({ queryKey: ["payroll", "houseReview"] });
+		},
+	});
+	return {
+		updateSupervisorReview: mutation.mutateAsync,
+		isUpdating:  mutation.isPending,
+		updateError: mutation.error ? getErrorMessage(mutation.error) : null,
+		resetUpdate: mutation.reset,
+	};
+};
+
+/**
+ * Mutation hook for updating a house's payroll status.
+ * Invalidates both the overview list and any open single-house review queries.
+ */
+export const useUpdatePayrollStatus = () => {
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: ({ houseId, payYear, periodNumber, body }) =>
+			payrollService.updatePayrollStatus({ houseId, payYear, periodNumber, body }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["payroll", "houseReviews"] });
+			queryClient.invalidateQueries({ queryKey: ["payroll", "houseReview"] });
+		},
+	});
+	return {
+		updatePayrollStatus: mutation.mutateAsync,
+		isUpdating:  mutation.isPending,
+		updateError: mutation.error ? getErrorMessage(mutation.error) : null,
+		resetUpdate: mutation.reset,
+	};
+};
+
+/**
  * Mutation hook for forcing a payroll stat recompute for a pay period.
  * Automatically invalidates all coverSheet queries on success so every
  * home row in the overview refreshes with the recomputed data.

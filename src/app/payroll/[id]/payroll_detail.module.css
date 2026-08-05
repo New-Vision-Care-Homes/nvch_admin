@@ -121,6 +121,7 @@
 .periodItem {
 	display: flex;
 	flex-direction: column;
+	align-items: flex-start;
 	gap: 3px;
 	padding: 12px 20px;
 	background: #fff;
@@ -309,6 +310,149 @@
 	font-weight: 700;
 	color: #dc2626;
 	white-space: nowrap;
+}
+
+/* ── Review action buttons (period strip) ─────────────────────────────────── */
+
+.periodItemRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+}
+
+/* ── Modal overlay + card ─────────────────────────────────────────────────── */
+
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+    backdrop-filter: blur(2px);
+}
+
+.modalCard {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+    width: 100%;
+    max-width: 420px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.modalCard form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.modalHeader {
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.875rem;
+}
+
+.modalTitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.modalLabel {
+    display: block;
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.modalRequired {
+    color: #dc2626;
+}
+
+.modalTextarea,
+.modalInput,
+.modalSelect {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.modalTextarea:focus,
+.modalInput:focus,
+.modalSelect:focus {
+    border-color: var(--color-primary, #1c4a6e);
+    background: #fff;
+}
+
+.modalTextarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.modalCancelBtn {
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s;
+}
+
+.modalCancelBtn:hover {
+    background: #e2e8f0;
+}
+
+.modalSubmitBtn {
+    padding: 7px 18px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--color-primary, #1c4a6e);
+    border: 1.5px solid var(--color-primary, #1c4a6e);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s, opacity 0.12s;
+}
+
+.modalSubmitBtn:hover:not(:disabled) {
+    background: #163d5c;
+}
+
+.modalSubmitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */

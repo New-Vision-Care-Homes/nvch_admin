@@ -99,7 +99,11 @@ export const API_ENDPOINTS = {
 		CAREGIVER_ENTRIES:        (caregiverId) => `/api/payroll/caregivers/${caregiverId}/entries`,
 		ENTRY_BY_ID:              (id) => `/api/payroll/entries/${id}`,
 		ENTRY_VOID:               (id) => `/api/payroll/entries/${id}/void`,
-		OVERTIME_ACKNOWLEDGMENTS: '/api/payroll/overtime/acknowledgments',
+		OVERTIME_ACKNOWLEDGMENTS:  '/api/payroll/overtime/acknowledgments',
+		HOUSE_REVIEWS:             (payYear, periodNumber) => `/api/payroll/pay-periods/${payYear}/${periodNumber}/house-reviews`,
+		HOUSE_REVIEW:              (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/review`,
+		HOUSE_SUPERVISOR_REVIEW:   (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/supervisor-review`,
+		HOUSE_PAYROLL_STATUS:      (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/payroll-status`,
 	},
 
 	/* All related endpoints for stat holidays */

@@ -26,18 +26,19 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
     Undo2, Building2,
-    FileSpreadsheet, Clock, Download, Loader2, AlertTriangle,
+    FileSpreadsheet, Clock, Download, Loader2, AlertTriangle, History,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import styles        from "./payroll_detail.module.css";
 import tableStyles   from "../payroll.module.css";
-import { useCoverSheet, usePayrollExceptions } from "@/hooks/usePayroll";
+import { useCoverSheet, usePayrollExceptions, useHouseReview, useUpdateSupervisorReview, useUpdatePayrollStatus } from "@/hooks/usePayroll";
 import { useShifts } from "@/hooks/useShifts";
+import { useProfile } from "@/hooks/useProfile";
 import SummaryTable from "../_components/SummaryTable";
 import DailyTable   from "../_components/DailyTable";
-import { ColorPill } from "@components/UI/Badge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
@@ -61,17 +62,10 @@ import logoImg  from "@/assets/logo/nv.png";
 //     (SummaryTable vs DailyTable) is rendered.
 // ============================================================
 
-/**
- * Placeholder payroll status displayed in the period strip.
- * The className maps to a CSS module class (e.g. .statusPending)
- * that applies the appropriate pill colour.
- *
- * TODO: Replace with a real status field from the cover-sheet API.
- */
-const PAYROLL_STATUS = {
-    label:     "Pending Review",
-    className: "statusPending",
-};
+const SUPERVISOR_TONE  = { pending: "warning", reviewed:  "success" };
+const PAYROLL_TONE     = { pending: "neutral", processing: "info",  processed: "success" };
+const SUPERVISOR_LABEL = { pending: "Pending", reviewed:  "Reviewed" };
+const PAYROLL_LABEL    = { pending: "Pending", processing: "Processing", processed: "Processed" };
 
 /**
  * Tab configuration for the two views on this page.
@@ -133,6 +127,8 @@ export default function PayrollDetailPage() {
     const payYear      = searchParams.get("payYear")      || "";
     const periodNumber = searchParams.get("periodNumber") || "";
 
+    const isCommunityRow = homeId === "community";
+
 
     // ── Local state ───────────────────────────────────────────────────────────
     // activeTab controls which table is shown and which API variant is
@@ -141,6 +137,13 @@ export default function PayrollDetailPage() {
     const [activeTab,    setActiveTab]    = useState("summary");
     // isExporting prevents double-clicks and shows a spinner on the Export button.
     const [isExporting,  setIsExporting]  = useState(false);
+
+    const [supervisorModalOpen, setSupervisorModalOpen] = useState(false);
+    const [supervisorNote,      setSupervisorNote]      = useState("");
+    const [payrollModalOpen,    setPayrollModalOpen]    = useState(false);
+    const [payrollNextStatus,   setPayrollNextStatus]   = useState("");
+    const [payrollReason,       setPayrollReason]       = useState("");
+    const [payrollNote,         setPayrollNote]         = useState("");
 
 
     // ── Data: Exceptions ─────────────────────────────────────────────────────
@@ -190,6 +193,48 @@ export default function PayrollDetailPage() {
     const displayStaff = coverSheet?.staff ?? [];
 
 
+    // ── Data: House review status ─────────────────────────────────────────────
+    const { review } = useHouseReview({
+        houseId:      homeId,
+        payYear:      payYear      ? Number(payYear)      : undefined,
+        periodNumber: periodNumber ? Number(periodNumber) : undefined,
+        enabled:      !!(homeId && payYear && periodNumber),
+    });
+
+    const supervisorStatus = review?.supervisorStatus ?? "pending";
+    const payrollStatus    = review?.payrollStatus    ?? "pending";
+
+    const {
+        updateSupervisorReview,
+        isUpdating:  isUpdatingSupervisor,
+        updateError: supervisorUpdateError,
+        resetUpdate: resetSupervisor,
+    } = useUpdateSupervisorReview();
+
+    // "payroll" in the API error message should read "payroll admin" in the UI
+    const supervisorDisplayError = supervisorUpdateError
+        ? supervisorUpdateError.replace(/\bpayroll\b(?! admin)/gi, "payroll admin")
+        : null;
+
+    const {
+        updatePayrollStatus: doUpdatePayrollStatus,
+        isUpdating:  isUpdatingPayroll,
+        updateError: payrollUpdateError,
+        resetUpdate: resetPayroll,
+    } = useUpdatePayrollStatus();
+
+    const { profile } = useProfile();
+    const canReviewSupervisor = profile?.permissionSlugs?.some((s) =>
+        s === "review_assigned_house_hours" || s === "review_all_house_hours"
+    ) ?? false;
+    const canManagePayroll = profile?.permissionSlugs?.includes("manage_payroll") ?? false;
+    const canViewReviewHistory = profile?.permissionSlugs?.some((s) =>
+        s === "view_payroll" ||
+        s === "review_assigned_house_hours" ||
+        s === "review_all_house_hours"
+    ) ?? false;
+
+
     // ── Data: Export package ─────────────────────────────────────────────────
     // The combined export always needs the daily-hours breakdown for the Hour
     // Sheet tab, regardless of which tab (summary/daily) the user currently
@@ -236,7 +281,7 @@ export default function PayrollDetailPage() {
         setIsExporting(true);
         try {
             await exportPayrollWorkbook({
-                homeName:     exportCoverSheet.home?.name,
+                homeName:     isCommunityRow ? "Other Hours" : exportCoverSheet.home?.name,
                 homeId,
                 payYear:      Number(payYear),
                 periodNumber: Number(periodNumber),
@@ -251,6 +296,62 @@ export default function PayrollDetailPage() {
         }
     };
 
+    // ── Modal handlers ────────────────────────────────────────────────────────
+
+    const openSupervisorModal = () => {
+        resetSupervisor();
+        setSupervisorNote("");
+        setSupervisorModalOpen(true);
+    };
+
+    const openPayrollModal = () => {
+        resetPayroll();
+        setPayrollReason("");
+        setPayrollNote("");
+        const defaultNext = payrollStatus === "pending"
+            ? "processing"
+            : payrollStatus === "processing"
+            ? "processed"
+            : "pending";
+        setPayrollNextStatus(defaultNext);
+        setPayrollModalOpen(true);
+    };
+
+    const handleSupervisorSubmit = async (e) => {
+        e.preventDefault();
+        const newStatus = supervisorStatus === "pending" ? "reviewed" : "pending";
+        try {
+            await updateSupervisorReview({
+                houseId: homeId,
+                payYear: Number(payYear),
+                periodNumber: Number(periodNumber),
+                body: {
+                    status: newStatus,
+                    ...(supervisorNote.trim() ? { note: supervisorNote.trim() } : {}),
+                },
+            });
+            setSupervisorModalOpen(false);
+        } catch { /* surfaced via supervisorUpdateError */ }
+    };
+
+    const handlePayrollSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await doUpdatePayrollStatus({
+                houseId: homeId,
+                payYear: Number(payYear),
+                periodNumber: Number(periodNumber),
+                body: {
+                    status: payrollNextStatus,
+                    ...(payrollReason.trim() ? { reason: payrollReason.trim() } : {}),
+                    ...(payrollNote.trim()   ? { note:   payrollNote.trim()   } : {}),
+                },
+            });
+            setPayrollModalOpen(false);
+        } catch { /* surfaced via payrollUpdateError */ }
+    };
+
+
     // ── Derived display values ────────────────────────────────────────────────
     // Colour tokens resolved from the home's type and region.
     // Used for the home card icon background and the type/region pills.
@@ -262,6 +363,20 @@ export default function PayrollDetailPage() {
     const backHref = `/payroll${payYear && periodNumber
         ? `?payYear=${payYear}&periodNumber=${periodNumber}`
         : ""}`;
+
+    const hasExceptions = (exceptionCount ?? 0) > 0;
+
+    const supervisorBtnDisabled = hasExceptions;
+    const supervisorBtnTitle    = hasExceptions
+        ? "Please clear all exceptions before changing the status"
+        : undefined;
+
+    const payrollBtnDisabled = supervisorStatus === "pending" || hasExceptions;
+    const payrollBtnTitle    = hasExceptions
+        ? "Please clear all exceptions before changing the status"
+        : supervisorStatus === "pending"
+        ? "Awaiting supervisor review"
+        : undefined;
 
 
     // ── Render helpers ────────────────────────────────────────────────────────
@@ -316,8 +431,17 @@ export default function PayrollDetailPage() {
 
                 {/* ── Page header: title left, back button right ───────────── */}
                 <div className={styles.pageHeader}>
-                    <div><h1>Payroll</h1></div>
+                    <div><h1>{isCommunityRow ? "Other Hours" : "Payroll"}</h1></div>
                     <div className={styles.headerActions}>
+                        {canViewReviewHistory && (
+                            <Button
+                                variant="secondary"
+                                icon={<History size={15} />}
+                                onClick={() => router.push(`/payroll/${homeId}/review-history?payYear=${payYear}&periodNumber=${periodNumber}`)}
+                            >
+                                Review History
+                            </Button>
+                        )}
                         <Button
                             variant="secondary"
                             icon={<Undo2 size={16} />}
@@ -337,7 +461,7 @@ export default function PayrollDetailPage() {
                 */}
                 <ErrorState isLoading={isLoading} errorMessage={fetchError} onRetry={refetch} />
 
-                {!isLoading && !fetchError && (
+                {!isLoading && !fetchError && !isCommunityRow && (
                     <div className={styles.homeCard}>
                         <div
                             className={styles.homeCardIcon}
@@ -354,10 +478,29 @@ export default function PayrollDetailPage() {
                                 {home?.region && <ColorPill label={home.region} color={regionColor} />}
                             </div>
                         </div>
+                        <Button
+                            className={styles.homeCardExportBtn}
+                            variant="excel"
+                            icon={isExporting ? <Loader2 size={15} className={tableStyles.spin} /> : <Download size={15} />}
+                            onClick={handleExport}
+                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0}
+                        >
+                            {isExporting ? "Exporting…" : "Export Payroll Package"}
+                        </Button>
+                    </div>
+                )}
 
-                        {/* Single combined-package export action, aligned to the far
-                            right of the home card — replaces the old per-tab buttons
-                            that used to sit in their own row below the tab strip. */}
+                {!isLoading && !fetchError && isCommunityRow && (
+                    <div className={styles.homeCard}>
+                        <div className={styles.homeCardIcon} style={{ background: "#f1f5f9" }}>
+                            <Building2 size={20} style={{ color: "#94a3b8" }} />
+                        </div>
+                        <div className={styles.homeCardBody}>
+                            <h1 className={styles.homeCardName}>Other Hours</h1>
+                            <p style={{ margin: 0, fontSize: "0.82rem", color: "#94a3b8" }}>
+                                Hours not assigned to any specific home this period.
+                            </p>
+                        </div>
                         <Button
                             className={styles.homeCardExportBtn}
                             variant="excel"
@@ -388,10 +531,46 @@ export default function PayrollDetailPage() {
                         </span>
                     </div>
                     <div className={styles.periodItem}>
+                        <span className={styles.periodItemLabel}>Supervisor Review</span>
+                        <div className={styles.periodItemRow}>
+                            <StatusBadge
+                                label={SUPERVISOR_LABEL[supervisorStatus] ?? supervisorStatus}
+                                tone={SUPERVISOR_TONE[supervisorStatus]   ?? "neutral"}
+                                size="tag"
+                            />
+                            {canReviewSupervisor && (
+                                <Button
+                                    variant="soft"
+                                    size="sm"
+                                    onClick={openSupervisorModal}
+                                    disabled={supervisorBtnDisabled}
+                                    title={supervisorBtnTitle}
+                                >
+                                    {supervisorStatus === "pending" ? "Mark as Reviewed" : "Revert to Pending"}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <div className={styles.periodItem}>
                         <span className={styles.periodItemLabel}>Payroll Status</span>
-                        <span className={`${styles.statusPill} ${styles[PAYROLL_STATUS.className]}`}>
-                            {PAYROLL_STATUS.label}
-                        </span>
+                        <div className={styles.periodItemRow}>
+                            <StatusBadge
+                                label={PAYROLL_LABEL[payrollStatus] ?? payrollStatus}
+                                tone={PAYROLL_TONE[payrollStatus]   ?? "neutral"}
+                                size="tag"
+                            />
+                            {canManagePayroll && (
+                                <Button
+                                    variant="soft"
+                                    size="sm"
+                                    onClick={openPayrollModal}
+                                    disabled={payrollBtnDisabled}
+                                    title={payrollBtnTitle}
+                                >
+                                    Update Status
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -434,6 +613,111 @@ export default function PayrollDetailPage() {
                 {renderTable()}
 
             </div>
+
+            {/* ── Supervisor Review Modal ──────────────────────────────────── */}
+            {supervisorModalOpen && (
+                <div className={styles.modalOverlay} onClick={() => setSupervisorModalOpen(false)}>
+                    <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2 className={styles.modalTitle}>
+                                {supervisorStatus === "pending" ? "Mark as Reviewed" : "Revert to Pending"}
+                            </h2>
+                        </div>
+                        {supervisorDisplayError && (
+                            <ActionMessage variant="error" message={supervisorDisplayError} />
+                        )}
+                        <form onSubmit={handleSupervisorSubmit}>
+                            <label className={styles.modalLabel}>Note (optional)</label>
+                            <textarea
+                                className={styles.modalTextarea}
+                                value={supervisorNote}
+                                onChange={(e) => setSupervisorNote(e.target.value)}
+                                placeholder="Add a note…"
+                                rows={3}
+                            />
+                            <div className={styles.modalActions}>
+                                <button type="button" className={styles.modalCancelBtn} onClick={() => setSupervisorModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className={styles.modalSubmitBtn} disabled={isUpdatingSupervisor}>
+                                    {isUpdatingSupervisor ? "Saving…" : supervisorStatus === "pending" ? "Mark as Reviewed" : "Revert to Pending"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Payroll Status Modal ─────────────────────────────────────── */}
+            {payrollModalOpen && (
+                <div className={styles.modalOverlay} onClick={() => setPayrollModalOpen(false)}>
+                    <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2 className={styles.modalTitle}>Update Payroll Status</h2>
+                        </div>
+                        {payrollUpdateError && (
+                            <ActionMessage variant="error" message={payrollUpdateError} />
+                        )}
+                        <form onSubmit={handlePayrollSubmit}>
+                            <label className={styles.modalLabel}>New Status</label>
+                            <select
+                                className={styles.modalSelect}
+                                value={payrollNextStatus}
+                                onChange={(e) => setPayrollNextStatus(e.target.value)}
+                                required
+                            >
+                                {["pending", "processing", "processed"]
+                                    .filter((s) => s !== payrollStatus)
+                                    .map((s) => (
+                                        <option key={s} value={s}>{PAYROLL_LABEL[s]}</option>
+                                    ))
+                                }
+                            </select>
+                            {payrollStatus === "processed" && payrollNextStatus && (
+                                <>
+                                    <label className={styles.modalLabel}>
+                                        Reason <span className={styles.modalRequired}>*</span>
+                                    </label>
+                                    <input
+                                        className={styles.modalInput}
+                                        type="text"
+                                        value={payrollReason}
+                                        onChange={(e) => setPayrollReason(e.target.value)}
+                                        placeholder="Why are you reverting from Processed?"
+                                        maxLength={500}
+                                        required
+                                    />
+                                </>
+                            )}
+                            <label className={styles.modalLabel}>Note (optional)</label>
+                            <textarea
+                                className={styles.modalTextarea}
+                                value={payrollNote}
+                                onChange={(e) => setPayrollNote(e.target.value)}
+                                placeholder="Add a note…"
+                                rows={3}
+                            />
+                            <div className={styles.modalActions}>
+                                <button type="button" className={styles.modalCancelBtn} onClick={() => setPayrollModalOpen(false)}>
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={styles.modalSubmitBtn}
+                                    disabled={
+                                        isUpdatingPayroll ||
+                                        !payrollNextStatus ||
+                                        (payrollStatus === "processed" && !payrollReason.trim())
+                                    }
+                                >
+                                    {isUpdatingPayroll ? "Saving…" : "Update Status"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </PageLayout>
     );
 }

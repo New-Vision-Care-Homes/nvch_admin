@@ -96,6 +96,71 @@ export const payrollService = {
 	},
 
 	/**
+	 * Fetch every house's review state for a single pay period.
+	 *
+	 * @param {Object} options
+	 * @param {number}  options.payYear
+	 * @param {number}  options.periodNumber
+	 * @param {Object}  [options.params]  - { mine, supervisorStatus, payrollStatus, region, hasActivity, includeInactiveHomes }
+	 */
+	getHouseReviews: async ({ payYear, periodNumber, params = {} }) => {
+		const { data } = await axiosClient.get(
+			API_ENDPOINTS.PAYROLL.HOUSE_REVIEWS(payYear, periodNumber),
+			{ params }
+		);
+		return data?.data;
+	},
+
+	/**
+	 * Fetch one house's review state and full audit trail.
+	 *
+	 * @param {Object} options
+	 * @param {string}  options.houseId
+	 * @param {number}  options.payYear
+	 * @param {number}  options.periodNumber
+	 */
+	getHouseReview: async ({ houseId, payYear, periodNumber }) => {
+		const { data } = await axiosClient.get(
+			API_ENDPOINTS.PAYROLL.HOUSE_REVIEW(houseId, payYear, periodNumber)
+		);
+		return data?.data;
+	},
+
+	/**
+	 * Update the supervisor review status for a house/period.
+	 *
+	 * @param {Object} options
+	 * @param {string}  options.houseId
+	 * @param {number}  options.payYear
+	 * @param {number}  options.periodNumber
+	 * @param {Object}  options.body  - { status: "reviewed" | "pending", note? }
+	 */
+	updateSupervisorReview: async ({ houseId, payYear, periodNumber, body }) => {
+		const { data } = await axiosClient.patch(
+			API_ENDPOINTS.PAYROLL.HOUSE_SUPERVISOR_REVIEW(houseId, payYear, periodNumber),
+			body
+		);
+		return data?.data;
+	},
+
+	/**
+	 * Update the payroll status for a house/period.
+	 *
+	 * @param {Object} options
+	 * @param {string}  options.houseId
+	 * @param {number}  options.payYear
+	 * @param {number}  options.periodNumber
+	 * @param {Object}  options.body  - { status: "pending" | "processing" | "processed", reason?, note? }
+	 */
+	updatePayrollStatus: async ({ houseId, payYear, periodNumber, body }) => {
+		const { data } = await axiosClient.patch(
+			API_ENDPOINTS.PAYROLL.HOUSE_PAYROLL_STATUS(houseId, payYear, periodNumber),
+			body
+		);
+		return data?.data;
+	},
+
+	/**
 	 * Force a stat recompute for a given pay period.
 	 * Returns counts and a per-staff qualification audit.
 	 *

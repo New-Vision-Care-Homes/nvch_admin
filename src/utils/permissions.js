@@ -113,7 +113,9 @@ export const PERMISSION_SCHEMAS = [
 		module: "Payroll",
 		slugs: [
 			"view_payroll",
-			"manage_payroll"
+			"manage_payroll",
+			"review_all_house_hours",
+			"review_assigned_house_hours"
 		]
 	},
 	{

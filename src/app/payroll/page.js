@@ -1,116 +1,46 @@
 "use client";
 
-// ============================================================
-// IMPORTS
-// ------------------------------------------------------------
-// Purpose:
-//   Pull in all external libraries, UI components, hooks, and
-//   utilities this page depends on.
-//
-// Relationship:
-//   - PageLayout / ErrorState are shared UI shell components.
-//   - usePayPeriod provides the current pay period so the
-//     filter can auto-populate on first load.
-//   - usePayrollOverview fetches all homes + their payroll
-//     totals concurrently and returns merged display rows.
-//   - HOME_TYPE_COLORS / REGION_COLORS drive per-row pill
-//     and accent colours throughout the table.
-// ============================================================
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
     Building2, MapPin, Eye,
-    AlertTriangle, CheckCircle2, Loader2, RefreshCw,
+    AlertTriangle, CheckCircle2, Loader2, RefreshCw, ClipboardList,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
-import IconButton     from "@components/UI/IconButton";
+import IconButton    from "@components/UI/IconButton";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
-import { ColorPill } from "@components/UI/Badge";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import styles        from "./payroll.module.css";
-import { usePayPeriod }                          from "@/hooks/usePayPeriods";
-import { usePayrollOverview, useRecomputeStats } from "@/hooks/usePayroll";
-import { useProfile }                            from "@/hooks/useProfile";
+import { usePayPeriod }                                          from "@/hooks/usePayPeriods";
+import { usePayrollOverview, useRecomputeStats, useHouseReviews, useCoverSheet } from "@/hooks/usePayroll";
+import { useProfile }                                            from "@/hooks/useProfile";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
-import { REGION_COLORS } from "@/utils/dropdownList/region";
-import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { REGION_COLORS }    from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK }   from "@/utils/dropdownList/shared";
 
-
-// ============================================================
-// SECTION: Constants
-// ------------------------------------------------------------
-// Purpose:
-//   Static lists used to populate the Pay Year and Pay Period
-//   filter dropdowns. Defined at module scope so they are
-//   created once, not on every render.
-//
-// Relationship:
-//   Consumed by the filter bar inside PayrollOverviewPage.
-// ============================================================
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CURRENT_YEAR   = new Date().getFullYear();
-
-/** Show one year before and after the current year as selectable options. */
 const YEAR_OPTIONS   = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
-
-/** NovaCare uses 26 bi-weekly pay periods per year (1–26). */
 const PERIOD_OPTIONS = Array.from({ length: 26 }, (_, i) => i + 1);
 
+// ─── Status tone maps ─────────────────────────────────────────────────────────
 
-// ============================================================
-// SECTION: Helpers
-// ------------------------------------------------------------
-// Purpose:
-//   Pure utility functions used to format data for display.
-//   Isolated here so they are easy to test and change without
-//   touching rendering logic.
-//
-// Relationship:
-//   Used in the overview table cells to format numeric totals.
-// ============================================================
+const SUPERVISOR_TONE = { pending: "warning", reviewed: "success" };
+const PAYROLL_TONE    = { pending: "neutral", processing: "info", processed: "success" };
 
-/**
- * Formats a numeric hour/dollar value to two decimal places.
- * Returns "—" for null or undefined values so empty cells look
- * intentional rather than broken.
- *
- * @param   {number|null|undefined} n
- * @returns {string}  e.g. "84.00" or "—"
- */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function fmt(n) {
     if (n == null) return "—";
     return Number(n).toFixed(2);
 }
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-// ============================================================
-// SECTION: Sub-components
-// ------------------------------------------------------------
-// Purpose:
-//   Small, focused components that render a single cell or
-//   UI element. Extracted here to keep the main table JSX
-//   readable and to encapsulate their own conditional logic.
-//
-// Relationship:
-//   Rendered inside the overview table row for each home.
-//   Depends on the per-row { unresolvedHours, isLoading }
-//   values returned by usePayrollOverview.
-// ============================================================
-
-/**
- * Renders the "Unresolved Hours" cell for one home row.
- *
- * Three states:
- *   1. isLoading  → spinning loader (payroll data still fetching)
- *   2. unresolvedHours > 0 → amber warning badge with hour count
- *   3. unresolvedHours === 0 → green "Resolved" badge
- *
- * @param {number|null} props.unresolvedHours  - From the payroll totals object.
- * @param {boolean}     props.isLoading        - True while the row's query is in flight.
- */
 function UnresolvedBadge({ unresolvedHours, isLoading }) {
     if (isLoading) {
         return <span className={styles.loadingDots}><Loader2 size={12} className={styles.spin} /></span>;
@@ -132,64 +62,17 @@ function UnresolvedBadge({ unresolvedHours, isLoading }) {
     );
 }
 
-
-// ============================================================
-// SECTION: Page Component — PayrollOverviewPage
-// ------------------------------------------------------------
-// Purpose:
-//   Bird's-eye view of payroll across all homes for a selected
-//   pay year and period. Each row shows one home's aggregated
-//   totals (regular hours, total hours, unresolved hours).
-//   Clicking the eye icon drills into the per-home cover sheet.
-//
-// Relationship:
-//   - Reads from usePayPeriod to auto-fill the current period.
-//   - Reads from usePayrollOverview which internally calls
-//     useHomes + one useQuery per home concurrently.
-//   - Navigates to /payroll/[homeId] (PayrollDetailPage) on
-//     row action.
-//
-// Flow:
-//   Page mounts
-//        ↓
-//   usePayPeriod resolves → auto-fills year + period dropdowns
-//        ↓
-//   usePayrollOverview fires once year + period are set
-//        ↓
-//   One concurrent query per home fetches payroll totals
-//        ↓
-//   Table renders rows, each loading independently
-//        ↓
-//   User clicks eye → navigates to detail page with query params
-// ============================================================
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PayrollOverviewPage() {
-
-    // ── Router ───────────────────────────────────────────────────────────────
-    // Used by handleView to push to the per-home detail URL.
     const router = useRouter();
 
-
-    // ── State: Filter controls ────────────────────────────────────────────────
-    // Controlled inputs for the Pay Year and Pay Period dropdowns.
-    // Both start empty; they are populated either by the auto-fill effect
-    // (see below) or by the user changing a dropdown.
-    //
-    // defaultsApplied prevents the auto-fill effect from overriding a
-    // selection the user has already made after the initial load.
     const [selectedYear,    setSelectedYear]    = useState("");
     const [selectedPeriod,  setSelectedPeriod]  = useState("");
     const [defaultsApplied, setDefaultsApplied] = useState(false);
 
-
-    // ── Data: Current pay period (for auto-fill) ──────────────────────────────
-    // Fetches the pay period at offset 0 (i.e. the active period today).
-    // Once resolved, the effect below copies its year + periodNumber into
-    // the filter dropdowns so the page shows meaningful data immediately.
     const { payPeriod } = usePayPeriod(0);
-
     useEffect(() => {
-        // Only run once; skip if the user has already interacted with the filters.
         if (payPeriod && !defaultsApplied) {
             setSelectedYear(String(payPeriod.payYear));
             setSelectedPeriod(String(payPeriod.periodNumber));
@@ -197,68 +80,67 @@ export default function PayrollOverviewPage() {
         }
     }, [payPeriod, defaultsApplied]);
 
+    const periodReady = !!(selectedYear && selectedPeriod);
 
-    // ── Data: All homes + payroll totals ──────────────────────────────────────
-    // usePayrollOverview handles everything: fetching the home list,
-    // firing one query per home concurrently, and merging the results
-    // into display-ready rows. The page only needs to render.
-    //
-    // Each row shape: { home, homeId, totals, isLoading, fetchError }
-    // rows is always an array (empty until homes load).
-    const {
-        rows,
-        homesLoading,
-        homesError,
-        refetchHomes,
-    } = usePayrollOverview({
+    const { rows, homesLoading, homesError, refetchHomes } = usePayrollOverview({
         payYear:      selectedYear,
         periodNumber: selectedPeriod,
-        enabled:      !!(selectedYear && selectedPeriod),
+        enabled:      periodReady,
     });
 
-    // ── Data: recompute mutation ──────────────────────────────────────────────
-    const {
-        recompute,
-        isRecomputing,
-        recomputeResult,
-        recomputeError,
-        resetRecompute,
-    } = useRecomputeStats();
+    const { houses: reviewData } = useHouseReviews({
+        payYear:      selectedYear,
+        periodNumber: selectedPeriod,
+        enabled:      periodReady,
+    });
 
-    // ── Permissions ───────────────────────────────────────────────────────────
+    // houseId → review row for O(1) lookup in the table
+    const reviewMap = useMemo(
+        () => new Map(reviewData.map((h) => [h.houseId, h])),
+        [reviewData]
+    );
+
+    // Community (unassigned) hours row — houseId is the fixed string "community"
+    const { coverSheet: communityCoverSheet, isLoading: communityLoading } = useCoverSheet({
+        params: {
+            homeId:       "community",
+            payYear:      selectedYear      ? Number(selectedYear)      : undefined,
+            periodNumber: selectedPeriod    ? Number(selectedPeriod)    : undefined,
+        },
+        enabled: periodReady,
+    });
+    const communityTotals = communityCoverSheet?.totals ?? null;
+    const communityReview = reviewData.find((h) => h.houseId === "community") ?? null;
+
+    const { recompute, isRecomputing, recomputeResult, recomputeError, resetRecompute } =
+        useRecomputeStats();
+
     const { profile } = useProfile();
     const canRecompute = profile?.permissionSlugs?.includes("manage_payroll") ?? false;
+    const canSeeHouseReviews = profile?.permissionSlugs?.some((s) =>
+        s === "review_all_house_hours" ||
+        s === "review_assigned_house_hours" ||
+        s === "view_payroll" ||
+        s === "manage_payroll"
+    ) ?? false;
 
-
-    // ── Event handlers ────────────────────────────────────────────────────────
-
-    /**
-     * Navigates to the per-home payroll detail page, carrying the
-     * currently selected year and period as query params so the
-     * detail page can pre-fetch the right cover sheet.
-     *
-     * @param {string} homeId - The home's database ID.
-     */
     const handleView = (homeId) => {
-        const qs = new URLSearchParams({
-            payYear:      selectedYear,
-            periodNumber: selectedPeriod,
-        }).toString();
+        const qs = new URLSearchParams({ payYear: selectedYear, periodNumber: selectedPeriod }).toString();
         router.push(`/payroll/${homeId}?${qs}`);
     };
 
-    /** Force a stat recompute for the currently selected period. */
-    const handleRecompute = async () => {
-        if (!selectedYear || !selectedPeriod) return;
-        try {
-            await recompute({ payYear: Number(selectedYear), periodNumber: Number(selectedPeriod) });
-        } catch (_) {
-            // recomputeError is surfaced via the hook's state and shown in ActionMessage.
-        }
+    const handleHouseReviews = () => {
+        const qs = new URLSearchParams({ payYear: selectedYear, periodNumber: selectedPeriod }).toString();
+        router.push(`/payroll/house-reviews?${qs}`);
     };
 
+    const handleRecompute = async () => {
+        if (!periodReady) return;
+        try {
+            await recompute({ payYear: Number(selectedYear), periodNumber: Number(selectedPeriod) });
+        } catch (_) { /* surfaced via recomputeError */ }
+    };
 
-    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <PageLayout>
             <div className={styles.pageContainer}>
@@ -274,7 +156,7 @@ export default function PayrollOverviewPage() {
                                 : <RefreshCw size={14} />
                             }
                             onClick={handleRecompute}
-                            disabled={isRecomputing || !selectedYear || !selectedPeriod}
+                            disabled={isRecomputing || !periodReady}
                         >
                             {isRecomputing ? "Recomputing…" : "Recompute Stats"}
                         </Button>
@@ -283,7 +165,6 @@ export default function PayrollOverviewPage() {
 
                 <div className={styles.overviewCard}>
 
-                    {/* ── Recompute feedback ───────────────────────────────── */}
                     <ActionMessage
                         variant="success"
                         message={recomputeResult
@@ -295,10 +176,6 @@ export default function PayrollOverviewPage() {
                     <ActionMessage variant="error" message={recomputeError} />
 
                     {/* ── Filter bar ───────────────────────────────────────── */}
-                    {/*
-                        Left: dropdowns + home count badge.
-                        Right: Recompute Stats button (manage_payroll only).
-                    */}
                     <div className={styles.overviewFilterBar}>
                         <div className={styles.overviewFilterGroup}>
                             <label className={styles.overviewFilterLabel}>Pay Year</label>
@@ -328,127 +205,197 @@ export default function PayrollOverviewPage() {
                             </select>
                         </div>
 
+                        {/* Home count + House Reviews button — shown once a period is selected */}
                         {rows.length > 0 && (
-                            <span className={styles.overviewCount}>{rows.length} homes</span>
+                            <>
+                                <span className={styles.overviewCount}>{rows.length} homes</span>
+                                {canSeeHouseReviews && (
+                                    <Button
+                                        variant="secondary"
+                                        icon={<ClipboardList size={14} />}
+                                        onClick={handleHouseReviews}
+                                        disabled={!periodReady}
+                                    >
+                                        House Reviews
+                                    </Button>
+                                )}
+                            </>
                         )}
                     </div>
 
                     {/* ── Homes table ──────────────────────────────────────── */}
-                    {/*
-                        ErrorState covers the homes-list fetch (not per-row payroll fetches).
-                        Per-row errors are handled inline in each row cell.
-                        Columns: Home | Type | Region | Address | Regular Hrs |
-                                 Total Hrs | Unresolved | Status | Actions
-                    */}
                     <ErrorState isLoading={homesLoading} errorMessage={homesError} onRetry={refetchHomes} />
 
                     {!homesLoading && !homesError && (
-                        <PageTable minWidth="820px">
-                                <thead>
-                                    <tr>
-                                        <th>Home</th>
-                                        <th>Type</th>
-                                        <th>Region</th>
-                                        <th>Address</th>
-                                        <PageTableHeadCell align="right">Regular Hrs</PageTableHeadCell>
-                                        <PageTableHeadCell align="right">Total Hrs</PageTableHeadCell>
-                                        <th>Unresolved</th>
-                                        <th>Status</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {rows.map(({ home, homeId, totals, isLoading, fetchError }, idx) => {
-                                        // Resolve colour tokens once per row to avoid repeating lookups in each cell.
-                                        const typeColor   = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
-                                        const regionColor = REGION_COLORS[home.region]       || COLOR_FALLBACK;
-                                        return (
-                                            <PageTableRow
-                                                key={homeId}
-                                                isEven={idx % 2 !== 0}
+                        <PageTable minWidth="980px">
+                            <thead>
+                                <tr>
+                                    <th>Home</th>
+                                    <th>Type</th>
+                                    <th>Region</th>
+                                    <th>Address</th>
+                                    <PageTableHeadCell align="right">Regular Hrs</PageTableHeadCell>
+                                    <PageTableHeadCell align="right">Total Hrs</PageTableHeadCell>
+                                    <th>Unresolved</th>
+                                    <th>Supervisor</th>
+                                    <th>Payroll</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {/* Community / unassigned hours — always first */}
+                                {periodReady && (
+                                    <PageTableRow key="__community__" isEven={false}>
+                                        <td
+                                            className={styles.overviewHomeCell}
+                                            style={{ borderLeft: `4px solid #94a3b8` }}
+                                        >
+                                            <div className={styles.overviewHomeInner}>
+                                                <Building2 size={14} style={{ color: "#94a3b8", flexShrink: 0 }} />
+                                                <span>Other Hours</span>
+                                            </div>
+                                        </td>
+                                        <td>—</td>
+                                        <td>—</td>
+                                        <td>—</td>
+                                        <td className={`${styles.overviewNumCell} ${communityLoading ? styles.overviewCellLoading : ""}`}>
+                                            {communityLoading ? <Loader2 size={13} className={styles.spin} /> : fmt(communityTotals?.regular)}
+                                        </td>
+                                        <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum} ${communityLoading ? styles.overviewCellLoading : ""}`}>
+                                            {communityLoading ? <Loader2 size={13} className={styles.spin} /> : fmt(communityTotals?.totalHours)}
+                                        </td>
+                                        <td>
+                                            <UnresolvedBadge
+                                                unresolvedHours={communityTotals?.unresolvedHours ?? null}
+                                                isLoading={communityLoading}
+                                            />
+                                        </td>
+                                        <td>
+                                            {communityReview
+                                                ? <StatusBadge
+                                                    label={communityReview.supervisorStatus === "reviewed" ? "Reviewed" : "Pending"}
+                                                    tone={SUPERVISOR_TONE[communityReview.supervisorStatus] ?? "neutral"}
+                                                    size="tag"
+                                                  />
+                                                : <span className={styles.overviewStatusDash}>—</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            {communityReview
+                                                ? <StatusBadge
+                                                    label={communityReview.payrollStatus.charAt(0).toUpperCase() + communityReview.payrollStatus.slice(1)}
+                                                    tone={PAYROLL_TONE[communityReview.payrollStatus] ?? "neutral"}
+                                                    size="tag"
+                                                  />
+                                                : <span className={styles.overviewStatusDash}>—</span>
+                                            }
+                                        </td>
+                                        <td className={styles.overviewActionsCell}>
+                                            <IconButton
+                                                onClick={() => handleView("community")}
+                                                title="View Other Hours payroll"
                                             >
-                                                {/* Home name — left accent border colour matches home type */}
-                                                <td
-                                                    className={styles.overviewHomeCell}
-                                                    style={{ borderLeft: `4px solid ${typeColor.border}` }}
-                                                >
-                                                    <div className={styles.overviewHomeInner}>
-                                                        <Building2 size={14} style={{ color: typeColor.border, flexShrink: 0 }} />
-                                                        <span>{home.name}</span>
+                                                <Eye size={15} />
+                                            </IconButton>
+                                        </td>
+                                    </PageTableRow>
+                                )}
+
+                                {rows.map(({ home, homeId, totals, isLoading, fetchError }, idx) => {
+                                    const typeColor   = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
+                                    const regionColor = REGION_COLORS[home.region]       || COLOR_FALLBACK;
+                                    const review      = reviewMap.get(homeId);
+                                    return (
+                                        <PageTableRow key={homeId} isEven={idx % 2 !== 0}>
+
+                                            <td
+                                                className={styles.overviewHomeCell}
+                                                style={{ borderLeft: `4px solid ${typeColor.border}` }}
+                                            >
+                                                <div className={styles.overviewHomeInner}>
+                                                    <Building2 size={14} style={{ color: typeColor.border, flexShrink: 0 }} />
+                                                    <span>{home.name}</span>
+                                                </div>
+                                            </td>
+
+                                            <td>
+                                                {home.homeType ? <ColorPill label={home.homeType} color={typeColor} /> : "—"}
+                                            </td>
+
+                                            <td>
+                                                {home.region ? <ColorPill label={home.region} color={regionColor} /> : "—"}
+                                            </td>
+
+                                            <td className={styles.overviewAddressCell}>
+                                                {home.address ? (
+                                                    <div className={styles.overviewAddressInner}>
+                                                        <MapPin size={12} style={{ flexShrink: 0, opacity: 0.45 }} />
+                                                        <span>{home.address.street}{home.address.city ? `, ${home.address.city}` : ""}</span>
                                                     </div>
-                                                </td>
+                                                ) : "—"}
+                                            </td>
 
-                                                {/* Type pill */}
-                                                <td>
-                                                    {home.homeType ? <ColorPill label={home.homeType} color={typeColor} /> : "—"}
-                                                </td>
+                                            <td className={`${styles.overviewNumCell} ${isLoading ? styles.overviewCellLoading : ""}`}>
+                                                {isLoading ? <Loader2 size={13} className={styles.spin} /> : fmt(totals?.regular)}
+                                            </td>
 
-                                                {/* Region pill */}
-                                                <td>
-                                                    {home.region ? <ColorPill label={home.region} color={regionColor} /> : "—"}
-                                                </td>
+                                            <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum} ${isLoading ? styles.overviewCellLoading : ""}`}>
+                                                {isLoading ? <Loader2 size={13} className={styles.spin} /> : fmt(totals?.totalHours)}
+                                            </td>
 
-                                                {/* Address */}
-                                                <td className={styles.overviewAddressCell}>
-                                                    {home.address ? (
-                                                        <div className={styles.overviewAddressInner}>
-                                                            <MapPin size={12} style={{ flexShrink: 0, opacity: 0.45 }} />
-                                                            <span>{home.address.street}{home.address.city ? `, ${home.address.city}` : ""}</span>
-                                                        </div>
-                                                    ) : "—"}
-                                                </td>
+                                            <td>
+                                                <UnresolvedBadge
+                                                    unresolvedHours={totals?.unresolvedHours ?? null}
+                                                    isLoading={isLoading && !fetchError}
+                                                />
+                                            </td>
 
-                                                {/* Regular hours — shows spinner while this home's query is in flight */}
-                                                <td className={`${styles.overviewNumCell} ${isLoading ? styles.overviewCellLoading : ""}`}>
-                                                    {isLoading
-                                                        ? <Loader2 size={13} className={styles.spin} />
-                                                        : fmt(totals?.regular)
-                                                    }
-                                                </td>
+                                            {/* Supervisor review status */}
+                                            <td>
+                                                {review
+                                                    ? <StatusBadge
+                                                        label={review.supervisorStatus === "reviewed" ? "Reviewed" : "Pending"}
+                                                        tone={SUPERVISOR_TONE[review.supervisorStatus] ?? "neutral"}
+                                                        size="tag"
+                                                      />
+                                                    : <span className={styles.overviewStatusDash}>—</span>
+                                                }
+                                            </td>
 
-                                                {/* Total hours */}
-                                                <td className={`${styles.overviewNumCell} ${styles.overviewTotalNum} ${isLoading ? styles.overviewCellLoading : ""}`}>
-                                                    {isLoading
-                                                        ? <Loader2 size={13} className={styles.spin} />
-                                                        : fmt(totals?.totalHours)
-                                                    }
-                                                </td>
+                                            {/* Payroll status */}
+                                            <td>
+                                                {review
+                                                    ? <StatusBadge
+                                                        label={review.payrollStatus.charAt(0).toUpperCase() + review.payrollStatus.slice(1)}
+                                                        tone={PAYROLL_TONE[review.payrollStatus] ?? "neutral"}
+                                                        size="tag"
+                                                      />
+                                                    : <span className={styles.overviewStatusDash}>—</span>
+                                                }
+                                            </td>
 
-                                                {/* Unresolved hours badge */}
-                                                <td>
-                                                    <UnresolvedBadge
-                                                        unresolvedHours={totals?.unresolvedHours ?? null}
-                                                        isLoading={isLoading && !fetchError}
-                                                    />
-                                                </td>
+                                            <td className={styles.overviewActionsCell}>
+                                                <IconButton
+                                                    onClick={() => handleView(homeId)}
+                                                    title="View payroll details"
+                                                    disabled={!periodReady}
+                                                >
+                                                    <Eye size={15} />
+                                                </IconButton>
+                                            </td>
 
-                                                {/* Payroll status — placeholder until backend provides a status field */}
-                                                <td>
-                                                    <span className={styles.overviewStatusDash}>—</span>
-                                                </td>
+                                        </PageTableRow>
+                                    );
+                                })}
 
-                                                {/* View action — navigates to detail page for this home */}
-                                                <td className={styles.overviewActionsCell}>
-                                                    <IconButton
-                                                        onClick={() => handleView(homeId)}
-                                                        title="View payroll details"
-                                                        disabled={!selectedYear || !selectedPeriod}
-                                                    >
-                                                        <Eye size={15} />
-                                                    </IconButton>
-                                                </td>
-                                            </PageTableRow>
-                                        );
-                                    })}
-
-                                    {rows.length === 0 && (
-                                        <tr>
-                                            <PageTableCell isEmpty colSpan={9}>
-                                                No homes found.
-                                            </PageTableCell>
-                                        </tr>
-                                    )}
-                                </tbody>
+                                {rows.length === 0 && (
+                                    <tr>
+                                        <PageTableCell isEmpty colSpan={10}>
+                                            No homes found.
+                                        </PageTableCell>
+                                    </tr>
+                                )}
+                            </tbody>
                         </PageTable>
                     )}
                 </div>
