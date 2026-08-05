@@ -142,7 +142,6 @@ export default function PayrollDetailPage() {
     const [supervisorNote,      setSupervisorNote]      = useState("");
     const [payrollModalOpen,    setPayrollModalOpen]    = useState(false);
     const [payrollNextStatus,   setPayrollNextStatus]   = useState("");
-    const [payrollReason,       setPayrollReason]       = useState("");
     const [payrollNote,         setPayrollNote]         = useState("");
 
 
@@ -306,7 +305,6 @@ export default function PayrollDetailPage() {
 
     const openPayrollModal = () => {
         resetPayroll();
-        setPayrollReason("");
         setPayrollNote("");
         const defaultNext = payrollStatus === "pending"
             ? "processing"
@@ -343,8 +341,7 @@ export default function PayrollDetailPage() {
                 periodNumber: Number(periodNumber),
                 body: {
                     status: payrollNextStatus,
-                    ...(payrollReason.trim() ? { reason: payrollReason.trim() } : {}),
-                    ...(payrollNote.trim()   ? { note:   payrollNote.trim()   } : {}),
+                    ...(payrollNote.trim() ? { note: payrollNote.trim() } : {}),
                 },
             });
             setPayrollModalOpen(false);
@@ -673,28 +670,22 @@ export default function PayrollDetailPage() {
                                     ))
                                 }
                             </select>
-                            {payrollStatus === "processed" && payrollNextStatus && (
-                                <>
-                                    <label className={styles.modalLabel}>
-                                        Reason <span className={styles.modalRequired}>*</span>
-                                    </label>
-                                    <input
-                                        className={styles.modalInput}
-                                        type="text"
-                                        value={payrollReason}
-                                        onChange={(e) => setPayrollReason(e.target.value)}
-                                        placeholder="Why are you reverting from Processed?"
-                                        maxLength={500}
-                                        required
-                                    />
-                                </>
-                            )}
-                            <label className={styles.modalLabel}>Note (optional)</label>
+                            <label className={styles.modalLabel}>
+                                Note
+                                {payrollStatus === "processed"
+                                    ? <span className={styles.modalRequired}> * required when reverting</span>
+                                    : <span> (optional)</span>
+                                }
+                            </label>
                             <textarea
                                 className={styles.modalTextarea}
                                 value={payrollNote}
                                 onChange={(e) => setPayrollNote(e.target.value)}
-                                placeholder="Add a note…"
+                                placeholder={payrollStatus === "processed"
+                                    ? "Why are you reverting from Processed?"
+                                    : "Add a note…"
+                                }
+                                maxLength={1000}
                                 rows={3}
                             />
                             <div className={styles.modalActions}>
@@ -707,7 +698,7 @@ export default function PayrollDetailPage() {
                                     disabled={
                                         isUpdatingPayroll ||
                                         !payrollNextStatus ||
-                                        (payrollStatus === "processed" && !payrollReason.trim())
+                                        (payrollStatus === "processed" && !payrollNote.trim())
                                     }
                                 >
                                     {isUpdatingPayroll ? "Saving…" : "Update Status"}

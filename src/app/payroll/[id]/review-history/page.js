@@ -330,10 +330,10 @@ export default function ReviewHistoryPage() {
                                                         <PersonPill name={resolveName(event.by) ?? "Unknown"} />
                                                     )}
                                                 </div>
-                                                {event.reason && (
+                                                {event.note && (
                                                     <div className={styles.timelineReason}>
-                                                        <span className={styles.timelineReasonLabel}>Reason</span>
-                                                        {event.reason}
+                                                        <span className={styles.timelineReasonLabel}>Note</span>
+                                                        {event.note}
                                                     </div>
                                                 )}
                                             </div>
