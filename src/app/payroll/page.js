@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
     Building2, MapPin, Eye,
-    AlertTriangle, CheckCircle2, Loader2, RefreshCw, ClipboardList,
+    AlertTriangle, CheckCircle2, Loader2, RefreshCw,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import ErrorState    from "@components/UI/ErrorState";
@@ -117,21 +117,9 @@ export default function PayrollOverviewPage() {
 
     const { profile } = useProfile();
     const canRecompute = profile?.permissionSlugs?.includes("manage_payroll") ?? false;
-    const canSeeHouseReviews = profile?.permissionSlugs?.some((s) =>
-        s === "review_all_house_hours" ||
-        s === "review_assigned_house_hours" ||
-        s === "view_payroll" ||
-        s === "manage_payroll"
-    ) ?? false;
-
     const handleView = (homeId) => {
         const qs = new URLSearchParams({ payYear: selectedYear, periodNumber: selectedPeriod }).toString();
         router.push(`/payroll/${homeId}?${qs}`);
-    };
-
-    const handleHouseReviews = () => {
-        const qs = new URLSearchParams({ payYear: selectedYear, periodNumber: selectedPeriod }).toString();
-        router.push(`/payroll/house-reviews?${qs}`);
     };
 
     const handleRecompute = async () => {
@@ -205,21 +193,9 @@ export default function PayrollOverviewPage() {
                             </select>
                         </div>
 
-                        {/* Home count + House Reviews button — shown once a period is selected */}
+                        {/* Home count — shown once a period is selected */}
                         {rows.length > 0 && (
-                            <>
-                                <span className={styles.overviewCount}>{rows.length} homes</span>
-                                {canSeeHouseReviews && (
-                                    <Button
-                                        variant="secondary"
-                                        icon={<ClipboardList size={14} />}
-                                        onClick={handleHouseReviews}
-                                        disabled={!periodReady}
-                                    >
-                                        House Reviews
-                                    </Button>
-                                )}
-                            </>
+                            <span className={styles.overviewCount}>{rows.length} homes</span>
                         )}
                     </div>
 

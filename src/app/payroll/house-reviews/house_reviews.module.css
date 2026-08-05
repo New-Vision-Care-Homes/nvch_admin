@@ -32,6 +32,30 @@
     flex-wrap: wrap;
 }
 
+.periodSelect {
+    padding: 4px 10px;
+    border: 1.5px solid #b8cfe0;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-primary, #1c4a6e);
+    background: #e8f0f7;
+    cursor: pointer;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.periodSelect:hover {
+    background: #d4e5f2;
+    border-color: #93b8d0;
+}
+
+.periodSelect:focus {
+    background: #fff;
+    border-color: var(--color-primary, #1c4a6e);
+}
+
 .periodBadge {
     display: inline-flex;
     align-items: center;

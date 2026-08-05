@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, ClipboardList, Sun, GraduationCap } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, NotebookPen, ListChecks, Sun, GraduationCap } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 
 const tabs = [
@@ -29,15 +29,6 @@ const tabs = [
 	{ id: 11, label: "Settings", icon: Settings, href: "/setting" }*/
 ];
 
-// id 6's entry is added dynamically in the component (see the local
-// flyoutMenus variable) based on which of Calendar / Shift Builder / Training
-// the user can access.
-const BASE_FLYOUT_MENUS = {
-	6.8: [
-		{ label: "Overview", href: "/payroll", icon: FileSpreadsheet, desc: "Cover sheet & hours breakdown" },
-		{ label: "Manual Entries", href: "/payroll/manual_entries", icon: ClipboardList, desc: "Per-caregiver manual entry view" },
-	],
-};
 
 // Map keywords to specific tab ids
 // If pathname includes the keyword, the corresponding tab will be active
@@ -92,9 +83,20 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 			: { id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling" };
 	}
 
-	const flyoutMenus = schedulingSubItems.length > 1
-		? { ...BASE_FLYOUT_MENUS, 6: schedulingSubItems }
-		: BASE_FLYOUT_MENUS;
+	const canSeeHouseReviews = permissionSlugs.some((s) =>
+		s === "view_payroll" || s === "manage_payroll" ||
+		s === "review_all_house_hours" || s === "review_assigned_house_hours"
+	);
+	const payrollSubItems = [
+		{ label: "Overview",       href: "/payroll",               icon: FileSpreadsheet, desc: "Cover sheet & hours breakdown" },
+		{ label: "Manual Entries", href: "/payroll/manual_entries", icon: NotebookPen,     desc: "Per-caregiver manual entry view" },
+		canSeeHouseReviews && { label: "House Reviews", href: "/payroll/house-reviews", icon: ListChecks, desc: "Review all house payroll periods" },
+	].filter(Boolean);
+
+	const flyoutMenus = {
+		...(schedulingSubItems.length > 1 ? { 6: schedulingSubItems } : {}),
+		6.8: payrollSubItems,
+	};
 
 	const visibleTabs = tabs.filter(tab =>
 		!tab.requiredSlugs || tab.requiredSlugs.some(slug => permissionSlugs.includes(slug))

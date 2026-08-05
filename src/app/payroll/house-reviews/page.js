@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
     Undo2, Clock,
@@ -13,6 +13,7 @@ import Button      from "@components/UI/Button";
 import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import styles from "./house_reviews.module.css";
 import { useHouseReviews } from "@/hooks/usePayroll";
+import { usePayPeriod }    from "@/hooks/usePayPeriods";
 import { useAdmins }        from "@/hooks/useAdmins";
 import { formatDateTime }    from "@/utils/dates";
 import { REGION_OPTIONS }    from "@/utils/dropdownList/region";
@@ -21,6 +22,10 @@ import { REGION_COLORS }     from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK }    from "@/utils/dropdownList/shared";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const CURRENT_YEAR   = new Date().getFullYear();
+const YEAR_OPTIONS   = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
+const PERIOD_OPTIONS = Array.from({ length: 26 }, (_, i) => i + 1);
 
 const SUPERVISOR_TONE  = { pending: "warning",  reviewed:  "success" };
 const PAYROLL_TONE     = { pending: "neutral",  processing: "info",   processed: "success" };
@@ -242,9 +247,20 @@ export default function HouseReviewsPage() {
     const router       = useRouter();
     const searchParams = useSearchParams();
 
-    const payYear      = searchParams.get("payYear");
-    const periodNumber = searchParams.get("periodNumber");
-    const periodReady  = !!(payYear && periodNumber);
+    const [selectedYear,    setSelectedYear]    = useState(searchParams.get("payYear")      ?? "");
+    const [selectedPeriod,  setSelectedPeriod]  = useState(searchParams.get("periodNumber") ?? "");
+    const [defaultsApplied, setDefaultsApplied] = useState(!!(searchParams.get("payYear") && searchParams.get("periodNumber")));
+
+    const { payPeriod: currentPeriod } = usePayPeriod(0);
+    useEffect(() => {
+        if (currentPeriod && !defaultsApplied) {
+            setSelectedYear(String(currentPeriod.payYear));
+            setSelectedPeriod(String(currentPeriod.periodNumber));
+            setDefaultsApplied(true);
+        }
+    }, [currentPeriod, defaultsApplied]);
+
+    const periodReady = !!(selectedYear && selectedPeriod);
 
     const [mine,             setMine]             = useState(false);
     const [supervisorFilter, setSupervisorFilter] = useState("");
@@ -265,7 +281,7 @@ export default function HouseReviewsPage() {
     }, [mine, supervisorFilter, payrollFilter, regionFilter, hasActivityOnly, includeInactive]);
 
     const { payPeriod, reviewDueAt, houses, counts, isLoading, fetchError, refetch } =
-        useHouseReviews({ payYear, periodNumber, params: apiParams, enabled: periodReady });
+        useHouseReviews({ payYear: selectedYear, periodNumber: selectedPeriod, params: apiParams, enabled: periodReady });
 
     const { admins } = useAdmins({ params: { limit: 200 } });
     const adminMap = useMemo(
@@ -291,15 +307,9 @@ export default function HouseReviewsPage() {
     };
 
     const handleBack = () => {
-        const qs = new URLSearchParams({ payYear, periodNumber }).toString();
+        const qs = new URLSearchParams({ payYear: selectedYear, periodNumber: selectedPeriod }).toString();
         router.push(`/payroll?${qs}`);
     };
-
-    const periodLabel = payPeriod
-        ? `${payPeriod.payYear}  ·  Period ${payPeriod.periodNumber}`
-        : payYear && periodNumber
-        ? `${payYear}  ·  Period ${periodNumber}`
-        : null;
 
     return (
         <PageLayout>
@@ -310,9 +320,26 @@ export default function HouseReviewsPage() {
                     <div className={styles.titleBlock}>
                         <h1>House Reviews</h1>
                         <div className={styles.titleMeta}>
-                            {periodLabel && (
-                                <span className={styles.periodBadge}>{periodLabel}</span>
-                            )}
+                            <select
+                                className={styles.periodSelect}
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                            >
+                                <option value="">Year…</option>
+                                {YEAR_OPTIONS.map((y) => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                            <select
+                                className={styles.periodSelect}
+                                value={selectedPeriod}
+                                onChange={(e) => setSelectedPeriod(e.target.value)}
+                            >
+                                <option value="">Period…</option>
+                                {PERIOD_OPTIONS.map((p) => (
+                                    <option key={p} value={p}>Period {p}</option>
+                                ))}
+                            </select>
                             {reviewDueAt && (
                                 <span className={styles.dueBadge}>
                                     <Clock size={11} />
