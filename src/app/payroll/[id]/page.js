@@ -375,6 +375,8 @@ export default function PayrollDetailPage() {
         ? "Awaiting supervisor review"
         : undefined;
 
+    const exportBtnTitle = supervisorStatus === "pending" ? "Awaiting supervisor review" : undefined;
+
 
     // ── Render helpers ────────────────────────────────────────────────────────
 
@@ -480,7 +482,8 @@ export default function PayrollDetailPage() {
                             variant="excel"
                             icon={isExporting ? <Loader2 size={15} className={tableStyles.spin} /> : <Download size={15} />}
                             onClick={handleExport}
-                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0}
+                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0 || supervisorStatus === "pending"}
+                            title={exportBtnTitle}
                         >
                             {isExporting ? "Exporting…" : "Export Payroll Package"}
                         </Button>
@@ -503,7 +506,8 @@ export default function PayrollDetailPage() {
                             variant="excel"
                             icon={isExporting ? <Loader2 size={15} className={tableStyles.spin} /> : <Download size={15} />}
                             onClick={handleExport}
-                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0}
+                            disabled={isExporting || isLoading || !coverSheet || displayStaff.length === 0 || exceptionCount > 0 || supervisorStatus === "pending"}
+                            title={exportBtnTitle}
                         >
                             {isExporting ? "Exporting…" : "Export Payroll Package"}
                         </Button>
