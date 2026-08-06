@@ -765,7 +765,7 @@ export default function SchedulingPage() {
 			</div>
 			<span className={styles.toolbarLabel}>{calendarToolbarLabel}</span>
 			<div className={styles.toolbarBtnGroup}>
-				{["month", "agenda"].map((v) => (
+				{["month", "week", "day", "agenda"].map((v) => (
 					<button
 						key={v}
 						type="button"
@@ -986,7 +986,9 @@ export default function SchedulingPage() {
 				const startLocal = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
 				const endLocal   = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
 				const id         = shift._id || shift.id;
-				const fullRange  = `${format(startLocal, "H:mm")}–${format(endLocal, "H:mm")}`;
+				const startTime  = format(startLocal, "H:mm");
+				const endTime    = format(endLocal, "H:mm");
+				const fullRange  = `${startTime}–${endTime}`;
 
 				// A multi-day shift must appear on every day it spans, not just its
 				// start day. expandShiftDays yields one entry per Halifax calendar day.
@@ -994,26 +996,30 @@ export default function SchedulingPage() {
 					const multiDay = seg.spanDays > 1;
 					// Any shift that crosses midnight reads as a "night"/overnight chip.
 					const isNight  = multiDay || startLocal.getHours() >= 18;
-					// Per-day label: full range on a single day; directional arrows on a
-					// multi-day span so each cell shows where the shift enters/leaves the day.
-					const timeRange = !multiDay
-						? fullRange
-						: seg.isFirst ? `${format(startLocal, "H:mm")} →`
-						: seg.isLast  ? `→ ${format(endLocal, "H:mm")}`
-						:               "24h";
 
 					if (!map[cgId])              map[cgId]              = {};
 					if (!map[cgId][seg.dateStr]) map[cgId][seg.dateStr] = [];
 					map[cgId][seg.dateStr].push({
-						timeRange,
 						fullRange,
+						startTime,
+						endTime,
 						status: shift.status,
 						id,
 						isNight,
 						spanDays: seg.spanDays,
-						isContinuation: !seg.isFirst,
+						isFirst: seg.isFirst,
+						isLast: seg.isLast,
+						sortKey: seg.segStart.getTime(),
 					});
 				});
+			});
+
+			// Two different shifts can land on the same caregiver/day (e.g. one
+			// overnight shift ends at 7am and another starts at 7pm). Sort by
+			// time so they read left-to-right in one row instead of whatever
+			// order the shifts happened to come back from the API in.
+			Object.values(map).forEach((byDate) => {
+				Object.values(byDate).forEach((dayEntries) => dayEntries.sort((a, b) => a.sortKey - b.sortKey));
 			});
 
 			const ids = Object.keys(names).sort((a, b) => names[a].localeCompare(names[b]));
@@ -1160,24 +1166,84 @@ export default function SchedulingPage() {
 													const ds      = format(d, "yyyy-MM-dd");
 													const entries = shiftMap[cgId]?.[ds] || [];
 													const isToday = ds === todayStr;
+													// Entries are sorted left-to-right by start time (see above), so
+													// only the leftmost/rightmost entry can be touching a neighbouring
+													// day cell. If it's a segment that continues onto that neighbour,
+													// drop this cell's own padding/border on that side so the chip
+													// inside can butt flush against it (see .overviewCellBlend* /
+													// .overviewChipSpan*). Entries sharing this cell with each other
+													// (e.g. one shift ending 7am, another starting 7pm) stay separated
+													// by the normal gap between them — only the outer edges blend.
+													const leftEntry  = entries[0];
+													const rightEntry = entries[entries.length - 1];
+													const blendLeft  = leftEntry  && leftEntry.spanDays  > 1 && !leftEntry.isFirst;
+													const blendRight = rightEntry && rightEntry.spanDays > 1 && !rightEntry.isLast;
+													const cellSpanClass = [
+														blendLeft  ? styles.overviewCellBlendLeft  : "",
+														blendRight ? styles.overviewCellBlendRight : "",
+													].filter(Boolean).join(" ");
 													return (
 														<td
 															key={ds}
-															className={`${styles.overviewCell}${isToday ? ` ${styles.overviewCellToday}` : ""}`}
+															className={`${styles.overviewCell}${isToday ? ` ${styles.overviewCellToday}` : ""}${cellSpanClass ? ` ${cellSpanClass}` : ""}`}
 														>
-															{entries.map((entry, i) => (
-																<span
-																	key={i}
-																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled}`}
-																	onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
-																	title={`${cgNames[cgId]} · ${entry.fullRange}${entry.spanDays > 1 ? ` · ${entry.spanDays}-day shift${entry.isContinuation ? " (continues)" : ""}` : ""} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
-																>
-																	{entry.isNight
-																		? <Moon size={9} style={{ flexShrink: 0 }} />
-																		: <Sun  size={9} style={{ flexShrink: 0 }} />}
-																	{entry.timeRange}
-																</span>
-															))}
+															<div className={styles.overviewCellRow}>
+															{entries.map((entry, i) => {
+																const isMultiDay = entry.spanDays > 1;
+																// Overnight shifts get a "span" modifier so the chip bleeds into
+																// the next/previous day cell, reading as one continuous bar
+																// across the days it covers instead of separate disjoint chips.
+																const spanClass = !isMultiDay
+																	? ""
+																	: entry.isFirst ? styles.overviewChipSpanStart
+																	: entry.isLast  ? styles.overviewChipSpanEnd
+																	:                 styles.overviewChipSpanMiddle;
+																// An overnight shift only needs one icon and one arrow, both on the
+																// start day. The arrow is pushed to the bar's far (right) edge so it
+																// sits right on the day boundary instead of repeating on the end day.
+																// The end day just shows the end time; any full days in between stay
+																// blank — just the continuous bar.
+																let content = null;
+																if (!isMultiDay) {
+																	content = (
+																		<>
+																			{entry.isNight
+																				? <Moon size={9} style={{ flexShrink: 0 }} />
+																				: <Sun  size={9} style={{ flexShrink: 0 }} />}
+																			{entry.fullRange}
+																		</>
+																	);
+																} else if (entry.isFirst) {
+																	content = (
+																		<>
+																			{entry.isNight
+																				? <Moon size={9} style={{ flexShrink: 0 }} />
+																				: <Sun  size={9} style={{ flexShrink: 0 }} />}
+																			{entry.startTime}
+																			<span style={{ marginLeft: "auto" }}>→</span>
+																		</>
+																	);
+																} else if (entry.isLast) {
+																	content = entry.endTime;
+																} else {
+																	// A full middle day of a 3+ day shift: no label, but a
+																	// non-breaking space (not empty) keeps this chip's line
+																	// height identical to its labelled neighbours so the whole
+																	// bar sits flush on the same line across the row.
+																	content = "\u00A0";
+																}
+																return (
+																	<span
+																		key={i}
+																		className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled} ${spanClass}`}
+																		onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
+																		title={`${cgNames[cgId]} · ${entry.fullRange}${entry.spanDays > 1 ? ` · ${entry.spanDays}-day shift${!entry.isFirst ? " (continues)" : ""}` : ""} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
+																	>
+																		{content}
+																	</span>
+																);
+															})}
+															</div>
 														</td>
 													);
 												})}
