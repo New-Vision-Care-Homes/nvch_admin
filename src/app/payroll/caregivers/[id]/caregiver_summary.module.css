@@ -156,8 +156,18 @@
 
 /* ── Entries table ────────────────────────────────────────────────────────── */
 
+/* Scroll wrapper — the table has 7 columns with several nowrap cells, so it
+   needs to scroll horizontally on narrow screens instead of squashing or
+   overflowing the card (matches the ptWrap/scrollX/t2Wrap pattern used by
+   every other page-level table in the app). */
+.entriesTableWrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
 .entriesTable {
 	width: 100%;
+	min-width: 640px;
 	border-collapse: collapse;
 	font-size: 0.875rem;
 }

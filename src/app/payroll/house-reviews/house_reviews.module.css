@@ -529,7 +529,21 @@
 .metricsRow {
     display: flex;
     align-items: stretch;
+    flex-wrap: wrap;
     border-top: 1px solid #f1f5f9;
+}
+
+/* Five nowrap-labelled blocks don't fit one row under ~420px — wrap into two
+   rows of ~3 rather than letting the row overflow the card (houseCard clips
+   overflow, so anything past its edge was silently cut off). */
+@media (max-width: 480px) {
+    .metricBlock {
+        flex: 1 1 33%;
+    }
+
+    .metricDivider {
+        display: none;
+    }
 }
 
 .metricBlock {

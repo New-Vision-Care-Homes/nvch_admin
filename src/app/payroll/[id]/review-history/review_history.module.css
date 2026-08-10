@@ -150,6 +150,7 @@
 .activityStrip {
     display: flex;
     align-items: stretch;
+    flex-wrap: wrap;
     background: #fff;
     border: 1.5px solid #e8eef4;
     border-radius: 10px;
@@ -170,6 +171,19 @@
     width: 1px;
     background: #f1f5f9;
     align-self: stretch;
+}
+
+/* Four nowrap-labelled items don't fit one row under ~420px — wrap into two
+   rows of two rather than letting the row overflow (activityStrip clips
+   overflow, so anything past its edge was silently cut off). */
+@media (max-width: 480px) {
+    .activityItem {
+        flex: 1 1 40%;
+    }
+
+    .activityDivider {
+        display: none;
+    }
 }
 
 .activityNum {

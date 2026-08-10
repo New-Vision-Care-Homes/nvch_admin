@@ -570,9 +570,19 @@
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
+		/* Without this, the flex item's default min-width:auto keeps it sized
+		   to its full (unwrapped) content, so overflow-x:auto never actually
+		   engages inside .ackTabRow — the row just pushes past the viewport
+		   and hides the Export All button. min-width:0 lets it shrink so the
+		   tabs scroll internally instead. */
+		min-width: 0;
 	}
 	.tabs::-webkit-scrollbar { display: none; }
 	.tab { white-space: nowrap; }
+
+	.ackTabRow {
+		flex-wrap: wrap;
+	}
 
 	.row { padding: 12px 14px; gap: 10px; }
 

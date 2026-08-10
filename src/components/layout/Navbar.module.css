@@ -20,7 +20,7 @@
 	display: flex;
 	width: 95%;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-start;
 	gap: 10px;
 }
 
@@ -49,6 +49,10 @@
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	/* Pins actions to the right regardless of how many items precede them —
+	   keeps the logo pinned left next to the hamburger instead of drifting to
+	   center once the hamburger becomes a 3rd flex child on mobile. */
+	margin-left: auto;
 }
 
 .search {

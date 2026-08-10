@@ -947,4 +947,16 @@
 	.actionBtns {
 		flex-direction: column;
 	}
+
+	/* Approve/Mandate-reject modal footers can hold up to 3 buttons
+	   (MandateRejectModal's Cancel / Cancel Shift / Confirm Reassign & Remove) —
+	   side-by-side with nowrap labels overflows the modal on narrow phones. */
+	.approveModalActions {
+		flex-direction: column;
+	}
+
+	.approveModalActions > * {
+		flex: none;
+		width: 100%;
+	}
 }

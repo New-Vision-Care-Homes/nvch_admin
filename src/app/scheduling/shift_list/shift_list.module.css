@@ -282,6 +282,7 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
 	.header { flex-direction: column; }
-	.shiftCard { flex-wrap: wrap; }
+	.shiftCard { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; gap: 14px; }
+	.timeBlock { flex-direction: row; gap: 8px; align-items: baseline; width: 100%; justify-content: flex-start; }
 	.viewBtn { width: 100%; justify-content: center; }
 }

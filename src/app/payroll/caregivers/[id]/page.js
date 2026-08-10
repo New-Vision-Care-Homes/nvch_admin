@@ -248,6 +248,7 @@ export default function CaregiverPayrollSummaryPage() {
                             {entries.length === 0 ? (
                                 <p className={styles.entriesEmpty}>No manual entries for this period.</p>
                             ) : (
+                                <div className={styles.entriesTableWrap}>
                                 <table className={styles.entriesTable}>
                                     <thead>
                                         <tr>
@@ -300,6 +301,7 @@ export default function CaregiverPayrollSummaryPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                                </div>
                             )}
                         </CardContent>
                     </Card>

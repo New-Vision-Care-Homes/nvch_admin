@@ -96,6 +96,9 @@
 .searchWrap {
 	position: relative;
 	width: 220px;
+	max-width: 100%;
+	flex-shrink: 1;
+	min-width: 0;
 }
 
 .searchIcon {
@@ -149,5 +152,32 @@
 
 	.infoGrid {
 		grid-template-columns: 1fr;
+	}
+}
+
+/* Card headers pair a title with a fixed-ish search box (Caregivers/Clients/
+   Admins cards). Below ~480px there isn't room for both on one line, and the
+   title would otherwise wrap to two lines and visually collide with the
+   vertically-centered search box. Truncate the title instead and let the
+   search box shrink further. .cardTitle is passed to CardHeader's
+   className prop, which applies it directly to its <h2>. */
+.cardTitle {
+	min-width: 0;
+}
+
+@media (max-width: 480px) {
+	.searchWrap {
+		width: 130px;
+	}
+
+	.searchInput {
+		padding-left: 28px;
+		font-size: 0.8rem;
+	}
+
+	.cardTitle {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 }

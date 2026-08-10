@@ -145,3 +145,12 @@
     gap: 10px;
     flex-shrink: 0;
 }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+    /* Two side-by-side decision cards get too narrow for their description
+       text on a phone-width modal; stack them instead. */
+    .capDecisionRow {
+        grid-template-columns: 1fr;
+    }
+}

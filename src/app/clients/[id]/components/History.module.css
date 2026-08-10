@@ -74,15 +74,17 @@
   
 
 .tableWrapper {
-	opacity: 1; 
+	opacity: 1;
 	border-radius: 6px;
 	border: 1px solid #DEE1E6FF;
-	overflow: hidden;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .table {
 	width: 100%;
+	min-width: 640px;
 	border-collapse: collapse;
 }
 
@@ -172,4 +174,15 @@
 	text-align: center;
 	color: hsl(var(--muted-foreground));
 	font-size: 1rem;
+}
+
+/* ── Responsive (≤ 768px) ── */
+@media (max-width: 768px) {
+	.container {
+		padding: 1.25rem;
+	}
+
+	.searchInput {
+		width: 100%;
+	}
 }

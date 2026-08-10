@@ -161,7 +161,7 @@ export default function HomeDetailPage() {
 
 				{/* Caregivers */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input
@@ -205,7 +205,7 @@ export default function HomeDetailPage() {
 
 				{/* Clients */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input
@@ -249,7 +249,7 @@ export default function HomeDetailPage() {
 
 				{/* Admins */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input
