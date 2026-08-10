@@ -16,6 +16,7 @@ import { useHouseReviews } from "@/hooks/usePayroll";
 import { usePayPeriod }    from "@/hooks/usePayPeriods";
 import { useAdmins }        from "@/hooks/useAdmins";
 import { formatDateTime }    from "@/utils/dates";
+import { fullName } from "@/utils/formatting";
 import { REGION_OPTIONS }    from "@/utils/dropdownList/region";
 import { HOME_TYPE_COLORS }  from "@/utils/dropdownList/homeType";
 import { REGION_COLORS }     from "@/utils/dropdownList/region";
@@ -39,11 +40,6 @@ const TONE_ACCENT = {
     neutral: "#94a3b8",
     danger:  "#ef4444",
 };
-
-function fullName(person) {
-    if (!person) return null;
-    return [person.firstName, person.lastName].filter(Boolean).join(" ") || null;
-}
 
 // ─── Detail row (label + value, always rendered) ─────────────────────────────
 
@@ -290,9 +286,9 @@ export default function HouseReviewsPage() {
     );
     const resolveName = (idOrObj) => {
         if (!idOrObj) return null;
-        if (typeof idOrObj === "object") return fullName(idOrObj);
+        if (typeof idOrObj === "object") return fullName(idOrObj, null);
         const admin = adminMap.get(String(idOrObj));
-        return admin ? fullName(admin) : null;
+        return admin ? fullName(admin, null) : null;
     };
 
     const hasActiveFilters = mine || supervisorFilter || payrollFilter || regionFilter || hasActivityOnly || includeInactive;

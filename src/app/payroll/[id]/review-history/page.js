@@ -14,6 +14,7 @@ import styles from "./review_history.module.css";
 import { useHouseReview } from "@/hooks/usePayroll";
 import { useAdmins }     from "@/hooks/useAdmins";
 import { formatDateTime } from "@/utils/dates";
+import { fullName } from "@/utils/formatting";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS }    from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK }   from "@/utils/dropdownList/shared";
@@ -45,11 +46,6 @@ function statusTone(flag, value) {
     return flag === "supervisor"
         ? (SUPERVISOR_TONE[value] ?? "neutral")
         : (PAYROLL_TONE[value]    ?? "neutral");
-}
-
-function fullName(person) {
-    if (!person) return null;
-    return [person.firstName, person.lastName].filter(Boolean).join(" ") || null;
 }
 
 // ─── Person pill ──────────────────────────────────────────────────────────────
@@ -112,9 +108,9 @@ export default function ReviewHistoryPage() {
     );
     const resolveName = (idOrObj) => {
         if (!idOrObj) return null;
-        if (typeof idOrObj === "object") return fullName(idOrObj);
+        if (typeof idOrObj === "object") return fullName(idOrObj, null);
         const admin = adminMap.get(String(idOrObj));
-        return admin ? fullName(admin) : null;
+        return admin ? fullName(admin, null) : null;
     };
 
     const isCommunityRow = homeId === "community";
