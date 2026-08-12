@@ -7,8 +7,11 @@
 // the backend payload directly (no nesting).
 //
 // Permissions required by the backend:
-//   Read  — view_trainings OR view_payroll (either is sufficient)
-//   Write — manage_trainings
+//   Read       — view_trainings OR view_payroll (either is sufficient)
+//   Write      — manage_trainings
+//   Attendance — manage_trainings, manage_all_training_attendance, or
+//                manage_assigned_training_attendance (only for trainings the
+//                admin is listed on in trainers[])
 // ============================================================
 
 import axiosClient from '../axiosClient';
@@ -95,6 +98,39 @@ export const trainingService = {
      */
     setAttendeeStatus: async (id, caregiverId, body) => {
         const { data } = await axiosClient.put(API_ENDPOINTS.TRAININGS.ATTENDEE_BY_ID(id, caregiverId), body);
+        return data?.data;
+    },
+
+    // ── Attendance (supervisor overrides, portal-only) ──────────────────────────
+
+    /**
+     * Fix one attendee's clock pair — enter a missing clock-in, close a
+     * dangling clock-out, correct a time, or wipe a side.
+     * body: { clockInAt?, clockOutAt?, note? } — omit a field to leave it as-is,
+     * send null to clear it. At least one clock field is required.
+     * Response shape: { training }
+     */
+    setAttendeeAttendance: async (id, caregiverId, body) => {
+        const { data } = await axiosClient.put(API_ENDPOINTS.TRAININGS.ATTENDEE_ATTENDANCE(id, caregiverId), body);
+        return data?.data;
+    },
+
+    /**
+     * Bulk clock in the caregivers present ("take the register").
+     * Sequential, partial-success — mirrors addAttendees.
+     * body: { caregiverIds, at?, note? }
+     * Response shape: { training, summary: { total, updated, failed }, failed: [] }
+     */
+    bulkClockIn: async (id, body) => {
+        const { data } = await axiosClient.post(API_ENDPOINTS.TRAININGS.ATTENDANCE_CLOCK_IN(id), body);
+        return data?.data;
+    },
+
+    /**
+     * Bulk clock out. Same request/response shape as bulkClockIn.
+     */
+    bulkClockOut: async (id, body) => {
+        const { data } = await axiosClient.post(API_ENDPOINTS.TRAININGS.ATTENDANCE_CLOCK_OUT(id), body);
         return data?.data;
     },
 };

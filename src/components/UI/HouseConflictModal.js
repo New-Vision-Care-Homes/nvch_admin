@@ -1,15 +1,21 @@
 "use client";
 
 import { TriangleAlert, ArrowRightLeft } from "lucide-react";
-import styles from "./ClientConflictModal.module.css";
+import styles from "./HouseConflictModal.module.css";
 
-export default function ClientConflictModal({
+/**
+ * Confirms taking a client OR caregiver from another home — the rule, payload,
+ * and confirmMove override are identical for both entity types, only the copy
+ * differs. Pass subjectLabel="Caregiver" to reuse this for caregiver moves.
+ */
+export default function HouseConflictModal({
 	isOpen,
 	onClose,
 	onConfirm,
-	clientName,
+	subjectName,
 	currentHomeName,
 	newHomeName,
+	subjectLabel = "Client",
 }) {
 	if (!isOpen) return null;
 
@@ -21,10 +27,10 @@ export default function ClientConflictModal({
 					<TriangleAlert className={styles.icon} />
 				</div>
 
-				<h2 id="conflict-title" className={styles.title}>Client Already Assigned</h2>
+				<h2 id="conflict-title" className={styles.title}>{subjectLabel} Already Assigned</h2>
 
 				<p className={styles.body}>
-					<strong>{clientName}</strong> is currently assigned to{" "}
+					<strong>{subjectName}</strong> is currently assigned to{" "}
 					<span className={styles.homeBadge}>{currentHomeName || "another home"}</span>.
 				</p>
 
@@ -37,7 +43,7 @@ export default function ClientConflictModal({
 				)}
 
 				<p className={styles.hint}>
-					Moving will remove this client from their current home and reassign them here.
+					Moving will remove this {subjectLabel.toLowerCase()} from their current home and reassign them here.
 				</p>
 
 				<div className={styles.actions}>

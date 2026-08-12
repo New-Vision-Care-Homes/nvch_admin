@@ -225,7 +225,7 @@ export default function NotificationsPage() {
 			router.push(`/approvals/${n.data.approvalId}`);
 			return;
 		}
-		// broadcast and other non-tappable types: no navigation, just mark read.
+		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.
 	};
 
 	const handleFilterChange = (next) => {

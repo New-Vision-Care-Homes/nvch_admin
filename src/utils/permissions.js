@@ -1,3 +1,17 @@
+import * as yup from "yup";
+
+/**
+ * Shared by the add-new and edit permission-group forms — kept here (rather
+ * than duplicated in each page) since both forms validate the same shape.
+ * The group-name-vs-slug uniqueness check is dynamic (depends on the live
+ * slug list) and stays as a `setError` call in each page's onSubmit.
+ */
+export const permissionGroupSchema = yup.object({
+	name:        yup.string().trim().min(3, "Group name must be at least 3 characters.").required("Group name is required."),
+	description: yup.string().trim().required("Description is required."),
+	permissions: yup.array().min(1, "Please select at least one permission."),
+});
+
 /**
  * Canonical permissions mapping as defined by the backend.
  * This is used to render the categorized UI for permission selection.
@@ -129,7 +143,9 @@ export const PERMISSION_SCHEMAS = [
 		module: "Training",
 		slugs: [
 			"view_trainings",
-			"manage_trainings"
+			"manage_trainings",
+			"manage_all_training_attendance",
+			"manage_assigned_training_attendance"
 		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit

@@ -12,16 +12,19 @@ import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useProfile } from "@/hooks/useProfile";
 import { formatDateTime } from "@/utils/dates";
-import { personName } from "@/utils/formatting";
+import { personName, getLabel } from "@/utils/formatting";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 import PersonName from "../_components/PersonName";
 import AttendeeRoster from "../_components/AttendeeRoster";
 import AttendeeStatusModal from "../_components/AttendeeStatusModal";
+import AttendanceOverrideModal from "../_components/AttendanceOverrideModal";
+import BulkAttendanceModal from "../_components/BulkAttendanceModal";
 import AddAttendeesModal from "../_components/AddAttendeesModal";
 import CancelTrainingModal from "../_components/CancelTrainingModal";
-import { TRAINING_STATUS_META } from "../_components/statusMeta";
+import { TRAINING_STATUS_META, SESSION_STATE_META } from "../_components/statusMeta";
 import { getTrainingTypeColor } from "@/utils/dropdownList/trainingType";
 import {
-    Edit, Ban, AlertCircle, UserPlus,
+    Edit, Ban, AlertCircle, UserPlus, LogIn, LogOut,
     UserCheck, CalendarDays, Clock, MapPin, Undo2,
 } from "lucide-react";
 import styles from "./detail.module.css";
@@ -74,9 +77,27 @@ export default function TrainingDetailPage() {
 
     const { training, isLoading, fetchError, refetch, removeAttendee, isActionPending, actionError } = useTrainings(id);
 
+    // Attendance-override access follows a separate all/assigned axis:
+    // manage_trainings already carries it (see trainingService.js doc comment),
+    // manage_all_training_attendance grants it for any training, and
+    // manage_assigned_training_attendance only for trainings this admin is
+    // listed on in trainers[] — unlike canManageTarget's region-based scoping,
+    // "assigned" here means "I'm one of this training's trainers".
+    const isTrainer = (training?.trainers ?? []).some((t) => {
+        const trainerId = t?._id || t?.id || t;
+        return String(trainerId) === String(profile?.id ?? profile?._id);
+    });
+    const canManageAttendance =
+        canManage ||
+        slugs.includes("manage_all_training_attendance") ||
+        (slugs.includes("manage_assigned_training_attendance") && isTrainer);
+
     const [confirmCancel, setConfirmCancel]           = useState(false);
     const [showAddAttendees, setShowAddAttendees]     = useState(false);
+    const [showBulkClockIn, setShowBulkClockIn]       = useState(false);
+    const [showBulkClockOut, setShowBulkClockOut]     = useState(false);
     const [statusTarget, setStatusTarget]             = useState(null);
+    const [attendanceTarget, setAttendanceTarget]     = useState(null);
     const [removeTarget, setRemoveTarget]             = useState(null);
 
     const handleRemoveConfirm = () => {
@@ -105,6 +126,13 @@ export default function TrainingDetailPage() {
                                     tone={TRAINING_STATUS_META[training.status]?.tone}
                                     size="detail"
                                 />
+                                {training.sessionState && (
+                                    <StatusBadge
+                                        label={SESSION_STATE_META[training.sessionState]?.label || training.sessionState}
+                                        tone={SESSION_STATE_META[training.sessionState]?.tone}
+                                        size="detail"
+                                    />
+                                )}
                             </div>
                             <h1>{training.title}</h1>
                             <div className={styles.metaRow}>
@@ -212,19 +240,55 @@ export default function TrainingDetailPage() {
 
                         <Card>
                             <CardHeader
-                                actions={canManage && training.status !== "cancelled" && (
-                                    <Button icon={<UserPlus size={15} />} variant="secondary" onClick={() => setShowAddAttendees(true)}>
-                                        Add Attendees
-                                    </Button>
+                                actions={(canManage || canManageAttendance) && training.status !== "cancelled" && (
+                                    <div className={styles.attendeeActions}>
+                                        {canManageAttendance && (
+                                            <>
+                                                <Button icon={<LogIn size={15} />} variant="secondary" onClick={() => setShowBulkClockIn(true)}>
+                                                    Clock In
+                                                </Button>
+                                                <Button icon={<LogOut size={15} />} variant="secondary" onClick={() => setShowBulkClockOut(true)}>
+                                                    Clock Out
+                                                </Button>
+                                            </>
+                                        )}
+                                        {canManage && (
+                                            <Button icon={<UserPlus size={15} />} variant="secondary" onClick={() => setShowAddAttendees(true)}>
+                                                Add Attendees
+                                            </Button>
+                                        )}
+                                    </div>
                                 )}
                             >
                                 Attendees
                             </CardHeader>
                             <CardContent>
+                                {training.attendanceSummary && (
+                                    <div className={styles.attendanceSummaryStrip}>
+                                        <div className={styles.attendanceSummaryItem}>
+                                            <span className={styles.attendanceSummaryNum}>{training.attendanceSummary.total}</span>
+                                            <span className={styles.attendanceSummaryLabel}>Total</span>
+                                        </div>
+                                        <div className={styles.attendanceSummaryItem}>
+                                            <span className={styles.attendanceSummaryNum}>{training.attendanceSummary.notClockedIn}</span>
+                                            <span className={styles.attendanceSummaryLabel}>Not Clocked In</span>
+                                        </div>
+                                        <div className={styles.attendanceSummaryItem}>
+                                            <span className={styles.attendanceSummaryNum}>{training.attendanceSummary.inProgress}</span>
+                                            <span className={styles.attendanceSummaryLabel}>In Progress</span>
+                                        </div>
+                                        <div className={styles.attendanceSummaryItem}>
+                                            <span className={styles.attendanceSummaryNum}>{training.attendanceSummary.clockedOut}</span>
+                                            <span className={styles.attendanceSummaryLabel}>Clocked Out</span>
+                                        </div>
+                                    </div>
+                                )}
                                 <AttendeeRoster
                                     attendees={training.attendees}
                                     canManage={canManage && training.status !== "cancelled"}
+                                    canManageAttendance={canManageAttendance && training.status !== "cancelled"}
                                     onStatusClick={setStatusTarget}
+                                    onAttendanceClick={setAttendanceTarget}
                                     onRemove={(caregiverId) => {
                                         const attendee = training.attendees.find((a) => (a.caregiver?._id || a.caregiver?.id || a.caregiver) === caregiverId);
                                         setRemoveTarget(attendee || { caregiver: caregiverId });
@@ -239,7 +303,7 @@ export default function TrainingDetailPage() {
                             <CardContent>
                                 {training.generatesCertificate ? (
                                     <div className={styles.infoGrid}>
-                                        <InfoField label="Certification Type" value={training.certificationType} />
+                                        <InfoField label="Certification Type" value={getLabel(CERTIFICATE_OPTIONS, training.certificationType)} />
                                         <InfoField
                                             label="Validity"
                                             value={training.certificateValidityMonths ? `${training.certificateValidityMonths} months` : "Default (100 years)"}
@@ -288,6 +352,29 @@ export default function TrainingDetailPage() {
                         onClose={() => setStatusTarget(null)}
                         trainingId={id}
                         attendee={statusTarget}
+                    />
+
+                    <AttendanceOverrideModal
+                        isOpen={!!attendanceTarget}
+                        onClose={() => setAttendanceTarget(null)}
+                        trainingId={id}
+                        attendee={attendanceTarget}
+                    />
+
+                    <BulkAttendanceModal
+                        isOpen={showBulkClockIn}
+                        onClose={() => setShowBulkClockIn(false)}
+                        trainingId={id}
+                        attendees={training.attendees}
+                        mode="clock-in"
+                    />
+
+                    <BulkAttendanceModal
+                        isOpen={showBulkClockOut}
+                        onClose={() => setShowBulkClockOut(false)}
+                        trainingId={id}
+                        attendees={training.attendees}
+                        mode="clock-out"
                     />
 
                     <ConfirmDeleteModal

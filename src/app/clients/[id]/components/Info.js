@@ -26,7 +26,7 @@ import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
 import { useHomes } from "@/hooks/useHomes";
-import ClientConflictModal from "@/components/UI/ClientConflictModal";
+import HouseConflictModal from "@/components/UI/HouseConflictModal";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { MARITAL_STATUS_OPTIONS } from "@/utils/dropdownList/maritalStatus";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
@@ -446,11 +446,11 @@ export default function Info() {
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
-			<ClientConflictModal
+			<HouseConflictModal
 				isOpen={!!conflictInfo}
 				onClose={() => setConflictInfo(null)}
 				onConfirm={handleConflictConfirm}
-				clientName={clientDetail ? `${clientDetail.firstName} ${clientDetail.lastName}` : ""}
+				subjectName={clientDetail ? `${clientDetail.firstName} ${clientDetail.lastName}` : ""}
 				currentHomeName={conflictInfo?.currentHomeName}
 				newHomeName={newHomeName}
 			/>

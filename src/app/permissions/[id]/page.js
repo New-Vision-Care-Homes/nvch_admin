@@ -4,12 +4,13 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import Button from "@components/UI/Button";
 import { Undo2, Pencil } from "lucide-react";
 import { Card, CardHeader, CardContent, InputField, InfoField } from "@components/UI/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
-import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS } from "@/utils/permissions";
+import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS, permissionGroupSchema } from "@/utils/permissions";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@/components/UI/ErrorState";
 import ActionMessage from "@/components/UI/ActionMessage";
@@ -45,6 +46,7 @@ export default function PermissionGroupDetailPage() {
 	const canUpdate = profile?.permissionSlugs?.includes("update_permissions_groups");
 
 	const { register, handleSubmit, control, formState: { errors }, setError, reset } = useForm({
+		resolver: yupResolver(permissionGroupSchema),
 		defaultValues: { name: "", description: "", permissions: [] }
 	});
 
@@ -76,28 +78,12 @@ export default function PermissionGroupDetailPage() {
 	};
 
 	const onSubmit = (data) => {
-		if (!data.name || data.name.trim().length < 3) {
-			setError("name", { type: "manual", message: "Group name must be at least 3 characters." });
-			return;
-		}
-		if (!data.description || data.description.trim() === "") {
-			setError("description", { type: "manual", message: "Description is required." });
-			return;
-		}
-		// Prevent naming a group the same as a permission slug (the backend
-		// checks the full catalog, including the implicit self slugs that the
-		// definitions endpoint no longer returns).
+		// Runtime check: group name must not clash with an existing permission slug.
+		// The Yup schema handles all static rules; only this dynamic check needs setError.
 		if (permissionSlugs.includes(data.name.trim()) || IMPLICIT_SELF_SLUGS.includes(data.name.trim())) {
 			setError("name", {
 				type: "manual",
 				message: "Group name cannot be the same as an individual permission slug."
-			});
-			return;
-		}
-		if (!data.permissions || data.permissions.length === 0) {
-			setError("permissions", {
-				type: "manual",
-				message: "Please select at least one permission."
 			});
 			return;
 		}

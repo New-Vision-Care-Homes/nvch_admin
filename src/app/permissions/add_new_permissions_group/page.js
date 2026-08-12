@@ -5,18 +5,11 @@ import PageLayout from "@components/layout/PageLayout";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import Button from "@components/UI/Button";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
-import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS } from "@/utils/permissions";
-
-const schema = yup.object({
-	name:        yup.string().trim().min(3, "Group name must be at least 3 characters.").required("Group name is required."),
-	description: yup.string().trim().required("Description is required."),
-	permissions: yup.array().min(1, "Please select at least one permission."),
-});
+import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS, permissionGroupSchema } from "@/utils/permissions";
 
 export default function AddPermissionGroupPage() {
 	const router = useRouter();
@@ -34,7 +27,7 @@ export default function AddPermissionGroupPage() {
 	} = usePermissionDefinitions();
 
 	const { register, handleSubmit, control, formState: { errors }, setError } = useForm({
-		resolver: yupResolver(schema),
+		resolver: yupResolver(permissionGroupSchema),
 		defaultValues: { name: "", description: "", permissions: [] },
 	});
 

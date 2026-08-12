@@ -16,7 +16,8 @@
 //
 // Returned from mutations:
 //   createTraining, updateTraining, cancelTraining,
-//   addAttendees, removeAttendee, setAttendeeStatus — mutate functions
+//   addAttendees, removeAttendee, setAttendeeStatus,
+//   setAttendeeAttendance, bulkClockIn, bulkClockOut — mutate functions
 //   isActionPending — true while any mutation is in flight
 //   actionError     — human-readable string from the last failed mutation
 // ============================================================
@@ -94,6 +95,21 @@ export const useTrainings = (options = {}, { enabled = true } = {}) => {
         onSuccess:  (_, variables) => invalidateAll(variables.id),
     });
 
+    const setAttendeeAttendanceMutation = useMutation({
+        mutationFn: ({ id, caregiverId, body }) => trainingService.setAttendeeAttendance(id, caregiverId, body),
+        onSuccess:  (_, variables) => invalidateAll(variables.id),
+    });
+
+    const bulkClockInMutation = useMutation({
+        mutationFn: ({ id, body }) => trainingService.bulkClockIn(id, body),
+        onSuccess:  (_, variables) => invalidateAll(variables.id),
+    });
+
+    const bulkClockOutMutation = useMutation({
+        mutationFn: ({ id, body }) => trainingService.bulkClockOut(id, body),
+        onSuccess:  (_, variables) => invalidateAll(variables.id),
+    });
+
     // ── Error surfaces ─────────────────────────────────────────────────────────
     const fetchErrorRaw  = listQuery.error || detailQuery.error;
     const actionErrorRaw =
@@ -102,7 +118,10 @@ export const useTrainings = (options = {}, { enabled = true } = {}) => {
         cancelMutation.error ||
         addAttendeesMutation.error ||
         removeAttendeeMutation.error ||
-        setAttendeeStatusMutation.error;
+        setAttendeeStatusMutation.error ||
+        setAttendeeAttendanceMutation.error ||
+        bulkClockInMutation.error ||
+        bulkClockOutMutation.error;
 
     return {
         // List result
@@ -119,19 +138,25 @@ export const useTrainings = (options = {}, { enabled = true } = {}) => {
             cancelMutation.isPending ||
             addAttendeesMutation.isPending ||
             removeAttendeeMutation.isPending ||
-            setAttendeeStatusMutation.isPending,
+            setAttendeeStatusMutation.isPending ||
+            setAttendeeAttendanceMutation.isPending ||
+            bulkClockInMutation.isPending ||
+            bulkClockOutMutation.isPending,
 
         // Errors
         fetchError:  fetchErrorRaw  ? getErrorMessage(fetchErrorRaw)  : null,
         actionError: actionErrorRaw ? getErrorMessage(actionErrorRaw) : null,
 
         // Mutations
-        createTraining:    createMutation.mutate,
-        updateTraining:    updateMutation.mutate,
-        cancelTraining:    cancelMutation.mutate,
-        addAttendees:      addAttendeesMutation.mutate,
-        removeAttendee:    removeAttendeeMutation.mutate,
-        setAttendeeStatus: setAttendeeStatusMutation.mutate,
+        createTraining:        createMutation.mutate,
+        updateTraining:        updateMutation.mutate,
+        cancelTraining:        cancelMutation.mutate,
+        addAttendees:          addAttendeesMutation.mutate,
+        removeAttendee:        removeAttendeeMutation.mutate,
+        setAttendeeStatus:     setAttendeeStatusMutation.mutate,
+        setAttendeeAttendance: setAttendeeAttendanceMutation.mutate,
+        bulkClockIn:           bulkClockInMutation.mutate,
+        bulkClockOut:          bulkClockOutMutation.mutate,
 
         refetch:       listQuery.refetch,
         refetchDetail: detailQuery.refetch,

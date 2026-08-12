@@ -13,6 +13,7 @@ import GeofenceMap from "@components/UI/GeofenceMap";
 import AddressAutocomplete from "@components/UI/AddressAutocomplete";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
+import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 import PayRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../_components/PayRulesSection";
 import PersonMultiSelect from "../_components/PersonMultiSelect";
 import { X, Save, Loader } from "lucide-react";
@@ -323,7 +324,7 @@ export default function CreateTrainingPage() {
 
                             {generatesCertificate && (
                                 <div className={styles.row2}>
-                                    <InputField label="Certification Type" name="certificationType" register={register} error={errors.certificationType} placeholder="e.g. umab-new" required />
+                                    <InputField label="Certification Type" name="certificationType" type="select" register={register} error={errors.certificationType} options={CERTIFICATE_OPTIONS} required />
                                     <InputField label="Validity (months, optional)" name="certificateValidityMonths" type="number" min="0" step="1" register={register} error={errors.certificateValidityMonths} placeholder="e.g. 24" />
                                 </div>
                             )}

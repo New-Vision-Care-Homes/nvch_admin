@@ -53,6 +53,55 @@
 	position: relative;
 }
 
+/* ── Bulk attendance checklist ───────────────────────────────────────────── */
+
+.checkRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 2px;
+	font-size: 0.875rem;
+	color: #111827;
+	cursor: pointer;
+}
+
+.checkRow input[type="checkbox"] {
+	cursor: pointer;
+}
+
+.checkListLabel {
+	display: block;
+	margin-bottom: 5px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.dateInput,
+.noteInput {
+	width: 100%;
+	padding: 9px 12px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.noteInput {
+	resize: vertical;
+	min-height: 56px;
+}
+
+.dateInput:focus,
+.noteInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
 .failedList {
 	width: 100%;
 	text-align: left;

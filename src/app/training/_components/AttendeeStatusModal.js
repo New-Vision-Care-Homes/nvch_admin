@@ -8,15 +8,8 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { toDateInput } from "@/utils/dates";
 import { useTrainings } from "@/hooks/useTrainings";
 import PersonName from "./PersonName";
+import { ATTENDEE_STATUS_OPTIONS } from "./statusMeta";
 import styles from "./AttendeeStatusModal.module.css";
-
-const STATUS_OPTIONS = [
-    { value: "pending",   label: "Pending" },
-    { value: "attended",  label: "Attended" },
-    { value: "completed", label: "Completed" },
-    { value: "retake",    label: "Retake" },
-    { value: "failed",    label: "Failed" },
-];
 
 /**
  * Modal for grading a single attendee (status + retake date + notes).
@@ -80,7 +73,7 @@ export default function AttendeeStatusModal({ isOpen, onClose, trainingId, atten
                         onChange={(e) => { setStatus(e.target.value); setValidationError(""); }}
                         disabled={isActionPending}
                     >
-                        {STATUS_OPTIONS.map((o) => (
+                        {ATTENDEE_STATUS_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                         ))}
                     </select>

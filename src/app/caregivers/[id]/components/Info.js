@@ -8,7 +8,7 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./info.module.css";
 import ActionMessage from "@components/UI/ActionMessage";
-import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase } from "lucide-react";
+import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase, Home } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
@@ -17,10 +17,12 @@ import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
+import { useHomes } from "@/hooks/useHomes";
 import { canManageTarget } from "@/utils/permissions";
 import ErrorState from "@components/UI/ErrorState";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import PersonSearchField from "@/components/UI/PersonSearchField";
+import HouseConflictModal from "@/components/UI/HouseConflictModal";
 
 const EMPLOYMENT_STATUS_OPTIONS = [
 	{ label: "Full Time", value: "full_time" },
@@ -48,6 +50,7 @@ const cleanFetchedData = (apiData) => {
 		supervisor: apiData.supervisor || "",
 		teamLead: apiData.teamLead || "",
 		employmentStatus: apiData.employmentStatus || "",
+		homeId: typeof apiData.home === 'string' ? apiData.home : (apiData.home?._id || apiData.home?.id || apiData.homeId || ""),
 	};
 	const emergencyContact = apiData.emergencyContact || {};
 	const emergencyNameParts = emergencyContact.name?.split(' ') || [];
@@ -80,6 +83,7 @@ const schema = yup.object({
 	employmentStatus: yup.string().oneOf(["full_time", "casual", "term", ""], "Please select a valid employment status").required(),
 	supervisor: yup.string().required("Supervisor is required"),
 	teamLead: yup.string().optional(),
+	homeId: yup.string().nullable().optional(),
 	emergencyFName: nameRule.optional(),
 	emergencyLName: nameRule.optional(),
 	emergencyPhone: phoneRule.optional(),
@@ -94,9 +98,11 @@ export default function Info() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [gpsCoordinates, setGpsCoordinates] = useState({ latitude: 44.6476, longitude: -63.5728 });
+	const [conflictInfo, setConflictInfo] = useState(null);
 	const { id } = useParams();
 
 	const { caregiverDetail, updateCaregiver, isCaregiverLoading, isCaregiverActionPending, caregiverFetchError } = useCaregivers(id);
+	const { homes } = useHomes({ limit: 100 });
 
 	// update_assigned_caregivers only counts when the caregiver shares a region
 	// with the requester — same scoping the backend applies on save.
@@ -112,6 +118,7 @@ export default function Info() {
 	const watchState = watch("state");
 	const watchPincode = watch("pincode");
 	const watchCountry = watch("country");
+	const watchHomeId = watch("homeId");
 	const selectedRegions = watch("regions") || [];
 
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
@@ -133,40 +140,72 @@ export default function Info() {
 		}
 	}, [caregiverDetail, reset, isInitialized]);
 
-	const onSubmit = async (data) => {
-		setStatus(null);
-		updateCaregiver({ id, data: {
-			email: data.email || null,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			phone: data.phone || null,
-			dateOfBirth: localDateToUtc(data.birth, "America/Halifax"),
-			employeeStartDate: localDateToUtc(data.employeeStartDate, "America/Halifax"),
-			regions: data.regions,
-			employmentStatus: data.employmentStatus || null,
-			address: {
-				street: data.street, unit: data.unit || null,
-				city: data.city, state: data.state, pinCode: data.pincode, country: data.country,
-				gpsCoordinates: { latitude: gpsCoordinates.latitude, longitude: gpsCoordinates.longitude },
-			},
-			biWeeklyWorkCapacity: { maxHours: data.maxHours },
-			supervisor: data.supervisor || null,
-			teamLead: data.teamLead || null,
-			emergencyContact: {
-				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
-				phone: data.emergencyPhone || null,
-				relationship: data.relationship || null,
-			},
-		}}, {
+	const buildBody = (data) => ({
+		email: data.email || null,
+		firstName: data.firstName,
+		lastName: data.lastName,
+		phone: data.phone || null,
+		dateOfBirth: localDateToUtc(data.birth, "America/Halifax"),
+		employeeStartDate: localDateToUtc(data.employeeStartDate, "America/Halifax"),
+		regions: data.regions,
+		employmentStatus: data.employmentStatus || null,
+		homeId: data.homeId || null,
+		address: {
+			street: data.street, unit: data.unit || null,
+			city: data.city, state: data.state, pinCode: data.pincode, country: data.country,
+			gpsCoordinates: { latitude: gpsCoordinates.latitude, longitude: gpsCoordinates.longitude },
+		},
+		biWeeklyWorkCapacity: { maxHours: data.maxHours },
+		supervisor: data.supervisor || null,
+		teamLead: data.teamLead || null,
+		emergencyContact: {
+			name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
+			phone: data.emergencyPhone || null,
+			relationship: data.relationship || null,
+		},
+	});
+
+	const submitUpdate = (body, formData) => {
+		updateCaregiver({ id, data: body }, {
 			onSuccess: () => {
 				setStatus({ variant: "success", text: "Caregiver data updated successfully!" });
-				reset(data);
+				reset(formData);
 				setIsEditing(false);
 			},
 			onError: (err) => {
 				setStatus({ variant: "error", text: err?.response?.data?.error || err?.response?.data?.message || err?.message || "Failed to update caregiver." });
 			},
 		});
+	};
+
+	// A caregiver may be assigned to at most one house — same rule, payload,
+	// and confirmMove override as a client's home reassignment (see
+	// clients/[id]/components/Info.js). Pre-check their current home before
+	// submitting so we can confirm the move instead of hitting a 409.
+	const onSubmit = async (data) => {
+		setStatus(null);
+
+		const newHomeId = data.homeId || null;
+		// caregiverDetail.home comes back fully populated (with .name), and
+		// homeId is already a flat string — no need to fetch the home by id.
+		const currentHomeId = caregiverDetail?.homeId || null;
+
+		if (newHomeId && currentHomeId && newHomeId !== currentHomeId) {
+			setConflictInfo({
+				currentHomeName: caregiverDetail?.home?.name || null,
+				pendingBody: buildBody(data),
+				pendingData: data,
+			});
+			return;
+		}
+
+		submitUpdate(buildBody(data), data);
+	};
+
+	const handleConflictConfirm = () => {
+		if (!conflictInfo) return;
+		submitUpdate({ ...conflictInfo.pendingBody, confirmMove: true }, conflictInfo.pendingData);
+		setConflictInfo(null);
 	};
 
 	const handleCancel = () => {
@@ -190,9 +229,26 @@ export default function Info() {
 	const ec = d.emergencyContact || {};
 
 	const fullAddress = [addr.street, addr.city, addr.state, addr.pinCode, addr.country].filter(Boolean).join(", ");
+	// The caregiver detail response returns home fully populated (with .name)
+	// alongside a flat homeId string — no need to cross-reference the homes list.
+	const rawHomeId = d.homeId || null;
+	const homeName = d.home?.name ?? null;
+
+	const newHomeName = watchHomeId
+		? homes.find(h => h.id === watchHomeId || h._id === watchHomeId)?.name
+		: undefined;
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
+			<HouseConflictModal
+				isOpen={!!conflictInfo}
+				onClose={() => setConflictInfo(null)}
+				onConfirm={handleConflictConfirm}
+				subjectLabel="Caregiver"
+				subjectName={caregiverDetail ? `${caregiverDetail.firstName} ${caregiverDetail.lastName}` : ""}
+				currentHomeName={conflictInfo?.currentHomeName}
+				newHomeName={newHomeName}
+			/>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
 			<div className={styles.body}>
@@ -214,11 +270,11 @@ export default function Info() {
 								{/* Fields grid */}
 								<div className={styles.contact_list}>
 									<div className={styles.contact_row}>
-										<div className={styles.contact_icon_wrap}><Calendar size={16} /></div>
+										<div className={styles.contact_icon_wrap}><Home size={16} /></div>
 										<div className={styles.contact_detail}>
-											<div className={styles.contact_label}>Date of Birth</div>
-											<div className={d.dateOfBirth ? styles.contact_value : styles.contact_value_empty}>
-												{utcToDateString(d.dateOfBirth, "America/Halifax") || "Not provided"}
+											<div className={styles.contact_label}>Assigned Home</div>
+											<div className={homeName ? styles.contact_value : styles.contact_value_empty}>
+												{homeName || (rawHomeId ? "Home assigned" : "No home assigned")}
 											</div>
 										</div>
 									</div>
@@ -266,6 +322,15 @@ export default function Info() {
 										</div>
 									</div>
 									<div className={styles.contact_row}>
+										<div className={styles.contact_icon_wrap}><Calendar size={16} /></div>
+										<div className={styles.contact_detail}>
+											<div className={styles.contact_label}>Date of Birth</div>
+											<div className={d.dateOfBirth ? styles.contact_value : styles.contact_value_empty}>
+												{utcToDateString(d.dateOfBirth, "America/Halifax") || "Not provided"}
+											</div>
+										</div>
+									</div>
+									<div className={styles.contact_row}>
 										<div className={styles.contact_icon_wrap}><Phone size={16} /></div>
 										<div className={styles.contact_detail}>
 											<div className={styles.contact_label}>Phone</div>
@@ -283,7 +348,7 @@ export default function Info() {
 											</div>
 										</div>
 									</div>
-									<div className={styles.contact_row} style={{ gridColumn: "1 / -1" }}>
+									<div className={styles.contact_row}>
 										<div className={styles.contact_icon_wrap}><MapPin size={16} /></div>
 										<div className={styles.contact_detail}>
 											<div className={styles.contact_label}>Address{addr.unit ? ` · Unit ${addr.unit}` : ""}</div>
@@ -303,7 +368,7 @@ export default function Info() {
 								</div>
 								<div className={styles.card_row_2}>
 									<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
-									<InputField label="Employment Status" name="employmentStatus" type="select" register={register} error={errors.employmentStatus} options={EMPLOYMENT_STATUS_OPTIONS} />
+									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
 								</div>
 								<div style={{ marginBottom: "1rem" }}>
 									<RegionCheckboxGroup
@@ -321,6 +386,18 @@ export default function Info() {
 								<div className={styles.card_row_2}>
 									<PersonSearchField label="Supervisor" name="supervisor" control={control} error={errors.supervisor} type="admin" fallbackDisplayName={d.supervisorInfo ? `${d.supervisorInfo.firstName} ${d.supervisorInfo.lastName}` : ""} />
 									<PersonSearchField label="Team Lead" name="teamLead" control={control} error={errors.teamLead} type="admin" fallbackDisplayName={d.teamLeadInfo ? `${d.teamLeadInfo.firstName} ${d.teamLeadInfo.lastName}` : ""} />
+								</div>
+								<div className={styles.card_row_2}>
+									<InputField label="Employment Status" name="employmentStatus" type="select" register={register} error={errors.employmentStatus} options={EMPLOYMENT_STATUS_OPTIONS} />
+									<InputField
+										key={homes.length}
+										label="Assigned Home"
+										name="homeId"
+										type="select"
+										register={register}
+										error={errors.homeId}
+										options={homes.map(h => ({ label: h.name, value: h.id || h._id }))}
+									/>
 								</div>
 
 								<div className={styles.edit_divider}>
