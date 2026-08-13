@@ -5,8 +5,8 @@
 	align-items: flex-start;
 	justify-content: space-between;
 	border-bottom: var(--border-primary);
-	padding-bottom: 1rem;
-	margin-bottom: 2rem;
+	padding-bottom: 0.75rem;
+	margin-bottom: 1.25rem;
 	gap: 1rem;
 }
 
@@ -49,14 +49,27 @@
 	flex-shrink: 0;
 }
 
-/* ── Content column (matches Homes' single-column detail layout) ─────────── */
+/* ── Content column (full width — matches the header) ─────────────────────── */
 
 .content {
 	display: flex;
 	flex-direction: column;
-	gap: 1.5rem;
-	width: 80%;
-	margin: 0 auto;
+	gap: 1rem;
+	width: 100%;
+}
+
+/* ── Top row (Training Details + Site side by side) ──────────────────────── */
+
+.topRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.leftCard,
+.rightCard {
+	flex: 1;
+	min-width: 0;
 }
 
 /* ── Info grid ────────────────────────────────────────────────────────────── */
@@ -64,16 +77,22 @@
 .infoGrid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 1rem 1.5rem;
+	gap: 0.65rem 1.25rem;
+}
+
+.infoGrid3 {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.65rem 1.25rem;
 }
 
 /* ── Section divider (groups fields within a merged card) ─────────────────── */
 
 .sectionDivider {
 	margin: 0;
-	padding-top: 0.75rem;
+	padding-top: 0.6rem;
 	border-top: 1px solid #f3f4f6;
-	font-size: 0.72rem;
+	font-size: 0.7rem;
 	font-weight: 700;
 	color: #6b7280;
 	text-transform: uppercase;
@@ -98,7 +117,7 @@
 }
 
 .siteMapWrap {
-	margin-top: 12px;
+	margin-top: 8px;
 	border: 1px solid #e5e7eb;
 	border-radius: 10px;
 	overflow: hidden;
@@ -173,43 +192,45 @@
 	border: 1px solid #e5e7eb;
 }
 
-/* ── Pay-rule view cards ──────────────────────────────────────────────────── */
+/* ── Pay rules (compact one-line-per-rule) ────────────────────────────────── */
 
 .rulesViewList {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 6px;
 }
 
-.ruleViewCard {
+.ruleRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
 	border: 1px solid #e5e7eb;
 	border-left: 3px solid #d1d5db;
-	border-radius: 9px;
-	padding: 14px 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
+	border-radius: 6px;
 	background: #fafafa;
+	font-size: 0.83rem;
 }
 
-.ruleViewRow {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
-}
-
-.ruleViewLabel {
-	font-size: 0.68rem;
-	font-weight: 700;
-	color: #9ca3af;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-}
-
-.ruleViewValue {
-	font-size: 0.875rem;
+.ruleRowType {
+	font-weight: 600;
 	color: #111827;
-	font-weight: 500;
+}
+
+.ruleRowMode {
+	color: #6b7280;
+}
+
+.ruleRowMode::before {
+	content: "·";
+	margin-right: 8px;
+	color: #d1d5db;
+}
+
+.ruleRowHours {
+	margin-left: auto;
+	font-weight: 600;
+	color: #374151;
 }
 
 /* ── Empty note ──────────────────────────────────────────────────────────── */
@@ -239,10 +260,6 @@
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
-	.content {
-		width: 100%;
-	}
-
 	.pageHeader {
 		flex-direction: column;
 		align-items: flex-start;
@@ -253,10 +270,17 @@
 		width: 100%;
 		justify-content: flex-end;
 	}
+
+	.topRow {
+		flex-direction: column;
+	}
 }
 
 @media (max-width: 640px) {
-	.infoGrid { grid-template-columns: 1fr; }
+	.infoGrid,
+	.infoGrid3 {
+		grid-template-columns: 1fr;
+	}
 }
 
 @media (max-width: 480px) {

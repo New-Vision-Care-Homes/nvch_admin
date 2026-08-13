@@ -41,23 +41,14 @@ const PAY_MODE_LABEL = {
 const EMPLOYMENT_STATUS_LABEL = { full_time: "Full-time", casual: "Casual", term: "Term" };
 const RULE_ACCENT = { full_time: "#1c4a6e", casual: "#d97706", term: "#64748b" };
 
-function PayRuleCard({ rule }) {
+function PayRuleRow({ rule }) {
     const accent = RULE_ACCENT[rule.employmentStatus] ?? "#d1d5db";
     return (
-        <div className={styles.ruleViewCard} style={{ borderLeftColor: accent }}>
-            <div className={styles.ruleViewRow}>
-                <span className={styles.ruleViewLabel}>Employment Type</span>
-                <span className={styles.ruleViewValue}>{EMPLOYMENT_STATUS_LABEL[rule.employmentStatus] ?? rule.employmentStatus}</span>
-            </div>
-            <div className={styles.ruleViewRow}>
-                <span className={styles.ruleViewLabel}>Pay Mode</span>
-                <span className={styles.ruleViewValue}>{PAY_MODE_LABEL[rule.payMode] ?? rule.payMode}</span>
-            </div>
+        <div className={styles.ruleRow} style={{ borderLeftColor: accent }}>
+            <span className={styles.ruleRowType}>{EMPLOYMENT_STATUS_LABEL[rule.employmentStatus] ?? rule.employmentStatus}</span>
+            <span className={styles.ruleRowMode}>{PAY_MODE_LABEL[rule.payMode] ?? rule.payMode}</span>
             {rule.payMode === "fixed_hours" && rule.fixedHours != null && (
-                <div className={styles.ruleViewRow}>
-                    <span className={styles.ruleViewLabel}>Fixed Hours</span>
-                    <span className={styles.ruleViewValue}>{rule.fixedHours} h</span>
-                </div>
+                <span className={styles.ruleRowHours}>{rule.fixedHours}h</span>
             )}
         </div>
     );
@@ -186,57 +177,79 @@ export default function TrainingDetailPage() {
                     {/* ═══════════════════════════════════ CARDS */}
                     <div className={styles.content}>
 
-                        <Card>
-                            <CardHeader>Basic Info</CardHeader>
-                            <CardContent>
-                                <div className={styles.infoGrid}>
-                                    <InfoField label="Type">
-                                        <ColorPill label={training.trainingTypeLabel || training.trainingType} color={getTrainingTypeColor(training.trainingType)} />
-                                    </InfoField>
-                                </div>
-
-                                <p className={styles.sectionDivider}>Schedule</p>
-                                <div className={styles.infoGrid}>
-                                    <InfoField label="Start" value={formatDateTime(training.startTime)} />
-                                    <InfoField label="End" value={formatDateTime(training.endTime)} />
-                                </div>
-
-                                <p className={styles.sectionDivider}>Site</p>
-                                <div className={styles.siteHeading}>
-                                    <MapPin size={14} />
-                                    <span>{training.site?.name}</span>
-                                </div>
-                                {training.site?.address && (
-                                    <p className={styles.siteAddress}>{training.site.address}</p>
-                                )}
-                                {training.site?.geofence?.center && (
-                                    <div className={styles.siteMapWrap}>
-                                        <GeofenceMap
-                                            center={training.site.geofence.center}
-                                            radius={training.site.geofence.radius}
-                                            height="280px"
-                                        />
+                        <div className={styles.topRow}>
+                            <Card className={styles.leftCard}>
+                                <CardHeader>Training Details</CardHeader>
+                                <CardContent>
+                                    <div className={styles.infoGrid3}>
+                                        <InfoField label="Type">
+                                            <ColorPill label={training.trainingTypeLabel || training.trainingType} color={getTrainingTypeColor(training.trainingType)} />
+                                        </InfoField>
+                                        <InfoField label="Start" value={formatDateTime(training.startTime)} />
+                                        <InfoField label="End" value={formatDateTime(training.endTime)} />
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
 
-                        <Card>
-                            <CardHeader>Trainers</CardHeader>
-                            <CardContent>
-                                {!training.trainers || training.trainers.length === 0 ? (
-                                    <p className={styles.emptyNote}>No trainers assigned.</p>
-                                ) : (
-                                    <div className={styles.chipRow}>
-                                        {training.trainers.map((trainer, i) => (
-                                            <span key={trainer?._id || trainer?.id || trainer || i} className={styles.chip}>
-                                                <PersonName role="admin" person={trainer} />
-                                            </span>
-                                        ))}
+                                    <p className={styles.sectionDivider}>Trainers</p>
+                                    {!training.trainers || training.trainers.length === 0 ? (
+                                        <p className={styles.emptyNote}>No trainers assigned.</p>
+                                    ) : (
+                                        <div className={styles.chipRow}>
+                                            {training.trainers.map((trainer, i) => (
+                                                <span key={trainer?._id || trainer?.id || trainer || i} className={styles.chip}>
+                                                    <PersonName role="admin" person={trainer} />
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <p className={styles.sectionDivider}>Certificate</p>
+                                    {training.generatesCertificate ? (
+                                        <div className={styles.infoGrid}>
+                                            <InfoField label="Certification Type" value={getLabel(CERTIFICATE_OPTIONS, training.certificationType)} />
+                                            <InfoField
+                                                label="Validity"
+                                                value={training.certificateValidityMonths ? `${training.certificateValidityMonths} months` : "Default (100 years)"}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <p className={styles.emptyNote}>Does not generate a certificate.</p>
+                                    )}
+
+                                    <p className={styles.sectionDivider}>Pay Rules</p>
+                                    {!training.payRules || training.payRules.length === 0 ? (
+                                        <p className={styles.emptyNote}>No pay rules configured — no employment type is paid.</p>
+                                    ) : (
+                                        <div className={styles.rulesViewList}>
+                                            {training.payRules.map((rule, index) => (
+                                                <PayRuleRow key={index} rule={rule} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card className={styles.rightCard}>
+                                <CardHeader>Site</CardHeader>
+                                <CardContent>
+                                    <div className={styles.siteHeading}>
+                                        <MapPin size={14} />
+                                        <span>{training.site?.name}</span>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                    {training.site?.address && (
+                                        <p className={styles.siteAddress}>{training.site.address}</p>
+                                    )}
+                                    {training.site?.geofence?.center && (
+                                        <div className={styles.siteMapWrap}>
+                                            <GeofenceMap
+                                                center={training.site.geofence.center}
+                                                radius={training.site.geofence.radius}
+                                                height="260px"
+                                            />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
 
                         <Card>
                             <CardHeader
@@ -295,38 +308,6 @@ export default function TrainingDetailPage() {
                                     }}
                                     isActionPending={isActionPending}
                                 />
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>Certificate</CardHeader>
-                            <CardContent>
-                                {training.generatesCertificate ? (
-                                    <div className={styles.infoGrid}>
-                                        <InfoField label="Certification Type" value={getLabel(CERTIFICATE_OPTIONS, training.certificationType)} />
-                                        <InfoField
-                                            label="Validity"
-                                            value={training.certificateValidityMonths ? `${training.certificateValidityMonths} months` : "Default (100 years)"}
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className={styles.emptyNote}>This training does not generate a certificate.</p>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>Pay Rules</CardHeader>
-                            <CardContent>
-                                {!training.payRules || training.payRules.length === 0 ? (
-                                    <p className={styles.emptyNote}>No pay rules configured — no employment type is paid.</p>
-                                ) : (
-                                    <div className={styles.rulesViewList}>
-                                        {training.payRules.map((rule, index) => (
-                                            <PayRuleCard key={index} rule={rule} />
-                                        ))}
-                                    </div>
-                                )}
                             </CardContent>
                         </Card>
 
