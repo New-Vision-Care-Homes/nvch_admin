@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code — per-machine local config (absolute paths, machine-specific allow rules)
+.claude/settings.json
+.claude/settings.local.json

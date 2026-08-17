@@ -9,9 +9,7 @@
 // Permissions required by the backend:
 //   Read       — view_trainings OR view_payroll (either is sufficient)
 //   Write      — manage_trainings
-//   Attendance — manage_trainings, manage_all_training_attendance, or
-//                manage_assigned_training_attendance (only for trainings the
-//                admin is listed on in trainers[])
+//   Attendance — manage_trainings
 // ============================================================
 
 import axiosClient from '../axiosClient';

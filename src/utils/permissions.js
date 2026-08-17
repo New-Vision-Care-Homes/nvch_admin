@@ -143,9 +143,7 @@ export const PERMISSION_SCHEMAS = [
 		module: "Training",
 		slugs: [
 			"view_trainings",
-			"manage_trainings",
-			"manage_all_training_attendance",
-			"manage_assigned_training_attendance"
+			"manage_trainings"
 		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit

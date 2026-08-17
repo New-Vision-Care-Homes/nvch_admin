@@ -68,20 +68,10 @@ export default function TrainingDetailPage() {
 
     const { training, isLoading, fetchError, refetch, removeAttendee, isActionPending, actionError } = useTrainings(id);
 
-    // Attendance-override access follows a separate all/assigned axis:
-    // manage_trainings already carries it (see trainingService.js doc comment),
-    // manage_all_training_attendance grants it for any training, and
-    // manage_assigned_training_attendance only for trainings this admin is
-    // listed on in trainers[] — unlike canManageTarget's region-based scoping,
-    // "assigned" here means "I'm one of this training's trainers".
-    const isTrainer = (training?.trainers ?? []).some((t) => {
-        const trainerId = t?._id || t?.id || t;
-        return String(trainerId) === String(profile?.id ?? profile?._id);
-    });
-    const canManageAttendance =
-        canManage ||
-        slugs.includes("manage_all_training_attendance") ||
-        (slugs.includes("manage_assigned_training_attendance") && isTrainer);
+    // Attendance override has no permission axis of its own — the backend folded
+    // it into manage_trainings (see trainingService.js doc comment). Kept as a
+    // named alias so the roster's attendance-only actions stay readable.
+    const canManageAttendance = canManage;
 
     const [confirmCancel, setConfirmCancel]           = useState(false);
     const [showAddAttendees, setShowAddAttendees]     = useState(false);
@@ -253,7 +243,7 @@ export default function TrainingDetailPage() {
 
                         <Card>
                             <CardHeader
-                                actions={(canManage || canManageAttendance) && training.status !== "cancelled" && (
+                                actions={canManage && training.status !== "cancelled" && (
                                     <div className={styles.attendeeActions}>
                                         {canManageAttendance && (
                                             <>
