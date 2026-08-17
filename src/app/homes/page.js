@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./homes.module.css";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import Pagination from "@components/UI/Pagination";
 import Link from "next/link";
-import { Building2, Trash2, Plus, Users, User, MapPin, Search, X } from "lucide-react";
+import { Building2, Trash2, Eye, Plus, Users, User, MapPin, Search, X } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -15,16 +15,13 @@ import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import Modal from "@components/UI/Modal";
-import {
-	HOME_TYPE_OPTIONS,
-	HOME_TYPE_COLORS,
-	REGION_OPTIONS,
-	REGION_COLORS,
-	COLOR_FALLBACK,
-} from "@/utils/dropdown_list";
+import { PageTable, PageTableRow } from "@components/UI/Table";
+import { ColorPill } from "@components/UI/Badge";
+import { HOME_TYPE_OPTIONS, HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function Homes() {
-	const router = useRouter();
 	const { profile } = useProfile();
 	const slugs = profile?.permissionSlugs ?? [];
 	const canCreate = slugs.includes("create_home");
@@ -160,24 +157,14 @@ export default function Homes() {
 						{/* Color legend */}
 						<div className={styles.legend}>
 							<span className={styles.legendLabel}>Type:</span>
-							{HOME_TYPE_OPTIONS.map((o) => {
-								const c = HOME_TYPE_COLORS[o.value] || COLOR_FALLBACK;
-								return (
-									<span key={o.value} className={styles.legendChip} style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-										{o.label}
-									</span>
-								);
-							})}
+							{HOME_TYPE_OPTIONS.map((o) => (
+								<ColorPill key={o.value} label={o.label} color={HOME_TYPE_COLORS[o.value] || COLOR_FALLBACK} />
+							))}
 							<span className={styles.legendSep} />
 							<span className={styles.legendLabel}>Region:</span>
-							{REGION_OPTIONS.map((o) => {
-								const c = REGION_COLORS[o.value] || COLOR_FALLBACK;
-								return (
-									<span key={o.value} className={styles.legendChip} style={{ background: c.bg, color: c.text, borderColor: c.border }}>
-										{o.label}
-									</span>
-								);
-							})}
+							{REGION_OPTIONS.map((o) => (
+								<ColorPill key={o.value} label={o.label} color={REGION_COLORS[o.value] || COLOR_FALLBACK} />
+							))}
 						</div>
 
 						<ErrorState isLoading={isLoading} errorMessage={fetchError} onRetry={refetch} />
@@ -185,34 +172,31 @@ export default function Homes() {
 						{!isLoading && !fetchError && (
 							<>
 								{homes && homes.length > 0 ? (
-									<div className={styles.tableWrap}>
-										<table className={styles.homesTable}>
-											<thead>
-												<tr>
-													<th>Home</th>
-													<th>Type</th>
-													<th>Region</th>
-													<th>Address</th>
-													<th>Caregivers</th>
-													<th>Admins</th>
-													<th>Clients</th>
-													<th>Status</th>
-													<th>Opened</th>
-													{canDelete && <th></th>}
-												</tr>
-											</thead>
-											<tbody>
-												{homes.map((home, idx) => {
-													const homeId = home.id || home._id;
-													const typeColor = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
-													const regionColor = REGION_COLORS[home.region] || COLOR_FALLBACK;
-													const isEven = idx % 2 !== 0;
-													return (
-														<tr
-															key={homeId}
-															className={`${styles.homeRow} ${isEven ? styles.homeRowEven : ""}`}
-															onClick={() => router.push(`/homes/${homeId}`)}
-														>
+									<PageTable>
+										<thead>
+											<tr>
+												<th>Home</th>
+												<th>Type</th>
+												<th>Region</th>
+												<th>Address</th>
+												<th>Caregivers</th>
+												<th>Admins</th>
+												<th>Clients</th>
+												<th>Status</th>
+												<th>Opened</th>
+												<th></th>
+											</tr>
+										</thead>
+										<tbody>
+											{homes.map((home, idx) => {
+												const homeId = home.id || home._id;
+												const typeColor = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
+												const regionColor = REGION_COLORS[home.region] || COLOR_FALLBACK;
+												return (
+													<PageTableRow
+														key={homeId}
+														isEven={idx % 2 !== 0}
+													>
 															<td
 																className={styles.homeNameCell}
 																style={{ borderLeft: `4px solid ${typeColor.border}` }}
@@ -223,18 +207,10 @@ export default function Homes() {
 																</div>
 															</td>
 															<td>
-																{home.homeType ? (
-																	<span className={styles.typePill} style={{ background: typeColor.bg, color: typeColor.text, borderColor: typeColor.border }}>
-																		{home.homeType}
-																	</span>
-																) : "—"}
+																{home.homeType ? <ColorPill label={home.homeType} color={typeColor} /> : "—"}
 															</td>
 															<td>
-																{home.region ? (
-																	<span className={styles.typePill} style={{ background: regionColor.bg, color: regionColor.text, borderColor: regionColor.border }}>
-																		{home.region}
-																	</span>
-																) : "—"}
+																{home.region ? <ColorPill label={home.region} color={regionColor} /> : "—"}
 															</td>
 															<td className={styles.addressCell}>
 																{home.address ? (
@@ -270,17 +246,23 @@ export default function Homes() {
 															<td className={styles.dateCell}>
 																{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 															</td>
-															{canDelete && (
-																<td className={styles.actionsCell} onClick={(e) => e.stopPropagation()}>
-																	<Trash2 size={15} className={styles.deleteIcon} onClick={() => handleDeleteClick(homeId)} />
-																</td>
-															)}
-														</tr>
+															<td className={styles.actionsCell}>
+																<div className={styles.actionsRow}>
+																	<IconButton href={`/homes/${homeId}`} title="View home">
+																		<Eye size={15} />
+																	</IconButton>
+																	{canDelete && (
+																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(homeId)}>
+																			<Trash2 size={15} />
+																		</IconButton>
+																	)}
+																</div>
+															</td>
+														</PageTableRow>
 													);
 												})}
 											</tbody>
-										</table>
-									</div>
+										</PageTable>
 								) : (
 									<EmptyState title="No homes found" message="Try adjusting your search or filters." />
 								)}

@@ -1,0 +1,76 @@
+/* ══════════════════════════════════════════════════════════════
+   Voluntary pending success modal
+   Rendered inside the shared Modal wrapper component.
+══════════════════════════════════════════════════════════════ */
+
+.capPendingBody {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 0.5rem 0.25rem;
+}
+
+.capPendingIcon {
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.capPendingTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-primary, #1c4a6e);
+}
+
+.capPendingText {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #1e293b;
+    line-height: 1.6;
+    max-width: 380px;
+}
+
+.capPendingNote {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #64748b;
+    line-height: 1.5;
+    max-width: 380px;
+}
+
+/* Box showing the approval that was auto-sent to the caregiver's app */
+.capPendingApprovalBox {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.capPendingApprovalLabel {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #1e40af;
+    line-height: 1.5;
+}
+
+/* Approval ID for admin tracking — shown when the shift response includes it */
+.capPendingApprovalId {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #3b82f6;
+}
+
+.capPendingApprovalId code {
+    font-family: monospace;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.73rem;
+}

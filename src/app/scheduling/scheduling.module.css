@@ -298,6 +298,26 @@
 	white-space: nowrap;
 }
 
+/* Stacks the status badge and overtime-pending badge vertically inside the cell */
+.payrollStatusCell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
+.payrollOvertimePending {
+	display: inline-block;
+	padding: 2px 9px;
+	border-radius: 20px;
+	font-size: 0.68rem;
+	font-weight: 600;
+	white-space: nowrap;
+	background: #fff7ed;
+	color: #c2410c;
+	border: 1px solid #fed7aa;
+}
+
 .payrollEmpty {
 	text-align: center;
 	color: #94a3b8;
@@ -509,6 +529,15 @@
 	background: #fff;
 }
 
+/* Wraps a day cell's chip(s) in a flex row. Kept off the <td> itself —
+   display:flex on a table cell overrides its display:table-cell and breaks
+   the table's column layout entirely. */
+.overviewCellRow {
+	display: flex;
+	align-items: stretch;
+	gap: 4px;
+}
+
 .overviewRowEven .overviewCell {
 	background: #f8fafc;
 }
@@ -545,16 +574,20 @@
 	padding: 2px 7px;
 	border-radius: 5px;
 	cursor: pointer;
-	margin-bottom: 3px;
 	transition: filter 0.12s ease, transform 0.12s ease;
 	white-space: nowrap;
 	line-height: 1.55;
 	border-width: 1px;
 	border-style: solid;
-}
-
-.overviewChip:last-child {
-	margin-bottom: 0;
+	/* Sized to fit its own text by default — a plain day shift should read as
+	   a short pill, not stretch to fill the whole day column. Multi-day
+	   segments override this below (they need to fill their cell to form a
+	   continuous bar), and a flex row still keeps every chip in a cell on one
+	   line (see .overviewCellRow) regardless of how each one is sized. */
+	flex: 0 0 auto;
+	/* Keeps a blank continuation segment of an overnight span (no icon/text)
+	   the same height as a labelled chip, so the bar reads as one solid block. */
+	min-height: 19px;
 }
 
 .overviewChip:hover {
@@ -562,12 +595,64 @@
 	transform: translateY(-1px);
 }
 
+/* Overnight / multi-day shifts: rather than overflowing the chip past its
+   cell (percentage widths inside an auto-layout <table> cell don't bleed
+   predictably), the day cell that a shift continues into/out of drops its
+   own padding and border on the joining side (see .overviewCellBlend* below)
+   and the chip fills that cell edge to edge (flex:1 grows to take the full
+   row — or, on the rare day two shifts meet, an even split of it). Two
+   adjoining cells then paint as one uninterrupted bar with no gap in between. */
+.overviewChipSpanStart {
+	flex: 1 1 0%;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+	border-right-color: transparent;
+}
+
+.overviewChipSpanEnd {
+	flex: 1 1 0%;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	border-left-color: transparent;
+}
+
+.overviewChipSpanMiddle {
+	flex: 1 1 0%;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-radius: 0;
+	border-left-color: transparent;
+	border-right-color: transparent;
+}
+
+/* A day cell's leftmost/rightmost entry may continue onto the neighbouring
+   day cell (see isFirst/isLast in page.js) — drop this cell's own
+   padding/border on that side so the chip above can fill flush to the
+   actual column boundary instead of stopping short of it. Independent
+   classes because a cell can need both at once (one shift ending in the
+   morning, a different one starting that same evening). */
+.overviewCellBlendLeft {
+	padding-left: 0;
+}
+
+.overviewCellBlendRight {
+	padding-right: 0;
+	border-right: none;
+}
+
 /* Static chips used in the legend (no hover interaction) */
 .overviewChipStatic {
 	display: inline-block;
+	flex: none;
 	cursor: default;
 	pointer-events: none;
-	margin-bottom: 0;
 	font-size: 0.72rem;
 }
 

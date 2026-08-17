@@ -18,6 +18,14 @@ import {
 	CheckCheck,
 	ExternalLink,
 	ClipboardCheck,
+	BadgeCheck,
+	CalendarPlus,
+	CalendarDays,
+	AlarmClock,
+	GraduationCap,
+	Award,
+	ListChecks,
+	PiggyBank,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,13 +65,27 @@ function groupByDate(items) {
 
 /** Maps each notification type to an icon component + colour palette. */
 const TYPE_CONFIG = {
-	shift_missed:           { Icon: AlertTriangle,   color: "#dc2626", bg: "#fef2f2" },
-	shift_late_start:       { Icon: Clock,           color: "#d97706", bg: "#fffbeb" },
-	shift_missed_reporting: { Icon: AlertTriangle,   color: "#ea580c", bg: "#fff7ed" },
-	shift_late_reporting:   { Icon: Clock,           color: "#d97706", bg: "#fffbeb" },
-	shift_auto_ended:       { Icon: CircleOff,       color: "#6b7280", bg: "#f3f4f6" },
-	broadcast:              { Icon: Megaphone,       color: "#dc2626", bg: "#fef2f2" },
-	approval_requested:     { Icon: ClipboardCheck,  color: "#7c3aed", bg: "#f5f3ff" },
+	// Shift lifecycle (mobile: assigned/starting-soon; portal: missed/late/ended)
+	shift_assigned:              { Icon: CalendarPlus,   color: "#2563eb", bg: "#eff6ff" },
+	shifts_bulk_created:         { Icon: CalendarDays,   color: "#4f46e5", bg: "#eef2ff" },
+	shift_starting_soon:         { Icon: AlarmClock,     color: "#e11d48", bg: "#fff1f2" },
+	shift_missed:                { Icon: AlertTriangle,  color: "#dc2626", bg: "#fef2f2" },
+	shift_late_start:            { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
+	shift_missed_reporting:      { Icon: AlertTriangle,  color: "#ea580c", bg: "#fff7ed" },
+	shift_late_reporting:        { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
+	shift_auto_ended:            { Icon: CircleOff,      color: "#6b7280", bg: "#f3f4f6" },
+	// Training
+	training_assigned:           { Icon: GraduationCap,  color: "#059669", bg: "#ecfdf5" },
+	training_outcome:            { Icon: Award,          color: "#0d9488", bg: "#f0fdfa" },
+	// Payroll / house-hours review
+	house_hours_review_overdue:  { Icon: ListChecks,     color: "#dc2626", bg: "#fef2f2" },
+	house_hours_review_not_done: { Icon: ListChecks,     color: "#7c3aed", bg: "#f5f3ff" },
+	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
+	// Broadcasts & approvals
+	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
+	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+	// Teal-green: signals a completed/resolved action rather than a pending one
+	approval_decided:            { Icon: BadgeCheck,     color: "#0891b2", bg: "#ecfeff" },
 };
 
 /**
@@ -79,8 +101,8 @@ const SHIFT_TYPES = new Set([
 	"shift_auto_ended",
 ]);
 
-/** Approval notification types that deep-link to the approval detail page. */
-const APPROVAL_TYPES = new Set(["approval_requested"]);
+/** Approval notification types — both route to /approvals/[id]. */
+const APPROVAL_TYPES = new Set(["approval_requested", "approval_decided"]);
 
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
@@ -112,8 +134,11 @@ function NotificationCard({ notification: n, onClick }) {
 					{n.type === "broadcast" && (
 						<span className={styles.broadcastBadge}>Broadcast</span>
 					)}
-					{isApprovalLink && (
+					{n.type === "approval_requested" && (
 						<span className={styles.approvalBadge}>Needs Review</span>
+					)}
+					{n.type === "approval_decided" && (
+						<span className={styles.decidedBadge}>Reviewed</span>
 					)}
 				</div>
 				{n.body && <p className={styles.bodyText}>{n.body}</p>}
@@ -122,7 +147,9 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink) && <ExternalLink size={13} className={styles.linkIcon} />}
+				{(isShiftLink || isApprovalLink) && (
+					<ExternalLink size={13} className={styles.linkIcon} />
+				)}
 			</div>
 		</div>
 	);
@@ -182,6 +209,7 @@ export default function NotificationsPage() {
 		fetchNotificationError,
 	} = useNotifications({ params, fetchList: true });
 
+
 	const handleNotificationClick = async (n) => {
 		// Always mark as read first
 		if (!n.isRead) await markRead(n._id).catch(() => {});
@@ -192,12 +220,12 @@ export default function NotificationsPage() {
 			return;
 		}
 
-		// Approval notifications → go to the approval detail page.
+		// Approval notifications (requested + decided) → approval detail page.
 		if (APPROVAL_TYPES.has(n.type) && n.data?.approvalId) {
 			router.push(`/approvals/${n.data.approvalId}`);
 			return;
 		}
-		// broadcast and other non-tappable types: no navigation, just mark read.
+		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.
 	};
 
 	const handleFilterChange = (next) => {

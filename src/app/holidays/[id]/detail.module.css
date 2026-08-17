@@ -1,0 +1,517 @@
+/* ── Page header ─────────────────────────────────────────────────────────── */
+
+.pageHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	border-bottom: 1px solid #e5e7eb;
+	padding-bottom: 1rem;
+	margin-bottom: 2rem;
+	gap: 1rem;
+}
+
+.headerActions {
+	display: flex;
+	gap: 10px;
+	flex-shrink: 0;
+	align-items: center;
+	padding-top: 4px;
+}
+
+/* ── Badge row (above h1) ────────────────────────────────────────────────── */
+
+.badgeRow {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
+/* ── Meta row (below h1) ─────────────────────────────────────────────────── */
+
+.metaRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.82rem;
+	color: #6b7280;
+	margin-top: 4px;
+	flex-wrap: wrap;
+}
+
+.metaRow strong {
+	color: #374151;
+	font-weight: 600;
+}
+
+.metaSep {
+	color: #d1d5db;
+	flex-shrink: 0;
+}
+
+/* ── Two-column layout ───────────────────────────────────────────────────── */
+
+.mainRow {
+	display: flex;
+	gap: 1.5rem;
+	align-items: flex-start;
+}
+
+.colLeft {
+	flex: 3;
+	min-width: 0;
+}
+
+.colRight {
+	flex: 2;
+	min-width: 0;
+}
+
+/* ── Card title inner (icon + text) ─────────────────────────────────────── */
+
+.cardTitleInner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* ── View mode: info grid ────────────────────────────────────────────────── */
+
+.infoGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem 1.5rem;
+}
+
+/* ── Grant labels ────────────────────────────────────────────────────────── */
+
+.fixedLabel {
+	display: inline-block;
+	padding: 2px 9px;
+	font-size: 0.73rem;
+	font-weight: 600;
+	color: #065f46;
+	background: #d1fae5;
+	border: 1px solid #6ee7b7;
+	border-radius: 999px;
+}
+
+.proratedLabel {
+	display: inline-block;
+	padding: 2px 9px;
+	font-size: 0.73rem;
+	font-weight: 600;
+	color: #6d28d9;
+	background: #ede9fe;
+	border: 1px solid #c4b5fd;
+	border-radius: 999px;
+}
+
+/* ── Admin level chips ───────────────────────────────────────────────────── */
+
+.chipRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+/* ── View mode: rule cards ───────────────────────────────────────────────── */
+
+.rulesViewList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ruleViewCard {
+	border: 1px solid #e5e7eb;
+	border-left: 3px solid #d1d5db;
+	border-radius: 9px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	background: #fafafa;
+}
+
+.ruleViewRow {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.ruleViewLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	color: #9ca3af;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.ruleViewValue {
+	font-size: 0.875rem;
+	color: #111827;
+	font-weight: 500;
+}
+
+/* ── Empty note ──────────────────────────────────────────────────────────── */
+
+.emptyNote {
+	font-size: 0.875rem;
+	color: #9ca3af;
+	font-style: italic;
+	margin: 0;
+}
+
+/* ── Delete confirmation banner ──────────────────────────────────────────── */
+
+.deleteBanner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #7f1d1d;
+	margin-bottom: 1rem;
+	flex-wrap: wrap;
+}
+
+.deleteBannerActions {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.cancelDeleteBtn {
+	padding: 6px 14px;
+	font-size: 0.83rem;
+	font-weight: 600;
+	color: #374151;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 7px;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background 0.12s;
+}
+
+.cancelDeleteBtn:hover:not(:disabled) { background: #f3f4f6; }
+.cancelDeleteBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.confirmDeleteBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 6px 14px;
+	font-size: 0.83rem;
+	font-weight: 600;
+	color: #fff;
+	background: #dc2626;
+	border: none;
+	border-radius: 7px;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background 0.12s;
+}
+
+.confirmDeleteBtn:hover:not(:disabled) { background: #b91c1c; }
+.confirmDeleteBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Action error banner ─────────────────────────────────────────────────── */
+
+.errorBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	padding: 10px 14px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 8px;
+	font-size: 0.83rem;
+	color: #991b1b;
+	margin-bottom: 1rem;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+
+.spin { animation: spinAnim 0.85s linear infinite; }
+
+@keyframes spinAnim {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}
+
+/* ── Edit mode: form fields ──────────────────────────────────────────────── */
+
+.editForm {
+	display: flex;
+	flex-direction: column;
+	gap: 1.1rem;
+}
+
+.editRulesBody {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.fieldGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.1rem;
+}
+
+.fieldRow {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.fieldLabel {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.fieldRequired { color: #ef4444; margin-left: 2px; }
+
+.fieldInput {
+	padding: 8px 11px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fieldInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.fieldInputError              { border-color: #ef4444; }
+.fieldInputError:focus        { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
+.fieldError                   { font-size: 0.78rem; color: #ef4444; }
+
+/* ── Toggle row ──────────────────────────────────────────────────────────── */
+
+.toggleRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding: 12px 14px;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+}
+
+.toggleInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.toggleLabel { font-size: 0.875rem; font-weight: 600; color: #111827; }
+.toggleDesc  { font-size: 0.78rem; color: #6b7280; max-width: 480px; }
+
+.toggle {
+	position: relative;
+	display: inline-block;
+	width: 42px;
+	height: 24px;
+	flex-shrink: 0;
+}
+
+.toggle input { opacity: 0; width: 0; height: 0; }
+
+.toggleSlider {
+	position: absolute;
+	inset: 0;
+	background: #d1d5db;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.toggleSlider::before {
+	content: "";
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	background: #fff;
+	border-radius: 50%;
+	top: 3px;
+	left: 3px;
+	transition: transform 0.2s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.toggle input:checked + .toggleSlider { background: var(--color-primary, #1c4a6e); }
+.toggle input:checked + .toggleSlider::before { transform: translateX(18px); }
+
+/* ── Admin level checkboxes ──────────────────────────────────────────────── */
+
+.checkboxGrid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 7px;
+}
+
+.checkboxLabel {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.82rem;
+	color: #374151;
+	cursor: pointer;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+	transition: background 0.12s, border-color 0.12s;
+	user-select: none;
+}
+
+.checkboxLabel:hover { background: #f9fafb; border-color: #d1d5db; }
+
+.checkboxLabelChecked {
+	background: #e8f0f7;
+	border-color: #b8cfe0;
+	color: #1c4a6e;
+	font-weight: 600;
+}
+
+.checkboxLabel input {
+	width: 15px;
+	height: 15px;
+	accent-color: var(--color-primary, #1c4a6e);
+	flex-shrink: 0;
+	cursor: pointer;
+}
+
+/* ── Edit mode: caregiver rule cards ─────────────────────────────────────── */
+
+.rulesHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.rulesError { font-size: 0.78rem; color: #ef4444; }
+
+.rulesList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ruleCard {
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+	padding: 14px 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	position: relative;
+	background: #fafafa;
+}
+
+.ruleCardFullTime { border-left: 3px solid #1c4a6e; }
+.ruleCardCasual   { border-left: 3px solid #d97706; }
+.ruleCardTerm     { border-left: 3px solid #64748b; }
+.ruleCardNew      { border-left: 3px solid #d1d5db; }
+
+.ruleRow      { display: grid; grid-template-columns: 1fr 1fr;     gap: 12px; align-items: end; }
+.ruleRowThree { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+
+.ruleRemoveBtn {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border: none;
+	background: none;
+	border-radius: 6px;
+	color: #9ca3af;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+}
+
+.ruleRemoveBtn:hover { background: #fee2e2; color: #ef4444; }
+
+.addRuleBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 18px;
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--color-primary, #1c4a6e);
+	background: #e8f0f7;
+	border: 1.5px dashed #b8cfe0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.12s, border-color 0.12s;
+	font-family: inherit;
+}
+
+.addRuleBtn:hover:not(:disabled) { background: #d4e6f1; border-color: #93c5d4; }
+.addRuleBtn:disabled              { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+	.mainRow {
+		flex-direction: column;
+	}
+
+	.colLeft,
+	.colRight {
+		flex: 1 1 100%;
+		width: 100%;
+	}
+
+	.pageHeader {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	.headerActions {
+		width: 100%;
+		justify-content: flex-end;
+	}
+}
+
+@media (max-width: 640px) {
+	.infoGrid   { grid-template-columns: 1fr; }
+	.fieldGrid  { grid-template-columns: 1fr; }
+	.checkboxGrid { grid-template-columns: repeat(2, 1fr); }
+
+	.ruleRow,
+	.ruleRowThree { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+	.headerActions {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.headerActions > * {
+		width: 100%;
+		justify-content: center;
+	}
+}

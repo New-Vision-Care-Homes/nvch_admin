@@ -1,0 +1,443 @@
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+
+.pageContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.pageHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	border-bottom: 1px solid #e8eef4;
+	padding-bottom: 1.25rem;
+	margin-bottom: 1.75rem;
+}
+
+.headerActions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.backBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #374151;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	cursor: pointer;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.12s, border-color 0.12s;
+}
+
+.backBtn:hover {
+	background: #f3f4f6;
+	border-color: #9ca3af;
+}
+
+.submitBtn {
+	padding: 9px 22px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--color-primary, #1c4a6e);
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-family: inherit;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	white-space: nowrap;
+	transition: background 0.12s;
+}
+
+.submitBtn:hover:not(:disabled) {
+	background: #163d5c;
+}
+
+.submitBtn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+/* ── Error banner (shown between header and form card on API error) ────────── */
+
+.errorBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	padding: 10px 14px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 8px;
+	font-size: 0.83rem;
+	color: #991b1b;
+	margin-bottom: 1rem;
+}
+
+/* ── Form card ────────────────────────────────────────────────────────────── */
+
+.formCard {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+
+.section {
+	padding: 1.5rem 2rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.section + .section {
+	border-top: 1px solid #f3f4f6;
+}
+
+.sectionTitle {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #6b7280;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	margin: 0;
+}
+
+/* ── Fields ───────────────────────────────────────────────────────────────── */
+
+.fieldRow {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+/* Two-column grid — widens to three where needed by the ruleRowThree variant */
+.fieldGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.25rem;
+}
+
+.fieldLabel {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.fieldRequired {
+	color: #ef4444;
+	margin-left: 2px;
+}
+
+.fieldInput {
+	padding: 9px 12px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fieldInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.fieldInputError {
+	border-color: #ef4444;
+}
+
+.fieldInputError:focus {
+	border-color: #ef4444;
+	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.fieldError {
+	font-size: 0.78rem;
+	color: #ef4444;
+}
+
+/* ── Toggle row ───────────────────────────────────────────────────────────── */
+
+.toggleRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding: 14px 16px;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+}
+
+.toggleInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.toggleLabel {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #111827;
+}
+
+.toggleDesc {
+	font-size: 0.78rem;
+	color: #6b7280;
+	max-width: 480px;
+}
+
+/* Toggle switch */
+.toggle {
+	position: relative;
+	display: inline-block;
+	width: 42px;
+	height: 24px;
+	flex-shrink: 0;
+}
+
+.toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.toggleSlider {
+	position: absolute;
+	inset: 0;
+	background: #d1d5db;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.toggleSlider::before {
+	content: "";
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	background: #fff;
+	border-radius: 50%;
+	top: 3px;
+	left: 3px;
+	transition: transform 0.2s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.toggle input:checked + .toggleSlider {
+	background: var(--color-primary, #1c4a6e);
+}
+
+.toggle input:checked + .toggleSlider::before {
+	transform: translateX(18px);
+}
+
+/* ── Admin-level checkboxes ───────────────────────────────────────────────── */
+
+.checkboxGrid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+}
+
+.checkboxLabel {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.84rem;
+	color: #374151;
+	cursor: pointer;
+	padding: 9px 14px;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+	transition: background 0.12s, border-color 0.12s;
+	user-select: none;
+}
+
+.checkboxLabel:hover {
+	background: #f9fafb;
+	border-color: #d1d5db;
+}
+
+.checkboxLabelChecked {
+	background: #e8f0f7;
+	border-color: #b8cfe0;
+	color: #1c4a6e;
+	font-weight: 600;
+}
+
+.checkboxLabel input {
+	width: 15px;
+	height: 15px;
+	accent-color: var(--color-primary, #1c4a6e);
+	flex-shrink: 0;
+	cursor: pointer;
+}
+
+/* ── Caregiver Rules ──────────────────────────────────────────────────────── */
+
+.rulesHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.rulesError {
+	font-size: 0.78rem;
+	color: #ef4444;
+}
+
+.rulesList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.ruleCard {
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+	padding: 16px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	position: relative;
+	background: #fafafa;
+}
+
+/* Left accent per employment type */
+.ruleCardFullTime { border-left: 3px solid #1c4a6e; }
+.ruleCardCasual   { border-left: 3px solid #d97706; }
+.ruleCardTerm     { border-left: 3px solid #64748b; }
+.ruleCardNew      { border-left: 3px solid #d1d5db; }
+
+.ruleRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+	align-items: end;
+}
+
+.ruleRowThree {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 14px;
+	align-items: end;
+}
+
+.ruleRemoveBtn {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: none;
+	background: none;
+	border-radius: 6px;
+	color: #9ca3af;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+}
+
+.ruleRemoveBtn:hover {
+	background: #fee2e2;
+	color: #ef4444;
+}
+
+.addRuleBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 18px;
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--color-primary, #1c4a6e);
+	background: #e8f0f7;
+	border: 1.5px dashed #b8cfe0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.12s, border-color 0.12s;
+	font-family: inherit;
+}
+
+.addRuleBtn:hover:not(:disabled) {
+	background: #d4e6f1;
+	border-color: #93c5d4;
+}
+
+.addRuleBtn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+
+.spin {
+	animation: spinAnim 0.85s linear infinite;
+}
+
+@keyframes spinAnim {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+	.pageHeader {
+		align-items: flex-start;
+	}
+
+	.headerActions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.backBtn,
+	.submitBtn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+@media (max-width: 560px) {
+	.section {
+		padding: 1.25rem 1rem;
+	}
+
+	.fieldGrid,
+	.ruleRow,
+	.ruleRowThree {
+		grid-template-columns: 1fr;
+	}
+
+	.checkboxGrid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}

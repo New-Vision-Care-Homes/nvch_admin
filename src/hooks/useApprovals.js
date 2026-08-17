@@ -1,6 +1,45 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { approvalService } from "@/services/api/services/approvalService";
 
+// ── Overtime acknowledgment audit trail ────────────────────────────────────────
+
+const getAckErrorMessage = (err) =>
+	err?.response?.data?.error || "An unexpected error occurred";
+
+export const useOvertimeAcknowledgments = (params = {}, { enabled = true } = {}) => {
+	const query = useQuery({
+		queryKey:        ["overtimeAcknowledgments", params],
+		queryFn:         () => approvalService.getOvertimeAcknowledgments(params),
+		enabled,
+		placeholderData: keepPreviousData,
+	});
+
+	// Fetches every page of the given filters (up to 100 per request) for export.
+	// Runs outside React Query so it can be awaited imperatively on button click.
+	const fetchAllForExport = async (exportParams) => {
+		let allAcks = [];
+		let page    = 1;
+		let hasMore = true;
+		while (hasMore) {
+			const result = await approvalService.getOvertimeAcknowledgments({ ...exportParams, page, limit: 100 });
+			allAcks  = [...allAcks, ...(result?.acknowledgments ?? [])];
+			hasMore  = page < (result?.pagination?.pages ?? 1);
+			page++;
+		}
+		return allAcks;
+	};
+
+	return {
+		acknowledgments:  query.data?.acknowledgments ?? [],
+		counts:           query.data?.counts          ?? { pending: 0, acknowledged: 0, declined: 0, cancelled: 0, total: 0 },
+		pagination:       query.data?.pagination      ?? { current: 1, pages: 0, total: 0 },
+		isLoading:        query.isLoading,
+		fetchError:       query.error ? getAckErrorMessage(query.error) : null,
+		refetch:          query.refetch,
+		fetchAllForExport,
+	};
+};
+
 /**
  * Manages approval data and decision mutations.
  *
@@ -51,7 +90,14 @@ export const useApprovals = (options = {}) => {
 
 	// ── Approve ─────────────────────────────────────────────────────────────────
 	const approveMutation = useMutation({
-		mutationFn: ({ id, reason }) => approvalService.approve(id, reason ? { reason } : {}),
+		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate }) => {
+			const body = {};
+			if (reason)      body.reason      = reason;
+			if (startDate)   body.startDate   = startDate;
+			if (expiryDate)  body.expiryDate  = expiryDate;
+			if (renewalDate) body.renewalDate  = renewalDate;
+			return approvalService.approve(id, body);
+		},
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", variables.id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });

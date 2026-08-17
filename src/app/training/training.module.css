@@ -1,0 +1,148 @@
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+
+.pageContainer {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.pageHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	border-bottom: 1px solid #e8eef4;
+	padding-bottom: 1.25rem;
+	margin-bottom: 1.5rem;
+}
+
+.headerActions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+/* ── Add button (manage_trainings only) ──────────────────────────────────── */
+
+.addButton {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 18px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--color-primary, #1c4a6e);
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	white-space: nowrap;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+
+.addButton:hover {
+	background: #163d5c;
+}
+
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+/* Flat row, no card chrome — matches the compact filter-bar convention used
+   on the Homes/Scheduling list pages (background/border live on each
+   control, not on the row). */
+
+.filterBar {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	margin-bottom: 1.25rem;
+	flex-wrap: wrap;
+}
+
+.filterGroup {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.filterLabel {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	white-space: nowrap;
+}
+
+.filterSelect {
+	padding: 7px 10px;
+	font-size: 0.84rem;
+	color: #1e293b;
+	background: #f8fafc;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	outline: none;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+	font-family: inherit;
+	min-width: 140px;
+}
+
+.filterSelect:hover  { border-color: #cbd5e1; }
+.filterSelect:focus  { border-color: var(--color-primary, #1c4a6e); background: #fff; }
+
+/* ── Type color legend ────────────────────────────────────────────────────── */
+
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	flex-wrap: wrap;
+	margin-bottom: 1.25rem;
+}
+
+.legendLabel {
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #94a3b8;
+	margin-right: 2px;
+}
+
+/* ── Table cell overrides (base table chrome comes from PageTable) ─────────── */
+
+.tdName {
+	font-weight: 600;
+	color: #111827;
+	white-space: nowrap;
+}
+
+.tdDate {
+	white-space: nowrap;
+}
+
+.actionsCell {
+	text-align: center;
+	width: 52px;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+	.filterBar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.filterGroup {
+		justify-content: space-between;
+	}
+
+	.filterSelect {
+		flex: 1;
+		min-width: 0;
+	}
+}

@@ -90,6 +90,40 @@ export const API_ENDPOINTS = {
 		CANCEL: (id) => `/api/approvals/${id}/cancel`,
 	},
 
+	/* All related endpoints for payroll */
+	PAYROLL: {
+		COVER_SHEET:              '/api/payroll/cover-sheet',
+		EXCEPTIONS:               '/api/payroll/exceptions',
+		STAT_RECOMPUTE:           '/api/payroll/stat/recompute',
+		CAREGIVER_SUMMARY:        (caregiverId) => `/api/payroll/caregivers/${caregiverId}/summary`,
+		CAREGIVER_ENTRIES:        (caregiverId) => `/api/payroll/caregivers/${caregiverId}/entries`,
+		ENTRY_BY_ID:              (id) => `/api/payroll/entries/${id}`,
+		ENTRY_VOID:               (id) => `/api/payroll/entries/${id}/void`,
+		OVERTIME_ACKNOWLEDGMENTS:  '/api/payroll/overtime/acknowledgments',
+		HOUSE_REVIEWS:             (payYear, periodNumber) => `/api/payroll/pay-periods/${payYear}/${periodNumber}/house-reviews`,
+		HOUSE_REVIEW:              (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/review`,
+		HOUSE_SUPERVISOR_REVIEW:   (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/supervisor-review`,
+		HOUSE_PAYROLL_STATUS:      (houseId, payYear, periodNumber) => `/api/payroll/houses/${houseId}/pay-periods/${payYear}/${periodNumber}/payroll-status`,
+	},
+
+	/* All related endpoints for stat holidays */
+	HOLIDAYS: {
+		BASE:    '/api/holidays',
+		BY_ID:   (id) => `/api/holidays/${id}`,
+	},
+
+	/* All related endpoints for admin-scheduled trainings */
+	TRAININGS: {
+		BASE:                 '/api/trainings',
+		TYPES:                '/api/trainings/types',
+		BY_ID:                (id) => `/api/trainings/${id}`,
+		ATTENDEES:            (id) => `/api/trainings/${id}/attendees`,
+		ATTENDEE_BY_ID:       (id, caregiverId) => `/api/trainings/${id}/attendees/${caregiverId}`,
+		ATTENDEE_ATTENDANCE:  (id, caregiverId) => `/api/trainings/${id}/attendees/${caregiverId}/attendance`,
+		ATTENDANCE_CLOCK_IN:  (id) => `/api/trainings/${id}/attendance/clock-in`,
+		ATTENDANCE_CLOCK_OUT: (id) => `/api/trainings/${id}/attendance/clock-out`,
+	},
+
 	/* All related endpoints for notifications */
 	NOTIFICATIONS: {
 		BASE: '/api/notifications',

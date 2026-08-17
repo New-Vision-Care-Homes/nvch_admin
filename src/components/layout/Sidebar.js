@@ -3,10 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, Bell, MessageSquare } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, NotebookPen, ListChecks, Sun, GraduationCap } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useApprovals } from "@/hooks/useApprovals";
-import { useNotifications } from "@/hooks/useNotifications";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -15,8 +13,12 @@ const tabs = [
 	{ id: 4, label: "Admins", icon: UserLock, href: "/admins", requiredSlugs: ["view_admin"] },
 	{ id: 4.5, label: "Permissions", icon: Key, href: "/permissions", requiredSlugs: ["view_permissions_groups"] },
 	{ id: 5, label: "Homes", icon: Building, href: "/homes", requiredSlugs: ["view_all_homes", "view_home"] },
-	{ id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true, requiredSlugs: ["view_shifts"] },
-	{ id: 6.5, label: "Notifications", icon: Bell, href: "/notification", hasFlyout: true },
+	// id 6 (Scheduling / Training) is computed per-profile in the component below —
+	// see schedulingTab — since its label/icon/flyout depend on which of shifts vs
+	// training the user can access, not a simple "has any of these slugs" check.
+	{ id: 6.5, label: "Approv / Ack", icon: ClipboardCheck, href: "/approvals" },
+	{ id: 6.8, label: "Payroll", icon: DollarSign, href: "/payroll", hasFlyout: true, requiredSlugs: ["view_payroll", "manage_payroll"] },
+	{ id: 6.85, label: "Holidays", icon: Sun, href: "/holidays", requiredSlugs: ["view_holidays", "view_payroll"] },
 	{ id: 7, label: "Settings", icon: Settings, href: "/setting" },
 	/*
 	{ id: 7, label: "Billing & Payroll", icon: CreditCard, href: "/billing" },
@@ -27,30 +29,23 @@ const tabs = [
 	{ id: 11, label: "Settings", icon: Settings, href: "/setting" }*/
 ];
 
-const flyoutMenus = {
-	6: [
-		{ label: "Calendar", href: "/scheduling", icon: CalendarDays, desc: "View & manage shifts" },
-		{ label: "Shift Builder", href: "/scheduling/shift_builder", icon: LayoutGrid, desc: "Design shift templates" },
-	],
-	6.5: [
-		{ label: "All Messages", href: "/notification", icon: MessageSquare, desc: "View all notifications" },
-		{ label: "Approvals", href: "/approvals", icon: ClipboardCheck, desc: "Pending certificate approvals" },
-	],
-};
 
 // Map keywords to specific tab ids
 // If pathname includes the keyword, the corresponding tab will be active
 const keywordToTabMap = {
 	"/client": 2,       // any path containing "/client" -> Clients tab
 	"/focus_notes": 2,  // focus note detail lives under the Clients tab
+	"/payroll/caregiver": 6.8, // payroll caregiver pages must match before the generic /caregiver rule
 	"/caregiver": 3,    // any path containing "/caregiver" -> Caregivers tab
 	"/admin": 4,        // any path containing "/admin" -> Admins tab
 	"/permission": 4.5, // any path containing "/permission" -> Permissions tab
 	"/homes": 5,        // any path containing "/homes" -> Homes tab
-	"/scheduling": 6,     // any path containing "/scheduling" -> Scheduling tab
-	"/notification": 6.5, // any path containing "/notification" -> Notifications tab
-	"/approvals": 6.5,    // any path containing "/approvals" -> Notifications tab
-	"/billing": 7,      // any path containing "/billing" -> Billing tab (updated ID)
+	"/scheduling": 6,     // any path containing "/scheduling" -> Scheduling/Training tab
+	"/training": 6,       // any path containing "/training" -> Scheduling/Training tab (nested subtab or standalone, depending on permissions)
+	"/approvals": 6.5,    // any path containing "/approvals" -> Approvals tab
+	"/payroll": 6.8,      // any path containing "/payroll" -> Payroll tab
+	"/holidays": 6.85,    // any path containing "/holidays" -> Holidays tab
+	"/billing": 7,        // any path containing "/billing" -> Billing tab (updated ID)
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
 
@@ -58,25 +53,61 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 	const pathname = usePathname();
 	const { profile, isLoading, fetchError, refetch } = useProfile();
 
-	const { totalCount: pendingApprovalCount } = useApprovals({
-		params: { page: 1, limit: 1 },
-		fetchQueue: true,
-	});
-
-	const { unreadCount } = useNotifications({ fetchList: false });
-
-	const flyoutBadges = {
-		"/notification": unreadCount,
-		"/approvals": pendingApprovalCount,
-	};
-
 	// While the profile is loading (or failed to load) only the ungated tabs
 	// render; the ErrorState below makes that state visible instead of
 	// silently hiding every permission-gated module.
 	const permissionSlugs = profile?.permissionSlugs ?? [];
+
+	// Scheduling/Training tab (id 6): its shape depends on which of Calendar,
+	// Shift Builder, and Training the user can reach — a plain "has any of
+	// these slugs" check (like every other tab) isn't expressive enough here.
+	// "Edit implies view" per the user's rule: holding a mutate slug counts as
+	// having the matching view slug even if view isn't separately granted.
+	const canViewShifts   = permissionSlugs.includes("view_shifts") || permissionSlugs.includes("create_shifts") || permissionSlugs.includes("update_shifts");
+	const canBuildShifts  = permissionSlugs.includes("create_shifts"); // same slug that gates "Create New Shift" in scheduling/page.js
+	const canViewTraining = permissionSlugs.includes("view_trainings") || permissionSlugs.includes("manage_trainings") || permissionSlugs.includes("view_payroll");
+
+	const schedulingSubItems = [
+		canViewShifts   && { label: "Calendar", href: "/scheduling", icon: CalendarDays, desc: "View & manage shifts" },
+		canBuildShifts  && { label: "Shift Builder", href: "/scheduling/shift_builder", icon: LayoutGrid, desc: "Design shift templates" },
+		canViewTraining && { label: "Training", href: "/training", icon: GraduationCap, desc: "Manage training sessions" },
+	].filter(Boolean);
+
+	let schedulingTab = null;
+	if (!canViewShifts && canViewTraining) {
+		// No shift access at all — Training surfaces as its own top-level tab.
+		schedulingTab = { id: 6, label: "Training", icon: GraduationCap, href: "/training" };
+	} else if (canViewShifts) {
+		schedulingTab = schedulingSubItems.length > 1
+			? { id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling", hasFlyout: true }
+			: { id: 6, label: "Scheduling", icon: Calendar, href: "/scheduling" };
+	}
+
+	const canSeeHouseReviews = permissionSlugs.some((s) =>
+		s === "view_payroll" || s === "manage_payroll" ||
+		s === "review_all_house_hours" || s === "review_assigned_house_hours"
+	);
+	const payrollSubItems = [
+		{ label: "Overview",       href: "/payroll",               icon: FileSpreadsheet, desc: "Cover sheet & hours breakdown" },
+		{ label: "Manual Entries", href: "/payroll/manual_entries", icon: NotebookPen,     desc: "Per-caregiver manual entry view" },
+		canSeeHouseReviews && { label: "House Reviews", href: "/payroll/house-reviews", icon: ListChecks, desc: "Review all house payroll periods" },
+	].filter(Boolean);
+
+	const flyoutMenus = {
+		...(schedulingSubItems.length > 1 ? { 6: schedulingSubItems } : {}),
+		6.8: payrollSubItems,
+	};
+
 	const visibleTabs = tabs.filter(tab =>
 		!tab.requiredSlugs || tab.requiredSlugs.some(slug => permissionSlugs.includes(slug))
 	);
+	if (schedulingTab) {
+		// Insert right before Approvals (id 6.5, always visible/no requiredSlugs)
+		// rather than "after Homes" — Homes itself can be filtered out of
+		// visibleTabs for a given user, which would otherwise misplace this tab.
+		const approvalsIndex = visibleTabs.findIndex(t => t.id === 6.5);
+		visibleTabs.splice(approvalsIndex === -1 ? visibleTabs.length : approvalsIndex, 0, schedulingTab);
+	}
 
 	const [activeTab, setActiveTab] = useState(() => {
 		const tabMatch = tabs.find(tab => tab.href === pathname);
@@ -183,12 +214,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 												>
 													<ItemIcon size={15} className={styles.flyoutItemIcon} />
 													<div>
-														<div className={styles.flyoutItemLabel}>
-															{item.label}
-															{flyoutBadges[item.href] > 0 && (
-																<span className={styles.flyoutBadge}>{flyoutBadges[item.href]}</span>
-															)}
-														</div>
+														<div className={styles.flyoutItemLabel}>{item.label}</div>
 														<div className={styles.flyoutItemDesc}>{item.desc}</div>
 													</div>
 												</Link>
@@ -254,7 +280,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 					onMouseLeave={closeFlyout}
 				>
 					<div className={styles.flyoutTitle}>
-						{tabs.find(t => t.id === hoveredTabId)?.label}
+						{visibleTabs.find(t => t.id === hoveredTabId)?.label}
 					</div>
 					{flyoutMenus[hoveredTabId].map(item => {
 						const ItemIcon = item.icon;
@@ -267,12 +293,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 							>
 								<ItemIcon size={16} className={styles.flyoutItemIcon} />
 								<div>
-									<div className={styles.flyoutItemLabel}>
-										{item.label}
-										{flyoutBadges[item.href] > 0 && (
-											<span className={styles.flyoutBadge}>{flyoutBadges[item.href]}</span>
-										)}
-									</div>
+									<div className={styles.flyoutItemLabel}>{item.label}</div>
 									<div className={styles.flyoutItemDesc}>{item.desc}</div>
 								</div>
 							</Link>

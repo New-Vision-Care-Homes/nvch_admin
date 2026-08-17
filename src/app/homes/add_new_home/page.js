@@ -18,8 +18,16 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
-import ClientConflictModal from "@/components/UI/ClientConflictModal";
-import { HOME_TYPE_OPTIONS, REGION_OPTIONS } from "@/utils/dropdown_list";
+import HouseConflictModal from "@/components/UI/HouseConflictModal";
+import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+
+// Referentially-stable "no results" value — returning a fresh `[]` literal from
+// the useMemo below would give caregiverResults/clientResults a new identity
+// every render (since searchedCaregivers/searchedClients aren't memoized
+// upstream), which retriggers the "assigned" hint effect every render and
+// loops (setCaregiverHomeMap({}) → re-render → new [] → effect fires → ...).
+const EMPTY_LIST = [];
 
 
 const schema = yup.object({
@@ -93,6 +101,10 @@ export default function AddNewHomePage() {
 	const [caregiverSearch, setCaregiverSearch] = useState("");
 	const [showCaregiverResults, setShowCaregiverResults] = useState(false);
 	const [selectedCaregivers, setSelectedCaregivers] = useState([]);
+	const [caregiverConflictInfo, setCaregiverConflictInfo] = useState(null); // { caregiver, currentHomeName }
+	const [hasCaregiverMove, setHasCaregiverMove] = useState(false);
+	const [isCheckingCaregiver, setIsCheckingCaregiver] = useState(false);
+	const [caregiverHomeMap, setCaregiverHomeMap] = useState({}); // { caregiverId: boolean }
 
 	// Client search state
 	const [clientSearch, setClientSearch] = useState("");
@@ -119,7 +131,7 @@ export default function AddNewHomePage() {
 
 	// Search Caregivers
 	const [caregiverSearchParams, setCaregiverSearchParams] = useState({});
-	const { caregivers: searchedCaregivers } = useCaregivers(caregiverSearchParams);
+	const { caregivers: searchedCaregivers, fetchCaregiver } = useCaregivers(caregiverSearchParams);
 
 	const searchCaregivers = (searchTerm) => {
 		if (searchTerm.length < 2) {
@@ -130,7 +142,7 @@ export default function AddNewHomePage() {
 	};
 
 	const caregiverResults = useMemo(() => {
-		if (!searchedCaregivers || !caregiverSearchParams.search) return [];
+		if (!searchedCaregivers || !caregiverSearchParams.search) return EMPTY_LIST;
 		return searchedCaregivers.filter(c => !selectedCaregivers.find(s => s.id === c.id));
 	}, [searchedCaregivers, caregiverSearchParams.search, selectedCaregivers]);
 
@@ -142,11 +154,62 @@ export default function AddNewHomePage() {
 
 	const getStaffId = (person) => person._id || person.id;
 
-	const handleCaregiverSelect = (caregiver) => {
-		setSelectedCaregivers([...selectedCaregivers, caregiver]);
+	// Batch-fetch full caregiver details when search results change to drive the "· assigned" hint
+	useEffect(() => {
+		if (!caregiverResults.length) {
+			setCaregiverHomeMap(prev => (Object.keys(prev).length === 0 ? prev : {}));
+			return;
+		}
+		let cancelled = false;
+		Promise.all(caregiverResults.map(c => fetchCaregiver(getStaffId(c)))).then(full => {
+			if (cancelled) return;
+			const map = {};
+			full.forEach((f, i) => {
+				const homeRaw = f.home;
+				map[getStaffId(caregiverResults[i])] = !!(
+					(typeof homeRaw === "string" ? homeRaw : (homeRaw?._id || homeRaw?.id)) || f.homeId
+				);
+			});
+			setCaregiverHomeMap(map);
+		}).catch(() => {});
+		return () => { cancelled = true; };
+	}, [caregiverResults]);
+
+	const handleCaregiverSelect = async (caregiver) => {
+		if (isCheckingCaregiver) return;
 		setCaregiverSearch("");
 		setShowCaregiverResults(false);
+		setIsCheckingCaregiver(true);
+		try {
+			const full = await fetchCaregiver(getStaffId(caregiver));
+			const homeRaw = full.home;
+			const existingHomeId =
+				typeof homeRaw === "string" ? homeRaw :
+				(homeRaw?._id || homeRaw?.id || full.homeId || null);
+			if (existingHomeId) {
+				let currentHomeName = null;
+				try {
+					const homeDetail = await fetchHome(existingHomeId);
+					currentHomeName = homeDetail?.name || homeDetail?.home?.name || null;
+				} catch {}
+				setCaregiverConflictInfo({ caregiver, currentHomeName });
+				return;
+			}
+			setSelectedCaregivers(prev => [...prev, caregiver]);
+		} catch {
+			setSelectedCaregivers(prev => [...prev, caregiver]);
+		} finally {
+			setIsCheckingCaregiver(false);
+		}
 	};
+
+	const handleCaregiverConflictConfirm = () => {
+		if (!caregiverConflictInfo) return;
+		setSelectedCaregivers(prev => [...prev, caregiverConflictInfo.caregiver]);
+		setHasCaregiverMove(true);
+		setCaregiverConflictInfo(null);
+	};
+
 	const removeCaregiver = (id) => { setSelectedCaregivers(selectedCaregivers.filter(c => getStaffId(c) !== id)); };
 
 	// Search Clients
@@ -165,7 +228,7 @@ export default function AddNewHomePage() {
 
 	// Memoize filtered client results to avoid infinite loops and unnecessary re-renders
 	const clientResults = useMemo(() => {
-		if (!searchedClients || !clientSearchParams.search) return [];
+		if (!searchedClients || !clientSearchParams.search) return EMPTY_LIST;
 
 		return searchedClients.filter(client => {
 			const exists = selectedClients.find(c => getStaffId(c) === getStaffId(client));
@@ -175,7 +238,10 @@ export default function AddNewHomePage() {
 
 	// Batch-fetch full client details when search results change to drive the "· assigned" hint
 	useEffect(() => {
-		if (!clientResults.length) { setClientHomeMap({}); return; }
+		if (!clientResults.length) {
+			setClientHomeMap(prev => (Object.keys(prev).length === 0 ? prev : {}));
+			return;
+		}
 		let cancelled = false;
 		Promise.all(clientResults.map(c => fetchClient(getStaffId(c)))).then(full => {
 			if (cancelled) return;
@@ -287,7 +353,7 @@ export default function AddNewHomePage() {
 			caregivers: selectedCaregivers.map(s => getStaffId(s)),
 			admins: selectedAdmins.map(a => ({ admin: getStaffId(a), adminLevel: a.adminLevel || 'supervisor' })),
 			clients: selectedClients.map(c => getStaffId(c)),
-			...(hasClientMove && { confirmMove: true }),
+			...((hasClientMove || hasCaregiverMove) && { confirmMove: true }),
 			nightChecksEnabled: data.nightChecksEnabled || false,
 			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
@@ -314,12 +380,21 @@ export default function AddNewHomePage() {
 
 	return (
 		<PageLayout>
-			<ClientConflictModal
+			<HouseConflictModal
 				isOpen={!!conflictInfo}
 				onClose={() => setConflictInfo(null)}
 				onConfirm={handleConflictConfirm}
-				clientName={conflictInfo ? `${conflictInfo.client.firstName} ${conflictInfo.client.lastName}` : ""}
+				subjectName={conflictInfo ? `${conflictInfo.client.firstName} ${conflictInfo.client.lastName}` : ""}
 				currentHomeName={conflictInfo?.currentHomeName}
+				newHomeName={newHomeName}
+			/>
+			<HouseConflictModal
+				isOpen={!!caregiverConflictInfo}
+				onClose={() => setCaregiverConflictInfo(null)}
+				onConfirm={handleCaregiverConflictConfirm}
+				subjectLabel="Caregiver"
+				subjectName={caregiverConflictInfo ? `${caregiverConflictInfo.caregiver.firstName} ${caregiverConflictInfo.caregiver.lastName}` : ""}
+				currentHomeName={caregiverConflictInfo?.currentHomeName}
 				newHomeName={newHomeName}
 			/>
 			<form onSubmit={handleSubmit(onSubmit)}>
@@ -422,16 +497,26 @@ export default function AddNewHomePage() {
 										/>
 										{showCaregiverResults && caregiverResults.length > 0 && (
 											<div className={cardStyles.searchResults}>
-												{caregiverResults.map(caregiver => (
-													<div
-														key={getStaffId(caregiver)}
-														onMouseDown={() => handleCaregiverSelect(caregiver)}
-														className={cardStyles.searchItem}
-													>
-														<span className={cardStyles.searchItemName}>{caregiver.firstName} {caregiver.lastName}</span>
-														<span className={cardStyles.searchItemSub}>{caregiver.email || caregiver.phone}</span>
-													</div>
-												))}
+												{caregiverResults.map(caregiver => {
+													const hasHome = !!caregiverHomeMap[getStaffId(caregiver)];
+													return (
+														<div
+															key={getStaffId(caregiver)}
+															onMouseDown={() => handleCaregiverSelect(caregiver)}
+															className={cardStyles.searchItem}
+														>
+															<span className={cardStyles.searchItemName}>{caregiver.firstName} {caregiver.lastName}</span>
+															<span className={cardStyles.searchItemSub}>
+																{caregiver.email || caregiver.phone}
+																{hasHome && (
+																	<span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
+																		· assigned
+																	</span>
+																)}
+															</span>
+														</div>
+													);
+												})}
 											</div>
 										)}
 									</div>

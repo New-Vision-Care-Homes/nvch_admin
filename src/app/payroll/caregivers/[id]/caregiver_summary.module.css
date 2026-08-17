@@ -1,0 +1,259 @@
+/* ── Hours / dollars breakdown grid ──────────────────────────────────────── */
+
+.summaryGrid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+}
+
+@media (max-width: 768px) {
+	.summaryGrid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 480px) {
+	.summaryGrid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ── Individual summary item card ─────────────────────────────────────────── */
+
+.summaryItem {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 1rem;
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 10px;
+}
+
+/* ── Item label ───────────────────────────────────────────────────────────── */
+
+.summaryItemLabel {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9ca3af;
+}
+
+/* ── Item value ───────────────────────────────────────────────────────────── */
+
+.summaryItemValue {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+/* ── Total hours value — displayed large and prominently ──────────────────── */
+
+.summaryTotalValue {
+	font-size: 2rem;
+	font-weight: 800;
+	color: var(--color-primary, #1c4a6e);
+}
+
+/* ── Caregiver info card ──────────────────────────────────────────────────── */
+
+.caregiverCard {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 14px;
+	padding: 1rem 1.25rem;
+	background: #fff;
+	border: 1.5px solid #e8eef4;
+	border-radius: 12px;
+	margin-bottom: 1rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Caregiver name ───────────────────────────────────────────────────────── */
+
+.caregiverName {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: #111827;
+}
+
+/* ── Caregiver info (name + meta) — grows to fill available space ─────────── */
+
+.caregiverInfo {
+	flex: 1;
+}
+
+/* ── Caregiver metadata (employee ID, status, etc.) ──────────────────────── */
+
+.caregiverMeta {
+	font-size: 0.82rem;
+	color: #6b7280;
+}
+
+/* ── Period badge cluster — pinned to the right of the caregiver card ─────── */
+
+.caregiverPeriod {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.caregiverPeriodYear {
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #6b7280;
+	letter-spacing: 0.04em;
+}
+
+.caregiverPeriodBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background: #eef4fb;
+	color: #1c4a6e;
+	font-size: 0.78rem;
+	font-weight: 700;
+	border-radius: 20px;
+	letter-spacing: 0.02em;
+}
+
+/* ── Card stack — consistent vertical gap between all section cards ────────── */
+
+.cardStack {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Manual entries list ──────────────────────────────────────────────────── */
+
+.entriesCount {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	background: #1c4a6e;
+	color: #fff;
+	font-size: 0.7rem;
+	font-weight: 700;
+	border-radius: 10px;
+}
+
+.entriesEmpty {
+	font-size: 0.875rem;
+	color: #9ca3af;
+	text-align: center;
+	padding: 1rem 0;
+	margin: 0;
+}
+
+/* ── Entries table ────────────────────────────────────────────────────────── */
+
+/* Scroll wrapper — the table has 7 columns with several nowrap cells, so it
+   needs to scroll horizontally on narrow screens instead of squashing or
+   overflowing the card (matches the ptWrap/scrollX/t2Wrap pattern used by
+   every other page-level table in the app). */
+.entriesTableWrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.entriesTable {
+	width: 100%;
+	min-width: 640px;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+}
+
+.entriesTable thead th {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9ca3af;
+	padding: 0.5rem 0.75rem;
+	text-align: left;
+	border-bottom: 2px solid #f3f4f6;
+	white-space: nowrap;
+}
+
+.entriesThNum {
+	text-align: right !important;
+}
+
+.entryTableRow td {
+	padding: 1rem 0.75rem;
+	border-bottom: 1.5px solid #f3f4f6;
+	vertical-align: middle;
+}
+
+.entryTableRow:last-child td {
+	border-bottom: none;
+}
+
+.entryTableRow:hover td {
+	background: #f9fafb;
+}
+
+.entryCategory {
+	font-weight: 600;
+	color: #111827;
+}
+
+.entryMuted {
+	font-size: 0.82rem;
+	color: #6b7280;
+	white-space: nowrap;
+}
+
+.entryAmount {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	background: #eef4fb;
+	color: #1c4a6e;
+	font-size: 0.82rem;
+	font-weight: 700;
+	border-radius: 20px;
+	white-space: nowrap;
+}
+
+.entryActionsCell {
+	text-align: right;
+	width: 40px;
+}
+
+/* ── Entry status badge ───────────────────────────────────────────────────── */
+
+.entryStatusBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: capitalize;
+}
+
+.entryStatus_approved {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.entryStatus_pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.entryStatus_voided,
+.entryStatus_reversed {
+	background: #fee2e2;
+	color: #dc2626;
+}

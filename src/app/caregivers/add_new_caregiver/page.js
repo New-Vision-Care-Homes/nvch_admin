@@ -12,12 +12,13 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import { useCaregivers } from "@/hooks/useCaregivers";
+import { useHomes } from "@/hooks/useHomes";
 import ActionMessage from "@components/UI/ActionMessage";
 import PersonSearchField from "@/components/UI/PersonSearchField";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
-import { REGION_OPTIONS } from "@/utils/dropdown_list";
+import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
 import { localDateToUtc } from "@/utils/timeHandling";
 
@@ -100,6 +101,11 @@ const schema = yup.object({
 	supervisor: yup.string().required("Supervisor is required"),
 	teamLead: yup.string().optional(),
 
+	// Assigned Home — a caregiver may be assigned to at most one house (their
+	// primary house, which decides where their non-shift pay lands, not where
+	// they may work — see homes/[id]/edit/page.js for the reassignment rule).
+	homeId: yup.string().nullable().optional(),
+
 	// Emergency Contact fields
 	emergencyLName: nameRule.required("Emergency Contact Name is required"),
 	emergencyFName: nameRule.required("Emergency Contact Name is required"),
@@ -157,6 +163,7 @@ export default function Page() {
 	});
 
 	const { addCaregiver, caregiverActionError, isCaregiverActionPending } = useCaregivers();
+	const { homes } = useHomes({ limit: 100 });
 
 
 	/*
@@ -215,6 +222,7 @@ export default function Page() {
 
 			supervisor: data.supervisor || null,
 			teamLead: data.teamLead || null,
+			homeId: data.homeId || null,
 
 			emergencyContact: {
 				name: `${data.emergencyFName} ${data.emergencyLName}`.trim(),
@@ -314,7 +322,14 @@ export default function Page() {
 
 								<div className={styles.row2}>
 									<InputField label="Date of Birth" name="dateOfBirth" register={register} control={control} error={errors.dateOfBirth} type="date" required />
-									<div />
+									<InputField
+										label="Assigned Home"
+										name="homeId"
+										type="select"
+										register={register}
+										error={errors.homeId}
+										options={homes.map(h => ({ label: h.name, value: h.id || h._id }))}
+									/>
 								</div>
 
 								<div style={{ marginBottom: "1rem" }}>

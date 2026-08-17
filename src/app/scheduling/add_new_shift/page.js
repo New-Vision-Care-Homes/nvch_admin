@@ -23,25 +23,16 @@ import Modal from "@components/UI/Modal";
 import ActionMessage from "@components/UI/ActionMessage";
 import styles from "./add_new_shift.module.css";
 import cardStyles from "@components/UI/Card.module.css";
+import CapacityExceededModal from "../_components/CapacityExceededModal";
+import VoluntaryPendingModal from "../_components/VoluntaryPendingModal";
 
 import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@/utils/validation";
+import { formatAddress } from "@/utils/formatting";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const HALIFAX_TZ = "America/Halifax";
-
-function joinAddress(addressObj) {
-	if (!addressObj) return "";
-	if (typeof addressObj === "string") return addressObj;
-	return [
-		addressObj.unit,
-		addressObj.street,
-		addressObj.city,
-		addressObj.state || addressObj.province,
-		addressObj.pinCode || addressObj.postalCode,
-	].filter(Boolean).join(", ");
-}
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -379,7 +370,31 @@ export default function AddNewShiftPage() {
 	const [longShiftHours, setLongShiftHours] = useState(0);
 	const pendingSubmitRef = useRef(null);
 
-	function buildAndSubmit(data) {
+	// ── Capacity-exceeded overage decision ─────────────────────────────────────
+	// When the backend rejects a shift with 409 CAPACITY_EXCEEDED, we open a modal
+	// that shows the hours breakdown and lets the admin choose how to handle it.
+	//
+	// capacityData — null (modal closed) or:
+	//   { details: { maxHours, committedHours, shiftHours, projectedTotal,
+	//                overageHours, payPeriod }, pendingData: <original shiftData> }
+	//   `pendingData` is the shiftData that was blocked — resubmitted on confirm
+	//   with overageDecision added.
+	//
+	// capacityDecision — "mandated" | "voluntary" | null (nothing chosen yet)
+	//   "mandated"  → above-capacity hours pay as overtime; shift created immediately.
+	//   "voluntary" → a bank-or-pay acknowledgment approval is pushed to the
+	//                 caregiver's mobile app; clock-in is blocked until they respond.
+	//
+	// voluntaryPendingShift — null (not shown) or { caregiverName }
+	//   Shown after creating a voluntary shift instead of the normal redirect,
+	//   so the admin knows the shift is waiting for the caregiver's decision.
+	const [capacityData,         setCapacityData]         = useState(null);
+	const [capacityDecision,     setCapacityDecision]     = useState(null);
+	const [voluntaryPendingShift, setVoluntaryPendingShift] = useState(null);
+
+	// Using mutateAsync (not mutate) so the error and our setCapacityData call
+	// land in the same React 18 batch — no render gap where the banner flashes.
+	async function buildAndSubmit(data) {
 		const shiftData = {
 			caregiverId: data.caregiverId,
 			startTime: data.startTime,
@@ -389,31 +404,71 @@ export default function AddNewShiftPage() {
 			tasks: tasks.map((t) => ({ description: t.text, completed: false })),
 		};
 
-		// Exactly one target
 		if (targetType === "client" && data.clientId) {
 			shiftData.clientId = data.clientId;
 		} else if (targetType === "home" && data.homeId) {
 			shiftData.homeId = data.homeId;
 		}
 
-		// Geofence — only include if an address was selected or auto-filled
 		if (hasAddressSelected && (data.geofenceStreet || data.geofenceCity)) {
 			shiftData.geofence = {
-				center: {
-					latitude: mapCenter.lat,
-					longitude: mapCenter.lng,
-				},
+				center: { latitude: mapCenter.lat, longitude: mapCenter.lng },
 				radius: 100,
 				shape: "circle",
 				address: geofenceAddress || undefined,
 			};
 		}
 
-		addShift(shiftData, {
-			onSuccess: () => {
+		try {
+			await addShift(shiftData);
+			router.push("/scheduling");
+		} catch (err) {
+			if (err?.response?.data?.code === "CAPACITY_EXCEEDED") {
+				setCapacityData({
+					details:     err.response.data.details,
+					pendingData: shiftData,
+				});
+				setCapacityDecision(null);
+			}
+			// All other errors surface via actionShiftError automatically.
+		}
+	}
+
+	/**
+	 * Called when the admin confirms the capacity-exceeded modal.
+	 *
+	 * Resubmits the blocked shiftData with `overageDecision` added:
+	 *   "mandated"  → shift created immediately as overtime; redirect to schedule.
+	 *   "voluntary" → shift created with ackStatus:"pending"; caregiver receives
+	 *                 a bank-or-pay acknowledgment on mobile; clock-in is blocked.
+	 *                 Instead of redirecting, we show a "pending" success banner
+	 *                 so the admin knows they're waiting for the caregiver.
+	 */
+	async function handleCapacityDecision() {
+		if (!capacityDecision || !capacityData) return;
+		const decision        = capacityDecision;
+		const { pendingData } = capacityData;
+		const cgName = selectedCaregiver
+			? `${selectedCaregiver.firstName} ${selectedCaregiver.lastName}`
+			: "the caregiver";
+
+		setCapacityData(null);
+		setCapacityDecision(null);
+
+		try {
+			const shift = await addShift({ ...pendingData, overageDecision: decision });
+			if (decision === "voluntary") {
+				setVoluntaryPendingShift({
+					caregiverName:       cgName,
+					approvalId:          shift?.extraHours?.approvalId          ?? null,
+					plannedOverageHours: shift?.extraHours?.plannedOverageHours ?? null,
+				});
+			} else {
 				router.push("/scheduling");
 			}
-		});
+		} catch (err) {
+			// actionShiftError displays any non-CAPACITY error automatically.
+		}
 	}
 
 	function onSubmit(data) {
@@ -449,7 +504,17 @@ export default function AddNewShiftPage() {
 				</div>
 			</div>
 
-			{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
+			{/*
+			 * Hide the generic error banner while the capacity modal is open —
+			 * the modal already communicates why the shift was blocked and it's
+			 * cleaner than showing both at once.  After cancel, capacityData
+			 * becomes null and the banner re-appears so the admin has context.
+			 */}
+			{/* Hidden while the capacity modal is open (it already explains the block)
+			    and after voluntary success (the shift was created — error is stale). */}
+			{actionShiftError && !capacityData && !voluntaryPendingShift && (
+				<ActionMessage variant="error" message={actionShiftError} />
+			)}
 
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div className={styles.cards}>
@@ -522,7 +587,7 @@ export default function AddNewShiftPage() {
 											<div className={styles.card_row_1}>
 												<div style={{ backgroundColor: "#f3f4f6", borderRadius: "6px", border: "1px solid #dee1e6", padding: "0.55rem 0.75rem", fontSize: "0.875rem", color: "#6b7280" }}>
 													<span style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--color-primary)", marginBottom: "0.2rem" }}>Client Address</span>
-													{joinAddress(selectedClient.address) || "—"}
+													{formatAddress(selectedClient.address) || "—"}
 												</div>
 											</div>
 										</>
@@ -580,7 +645,7 @@ export default function AddNewShiftPage() {
 											<div className={styles.card_row_1}>
 												<div style={{ backgroundColor: "#f3f4f6", borderRadius: "6px", border: "1px solid #dee1e6", padding: "0.55rem 0.75rem", fontSize: "0.875rem", color: "#6b7280" }}>
 													<span style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "var(--color-primary)", marginBottom: "0.2rem" }}>Home Address</span>
-													{joinAddress(selectedHome.address) || "—"}
+													{formatAddress(selectedHome.address) || "—"}
 												</div>
 											</div>
 										</>
@@ -821,6 +886,29 @@ export default function AddNewShiftPage() {
 					</div>
 				</div>
 			</Modal>
+
+			<CapacityExceededModal
+				isOpen={!!capacityData}
+				onClose={() => { setCapacityData(null); setCapacityDecision(null); }}
+				caregiverName={
+					selectedCaregiver
+						? `${selectedCaregiver.firstName} ${selectedCaregiver.lastName}`
+						: "This caregiver"
+				}
+				details={capacityData?.details ?? {}}
+				decision={capacityDecision}
+				onDecisionChange={setCapacityDecision}
+				onConfirm={handleCapacityDecision}
+				isSaving={isShiftActionPending}
+			/>
+
+			<VoluntaryPendingModal
+				isOpen={!!voluntaryPendingShift}
+				onClose={() => router.push("/scheduling")}
+				caregiverName={voluntaryPendingShift?.caregiverName}
+				plannedOverageHours={voluntaryPendingShift?.plannedOverageHours}
+				approvalId={voluntaryPendingShift?.approvalId}
+			/>
 
 			{/* Warning before saving a shift longer than 12 hours (allowed, not blocked) */}
 			<Modal isOpen={showLongShiftModal} onClose={() => setShowLongShiftModal(false)}>

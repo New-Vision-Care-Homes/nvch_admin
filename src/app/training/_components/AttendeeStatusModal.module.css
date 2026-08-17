@@ -1,0 +1,134 @@
+.modalContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 12px;
+	padding: 1rem 0;
+	width: 100%;
+}
+
+.modalIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+	border-radius: 50%;
+	background: #e8f0f7;
+	color: var(--color-primary, #1c4a6e);
+	margin-bottom: 4px;
+}
+
+.modalTitle {
+	margin: 0;
+	font-size: 1.1rem;
+	color: #111827;
+}
+
+.fieldRow {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	text-align: left;
+}
+
+.fieldLabel {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.fieldRequired {
+	color: #ef4444;
+	margin-left: 2px;
+}
+
+.fieldInput {
+	padding: 9px 12px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	outline: none;
+	font-family: inherit;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fieldInput:focus {
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.fieldError {
+	font-size: 0.78rem;
+	color: #ef4444;
+	align-self: flex-start;
+}
+
+.contextNote {
+	font-size: 0.8rem;
+	color: #6b7280;
+	margin: -4px 0 0;
+}
+
+.clearBtn {
+	align-self: flex-start;
+	padding: 0;
+	font-size: 0.78rem;
+	color: #6b7280;
+	background: none;
+	border: none;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.clearBtn:hover {
+	color: #374151;
+}
+
+.textarea {
+	width: 100%;
+	padding: 10px 12px;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	resize: vertical;
+	min-height: 70px;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.textarea:focus {
+	outline: none;
+	border-color: var(--color-primary, #1c4a6e);
+	box-shadow: 0 0 0 3px rgba(28, 74, 110, 0.1);
+}
+
+.modalButtons {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	margin-top: 0.5rem;
+}
+
+.modalButtons button {
+	min-width: 80px;
+}
+
+.spin {
+	animation: spinAnim 0.85s linear infinite;
+}
+
+@keyframes spinAnim {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}

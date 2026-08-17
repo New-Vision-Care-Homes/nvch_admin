@@ -1,0 +1,521 @@
+/* ── Page shell ───────────────────────────────────────────────────────────── */
+
+.pageContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+
+.pageHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.pageHeader h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 6px;
+}
+
+.titleBlock {
+    display: flex;
+    flex-direction: column;
+}
+
+.titleMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.periodBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--color-primary, #1c4a6e);
+    background: #e8f0f7;
+    border: 1.5px solid #b8cfe0;
+    border-radius: 999px;
+}
+
+.dueBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #92400e;
+    background: #fffbeb;
+    border: 1.5px solid #fcd34d;
+    border-radius: 999px;
+}
+
+.overdueBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #dc2626;
+    background: #fee2e2;
+    border: 1.5px solid #fca5a5;
+    border-radius: 999px;
+}
+
+/* ── House card ───────────────────────────────────────────────────────────── */
+
+.houseCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 1.25rem 1.5rem;
+    background: #fff;
+    border: 1.5px solid #e8eef4;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.houseCardIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.houseCardBody {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.houseCardName {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    line-height: 1.25;
+}
+
+.houseCardMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.inactiveTag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 1px 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.supervisorsLine {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.supervisorsIcon {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+/* ── Activity strip ───────────────────────────────────────────────────────── */
+
+.activityStrip {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    background: #fff;
+    border: 1.5px solid #e8eef4;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.activityItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 1rem 0.75rem;
+}
+
+.activityDivider {
+    width: 1px;
+    background: #f1f5f9;
+    align-self: stretch;
+}
+
+/* Four nowrap-labelled items don't fit one row under ~420px — wrap into two
+   rows of two rather than letting the row overflow (activityStrip clips
+   overflow, so anything past its edge was silently cut off). */
+@media (max-width: 480px) {
+    .activityItem {
+        flex: 1 1 40%;
+    }
+
+    .activityDivider {
+        display: none;
+    }
+}
+
+.activityNum {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.activityLabel {
+    font-size: 0.69rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.activityIcon {
+    color: #94a3b8;
+}
+
+.activityItemWarn .activityNum  { color: #d97706; }
+.activityItemWarn .activityLabel { color: #d97706; }
+
+.activityItemActive .activityIcon  { color: #059669; }
+.activityItemActive .activityLabel { color: #059669; }
+
+/* ── Section wrapper ──────────────────────────────────────────────────────── */
+
+.section {
+    background: #fff;
+    border: 1.5px solid #e8eef4;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #374151;
+    padding: 0.875rem 1.25rem;
+    margin: 0;
+    border-bottom: 1px solid #f1f5f9;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.historyCount {
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: #94a3b8;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 1px 8px;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* ── Status panels ────────────────────────────────────────────────────────── */
+
+.statusPanels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 600px) {
+    .statusPanels { grid-template-columns: 1fr; }
+}
+
+.statusPanel {
+    padding: 1rem 1.25rem;
+    border-top: 3px solid var(--panel-accent, #94a3b8);
+    background: color-mix(in srgb, var(--panel-accent, #94a3b8) 4%, white);
+}
+
+.statusPanel + .statusPanel {
+    border-left: 1px solid #e8eef4;
+}
+
+@media (max-width: 600px) {
+    .statusPanel + .statusPanel {
+        border-left: none;
+        border-top: 1px solid #e8eef4;
+    }
+}
+
+.panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.panelTitle {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.panelBody {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ── Detail grid (review details section) ─────────────────────────────────── */
+
+.detailGrid {
+    padding: 0.25rem 1.25rem 0.75rem;
+}
+
+/* ── Detail row ───────────────────────────────────────────────────────────── */
+
+.detailRow {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 5px 0;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 0.82rem;
+}
+
+.detailRow:last-child {
+    border-bottom: none;
+}
+
+.detailLabel {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.detailValue {
+    color: #1e293b;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.detailEmpty {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+/* ── Person pill ──────────────────────────────────────────────────────────── */
+
+.personPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px 2px 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #1e293b;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+/* ── Audit trail timeline ─────────────────────────────────────────────────── */
+
+.timeline {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.timelineItem {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding-bottom: 1.5rem;
+    position: relative;
+}
+
+.timelineItem:last-child {
+    padding-bottom: 0;
+}
+
+/* Connecting line between markers */
+.timelineItem:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 22px;
+    bottom: 0;
+    width: 2px;
+    background: #e8edf2;
+    z-index: 0;
+}
+
+.timelineMarker {
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2.5px solid;
+    background: #fff;
+    margin-top: 2px;
+    z-index: 1;
+    position: relative;
+}
+
+.markerSupervisor {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.markerPayroll {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.timelineContent {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 0;
+}
+
+.timelineHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.timelineFlag {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.flagSupervisor {
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+}
+
+.flagPayroll {
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+}
+
+.timelineAt {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.77rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.timelineTransition {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.timelineTransition .personPill {
+    margin-left: auto;
+}
+
+.transitionArrow {
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.timelineBy {
+    font-size: 0.8rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.timelineReason {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #374151;
+    background: #f8fafc;
+    border: 1px solid #e8edf2;
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+
+.timelineReasonLabel {
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+/* ── Empty timeline ───────────────────────────────────────────────────────── */
+
+.emptyTimeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1.5rem;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+.emptyTimeline p {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0;
+}

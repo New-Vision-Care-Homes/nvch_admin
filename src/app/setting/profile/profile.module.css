@@ -142,26 +142,6 @@
 }
 
 
-.statusBadge {
-	display: inline-flex;
-	align-items: center;
-	padding: 0.25rem 0.85rem;
-	border-radius: 9999px;
-	font-size: 0.75rem;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.025em;
-}
-
-.active {
-	background-color: #DEF7EC;
-	color: #03543F;
-}
-
-.inactive {
-	background-color: #F3F4F6;
-	color: #4B5563;
-}
 
 .section {
 	margin-bottom: 2rem;

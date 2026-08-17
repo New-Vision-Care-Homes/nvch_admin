@@ -9,15 +9,18 @@ import { phoneRule, shortTextRule } from "@/utils/validation";
 
 import { Card, CardHeader, InfoField, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/ErrorState";
-import { Edit, Upload, Save, X, Activity } from "lucide-react";
+import { Edit, Upload, Save, X } from "lucide-react";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import { usePermissionGroups } from "@/hooks/usePermissions";
-import { REGION_COLORS, DEPARTMENT_COLORS, ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 const schema = yup.object({
 	phone: phoneRule,
@@ -31,7 +34,6 @@ export default function ProfilePage() {
 
 	const [isEditing, setIsEditing] = useState(false);
 
-	const { permissionGroups } = usePermissionGroups();
 
 	const { register, handleSubmit, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),
@@ -150,9 +152,11 @@ export default function ProfilePage() {
 								<div className={styles.infoGrid}>
 									<InfoField label="Status">
 										<div className={styles.paddingVal}>
-											<span className={`${styles.statusBadge} ${profile.isActive ? styles.active : styles.inactive}`}>
-												{profile.isActive ? "Active" : "Inactive"}
-											</span>
+											<StatusBadge
+												label={profile.isActive ? "Active" : "Inactive"}
+												tone={profile.isActive ? "success" : "neutral"}
+												size="detail"
+											/>
 										</div>
 									</InfoField>
 
@@ -175,10 +179,7 @@ export default function ProfilePage() {
 									)}
 
 									<InfoField label="Region">
-										{profile.region ? (() => {
-											const c = REGION_COLORS[profile.region] ?? COLOR_FALLBACK;
-											return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{profile.region}</span>;
-										})() : <span style={{ color: "#94a3b8" }}>—</span>}
+										{profile.region ? <ColorPill label={profile.region} color={REGION_COLORS[profile.region] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 									</InfoField>
 
 									<InfoField label="Date of Birth" value={profile.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : "N/A"} />
@@ -219,60 +220,26 @@ export default function ProfilePage() {
 								<div className={styles.text}>
 									<div className={styles.column}>
 										<InfoField label="Department">
-											{profile.department ? (() => {
-												const c = DEPARTMENT_COLORS[profile.department] ?? COLOR_FALLBACK;
-												return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{profile.department}</span>;
-											})() : <span style={{ color: "#94a3b8" }}>—</span>}
+											{profile.department ? <ColorPill label={profile.department} color={DEPARTMENT_COLORS[profile.department] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 										</InfoField>
 										<InfoField label="Admin Level">
-											{profile.adminLevel ? (() => {
-												const c = ADMIN_LEVEL_COLORS[profile.adminLevel] ?? COLOR_FALLBACK;
-												return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{ADMIN_LEVEL_LABEL[profile.adminLevel] ?? profile.adminLevel}</span>;
-											})() : <span style={{ color: "#94a3b8" }}>—</span>}
+											{profile.adminLevel ? <ColorPill label={ADMIN_LEVEL_LABEL[profile.adminLevel] ?? profile.adminLevel} color={ADMIN_LEVEL_COLORS[profile.adminLevel] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 										</InfoField>
 										<InfoField label="Permissions">
 											{(() => {
-												const pg = profile.permissionsGroup;
-												const groupIds = Array.isArray(pg) ? pg : (pg ? [pg] : []);
-												if (groupIds.length > 0) {
-													return (
-														<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-															{groupIds.map((g) => {
-																const id = typeof g === 'string' ? g : g._id;
-																const group = permissionGroups?.find(pg => pg._id === id);
-																if (!group) return null;
-																const groupName = group.name;
-																const groupSlugs = group.permissions || [];
-																return (
-																	<div key={id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-																		<span style={{ display: 'inline-flex', alignItems: 'center', background: '#f3f4f6', color: '#1f2937', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', fontSize: '0.95rem', width: 'fit-content' }}>
-																			<Activity size={14} style={{ marginRight: '6px', color: '#6b7280' }} />
-																			{groupName}
-																		</span>
-																		{groupSlugs.length > 0 && (
-																			<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '0.5rem' }}>
-																				{groupSlugs.map((slug) => (
-																					<span key={slug} style={{
-																						display: 'inline-block',
-																						background: '#e5e7eb',
-																						color: '#374151',
-																						padding: '2px 8px',
-																						borderRadius: '4px',
-																						fontSize: '0.78rem',
-																						fontWeight: '500',
-																					}}>
-																						{slug}
-																					</span>
-																				))}
-																			</div>
-																		)}
-																	</div>
-																);
-															})}
-														</div>
-													);
+												const slugs = profile.permissionSlugs ?? [];
+												if (slugs.length === 0) {
+													return <span style={{ color: '#6b7280' }}>No permissions assigned</span>;
 												}
-												return <span style={{ color: '#6b7280' }}>No permission groups assigned</span>;
+												return (
+													<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '0.5rem' }}>
+														{slugs.map((slug) => (
+															<span key={slug} style={{ display: 'inline-block', background: '#e5e7eb', color: '#374151', padding: '2px 8px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '500' }}>
+																{slug}
+															</span>
+														))}
+													</div>
+												);
 											})()}
 										</InfoField>
 									</div>

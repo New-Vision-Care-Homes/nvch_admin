@@ -1,3 +1,17 @@
+import * as yup from "yup";
+
+/**
+ * Shared by the add-new and edit permission-group forms — kept here (rather
+ * than duplicated in each page) since both forms validate the same shape.
+ * The group-name-vs-slug uniqueness check is dynamic (depends on the live
+ * slug list) and stays as a `setError` call in each page's onSubmit.
+ */
+export const permissionGroupSchema = yup.object({
+	name:        yup.string().trim().min(3, "Group name must be at least 3 characters.").required("Group name is required."),
+	description: yup.string().trim().required("Description is required."),
+	permissions: yup.array().min(1, "Please select at least one permission."),
+});
+
 /**
  * Canonical permissions mapping as defined by the backend.
  * This is used to render the categorized UI for permission selection.
@@ -97,6 +111,39 @@ export const PERMISSION_SCHEMAS = [
 		slugs: [
 			"approve_all_certificates",
 			"approve_assigned_certificates"
+		]
+	},
+	{
+		module: "Notification",
+		slugs: [
+			"broadcast_to_all_caregivers",
+			"broadcast_to_all_admins",
+			"broadcast_to_regions",
+			"broadcast_to_homes",
+			"broadcast_to_individuals"
+		]
+	},
+	{
+		module: "Payroll",
+		slugs: [
+			"view_payroll",
+			"manage_payroll",
+			"review_all_house_hours",
+			"review_assigned_house_hours"
+		]
+	},
+	{
+		module: "Holidays",
+		slugs: [
+			"view_holidays",
+			"manage_holidays"
+		]
+	},
+	{
+		module: "Training",
+		slugs: [
+			"view_trainings",
+			"manage_trainings"
 		]
 	}
 	// view_own_profile / update_own_profile / change_own_password are implicit

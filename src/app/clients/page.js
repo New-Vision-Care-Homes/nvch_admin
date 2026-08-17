@@ -18,7 +18,9 @@ import { useClients } from "@/hooks/useClients";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
-import { REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function Clients() {
 	const { profile } = useProfile();
@@ -196,14 +198,7 @@ export default function Clients() {
 												</TableCell>
 												<TableCell><span>{client.clientId}</span></TableCell>
 												<TableCell>
-													{client.region ? (() => {
-														const c = REGION_COLORS[client.region] ?? COLOR_FALLBACK;
-														return (
-															<span style={{ display: "inline-block", padding: "0.2rem 0.75rem", borderRadius: "20px", fontSize: "0.8rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text }}>
-																{client.region}
-															</span>
-														);
-													})() : <span style={{ color: "#94a3b8" }}>—</span>}
+													{client.region ? <ColorPill label={client.region} color={REGION_COLORS[client.region] ?? COLOR_FALLBACK} /> : <span style={{ color: "#94a3b8" }}>—</span>}
 												</TableCell>
 												<TableCell>
 													<span className={`${styles.statusPill} ${client.isActive ? styles.statusActive : styles.statusInactive}`}>

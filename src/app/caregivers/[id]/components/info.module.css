@@ -376,6 +376,13 @@
 	white-space: nowrap;
 }
 
+@media (max-width: 768px) {
+	.card_row_2 {
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+}
+
 @media (max-width: 640px) {
 	.contact_list {
 		grid-template-columns: 1fr;

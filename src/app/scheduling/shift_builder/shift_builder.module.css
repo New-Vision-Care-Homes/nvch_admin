@@ -862,6 +862,169 @@
 	gap: 3px;
 }
 
+
+/* ══════════════════════════════════════════════════════════════
+   Capacity-exceeded modal content
+   (rendered inside the shared Modal wrapper component)
+══════════════════════════════════════════════════════════════ */
+
+/* Outer flex column — constrains height so the list scrolls
+   instead of the modal growing taller than the viewport */
+.capacityModalBody {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding: 0.25rem 0 0.5rem;
+	max-height: 72vh;
+	overflow: hidden;
+}
+
+/* Icon + title block */
+.capacityModalHeader {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.capacityModalIcon {
+	color: #ef4444;
+	flex-shrink: 0;
+	margin-top: 3px;
+}
+
+.capacityModalTitle {
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 800;
+	color: var(--color-primary, #1c4a6e);
+}
+
+.capacityModalSubtitle {
+	margin: 5px 0 0;
+	font-size: 0.82rem;
+	color: #64748b;
+	line-height: 1.5;
+}
+
+/* Scrollable list so many failures don't overflow the modal */
+.capacityFailureList {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow-y: auto;
+	padding: 2px 2px 4px;
+}
+
+/* One card per CAPACITY_EXCEEDED failure */
+.capacityFailureItem {
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+	padding: 13px 15px;
+	background: #fafafa;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 11px;
+}
+
+/* Caregiver name (left) + shift date (right) */
+.capacityFailureName {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 0.88rem;
+	color: #1e293b;
+}
+
+.capacityFailureDate {
+	font-size: 0.78rem;
+	font-weight: 500;
+	color: #64748b;
+	white-space: nowrap;
+}
+
+/* Chip row: Max · Committed · This shift · Total · +Xh over */
+.capacityStatsRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.capacityStatChip {
+	display: inline-block;
+	padding: 2px 9px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	font-size: 0.73rem;
+	font-weight: 600;
+	color: #475569;
+	font-variant-numeric: tabular-nums;
+}
+
+/* "Over" chip uses red tones to draw the eye */
+.capacityStatOver {
+	background: #fef2f2;
+	border-color: #fecaca;
+	color: #b91c1c;
+}
+
+/* Two decision buttons side-by-side */
+.capacityDecisionRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.capacityDecisionBtn {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 3px;
+	padding: 9px 13px;
+	background: #fff;
+	border: 2px solid #e2e8f0;
+	border-radius: 9px;
+	cursor: pointer;
+	text-align: left;
+	transition: border-color 0.13s ease, background 0.13s ease;
+}
+
+.capacityDecisionBtn strong {
+	font-size: 0.82rem;
+	color: #1e293b;
+}
+
+.capacityDecisionBtn span {
+	font-size: 0.71rem;
+	color: #94a3b8;
+	line-height: 1.4;
+}
+
+.capacityDecisionBtn:hover {
+	border-color: var(--color-primary, #1c4a6e);
+	background: #f0f7ff;
+}
+
+/* Active / selected decision — highlighted border + tinted background */
+.capacityDecisionBtnActive {
+	border-color: var(--color-primary, #1c4a6e) !important;
+	background: #eff6ff !important;
+}
+
+.capacityDecisionBtnActive strong {
+	color: var(--color-primary, #1c4a6e) !important;
+}
+
+/* Confirm + Cancel row */
+.capacityModalActions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
 	.body {

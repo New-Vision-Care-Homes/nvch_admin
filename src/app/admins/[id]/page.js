@@ -15,7 +15,11 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { REGION_OPTIONS, DEPARTMENT_OPTIONS, ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL, DEPARTMENT_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
+import { DEPARTMENT_OPTIONS, DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
+import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
@@ -373,24 +377,22 @@ export default function Page() {
 											<div className={styles.row2}>
 												<InfoField label="Role">Admin</InfoField>
 												<InfoField label="Admin Level">
-												{user.adminLevel ? (() => {
-													const c = ADMIN_LEVEL_COLORS[user.adminLevel] ?? COLOR_FALLBACK;
-													return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{ADMIN_LEVEL_LABEL[user.adminLevel] ?? user.adminLevel}</span>;
-												})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												{user.adminLevel ? (
+													<ColorPill label={ADMIN_LEVEL_LABEL[user.adminLevel] ?? user.adminLevel} color={ADMIN_LEVEL_COLORS[user.adminLevel] ?? COLOR_FALLBACK} />
+												) : <span style={{ color: "#94a3b8" }}>—</span>}
 											</InfoField>
 											</div>
 											<div className={styles.row2}>
 												<InfoField label="Department">
-												{user.department ? (() => {
-													const c = DEPARTMENT_COLORS[user.department] ?? COLOR_FALLBACK;
-													return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{user.department}</span>;
-												})() : <span style={{ color: "#94a3b8" }}>—</span>}
+												{user.department ? (
+													<ColorPill label={user.department} color={DEPARTMENT_COLORS[user.department] ?? COLOR_FALLBACK} />
+												) : <span style={{ color: "#94a3b8" }}>—</span>}
 												</InfoField>
 												<InfoField label="Regions">
 												{(() => {
 													const regionList = Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []);
 													if (!regionList.length) return <span style={{ color: "#94a3b8" }}>—</span>;
-													return <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>{regionList.map((r) => { const c = REGION_COLORS[r] ?? COLOR_FALLBACK; return <span key={r} style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{r}</span>; })}</div>;
+													return <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>{regionList.map((r) => <ColorPill key={r} label={r} color={REGION_COLORS[r] ?? COLOR_FALLBACK} />)}</div>;
 												})()}
 												</InfoField>
 											</div>

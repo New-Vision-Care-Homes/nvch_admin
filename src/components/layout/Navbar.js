@@ -3,7 +3,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck } from "lucide-react";
+import {
+	Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck,
+	BadgeCheck, CalendarPlus, CalendarDays, AlarmClock, GraduationCap, Award, ListChecks, PiggyBank,
+} from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
@@ -14,13 +17,27 @@ import { useNotifications } from "@/hooks/useNotifications";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG = {
-	shift_missed:           { Icon: AlertTriangle, color: "#dc2626", bg: "#fef2f2" },
-	shift_late_start:       { Icon: Clock,         color: "#d97706", bg: "#fffbeb" },
-	shift_missed_reporting: { Icon: AlertTriangle, color: "#ea580c", bg: "#fff7ed" },
-	shift_late_reporting:   { Icon: Clock,         color: "#d97706", bg: "#fffbeb" },
-	shift_auto_ended:       { Icon: CircleOff,     color: "#6b7280", bg: "#f3f4f6" },
-	broadcast:              { Icon: Megaphone,     color: "#dc2626", bg: "#fef2f2" },
-	approval_requested:     { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+	// Shift lifecycle (mobile: assigned/starting-soon; portal: missed/late/ended)
+	shift_assigned:              { Icon: CalendarPlus,   color: "#2563eb", bg: "#eff6ff" },
+	shifts_bulk_created:         { Icon: CalendarDays,   color: "#4f46e5", bg: "#eef2ff" },
+	shift_starting_soon:         { Icon: AlarmClock,     color: "#e11d48", bg: "#fff1f2" },
+	shift_missed:                { Icon: AlertTriangle,  color: "#dc2626", bg: "#fef2f2" },
+	shift_late_start:            { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
+	shift_missed_reporting:      { Icon: AlertTriangle,  color: "#ea580c", bg: "#fff7ed" },
+	shift_late_reporting:        { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
+	shift_auto_ended:            { Icon: CircleOff,      color: "#6b7280", bg: "#f3f4f6" },
+	// Training
+	training_assigned:           { Icon: GraduationCap,  color: "#059669", bg: "#ecfdf5" },
+	training_outcome:            { Icon: Award,          color: "#0d9488", bg: "#f0fdfa" },
+	// Payroll / house-hours review
+	house_hours_review_overdue:  { Icon: ListChecks,     color: "#dc2626", bg: "#fef2f2" },
+	house_hours_review_not_done: { Icon: ListChecks,     color: "#7c3aed", bg: "#f5f3ff" },
+	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
+	// Broadcasts & approvals
+	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
+	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+	// Teal-green: signals a completed/resolved action rather than a pending one
+	approval_decided:            { Icon: BadgeCheck,     color: "#0891b2", bg: "#ecfeff" },
 };
 
 function timeAgo(dateStr) {

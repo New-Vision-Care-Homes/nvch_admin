@@ -5,13 +5,16 @@ import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
 import ActionMessage from "@components/UI/ActionMessage";
+import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
@@ -19,24 +22,13 @@ import {
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
-import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function personName(obj) {
-	if (!obj) return "—";
-	const full = `${obj.firstName || ""} ${obj.lastName || ""}`.trim();
-	return full || obj.email || "—";
-}
-
-function joinAddress(addr) {
-	if (!addr) return null;
-	if (typeof addr === "string") return addr;
-	return [addr.unit, addr.street, addr.city, addr.state || addr.province, addr.pinCode || addr.postalCode, addr.country]
-		.filter(Boolean).join(", ") || null;
-}
 
 function AdminName({ adminId }) {
 	const { adminDetail } = useAdmins(adminId || "");
@@ -78,8 +70,6 @@ export default function ShiftDetailPage() {
 	// Build address display string from geofence address or home/client address
 	const geofenceAddressStr = shift.geofence?.address || null;
 
-	const statusClass = styles[`status_${shift.status}`] || styles.status_default;
-
 	return (
 		<PageLayout>
 
@@ -87,9 +77,15 @@ export default function ShiftDetailPage() {
 			<div className={styles.pageHeader}>
 				<div>
 					<div className={styles.badgeRow}>
-						<span className={`${styles.statusBadge} ${statusClass}`}>
-							{shift.status?.replace(/_/g, " ")}
-						</span>
+						<StatusBadge
+							label={shift.status?.replace(/_/g, " ")}
+							tone={SHIFT_STATUS_TONE[shift.status] || "neutral"}
+							size="detail"
+						/>
+						{/* Secondary badge when a voluntary overtime acknowledgment is still pending */}
+						{shift.extraHours?.ackStatus === "pending" && (
+							<span className={styles.overtimePendingBadge}>Overtime Pending</span>
+						)}
 					</div>
 					<h1>Shift Details</h1>
 					<p className={styles.shiftId}>ID: {shift._id}</p>
@@ -271,7 +267,7 @@ export default function ShiftDetailPage() {
 									<InfoField label="Home Name" value={shift.home.name || "—"} />
 									{shift.home.region && (
 										<InfoField label="Region">
-											{(() => { const c = REGION_COLORS[shift.home.region] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.region}</span>; })()}
+											<ColorPill label={shift.home.region} color={REGION_COLORS[shift.home.region] ?? COLOR_FALLBACK} />
 										</InfoField>
 									)}
 									<InfoField label="Status">
@@ -281,7 +277,7 @@ export default function ShiftDetailPage() {
 									</InfoField>
 									{shift.home.homeType && (
 										<InfoField label="Home Type">
-											{(() => { const c = HOME_TYPE_COLORS[shift.home.homeType] ?? COLOR_FALLBACK; return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{shift.home.homeType}</span>; })()}
+											<ColorPill label={shift.home.homeType} color={HOME_TYPE_COLORS[shift.home.homeType] ?? COLOR_FALLBACK} />
 										</InfoField>
 									)}
 								</div>

@@ -93,6 +93,9 @@
 
 .tabLabel {
 	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .flyoutArrow {
@@ -188,21 +191,6 @@
 	font-size: 0.9rem;
 	font-weight: 600;
 	color: #1f2937;
-}
-
-.flyoutBadge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 18px;
-	height: 18px;
-	padding: 0 5px;
-	font-size: 11px;
-	font-weight: 700;
-	color: #fff;
-	background: #7c3aed;
-	border-radius: 999px;
-	flex-shrink: 0;
 }
 
 .flyoutItemDesc {

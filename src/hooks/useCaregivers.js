@@ -59,6 +59,17 @@ export const useCaregivers = (options = {}) => {
 		enabled: enabled && !!caregiverId,
 	});
 
+	// Imperative fetch for a single caregiver — uses the React Query cache so
+	// repeated calls for the same ID are free within the stale window. Mirrors
+	// useClients' fetchClient; used to pre-check a caregiver's current home
+	// before assigning them to another one.
+	const fetchCaregiver = (id) =>
+		queryClient.fetchQuery({
+			queryKey: ["caregiver", id],
+			queryFn: () => caregiverService.getCaregiver(id),
+			staleTime: 30_000,
+		});
+
 	// 3. DELETE: Remove a caregiver
 	const deleteMutation = useMutation({
 		mutationFn: (id) => caregiverService.delete(id),
@@ -136,6 +147,7 @@ export const useCaregivers = (options = {}) => {
 		updateCaregiver: updateMutation.mutate,
 		deleteCaregiver: deleteMutation.mutate,
 		toggleCaregiverStatus: toggleStatusMutation.mutate,
+		fetchCaregiver,
 		refetch: caregiversQuery.refetch,
 		refetchDetail: caregiverDetailQuery.refetch,
 	};

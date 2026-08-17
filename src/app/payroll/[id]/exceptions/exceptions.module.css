@@ -1,0 +1,179 @@
+/* ── Section card ─────────────────────────────────────────────────────────── */
+
+.sectionCard {
+	background: #fff;
+	border: 1px solid #e8eef4;
+	border-radius: 12px;
+	margin-bottom: 1.25rem;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+	overflow: hidden;
+}
+
+/* ── Section header ───────────────────────────────────────────────────────── */
+
+.sectionHeader {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	padding: 0.9rem 1.25rem;
+	border-bottom: 1px solid #e8eef4;
+	gap: 10px;
+}
+
+.sectionTitle {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: #111827;
+	flex: 1;
+}
+
+/* ── Section count badges ─────────────────────────────────────────────────── */
+
+.sectionCount {
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 999px;
+}
+
+.sectionCountRed {
+	composes: sectionCount;
+	color: #dc2626;
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+}
+
+.sectionCountAmber {
+	composes: sectionCount;
+	color: #d97706;
+	background: #fffbeb;
+	border: 1px solid #fcd34d;
+}
+
+.sectionCountOrange {
+	composes: sectionCount;
+	color: #ea580c;
+	background: #fff7ed;
+	border: 1px solid #fed7aa;
+}
+
+/* ── Section body ─────────────────────────────────────────────────────────── */
+
+.sectionBody {
+	padding: 0;
+}
+
+/* ── Exception row ────────────────────────────────────────────────────────── */
+
+.exceptionRow {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	padding: 0.75rem 1.25rem;
+	border-bottom: 1px solid #f3f4f6;
+	gap: 12px;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.exceptionRow:hover {
+	background: #f9fafb;
+}
+
+.exceptionRowLast {
+	border-bottom: none;
+}
+
+/* Row that is not navigable should not show pointer cursor */
+.exceptionRowStatic {
+	cursor: default;
+}
+
+/* ── Exception icon box ───────────────────────────────────────────────────── */
+
+.exceptionIconBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	flex-shrink: 0;
+}
+
+/* ── Exception body ───────────────────────────────────────────────────────── */
+
+.exceptionBody {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	gap: 2px;
+	min-width: 0;
+}
+
+.exceptionName {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #111827;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.exceptionMeta {
+	font-size: 0.78rem;
+	color: #6b7280;
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+/* ── Exception badge ──────────────────────────────────────────────────────── */
+
+.exceptionBadge {
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 2px 7px;
+	border-radius: 999px;
+	border: 1px solid;
+	white-space: nowrap;
+}
+
+/* ── External link icon ───────────────────────────────────────────────────── */
+
+.exceptionLink {
+	color: #9ca3af;
+	flex-shrink: 0;
+	transition: color 0.12s ease;
+}
+
+.exceptionRow:hover .exceptionLink {
+	color: #6b7280;
+}
+
+/* ── All clear row ────────────────────────────────────────────────────────── */
+
+.allClear {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+	padding: 0.75rem 1.25rem;
+	color: #059669;
+	font-size: 0.85rem;
+	font-weight: 500;
+}
+
+/* ── Footer note ──────────────────────────────────────────────────────────── */
+
+.footerNote {
+	text-align: center;
+	font-size: 0.8rem;
+	color: #9ca3af;
+	margin-top: 1rem;
+	padding: 0.75rem;
+	background: #f9fafb;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+}

@@ -5,7 +5,7 @@ import PageLayout from "@components/layout/PageLayout";
 import styles from "./permissions.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
-import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
+import { PageTable, PageTableRow } from "@components/UI/Table";
 import Pagination from "@components/UI/Pagination";
 import Modal from "@components/UI/Modal";
 import Link from "next/link";
@@ -110,51 +110,55 @@ export default function Permissions() {
 								/>
 							) : (
 								<div className={styles.tableWrapper}>
-									<Table>
-										<TableHeader>
-											<TableCell className={styles.firstCol}>Name</TableCell>
-											<TableCell>Description</TableCell>
-											<TableCell>Granted Permissions</TableCell>
-											<TableCell>Created</TableCell>
-											<TableCell>Updated</TableCell>
-											<TableCell>Actions</TableCell>
-										</TableHeader>
-										{permissionGroups?.map?.((group) => (
-											<TableContent key={group._id}>
-												<TableCell className={styles.firstCol}><strong>{group.name}</strong></TableCell>
-												<TableCell>
-													<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
-														{group.description?.length > 60
-															? group.description.substring(0, 60) + "..."
-															: group.description}
-													</span>
-												</TableCell>
-												<TableCell>
-													<span className={styles.pillBadge}>
-														{group.permissions?.length || 0} Modules
-													</span>
-												</TableCell>
-												<TableCell>
-													{format(new Date(group.createdAt), "MMM d, yyyy")}
-												</TableCell>
-												<TableCell>
-													{format(new Date(group.updatedAt), "MMM d, yyyy")}
-												</TableCell>
-												<TableCell>
-													<div className={styles.actionsCell}>
-														<IconButton href={`/permissions/${group._id}`} title="View Permission Group">
-															<Eye size={15} />
-														</IconButton>
-														{canDelete && (
-															<IconButton variant="danger" onClick={() => deleteHandler(group._id)} title="Delete Permission Group">
-																<Trash2 size={15} />
+									<PageTable>
+										<thead>
+											<tr>
+												<th>Name</th>
+												<th>Description</th>
+												<th>Granted Permissions</th>
+												<th>Created</th>
+												<th>Updated</th>
+												<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											{permissionGroups?.map?.((group, idx) => (
+												<PageTableRow key={group._id} isEven={idx % 2 !== 0}>
+													<td><strong>{group.name}</strong></td>
+													<td>
+														<span style={{ color: "#6B7280", fontSize: "0.9rem" }}>
+															{group.description?.length > 60
+																? group.description.substring(0, 60) + "..."
+																: group.description}
+														</span>
+													</td>
+													<td>
+														<span className={styles.pillBadge}>
+															{group.permissions?.length || 0} Modules
+														</span>
+													</td>
+													<td>
+														{format(new Date(group.createdAt), "MMM d, yyyy")}
+													</td>
+													<td>
+														{format(new Date(group.updatedAt), "MMM d, yyyy")}
+													</td>
+													<td>
+														<div className={styles.actionsCell}>
+															<IconButton href={`/permissions/${group._id}`} title="View Permission Group">
+																<Eye size={15} />
 															</IconButton>
-														)}
-													</div>
-												</TableCell>
-											</TableContent>
-										))}
-									</Table>
+															{canDelete && (
+																<IconButton variant="danger" onClick={() => deleteHandler(group._id)} title="Delete Permission Group">
+																	<Trash2 size={15} />
+																</IconButton>
+															)}
+														</div>
+													</td>
+												</PageTableRow>
+											))}
+										</tbody>
+									</PageTable>
 
 									<Pagination pageCount={totalPages} forcePage={currentPage - 1} onPageChange={handlePageClick} />
 								</div>

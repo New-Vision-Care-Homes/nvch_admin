@@ -68,4 +68,19 @@ export const approvalService = {
 		const { data } = await axiosClient.post(API_ENDPOINTS.APPROVALS.CANCEL(id));
 		return data?.data?.approval;
 	},
+
+	/**
+	 * Fetch the overtime acknowledgment audit trail — one row per waiver request,
+	 * newest first.
+	 * @param {Object} params - caregiverId, status (csv or repeated), payYear,
+	 *   periodNumber, from, to, page, limit
+	 * @returns {Promise<{ acknowledgments: Array, counts: Object, pagination: Object }>}
+	 */
+	getOvertimeAcknowledgments: async (params = {}) => {
+		const { data } = await axiosClient.get(
+			API_ENDPOINTS.PAYROLL.OVERTIME_ACKNOWLEDGMENTS,
+			{ params }
+		);
+		return data?.data;
+	},
 };

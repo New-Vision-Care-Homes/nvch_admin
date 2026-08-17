@@ -222,6 +222,22 @@
 	flex-shrink: 0;
 }
 
+/* Teal-green pill shown on approval_decided notifications */
+.decidedBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	color: #0e7490;
+	background: #ecfeff;
+	border: 1px solid #a5f3fc;
+	border-radius: 999px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
 /* Purple pill shown on approval_requested notifications */
 .approvalBadge {
 	display: inline-flex;

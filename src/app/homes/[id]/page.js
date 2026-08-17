@@ -11,11 +11,14 @@ import IconButton from "@components/UI/IconButton";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import GeofenceMap from "@/components/UI/GeofenceMap";
-import { Edit, Search, Eye } from "lucide-react";
+import { Edit, Search, Eye, Undo2 } from "lucide-react";
 import Link from "next/link";
 import styles from "./home_detail.module.css";
 import ErrorState from "@components/UI/ErrorState";
-import { HOME_TYPE_COLORS, REGION_COLORS, COLOR_FALLBACK } from "@/utils/dropdown_list";
+import { ColorPill } from "@components/UI/Badge";
+import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
+import { REGION_COLORS } from "@/utils/dropdownList/region";
+import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function HomeDetailPage() {
 	const { id } = useParams();
@@ -94,7 +97,7 @@ export default function HomeDetailPage() {
 			<div className={styles.header}>
 				<h1>{home.name}</h1>
 				<div className={styles.buttons}>
-					<Button variant="secondary" onClick={() => router.push("/homes")}>Back</Button>
+					<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.push("/homes")}>Back</Button>
 					{canEdit && (
 						<Link href={`/homes/${id}/edit`}>
 							<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>
@@ -112,10 +115,7 @@ export default function HomeDetailPage() {
 						<div className={styles.infoGrid}>
 							<InfoItem label="Home Name">{home.name}</InfoItem>
 							<InfoItem label="Region">
-								{home.region ? (() => {
-									const c = REGION_COLORS[home.region] ?? COLOR_FALLBACK;
-									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.region}</span>;
-								})() : "—"}
+								{home.region ? <ColorPill label={home.region} color={REGION_COLORS[home.region] ?? COLOR_FALLBACK} /> : "—"}
 							</InfoItem>
 							<InfoItem label="Status">
 								<span className={`${styles.statusPill} ${home.isActive ? styles.statusActive : styles.statusInactive}`}>
@@ -126,10 +126,7 @@ export default function HomeDetailPage() {
 								{home.openedAt ? format(new Date(home.openedAt), "MMM d, yyyy") : "—"}
 							</InfoItem>
 							<InfoItem label="Home Type">
-								{home.homeType ? (() => {
-									const c = HOME_TYPE_COLORS[home.homeType] ?? COLOR_FALLBACK;
-									return <span style={{ display: "inline-block", padding: "0.2rem 0.65rem", borderRadius: "20px", fontSize: "0.78rem", fontWeight: 500, background: c.bg, border: `1px solid ${c.border}`, color: c.text, whiteSpace: "nowrap" }}>{home.homeType}</span>;
-								})() : "—"}
+								{home.homeType ? <ColorPill label={home.homeType} color={HOME_TYPE_COLORS[home.homeType] ?? COLOR_FALLBACK} /> : "—"}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>
@@ -164,7 +161,7 @@ export default function HomeDetailPage() {
 
 				{/* Caregivers */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input
@@ -208,7 +205,7 @@ export default function HomeDetailPage() {
 
 				{/* Clients */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input
@@ -252,7 +249,7 @@ export default function HomeDetailPage() {
 
 				{/* Admins */}
 				<Card>
-					<CardHeader actions={
+					<CardHeader className={styles.cardTitle} actions={
 						<div className={styles.searchWrap}>
 							<Search size={14} className={styles.searchIcon} />
 							<input

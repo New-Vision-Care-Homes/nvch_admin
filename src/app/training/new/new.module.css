@@ -1,0 +1,202 @@
+/* ── Page chrome ──────────────────────────────────────────────────────────── */
+
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 2.5rem;
+}
+
+.pageSubtitle {
+	margin: 4px 0 0;
+	font-size: 0.9rem;
+	color: #6b7280;
+}
+
+.buttons {
+	display: flex;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.content {
+	display: flex;
+	gap: 5rem;
+	width: 80%;
+	margin: 0 auto;
+}
+
+.rightPanel {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.row2 {
+	display: flex;
+	gap: 15px;
+}
+
+.row2 > * {
+	flex: 1;
+}
+
+/* ── Section divider (groups fields within a merged card) ─────────────────── */
+
+.sectionDivider {
+	margin: 0;
+	padding-top: 0.75rem;
+	border-top: 1px solid #f3f4f6;
+	font-size: 0.72rem;
+	font-weight: 700;
+	color: #6b7280;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+}
+
+/* ── Site / geofence row ──────────────────────────────────────────────────── */
+
+.siteRow {
+	display: flex;
+	gap: 2rem;
+	align-items: flex-start;
+	margin-top: 1rem;
+}
+
+.siteMapWrap {
+	flex: 1;
+	min-width: 40%;
+	position: relative;
+	height: clamp(220px, 36vh, 320px);
+	border: 1px solid #dee1e6;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.siteAddressWrap {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+/* ── Toggle row ───────────────────────────────────────────────────────────── */
+
+.toggleRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding: 14px 16px;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	margin-bottom: 1rem;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.toggleInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.toggleLabel {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: #111827;
+}
+
+.toggleDesc {
+	font-size: 0.78rem;
+	color: #6b7280;
+	max-width: 480px;
+}
+
+.toggle {
+	position: relative;
+	display: inline-block;
+	width: 42px;
+	height: 24px;
+	flex-shrink: 0;
+}
+
+.toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.toggleSlider {
+	position: absolute;
+	inset: 0;
+	background: #d1d5db;
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.toggleSlider::before {
+	content: "";
+	position: absolute;
+	width: 18px;
+	height: 18px;
+	background: #fff;
+	border-radius: 50%;
+	top: 3px;
+	left: 3px;
+	transition: transform 0.2s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.toggle input:checked + .toggleSlider {
+	background: var(--color-primary, #1c4a6e);
+}
+
+.toggle input:checked + .toggleSlider::before {
+	transform: translateX(18px);
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+
+.spin {
+	animation: spinAnim 0.85s linear infinite;
+}
+
+@keyframes spinAnim {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}
+
+/* ── Responsive (≤ 768px) ── */
+
+@media (max-width: 900px) {
+	.siteRow {
+		flex-direction: column;
+	}
+
+	.siteMapWrap {
+		width: 100%;
+	}
+}
+
+@media (max-width: 768px) {
+	.header {
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.content {
+		width: 100%;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.row2 {
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+}

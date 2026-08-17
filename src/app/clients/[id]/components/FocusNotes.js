@@ -4,8 +4,11 @@ import React, { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
+import { personName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
+import StatusBadge from "@components/UI/Badge";
 import { Table2, Table2Pagination } from "@components/UI/Table";
+import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import { FileText, Download, ExternalLink, X } from "lucide-react";
 import styles from "./FocusNotes.module.css";
 
@@ -15,23 +18,10 @@ const PAGE_SIZE = 10;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function personName(obj) {
-	if (!obj) return "—";
-	return `${obj.firstName || ""} ${obj.lastName || ""}`.trim() || obj.email || "—";
-}
-
 function truncate(str, n = 60) {
 	if (!str) return <span className={styles.cellEmpty}>—</span>;
 	return str.length > n ? str.slice(0, n) + "…" : str;
 }
-
-const STATUS_CLASS = {
-	scheduled: styles.statusScheduled,
-	in_progress: styles.statusInProgress,
-	completed: styles.statusCompleted,
-	cancelled: styles.statusCancelled,
-	missed: styles.statusMissed,
-};
 
 const ROLE_CLASS = {
 	caregiver: styles.roleCaregiver,
@@ -126,9 +116,11 @@ export default function FocusNotes() {
 				const status = note.shift?.status;
 				if (!status) return <span className={styles.cellEmpty}>—</span>;
 				return (
-					<span className={`${styles.statusBadge} ${STATUS_CLASS[status] || ""}`}>
-						{status.replace(/_/g, " ")}
-					</span>
+					<StatusBadge
+						label={status.replace(/_/g, " ")}
+						tone={SHIFT_STATUS_TONE[status] || "neutral"}
+						size="tag"
+					/>
 				);
 			}
 		},
