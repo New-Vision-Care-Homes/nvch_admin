@@ -15,6 +15,7 @@ import { formatDateOnly, formatDateTime } from "@/utils/dates";
 import { personName }           from "@/utils/formatting";
 import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_COLORS } from "@/utils/dropdownList/adminLevel";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { MATCH_LABEL, REQUIREMENT_LABEL } from "../_components/caregiverRules";
 import {
     Edit, Trash2, Undo2, AlertCircle,
     UserCheck, CalendarDays, Clock,
@@ -26,12 +27,19 @@ import styles from "./detail.module.css";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const EMPLOYMENT_STATUS_LABEL = { full_time: "Full-time", casual: "Casual", term: "Term" };
-const QUALIFICATION_LABEL = {
-    automatic:          "Automatic",
-    min_biweekly_hours: "Min biweekly hours",
-    paid_days_bracket:  "Paid-days bracket (30-day)",
-};
 const RULE_ACCENT = { full_time: "#1c4a6e", casual: "#d97706", term: "#64748b" };
+
+/**
+ * A rule may carry the pre-stacking shape ({ qualification, minBiweeklyHours })
+ * if it predates the migration; normalize both to a requirements list.
+ */
+function ruleRequirements(rule) {
+    if (Array.isArray(rule.requirements) && rule.requirements.length > 0) return rule.requirements;
+    if (rule.qualification) {
+        return [{ type: rule.qualification, minBiweeklyHours: rule.minBiweeklyHours }];
+    }
+    return [];
+}
 
 function AdminName({ adminId }) {
     const { adminDetail } = useAdmins(adminId || "");
@@ -47,7 +55,8 @@ function AdminLevelChip({ level }) {
 }
 
 function RuleViewCard({ rule }) {
-    const accent = RULE_ACCENT[rule.employmentStatus] ?? "#d1d5db";
+    const accent       = RULE_ACCENT[rule.employmentStatus] ?? "#d1d5db";
+    const requirements = ruleRequirements(rule);
     return (
         <div className={styles.ruleViewCard} style={{ borderLeftColor: accent }}>
             <div className={styles.ruleViewRow}>
@@ -55,15 +64,27 @@ function RuleViewCard({ rule }) {
                 <span className={styles.ruleViewValue}>{EMPLOYMENT_STATUS_LABEL[rule.employmentStatus] ?? rule.employmentStatus}</span>
             </div>
             <div className={styles.ruleViewRow}>
-                <span className={styles.ruleViewLabel}>Qualification</span>
-                <span className={styles.ruleViewValue}>{QUALIFICATION_LABEL[rule.qualification] ?? rule.qualification}</span>
+                <span className={styles.ruleViewLabel}>
+                    {requirements.length > 1 ? MATCH_LABEL[rule.match] ?? MATCH_LABEL.all : "Qualification"}
+                </span>
+                {requirements.length === 0 ? (
+                    <span className={styles.ruleViewValue}>—</span>
+                ) : (
+                    <ul className={styles.requirementViewList}>
+                        {requirements.map((requirement, index) => (
+                            <li key={index} className={styles.requirementViewItem}>
+                                {REQUIREMENT_LABEL[requirement.type] ?? requirement.type}
+                                {requirement.type === "min_biweekly_hours" &&
+                                    requirement.minBiweeklyHours != null && (
+                                        <span className={styles.requirementViewMeta}>
+                                            {" "}· {requirement.minBiweeklyHours} h
+                                        </span>
+                                    )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
-            {rule.qualification === "min_biweekly_hours" && rule.minBiweeklyHours != null && (
-                <div className={styles.ruleViewRow}>
-                    <span className={styles.ruleViewLabel}>Min Biweekly Hours</span>
-                    <span className={styles.ruleViewValue}>{rule.minBiweeklyHours} h</span>
-                </div>
-            )}
         </div>
     );
 }
