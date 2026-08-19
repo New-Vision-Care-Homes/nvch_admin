@@ -129,7 +129,7 @@ export default function PayrollManualEntriesPage() {
         isLoading: homesLoading,
         fetchError: homesError,
         refetch: refetchHomes,
-    } = useHomes({ params: { limit: 100 } });
+    } = useHomes({ limit: 100 });
 
 
     // ── Data: Current pay period (for auto-fill) ──────────────────────────────
