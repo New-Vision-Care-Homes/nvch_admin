@@ -154,6 +154,39 @@
 	font-weight: 500;
 }
 
+.requirementViewList {
+	list-style: none;
+	margin: 2px 0 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.requirementViewItem {
+	font-size: 0.875rem;
+	color: #111827;
+	font-weight: 500;
+	padding-left: 12px;
+	position: relative;
+}
+
+.requirementViewItem::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 8px;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background: #9ca3af;
+}
+
+.requirementViewMeta {
+	color: #6b7280;
+	font-weight: 400;
+}
+
 /* ── Empty note ──────────────────────────────────────────────────────────── */
 
 .emptyNote {

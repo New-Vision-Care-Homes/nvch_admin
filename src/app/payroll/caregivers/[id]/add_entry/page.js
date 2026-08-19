@@ -131,7 +131,7 @@ export default function AddCaregiverEntryPage() {
 
 
     // ── Data ──────────────────────────────────────────────────────────────────
-    const { homes, isLoading: homesLoading } = useHomes({ params: { limit: 100 } });
+    const { homes, isLoading: homesLoading } = useHomes({ limit: 100 });
 
     const { summary: caregiverSummary } = useCaregiverPayrollSummary({
         params: {

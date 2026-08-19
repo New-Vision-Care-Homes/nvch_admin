@@ -9,7 +9,17 @@ import PageLayout from "@components/layout/PageLayout";
 import { useHolidays }        from "@/hooks/useHolidays";
 import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
 import { AlertCircle, Loader } from "lucide-react";
-import CaregiverRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../_components/CaregiverRulesSection";
+import CaregiverRulesSection from "../_components/CaregiverRulesSection";
+import {
+    EMPLOYMENT_STATUS_OPTIONS,
+    addRequirementTo,
+    caregiverRulesSchema,
+    emptyRule,
+    mapRuleErrors,
+    removeRequirementFrom,
+    rulesToPayload,
+    setRequirementField,
+} from "../_components/caregiverRules";
 import styles from "./new.module.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,20 +40,7 @@ const schema = yup.object({
     proratedToWorkedHours: yup.boolean().optional(),
     adminLevels:           yup.array().of(yup.string()).optional(),
     isActive:              yup.boolean().optional(),
-    caregiverRules:        yup.array().of(
-        yup.object({
-            employmentStatus: yup.string().required("Select an employment type."),
-            qualification:    yup.string().required(),
-            minBiweeklyHours: yup.number()
-                                  .transform((_v, o) => (o === "" ? null : +o))
-                                  .nullable()
-                                  .when("qualification", {
-                                      is: "min_biweekly_hours",
-                                      then:      (s) => s.typeError("Enter a valid hour threshold.").moreThan(0, "Enter a valid hour threshold.").required("Enter a valid hour threshold."),
-                                      otherwise: (s) => s.nullable().optional(),
-                                  }),
-        })
-    ).optional(),
+    caregiverRules:        caregiverRulesSchema,
 }).test(
     "holiday-has-target",
     "At least one admin level or caregiver rule must be eligible for this holiday.",
@@ -93,17 +90,23 @@ export default function CreateHolidayPage() {
     const availableTypes = EMPLOYMENT_STATUS_OPTIONS.filter((o) => !usedTypes.includes(o.value));
     const canAddRule     = availableTypes.length > 0;
 
+    /** useFieldArray's `fields` stays authoritative here: every rule edit goes through update(). */
+    const ruleAt = (index) => {
+        const { id: _id, ...rule } = fields[index];
+        return rule;
+    };
+
     const addRule = () => {
         if (!canAddRule) return;
-        append({ employmentStatus: availableTypes[0].value, qualification: "automatic", minBiweeklyHours: "" });
+        append(emptyRule(availableTypes[0].value));
     };
     const removeRule = (index) => remove(index);
-    const updateRule = (index, field, value) => {
-        const { id: _id, ...current } = fields[index];
-        const updated = { ...current, [field]: value };
-        if (field === "qualification" && value !== "min_biweekly_hours") updated.minBiweeklyHours = "";
-        update(index, updated);
-    };
+    const updateRule = (index, field, value) => update(index, { ...ruleAt(index), [field]: value });
+
+    const addRequirement    = (index)              => update(index, addRequirementTo(ruleAt(index)));
+    const removeRequirement = (index, reqIndex)    => update(index, removeRequirementFrom(ruleAt(index), reqIndex));
+    const updateRequirement = (index, reqIndex, field, value) =>
+        update(index, setRequirementField(ruleAt(index), reqIndex, field, value));
 
     const toggleAdminLevel = (level) =>
         setValue("adminLevels", adminLevels.includes(level)
@@ -112,11 +115,7 @@ export default function CreateHolidayPage() {
         );
 
     // Map nested rule errors to the flat format CaregiverRulesSection expects
-    const ruleErrors = {};
-    (errors.caregiverRules ?? []).forEach((ruleErr, i) => {
-        if (ruleErr?.employmentStatus) ruleErrors[`rule_${i}_type`]  = ruleErr.employmentStatus.message;
-        if (ruleErr?.minBiweeklyHours) ruleErrors[`rule_${i}_hours`] = ruleErr.minBiweeklyHours.message;
-    });
+    const ruleErrors = mapRuleErrors(errors.caregiverRules);
 
     // ── Submit ─────────────────────────────────────────────────────────────────
     const onSubmit = (data) => {
@@ -126,11 +125,7 @@ export default function CreateHolidayPage() {
             proratedToWorkedHours: data.proratedToWorkedHours,
             adminLevels:           data.adminLevels,
             isActive:              data.isActive,
-            caregiverRules:        data.caregiverRules.map((rule) => {
-                const entry = { employmentStatus: rule.employmentStatus, qualification: rule.qualification };
-                if (rule.qualification === "min_biweekly_hours") entry.minBiweeklyHours = Number(rule.minBiweeklyHours);
-                return entry;
-            }),
+            caregiverRules:        rulesToPayload(data.caregiverRules),
         };
         if (!data.proratedToWorkedHours) payload.grantHours = Number(data.grantHours) || 12;
         createHoliday(payload, { onSuccess: () => router.push("/holidays") });
@@ -306,6 +301,9 @@ export default function CreateHolidayPage() {
                             addRule={addRule}
                             removeRule={removeRule}
                             updateRule={updateRule}
+                            addRequirement={addRequirement}
+                            removeRequirement={removeRequirement}
+                            updateRequirement={updateRequirement}
                             isActionPending={isActionPending}
                         />
                     </div>

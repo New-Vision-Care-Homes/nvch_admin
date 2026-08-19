@@ -91,7 +91,7 @@ export const usePayrollOverview = ({ payYear, periodNumber, enabled = true } = {
 		isLoading: homesLoading,
 		fetchError: homesError,
 		refetch: refetchHomes,
-	} = useHomes({ params: { limit: 100 } });
+	} = useHomes({ limit: 100 });
 
 	const canFetch = !!(enabled && payYear && periodNumber && homes.length > 0);
 
