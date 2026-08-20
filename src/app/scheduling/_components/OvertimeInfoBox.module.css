@@ -1,0 +1,30 @@
+/* ══════════════════════════════════════════════════════════════
+   Overtime info box
+   Shared explanation shown inside both overtime-decision modals.
+══════════════════════════════════════════════════════════════ */
+
+.overtimeInfoBox {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 14px;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 8px;
+}
+
+.overtimeInfoBoxTitle {
+	margin: 0;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #1e40af;
+}
+
+.overtimeInfoBoxText {
+	margin: 0;
+	font-size: 0.8rem;
+	color: #1e40af;
+	line-height: 1.5;
+}

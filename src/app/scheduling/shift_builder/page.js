@@ -59,6 +59,7 @@ import Navbar from "@components/layout/Navbar";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
+import OvertimeInfoBox from "../_components/OvertimeInfoBox";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -493,6 +494,9 @@ function CapacityExceededModal({
 					</div>
 				</div>
 
+				{/* Explains the two paths up front so the per-card choice below isn't a guess */}
+				<OvertimeInfoBox />
+
 				{/* One card per CAPACITY_EXCEEDED failure */}
 				<div className={styles.capacityFailureList}>
 					{failures.map((failure) => {
@@ -551,14 +555,14 @@ function CapacityExceededModal({
 										onClick={() => onDecisionChange(key, "mandated")}
 									>
 										<strong>Mandate overtime</strong>
-										<span>Overtime pay · no caregiver action needed</span>
+										<span>Counted as overtime for payroll · no caregiver action needed</span>
 									</button>
 									<button
 										className={`${styles.capacityDecisionBtn}${chosen === "voluntary" ? ` ${styles.capacityDecisionBtnActive}` : ""}`}
 										onClick={() => onDecisionChange(key, "voluntary")}
 									>
 										<strong>Voluntary</strong>
-										<span>Caregiver acknowledges bank-or-pay via app</span>
+										<span>Caregiver acknowledges via app · paid regular (or banked)</span>
 									</button>
 								</div>
 
