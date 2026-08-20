@@ -53,6 +53,98 @@
 	cursor: not-allowed;
 }
 
+/* ── Notification type legend ────────────────────────────────────────────── */
+
+.legend {
+	margin-bottom: 1rem;
+}
+
+.legendToggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 12px;
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: #4b5563;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.legendToggle:hover {
+	background: #f3f4f6;
+	border-color: #d1d5db;
+}
+
+.legendChevronOpen {
+	transform: rotate(180deg);
+}
+
+.legendPanel {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+	margin-top: 10px;
+	padding: 16px 18px;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+}
+
+.legendGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.legendGroupLabel {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 0 0 2px;
+}
+
+.legendRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.legendIconBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 7px;
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+
+.legendRowLabel {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #111827;
+	margin: 0;
+}
+
+.legendRowDesc {
+	font-size: 0.76rem;
+	color: #6b7280;
+	line-height: 1.4;
+	margin: 2px 0 0;
+}
+
+@media (max-width: 900px) {
+	.legendPanel {
+		grid-template-columns: 1fr;
+	}
+}
+
 /* ── Filter tabs ──────────────────────────────────────────────────────────── */
 
 .tabs {
@@ -175,6 +267,7 @@
 /* ── Icon box ─────────────────────────────────────────────────────────────── */
 
 .iconBox {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -183,6 +276,20 @@
 	border-radius: 10px;
 	flex-shrink: 0;
 	margin-top: 1px;
+}
+
+/* Small corner badge on the house-review icons, signalling why it's flagged */
+.iconBadge {
+	position: absolute;
+	right: -4px;
+	bottom: -4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	border-radius: 999px;
+	border: 2px solid #ffffff;
 }
 
 /* ── Card body ────────────────────────────────────────────────────────────── */
@@ -217,22 +324,6 @@
 	letter-spacing: 0.03em;
 	color: #fff;
 	background: #dc2626;
-	border-radius: 999px;
-	white-space: nowrap;
-	flex-shrink: 0;
-}
-
-/* Teal-green pill shown on approval_decided notifications */
-.decidedBadge {
-	display: inline-flex;
-	align-items: center;
-	padding: 2px 8px;
-	font-size: 0.7rem;
-	font-weight: 700;
-	letter-spacing: 0.03em;
-	color: #0e7490;
-	background: #ecfeff;
-	border: 1px solid #a5f3fc;
 	border-radius: 999px;
 	white-space: nowrap;
 	flex-shrink: 0;
