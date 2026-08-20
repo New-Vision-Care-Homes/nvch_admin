@@ -471,6 +471,11 @@ export default function PayrollDetailPage() {
                         <div className={styles.homeCardBody}>
                             <h1 className={styles.homeCardName}>
                                 {home?.name ?? "—"}
+                                {review?.isOverdue && (
+                                    <span className={styles.overdueBadge}>
+                                        <StatusBadge label="Review Overdue" tone="danger" size="tag" />
+                                    </span>
+                                )}
                             </h1>
                             <div className={styles.homeCardMeta}>
                                 {home?.homeType && <ColorPill label={home.homeType} color={typeColor} />}
