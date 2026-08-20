@@ -18,14 +18,10 @@ import {
 	CheckCheck,
 	ExternalLink,
 	ClipboardCheck,
-	BadgeCheck,
-	CalendarPlus,
-	CalendarDays,
-	AlarmClock,
-	GraduationCap,
-	Award,
-	ListChecks,
 	PiggyBank,
+	House,
+	ChevronDown,
+	Info,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,30 +59,85 @@ function groupByDate(items) {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-/** Maps each notification type to an icon component + colour palette. */
+/**
+ * Maps each notification type to an icon component + colour palette.
+ * Portal-only: per the notification spec, shift_assigned, shifts_bulk_created,
+ * shift_starting_soon, training_assigned, and training_outcome surface on
+ * mobile only and are intentionally omitted here. approval_decided is kept —
+ * the portal does receive it in practice.
+ */
 const TYPE_CONFIG = {
-	// Shift lifecycle (mobile: assigned/starting-soon; portal: missed/late/ended)
-	shift_assigned:              { Icon: CalendarPlus,   color: "#2563eb", bg: "#eff6ff" },
-	shifts_bulk_created:         { Icon: CalendarDays,   color: "#4f46e5", bg: "#eef2ff" },
-	shift_starting_soon:         { Icon: AlarmClock,     color: "#e11d48", bg: "#fff1f2" },
+	// Shift lifecycle
 	shift_missed:                { Icon: AlertTriangle,  color: "#dc2626", bg: "#fef2f2" },
 	shift_late_start:            { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
 	shift_missed_reporting:      { Icon: AlertTriangle,  color: "#ea580c", bg: "#fff7ed" },
 	shift_late_reporting:        { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
 	shift_auto_ended:            { Icon: CircleOff,      color: "#6b7280", bg: "#f3f4f6" },
-	// Training
-	training_assigned:           { Icon: GraduationCap,  color: "#059669", bg: "#ecfdf5" },
-	training_outcome:            { Icon: Award,          color: "#0d9488", bg: "#f0fdfa" },
-	// Payroll / house-hours review
-	house_hours_review_overdue:  { Icon: ListChecks,     color: "#dc2626", bg: "#fef2f2" },
-	house_hours_review_not_done: { Icon: ListChecks,     color: "#7c3aed", bg: "#f5f3ff" },
+	// Payroll / house-hours review — house icon with a small corner badge
+	// signalling *why* it's flagged (overdue vs. not started).
+	house_hours_review_overdue:  { Icon: House, color: "#dc2626", bg: "#fef2f2", BadgeIcon: AlertTriangle, badgeColor: "#dc2626" },
+	house_hours_review_not_done: { Icon: House, color: "#7c3aed", bg: "#f5f3ff", BadgeIcon: Clock,         badgeColor: "#7c3aed" },
 	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
 	// Broadcasts & approvals
 	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
-	// Teal-green: signals a completed/resolved action rather than a pending one
-	approval_decided:            { Icon: BadgeCheck,     color: "#0891b2", bg: "#ecfeff" },
 };
+
+/** Human-friendly display name for each notification type. */
+const TYPE_LABEL = {
+	shift_missed:                "Shift Missed",
+	shift_late_start:            "Late Shift Start",
+	shift_missed_reporting:      "Missing Shift Report",
+	shift_late_reporting:        "Late Shift Report",
+	shift_auto_ended:            "Shift Auto-Ended",
+	house_hours_review_overdue:  "House Review Overdue",
+	house_hours_review_not_done: "House Review Not Done",
+	bank_cap_exceeded:           "Bank Cap Exceeded",
+	broadcast:                   "Broadcast",
+	approval_requested:          "Approval Requested",
+};
+
+/** One-line plain-language explanation of what each notification type means. */
+const TYPE_DESCRIPTION = {
+	shift_missed:                "A caregiver didn't show up for a scheduled shift. Names the caregiver.",
+	shift_late_start:            "A caregiver started their shift later than scheduled. Names the caregiver.",
+	shift_missed_reporting:      "SOH/TSA/TEA homes only. The caregiver's shift start time passed without them checking in during the required 15-minute early check-in window. The shift stays scheduled and can still be started late. Names the caregiver.",
+	shift_late_reporting:        "SOH/TSA/TEA homes only. The caregiver checked in, but more than a minute after the 15-minute early check-in window closed — so their check-in wasn't early enough. This is separate from starting the shift late. Names the caregiver.",
+	shift_auto_ended:            "The caregiver didn't clock out, so the system closed the shift by itself. Names the caregiver.",
+	house_hours_review_overdue:  "A home's hours are still unreviewed more than 7 days after the pay period ended. Sent to all admins in that home (supervisors, team leads). Clears once it's marked reviewed.",
+	house_hours_review_not_done: "Same event, sent to payroll and super admins — processing is blocked until the review is done.",
+	bank_cap_exceeded:           "A completed shift pushed a caregiver's banked-hours balance past the cap.",
+	broadcast:                   "A one-off announcement sent by an admin.",
+	approval_requested:          "Something needs your approval — a certificate, overtime, or a banked-hours payout. Clears once any approver decides.",
+};
+
+/**
+ * Groups every type into one of three plain-language buckets so people can
+ * tell at a glance whether a notification needs a decision, needs follow-up,
+ * or is just informational. Matches the "kind" column of the notification
+ * spec (action vs. info) — only house_hours_review_overdue and
+ * approval_requested are "action"; everything else portal-facing is "info".
+ */
+const TYPE_BUCKET = {
+	approval_requested:          "approval",
+	house_hours_review_overdue:  "action",
+	shift_missed:                "info",
+	shift_late_start:            "info",
+	shift_missed_reporting:      "info",
+	shift_late_reporting:        "info",
+	shift_auto_ended:            "info",
+	house_hours_review_not_done: "info",
+	bank_cap_exceeded:           "info",
+	broadcast:                   "info",
+};
+
+const BUCKET_META = {
+	approval: { label: "Needs Approval", color: "#7c3aed" },
+	action:   { label: "Needs Action",   color: "#d97706" },
+	info:     { label: "FYI",            color: "#6b7280" },
+};
+
+const BUCKET_ORDER = ["approval", "action", "info"];
 
 /**
  * Portal shift notification types that deep-link to the shift detail page.
@@ -101,17 +152,34 @@ const SHIFT_TYPES = new Set([
 	"shift_auto_ended",
 ]);
 
-/** Approval notification types — both route to /approvals/[id]. */
-const APPROVAL_TYPES = new Set(["approval_requested", "approval_decided"]);
+/**
+ * Approval notification type that routes to /approvals/[id]. approval_decided
+ * is hidden for now — showing it alongside everything else was too much noise.
+ */
+const APPROVAL_TYPES = new Set(["approval_requested"]);
+
+/**
+ * House-hours review types — both route to that house's cover sheet page,
+ * where payroll is actually approved.
+ */
+const HOUSE_REVIEW_TYPES = new Set(["house_hours_review_overdue", "house_hours_review_not_done"]);
+
+/**
+ * Types hidden from the list entirely (not just unstyled) — showing them
+ * with no icon/colour and a dead "tap to view details" CTA would be more
+ * confusing than not showing them at all.
+ */
+const HIDDEN_TYPES = new Set(["approval_decided"]);
 
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
 function NotificationCard({ notification: n, onClick }) {
-	const { Icon, color, bg } = TYPE_CONFIG[n.type] ?? {
+	const { Icon, color, bg, BadgeIcon, badgeColor } = TYPE_CONFIG[n.type] ?? {
 		Icon: Bell, color: "#6b7280", bg: "#f9fafb",
 	};
-	const isShiftLink    = SHIFT_TYPES.has(n.type);
-	const isApprovalLink = APPROVAL_TYPES.has(n.type);
+	const isShiftLink       = SHIFT_TYPES.has(n.type);
+	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
+	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);
 
 	return (
 		<div
@@ -125,6 +193,11 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Coloured icon box */}
 			<div className={styles.iconBox} style={{ background: bg }}>
 				<Icon size={18} color={color} strokeWidth={2} />
+				{BadgeIcon && (
+					<span className={styles.iconBadge} style={{ background: badgeColor }}>
+						<BadgeIcon size={9} color="#fff" strokeWidth={3} />
+					</span>
+				)}
 			</div>
 
 			{/* Main content */}
@@ -137,9 +210,6 @@ function NotificationCard({ notification: n, onClick }) {
 					{n.type === "approval_requested" && (
 						<span className={styles.approvalBadge}>Needs Review</span>
 					)}
-					{n.type === "approval_decided" && (
-						<span className={styles.decidedBadge}>Reviewed</span>
-					)}
 				</div>
 				{n.body && <p className={styles.bodyText}>{n.body}</p>}
 			</div>
@@ -147,7 +217,7 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink) && (
+				{(isShiftLink || isApprovalLink || isHouseReviewLink) && (
 					<ExternalLink size={13} className={styles.linkIcon} />
 				)}
 			</div>
@@ -170,6 +240,56 @@ function FilterTab({ label, active, badge, onClick }) {
 				</span>
 			)}
 		</button>
+	);
+}
+
+// ─── TypeLegend ───────────────────────────────────────────────────────────────
+
+/** Collapsible key explaining every notification type, grouped by what action (if any) it calls for. */
+function TypeLegend() {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div className={styles.legend}>
+			<button
+				type="button"
+				className={styles.legendToggle}
+				onClick={() => setOpen(o => !o)}
+				aria-expanded={open}
+			>
+				<Info size={14} />
+				What do these notifications mean?
+				<ChevronDown size={14} className={open ? styles.legendChevronOpen : ""} />
+			</button>
+
+			{open && (
+				<div className={styles.legendPanel}>
+					{BUCKET_ORDER.map((bucketKey) => {
+						const types = Object.keys(TYPE_BUCKET).filter(t => TYPE_BUCKET[t] === bucketKey);
+						const { label, color } = BUCKET_META[bucketKey];
+						return (
+							<div key={bucketKey} className={styles.legendGroup}>
+								<p className={styles.legendGroupLabel} style={{ color }}>{label}</p>
+								{types.map((type) => {
+									const { Icon, color: iconColor, bg } = TYPE_CONFIG[type];
+									return (
+										<div key={type} className={styles.legendRow}>
+											<span className={styles.legendIconBox} style={{ background: bg }}>
+												<Icon size={14} color={iconColor} strokeWidth={2} />
+											</span>
+											<div>
+												<p className={styles.legendRowLabel}>{TYPE_LABEL[type]}</p>
+												<p className={styles.legendRowDesc}>{TYPE_DESCRIPTION[type]}</p>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						);
+					})}
+				</div>
+			)}
+		</div>
 	);
 }
 
@@ -220,9 +340,16 @@ export default function NotificationsPage() {
 			return;
 		}
 
-		// Approval notifications (requested + decided) → approval detail page.
+		// Approval notifications → approval detail page.
 		if (APPROVAL_TYPES.has(n.type) && n.data?.approvalId) {
 			router.push(`/approvals/${n.data.approvalId}`);
+			return;
+		}
+
+		// House-hours review notifications (overdue + not_done) → that house's
+		// cover sheet page, where the payroll is actually approved.
+		if (HOUSE_REVIEW_TYPES.has(n.type) && n.data?.houseId && n.data?.payYear && n.data?.periodNumber) {
+			router.push(`/payroll/${n.data.houseId}?payYear=${n.data.payYear}&periodNumber=${n.data.periodNumber}`);
 			return;
 		}
 		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.
@@ -233,7 +360,8 @@ export default function NotificationsPage() {
 		setPage(1); // reset pagination when switching filters
 	};
 
-	const grouped = groupByDate(notifications);
+	const visibleNotifications = notifications.filter((n) => !HIDDEN_TYPES.has(n.type));
+	const grouped = groupByDate(visibleNotifications);
 
 	return (
 		<PageLayout>
@@ -266,6 +394,9 @@ export default function NotificationsPage() {
 					)}
 				</div>
 			</div>
+
+			{/* ── Notification type legend ─────────────────────────────── */}
+			<TypeLegend />
 
 			{/* ── Filter tabs ───────────────────────────────────────────── */}
 			<div className={styles.tabs}>
@@ -300,7 +431,7 @@ export default function NotificationsPage() {
 			)}
 
 			{/* ── Empty state ───────────────────────────────────────────── */}
-			{!isNotificationsLoading && !fetchNotificationError && notifications.length === 0 && (
+			{!isNotificationsLoading && !fetchNotificationError && visibleNotifications.length === 0 && (
 				<EmptyState
 					title={filter === "unread" ? "All caught up!" : "No notifications yet"}
 					message={
@@ -312,7 +443,7 @@ export default function NotificationsPage() {
 			)}
 
 			{/* ── Notification list ─────────────────────────────────────── */}
-			{!isNotificationsLoading && !fetchNotificationError && notifications.length > 0 && (
+			{!isNotificationsLoading && !fetchNotificationError && visibleNotifications.length > 0 && (
 				<>
 					{Object.entries(grouped).map(([dateLabel, items]) => (
 						<div key={dateLabel} className={styles.group}>

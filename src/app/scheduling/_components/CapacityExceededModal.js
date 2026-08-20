@@ -4,6 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { DateTime } from "luxon";
 import Modal from "@components/UI/Modal";
 import Button from "@components/UI/Button";
+import OvertimeInfoBox from "./OvertimeInfoBox";
 import styles from "./CapacityExceededModal.module.css";
 
 const HALIFAX_TZ = "America/Halifax";
@@ -87,9 +88,12 @@ export default function CapacityExceededModal({
 					<p className={styles.capPPLabel}>Pay period: {ppLabel}</p>
 				)}
 
+				{/* Explains the two paths up front so the choice below isn't a guess */}
+				<OvertimeInfoBox />
+
 				{/*
 				 * Decision buttons — mutually exclusive; click to select, then Confirm.
-				 * "mandated"  → overtime pay, no caregiver action needed.
+				 * "mandated"  → flagged as overtime for payroll, no caregiver action needed.
 				 * "voluntary" → bank-or-pay acknowledgment pushed to caregiver's app.
 				 */}
 				<div className={styles.capDecisionRow}>
@@ -98,14 +102,14 @@ export default function CapacityExceededModal({
 						onClick={() => onDecisionChange("mandated")}
 					>
 						<strong>Mandate overtime</strong>
-						<span>Overtime pay · no caregiver action needed</span>
+						<span>Counted as overtime for payroll · no caregiver action needed</span>
 					</button>
 					<button
 						className={`${styles.capDecisionBtn}${decision === "voluntary" ? ` ${styles.capDecisionBtnActive}` : ""}`}
 						onClick={() => onDecisionChange("voluntary")}
 					>
 						<strong>Voluntary</strong>
-						<span>Caregiver acknowledges bank-or-pay via app</span>
+						<span>Caregiver acknowledges via app · paid regular (or banked)</span>
 					</button>
 				</div>
 

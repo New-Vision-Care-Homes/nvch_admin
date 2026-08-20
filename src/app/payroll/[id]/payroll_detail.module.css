@@ -89,6 +89,11 @@
 	line-height: 1.25;
 }
 
+.overdueBadge {
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
 .homeCardMeta {
 	display: flex;
 	align-items: center;

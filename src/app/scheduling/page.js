@@ -494,24 +494,58 @@ export default function SchedulingPage() {
 			uniqueDates.map((d, i) => [d, PALETTE[i % PALETTE.length]])
 		);
 
-		// One agenda row per spanned day. Each row is clamped to a single day so
-		// react-big-calendar lists it under that day; a multi-day shift therefore
-		// appears once under every day it covers, marked "(cont.)" after day one.
+		// One agenda row per spanned day, clamped to that day — this is what
+		// keeps each row's color tied to its own day (react-big-calendar's
+		// Agenda auto-repeats any event under every day its start/end overlaps,
+		// so if start/end crossed midnight a row would wrongly reappear on the
+		// next day still carrying today's color). A plain overnight shift
+		// (crosses exactly one midnight) still gets both its start-day and
+		// end-day row — caregiver coverage spans both days, so both should be
+		// visible — but each carries the real, un-clamped start/end via
+		// _originalStart/_originalEnd so AgendaTimeComponent can show the full
+		// range on both rows, labelling whichever date isn't that row's own day.
 		const rows = [];
 		shifts.forEach((shift) => {
-			const name     = `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim();
-			const sid      = shift.id || shift._id;
-			const segments = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
+			const name        = `${shift.caregiver?.firstName ?? ""} ${shift.caregiver?.lastName ?? ""}`.trim();
+			const sid         = shift.id || shift._id;
+			const segments       = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
+			const originalStart  = utcToZonedDateObject(shift.startTime, HALIFAX_TZ);
+			const originalEnd    = utcToZonedDateObject(shift.endTime,   HALIFAX_TZ);
+			// A shift ending exactly at local midnight (e.g. 10 PM – 12 AM) still
+			// crosses into the next calendar day but expandShiftDays keeps it as a
+			// single segment (that final day has zero minutes on it, so it isn't
+			// "occupied") — treat it as overnight too, or it falls through to
+			// react-big-calendar's default label, which shows only the start time
+			// plus a stray "»" continuation marker.
+			const crossesMidnight = originalStart.toDateString() !== originalEnd.toDateString();
+			const isOvernight     = segments.length <= 2 && crossesMidnight;
+
 			segments.forEach((seg) => {
+				// A single-segment shift that still crosses midnight (ends exactly
+				// at local 00:00) has a real, un-clamped segEnd on the next
+				// calendar day. Clamp it to end-of-day here — like the two-segment
+				// case's first row already is — so react-big-calendar doesn't think
+				// this row "continues after" today and tack on its "»" marker; the
+				// real end still displays via _originalEnd.
+				const rowEnd = (isOvernight && segments.length === 1)
+					? new Date(seg.segStart.getFullYear(), seg.segStart.getMonth(), seg.segStart.getDate(), 23, 59, 59, 999)
+					: seg.segEnd;
+
 				rows.push({
 					id:        segments.length > 1 ? `${sid}_seg${seg.index}` : sid,
 					title:     seg.isFirst ? name : `${name} (cont.)`,
 					start:     seg.segStart,
-					end:       seg.segEnd,
+					end:       rowEnd,
 					_shift:    shift,
 					_dateStr:  seg.dateStr,
 					_color:    dateColorMap[seg.dateStr],
 					_isAgenda: true,
+					...(isOvernight && {
+						_isOvernight:   true,
+						_overnightPart: seg.isFirst ? "start" : "end",
+						_originalStart: originalStart,
+						_originalEnd:   originalEnd,
+					}),
 				});
 			});
 		});
@@ -630,6 +664,22 @@ export default function SchedulingPage() {
 				</div>
 			</div>
 		);
+	};
+
+	// Agenda time cell — an overnight shift's per-day rows are clamped to their
+	// own day (see agendaEvents) so each keeps its own day's color; here we
+	// swap in the real, un-clamped start/end so both rows read the full range,
+	// e.g. "10:00 PM – 6:00 AM", and tag on whichever date isn't that row's own
+	// day so it's clear the two rows are one continuous overnight shift.
+	const AgendaTimeComponent = ({ event, label }) => {
+		if (event._isOvernight) {
+			const startLabel = format(event._originalStart, "p", { locale: enCA });
+			const endLabel   = format(event._originalEnd,   "p", { locale: enCA });
+			return event._overnightPart === "start"
+				? `${startLabel} – ${endLabel} (ends ${format(event._originalEnd, "MMM d", { locale: enCA })})`
+				: `${startLabel} (from ${format(event._originalStart, "MMM d", { locale: enCA })}) – ${endLabel}`;
+		}
+		return label;
 	};
 
 	// Agenda row — caregiver name + address, colored per calendar day.
@@ -1417,7 +1467,7 @@ export default function SchedulingPage() {
 												startAccessor="start"
 												endAccessor="end"
 												onSelectEvent={handleSelectEvent}
-												components={{ toolbar: () => null, event: CustomEvent }}
+												components={{ toolbar: () => null, event: CustomEvent, time: AgendaTimeComponent }}
 												eventPropGetter={eventStyleGetter}
 												date={date}
 												onNavigate={setDate}
