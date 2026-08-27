@@ -44,6 +44,7 @@ import Button from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { User, UserMinus, Loader, AlertTriangle } from "lucide-react";
+import RejectReasonField from "@components/UI/RejectReasonField";
 import styles from "../approval_detail.module.css";
 
 export default function MandateRejectModal({
@@ -253,24 +254,15 @@ export default function MandateRejectModal({
                 </div>
 
                 {/* ── Reason for rejection ─────────────────────────────────── */}
-                <div className={styles.mandateField}>
-                    <label className={styles.mandateFieldLabel}>
-                        Reason for rejection <span className={styles.mandateRequired}>*</span>
-                    </label>
-                    <textarea
-                        className={`${styles.rejectTextarea} ${rejectReasonErr ? styles.rejectTextareaError : ""}`}
-                        rows={3}
-                        placeholder="Explain why the caregiver is being removed from this shift…"
-                        value={rejectReason}
-                        onChange={(e) => {
-                            setRejectReason(e.target.value);
-                            if (e.target.value.trim()) setRejectReasonErr("");
-                        }}
-                    />
-                    {rejectReasonErr && (
-                        <span className={styles.mandateErrMsg}>{rejectReasonErr}</span>
-                    )}
-                </div>
+                <RejectReasonField
+                    placeholder="Explain why the caregiver is being removed from this shift…"
+                    value={rejectReason}
+                    error={rejectReasonErr}
+                    onChange={(text) => {
+                        setRejectReason(text);
+                        if (text.trim()) setRejectReasonErr("");
+                    }}
+                />
 
                 {/* ── Scheduling conflict error + alternatives ──────────────── */}
                 {shiftUpdateError && (

@@ -2,8 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { focusNoteService } from "@/services/api/services/focusNoteService";
+import { useFocusNotes } from "@/hooks/useFocusNotes";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
 import PageLayout from "@components/layout/PageLayout";
@@ -40,16 +39,15 @@ export default function FocusNoteDetailPage() {
 	// `id` = the focus note _id passed in the URL
 	const { id: focusNoteId } = useParams();
 	const router = useRouter();
-	const queryClient = useQueryClient();
 
 	// ── Fetch single note by its own ID
-	const { data: fetchedNote, isLoading, isFetching, error: fetchError } = useQuery({
-		queryKey: ["focusNote", focusNoteId],
-		queryFn: () => focusNoteService.getById(focusNoteId),
-		enabled: !!focusNoteId,
-	});
-
-	const note = fetchedNote;
+	const {
+		focusNote: note,
+		isNoteLoading: isLoading,
+		noteError: fetchError,
+		updateFocusNote,
+		isUpdatePending,
+	} = useFocusNotes({ focusNoteId });
 
 	// ── Edit state
 	const [editing, setEditing] = useState(false);
@@ -75,34 +73,30 @@ export default function FocusNoteDetailPage() {
 		setStatus(null);
 	};
 
-	// ── Update mutation
-	const updateMutation = useMutation({
-		mutationFn: (data) => focusNoteService.update(focusNoteId, data),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["focusNote", focusNoteId] });
-			// Also invalidate the client's focus-notes list if it's cached
-			queryClient.invalidateQueries({ queryKey: ["focusNotes"] });
-			setEditing(false);
-			setStatus({ variant: "success", text: "Focus note updated successfully." });
-		},
-		onError: (err) => {
-			setStatus({
-				variant: "error",
-				text: err?.response?.data?.message || err?.response?.data?.error || "Failed to save changes.",
-			});
-		},
-	});
-
 	const handleSave = () => {
-		updateMutation.mutate(form);
+		updateFocusNote(
+			{ id: focusNoteId, data: form },
+			{
+				onSuccess: () => {
+					setEditing(false);
+					setStatus({ variant: "success", text: "Focus note updated successfully." });
+				},
+				onError: (err) => {
+					setStatus({
+						variant: "error",
+						text: err?.response?.data?.message || err?.response?.data?.error || "Failed to save changes.",
+					});
+				},
+			}
+		);
 	};
 
-	if (isLoading || (isFetching && !note) || fetchError || !note) {
+	if (isLoading || fetchError || !note) {
 		return (
 			<PageLayout>
 				<ErrorState
-					isLoading={isLoading || isFetching}
-					errorMessage={fetchError ? (fetchError?.response?.data?.message || "Failed to load focus note.") : (!note && !isLoading && !isFetching ? "Focus note not found." : null)}
+					isLoading={isLoading}
+					errorMessage={fetchError || (!note && !isLoading ? "Focus note not found." : null)}
 				/>
 			</PageLayout>
 		);
@@ -156,7 +150,7 @@ export default function FocusNoteDetailPage() {
 								variant="secondary"
 								icon={<X size={15} />}
 								onClick={handleCancel}
-								disabled={updateMutation.isPending}
+								disabled={isUpdatePending}
 							>
 								Cancel
 							</Button>
@@ -164,9 +158,9 @@ export default function FocusNoteDetailPage() {
 								variant="primary"
 								icon={<Save size={15} />}
 								onClick={handleSave}
-								disabled={updateMutation.isPending}
+								disabled={isUpdatePending}
 							>
-								{updateMutation.isPending ? "Saving…" : "Save Changes"}
+								{isUpdatePending ? "Saving…" : "Save Changes"}
 							</Button>
 						</>
 					)}

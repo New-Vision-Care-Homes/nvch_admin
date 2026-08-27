@@ -212,23 +212,6 @@ export default function Dashboard() {
 					})}
 				</div>
 			</section>
-
-			{/* Recent Activity */}
-			{/*
-			<section className={styles.section}>
-				<div className={styles.activityHeader}>
-					<h2 style={{ margin: 0 }}>Recent Activity</h2>
-					<Link href="/notification" className={styles.viewAllLink}>View All</Link>
-				</div>
-				<div className={styles.activityCard}>
-					<div className={styles.emptyState}>
-						<Activity size={36} color="#CBD5E1" />
-						<p className={styles.emptyTitle}>No Recent Activities</p>
-						<p className={styles.emptyDesc}>This section is currently under development.</p>
-					</div>
-				</div>
-			</section>
-			*/}
 		</PageLayout>
 	);
 }

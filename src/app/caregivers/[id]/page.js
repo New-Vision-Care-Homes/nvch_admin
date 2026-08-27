@@ -11,6 +11,8 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Link from "next/link";
 import { Activity, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
 import Modal from "@components/UI/Modal";
+import InlineBanner from "@components/UI/InlineBanner";
+import StatusToggleConfirmModal from "@components/UI/StatusToggleConfirmModal";
 import { useParams } from "next/navigation";
 import ProfilePictureModal from "@components/UI/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -180,20 +182,7 @@ export default function Page() {
 	return (
 		<>
 			<PageLayout>
-				{inlineMessage && (
-					<div style={{
-						backgroundColor: inlineMessage.type === 'error' ? '#fee2e2' : '#dcfce7',
-						color: inlineMessage.type === 'error' ? '#991b1b' : '#166534',
-						padding: '1rem',
-						borderRadius: '6px',
-						marginBottom: '1rem',
-						fontWeight: '500',
-						textAlign: 'center',
-						border: `1px solid ${inlineMessage.type === 'error' ? '#fecaca' : '#bbf7d0'}`
-					}}>
-						{inlineMessage.text}
-					</div>
-				)}
+				<InlineBanner message={inlineMessage} />
 				{/* Header */}
 				<div className={styles.header}>
 					<h1>Caregiver Profile: {caregiverDetail.firstName} {caregiverDetail.lastName}</h1>
@@ -314,21 +303,14 @@ export default function Page() {
 			</PageLayout>
 
 			{/* Status Confirmation Modal */}
-			<Modal isOpen={isStatusConfirmModalOpen} onClose={handleStatusConfirmCancel}>
-				<div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
-					<h2 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1f2937' }}>
-						Are you sure you want to {activeStatus ? "deactivate" : "activate"} this caregiver?
-					</h2>
-					<div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-						<Button variant="secondary" onClick={handleStatusConfirmCancel} disabled={isCaregiverActionPending}>
-							No, Cancel
-						</Button>
-						<Button variant="primary" onClick={confirmToggleStatus} disabled={isCaregiverActionPending}>
-							Yes, {activeStatus ? "Deactivate" : "Activate"}
-						</Button>
-					</div>
-				</div>
-			</Modal>
+			<StatusToggleConfirmModal
+				isOpen={isStatusConfirmModalOpen}
+				isActive={activeStatus}
+				entityLabel="caregiver"
+				onConfirm={confirmToggleStatus}
+				onCancel={handleStatusConfirmCancel}
+				isPending={isCaregiverActionPending}
+			/>
 
 			{/* General Success/Error Modal */}
 			<Modal isOpen={isGeneralModalOpen} onClose={handleGeneralModalCancel}>
