@@ -322,6 +322,18 @@ export default function EditShiftPage() {
 		doSubmitScheduled(pendingData, decision);
 	}
 
+	// Submit flow overview (same shape as add_new_shift/page.js) — up to 3
+	// modals can appear before an edit is saved:
+	//   1. onSubmitScheduled  — if the edited shift is >12h, pause on the
+	//                           long-shift confirm modal first.
+	//   2. doSubmitScheduled  — the real update call; a CAPACITY_EXCEEDED
+	//                           response shows the capacity-exceeded modal
+	//                           instead of a plain error.
+	//   3. handleCapacityDecision — resubmits with the admin's overage
+	//                           decision; "voluntary" shows a pending
+	//                           caregiver-acknowledgment modal instead of
+	//                           redirecting, since the shift isn't confirmed
+	//                           until the caregiver accepts it on mobile.
 	function onSubmitScheduled(data) {
 		const h = hoursBetween(data.startTime, data.endTime);
 		if (h > 12) {

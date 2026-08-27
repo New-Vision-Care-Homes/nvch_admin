@@ -32,6 +32,13 @@ import { MARITAL_STATUS_OPTIONS } from "@/utils/dropdownList/maritalStatus";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { splitName, joinName, getLabel } from "@/utils/formatting";
 
+// Flattens the 8 nested legal-person objects the API returns (emergency
+// contact, SDM, next of kin, care coordinator, POA, personal directive,
+// legal guardianship, adult protection) into the flat `<prefix>FName` /
+// `<prefix>LName` / `<prefix>Phone` / `<prefix>Email` fields this form uses.
+// Inverse of buildBody() below — keep both in sync when adding a field.
+// Note: the SDM record uses `phoneNumber` while every other contact type
+// uses `phone` — that's the API's naming, not a typo here.
 const cleanFetchedData = (apiData) => {
 	if (!apiData) return {};
 
@@ -292,6 +299,11 @@ export default function Info() {
 		}
 	}, [clientDetail, reset, isInitialized]);
 
+	// Inverse of cleanFetchedData() above — re-nests the flat form fields back
+	// into the 8 legal-person objects the API expects. This full object is
+	// also what clients/[id]/page.js sends when patching just allowableHours,
+	// since the API requires a full PUT rather than a partial update — so any
+	// field added here must also be added there, or it'll be silently wiped.
 	const buildBody = (data) => ({
 		email: data.email,
 		firstName: data.firstName,

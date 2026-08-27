@@ -132,6 +132,15 @@ function classifyShift(shift) {
  * `shiftId`         — the shift's DB id; included in the PUT payload to update (not re-create) the shift.
  *
  * Custom shifts store their actual Halifax-time start/end so the cell displays the real range.
+ *
+ * This is one of three places that cooperate to render multi-day shifts as
+ * "continuation" cells (a shift starting on one day and spanning into the
+ * next): this function marks which cells are continuations when loading
+ * shifts from the API, ShiftCell renders a continuation cell differently
+ * (muted, no controls) from a real start-day cell, and cycleCell handles
+ * what happens when a user clicks/cycles a continuation cell (it edits the
+ * owning start-day shift rather than creating a new one). Each is commented
+ * locally — this note is just the map between them.
  */
 function buildAssignmentsFromShifts(shifts) {
 	const map = {};

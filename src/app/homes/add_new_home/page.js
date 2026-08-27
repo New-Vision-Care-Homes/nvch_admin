@@ -175,6 +175,11 @@ export default function AddNewHomePage() {
 		return () => { cancelled = true; };
 	}, [caregiverResults]);
 
+	// Same conflict-check workflow as homes/[id]/edit/page.js (mirrored below
+	// for clients too): fetch the selected person's full record, and if
+	// they're already assigned to a different home, pause on a
+	// HouseConflictModal instead of adding them immediately. Confirming sets
+	// hasCaregiverMove so the submit payload includes confirmMove: true.
 	const handleCaregiverSelect = async (caregiver) => {
 		if (isCheckingCaregiver) return;
 		setCaregiverSearch("");

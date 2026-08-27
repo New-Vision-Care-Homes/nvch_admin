@@ -365,6 +365,11 @@ export default function Timesheet() {
 											dayItem.slots.map((slot, slotInnerIndex) => {
 												// Find the flat index so handleTimeChange and handleRemoveSlot
 												// can update the correct entry in the `availability` array.
+												// Matched by day+startTime+endTime (not array position) so this
+												// survives groupedAvailability's re-grouping. Caveat: if a day
+												// ever has two slots with identical start/end times, both rows
+												// resolve to the same (first) flatIndex, so editing the second
+												// row would silently mutate the first slot instead.
 												const flatIndex = availability.findIndex(
 													(s) =>
 														s.day.toLowerCase() === dayItem.day.toLowerCase() &&
