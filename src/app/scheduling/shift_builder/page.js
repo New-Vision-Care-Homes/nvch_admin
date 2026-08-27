@@ -497,8 +497,8 @@ function CapacityExceededModal({
 						<h2 className={styles.capacityModalTitle}>Overtime Decision Required</h2>
 						<p className={styles.capacityModalSubtitle}>
 							{failures.length} shift{failures.length !== 1 ? "s" : ""}{" "}
-							exceed{failures.length === 1 ? "s" : ""} the caregiver&apos;s bi-weekly
-							capacity. Choose how to handle each one before resubmitting.
+							add{failures.length === 1 ? "s" : ""} hours past the caregiver&apos;s
+							bi-weekly capacity. Choose how to handle each one before resubmitting.
 						</p>
 					</div>
 				</div>
@@ -517,7 +517,16 @@ function CapacityExceededModal({
 							shiftHours,
 							projectedTotal,
 							overageHours,
+							designatedOverageHours,
+							newOverageHours,
 						} = failure.details ?? {};
+
+						// Overage is attributed incrementally: the decision is about what
+						// THIS cell adds on top of the overage other shifts in the period
+						// already carry, not the period-wide total. Fall back to
+						// `overageHours` so a pre-incremental backend still renders.
+						const newOverage = newOverageHours ?? overageHours;
+						const alreadyDesignated = designatedOverageHours ?? 0;
 
 						// Look up display name from the combined caregiver list
 						const cg = allCaregivers.find(
@@ -546,8 +555,13 @@ function CapacityExceededModal({
 									<span className={styles.capacityStatChip}>Committed {committedHours}h</span>
 									<span className={styles.capacityStatChip}>This shift {shiftHours}h</span>
 									<span className={styles.capacityStatChip}>Total {projectedTotal}h</span>
+									{alreadyDesignated > 0 && (
+										<span className={styles.capacityStatChip}>
+											Designated {alreadyDesignated}h
+										</span>
+									)}
 									<span className={`${styles.capacityStatChip} ${styles.capacityStatOver}`}>
-										+{overageHours}h over
+										+{newOverage}h added
 									</span>
 								</div>
 
