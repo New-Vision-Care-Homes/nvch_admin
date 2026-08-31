@@ -712,6 +712,125 @@
 	cursor: not-allowed;
 }
 
+/* ── Cell stack ──
+   A day column holds several shifts (day + night, a custom top-up, a multi-day
+   shift ending in the morning). Locked cells sit on top, editable ones below,
+   with the "+" affordance last. */
+.cellStack {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.cellAddBtn {
+	width: 100%;
+	min-height: 16px;
+	padding: 0;
+	line-height: 1;
+	font-size: 12px;
+	font-weight: 800;
+	color: #94a3b8;
+	background: transparent;
+	border: 1px dashed #d7dfe8;
+	border-radius: 6px;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.12s, border-color 0.12s, color 0.12s, background 0.12s;
+}
+/* Stays out of the way until the row is hovered, so a full grid isn't a wall of "+" */
+.tr:hover .cellAddBtn { opacity: 1; }
+.cellAddBtn:focus-visible { opacity: 1; }
+.cellAddBtn:hover {
+	color: #4f46e5;
+	border-color: #a5b4fc;
+	background: #eef2ff;
+}
+
+/* ── Continuation marker ──
+   Day 2+ of a multi-day shift. Inert: the shift is edited from its start day. */
+.cellContinuation {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 26px;
+	border-radius: 6px;
+	border: 1px dashed #cbd5e1;
+	color: #64748b;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: default;
+	background: repeating-linear-gradient(45deg, #eef2f7, #eef2f7 6px, #e3e9f1 6px, #e3e9f1 12px);
+}
+
+/* ── Locked cell ──
+   Occupies the slot but can't be edited from this grid: a missed shift, a
+   commitment at another home/client, or an open shift. Read-only by design. */
+.cellLocked {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	min-height: 24px;
+	padding: 3px 4px;
+	border-radius: 6px;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #64748b;
+	cursor: default;
+	overflow: hidden;
+}
+
+.cellLockedLabel {
+	font-size: 9px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.cellLockedRange {
+	font-size: 9px;
+	font-weight: 600;
+	opacity: 0.75;
+	white-space: nowrap;
+}
+
+.cellLocked_missed {
+	border-color: #fecaca;
+	background: #fef2f2;
+	color: #b91c1c;
+}
+
+.cellLocked_busy {
+	border-color: #fde68a;
+	background: #fffbeb;
+	color: #b45309;
+}
+
+.cellLocked_unassigned {
+	border-color: #bfdbfe;
+	background: #eff6ff;
+	color: #1d4ed8;
+}
+
+/* Stand-in avatar for the unassigned row's name cell */
+.unassignedAvatar {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	border: 1.5px dashed #bfdbfe;
+	background: #eff6ff;
+	color: #1d4ed8;
+	font-size: 0.85rem;
+	font-weight: 800;
+}
+
 /* ── Custom cell ── */
 .cellCustom {
 	display: flex;
