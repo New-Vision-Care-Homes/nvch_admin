@@ -49,6 +49,15 @@
  *   unassigned — an open shift at this home with no caregiver. The bulk endpoint
  *                keys assignments by caregiverId, so these get their own
  *                read-only row at the bottom of the grid.
+ *
+ * ADDITIONAL WORKERS (the search row)
+ * ───────────────────────────────────
+ * The grid starts from the home's own roster, but the search row at the bottom
+ * can pull in ANY active caregiver whose regions include this home's region —
+ * not just casuals, since a full-timer from another house in the same region is
+ * a legitimate fill-in. Non-roster workers who already hold a shift at this home
+ * are surfaced there automatically. A home with an empty roster still renders
+ * the whole grid, because that search row is the only way to staff it.
  */
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
@@ -1036,10 +1045,18 @@ export default function ShiftBuilderPage() {
 	// read-only row at the bottom of the grid.
 	const unassignedCells = lockedCells[UNASSIGNED_ROW_ID];
 
-	// Casual workers for the selected home's region
+	// The pool the search row draws from: every active caregiver whose regions
+	// include this home's region — deliberately NOT restricted to casuals. A
+	// full-timer based at another house in the same region is a legitimate
+	// fill-in, and roster members are filtered out of the results below since
+	// they already have a row.
+	//
+	// Fetched once per region and filtered client-side so typing is instant.
+	// `limit` is therefore the ceiling on how many of a region's caregivers are
+	// searchable — raise it if a region ever outgrows it.
 	const homeRegion = homeDetail?.region ?? null;
-	const { caregivers: allCasualWorkers, isCaregiverLoading: casualLoading } = useCaregivers({
-		params: { employmentStatus: "casual", region: homeRegion, limit: 100 },
+	const { caregivers: regionCaregivers, isCaregiverLoading: casualLoading } = useCaregivers({
+		params: { region: homeRegion, isActive: true, limit: 200 },
 		enabled: !!homeRegion,
 	});
 
@@ -1143,8 +1160,9 @@ export default function ShiftBuilderPage() {
 
 	// ─ Caregiver list & ordering ────────────────────────────────────────────────
 
-	// Caregivers that belong to the selected home
-	const caregivers = homeDetail?.caregivers ?? [];
+	// Caregivers that belong to the selected home. Memoised so the `?? []`
+	// fallback doesn't hand every dependent memo a brand-new array each render.
+	const caregivers = useMemo(() => homeDetail?.caregivers ?? [], [homeDetail?.caregivers]);
 
 	// Caregivers sorted by the user's drag order
 	const sortedCaregivers = useMemo(() => {
@@ -1182,19 +1200,24 @@ export default function ShiftBuilderPage() {
 	// Set for O(1) date-in-range checks; also filters out stale assignments
 	const dateSet = useMemo(() => new Set(dates), [dates]);
 
-	// ─ Casual worker search ─────────────────────────────────────────────────────
+	// ─ Worker search ────────────────────────────────────────────────────────────
 
-	// Casual worker search results — excludes already-added workers
+	// Search results — hides anyone who already has a row in the grid: the
+	// home's permanent roster plus the workers added below it. Matches on name
+	// or email so an admin can paste either.
 	const filteredCasualResults = useMemo(() => {
-		const addedIds = new Set(addedCasualWorkers.map((cg) => (cg._id || cg.id)?.toString()));
+		const shownIds = new Set([
+			...caregivers.map(entityId),
+			...addedCasualWorkers.map(entityId),
+		]);
 		const q = casualSearch.trim().toLowerCase();
-		return (allCasualWorkers || []).filter((cg) => {
-			if (addedIds.has((cg._id || cg.id)?.toString())) return false;
+		return (regionCaregivers || []).filter((cg) => {
+			if (shownIds.has(entityId(cg))) return false;
 			if (!q) return true;
 			const name = [cg.firstName, cg.lastName].filter(Boolean).join(" ").toLowerCase();
-			return name.includes(q);
+			return name.includes(q) || (cg.email || "").toLowerCase().includes(q);
 		});
-	}, [allCasualWorkers, casualSearch, addedCasualWorkers]);
+	}, [regionCaregivers, casualSearch, addedCasualWorkers, caregivers]);
 
 	// ─ Grid summary counts ──────────────────────────────────────────────────────
 	// These drive the "Publish N Shifts" / "Save Schedule" button label and
@@ -1971,10 +1994,6 @@ export default function ShiftBuilderPage() {
 						<div className={styles.tableCard}>
 							<ErrorState isLoading />
 						</div>
-					) : caregivers.length === 0 ? (
-						<div className={styles.emptyState}>
-							No active caregivers found for this home.
-						</div>
 					) : (
 						<div className={styles.tableCard}>
 							<div className={styles.tableWrap}>
@@ -2102,11 +2121,29 @@ export default function ShiftBuilderPage() {
 											);
 										})}
 
-									{/* ── Casual worker separator + rows ──────── */}
+									{/*
+									 * ── Empty roster hint ────────────────────
+									 * A home with nobody assigned still gets the
+									 * full grid — the search row below is the only
+									 * way to staff it, so hiding the table would
+									 * leave the admin with nothing to act on.
+									 */}
+									{sortedCaregivers.length === 0 && addedCasualWorkers.length === 0 && (
+										<tr className={styles.emptyRosterRow}>
+											<td colSpan={dates.length + 2} className={styles.emptyRosterCell}>
+												No caregivers are assigned to this home
+												{homeRegion
+													? ` — search ${homeRegion} below to add one.`
+													: ". Set a region on this home to search for workers."}
+											</td>
+										</tr>
+									)}
+
+									{/* ── Added worker separator + rows ───────── */}
 									{addedCasualWorkers.length > 0 && (
 										<tr className={styles.casualSeparatorRow}>
 											<td colSpan={dates.length + 2} className={styles.casualSeparatorCell}>
-												Casual Workers
+												Additional Workers
 											</td>
 										</tr>
 									)}
@@ -2248,7 +2285,7 @@ export default function ShiftBuilderPage() {
 										</>
 									)}
 
-									{/* ── Casual worker search row ────────────── */}
+									{/* ── Worker search row ───────────────────── */}
 									{selectedHomeId && (
 										<tr className={styles.casualSearchRow}>
 											<td colSpan={dates.length + 2} className={styles.casualSearchCell}>
@@ -2257,7 +2294,7 @@ export default function ShiftBuilderPage() {
 													<input
 														ref={casualSearchRef}
 														className={styles.casualSearchInput}
-														placeholder={homeRegion ? `Search casual workers in ${homeRegion}…` : "Search casual workers…"}
+														placeholder={homeRegion ? `Search employees in ${homeRegion}…` : "Search employees…"}
 														value={casualSearch}
 														onChange={(e) => { setCasualSearch(e.target.value); setShowCasualDropdown(true); }}
 														onFocus={openCasualDropdown}
@@ -2274,7 +2311,7 @@ export default function ShiftBuilderPage() {
 					</div>
 					)}
 
-					{/* ── Casual worker dropdown (fixed-position) ─────────── */}
+					{/* ── Worker search dropdown (fixed-position) ─────────── */}
 					{showCasualDropdown && filteredCasualResults.length > 0 && (
 						<div
 							className={styles.casualDropdown}

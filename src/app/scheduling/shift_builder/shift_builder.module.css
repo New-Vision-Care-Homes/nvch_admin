@@ -1172,6 +1172,19 @@
 	}
 }
 
+/* ── Empty-roster hint row ── */
+.emptyRosterRow td {
+	padding: 0;
+}
+
+.emptyRosterCell {
+	padding: 22px 12px;
+	text-align: center;
+	font-size: 0.85rem;
+	font-style: italic;
+	color: #94a3b8;
+}
+
 /* ══════════════════════════════════════════════════════════════
    Casual worker rows
 ══════════════════════════════════════════════════════════════ */
