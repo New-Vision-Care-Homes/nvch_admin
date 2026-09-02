@@ -1062,7 +1062,15 @@ export default function ShiftBuilderPage() {
 	// searchable — raise it if a region ever outgrows it.
 	const homeRegion = homeDetail?.region ?? null;
 	const { caregivers: regionCaregivers, isCaregiverLoading: casualLoading } = useCaregivers({
-		params: { region: homeRegion, isActive: true, limit: 200 },
+		params: {
+			region: homeRegion,
+			isActive: true,
+			limit: 200,
+			// A shift's worker may be a caregiver or an admin holding access_app,
+			// so the search offers both. Every other caregiver screen leaves this
+			// off and stays caregiver-only.
+			includeAssignableAdmins: true,
+		},
 		enabled: !!homeRegion,
 	});
 
