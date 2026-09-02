@@ -11,6 +11,7 @@ import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
 import IconButton    from "@components/UI/IconButton";
+import Pagination    from "@components/UI/Pagination";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table";
 import StatusBadge, { ColorPill } from "@components/UI/Badge";
 import styles        from "./payroll.module.css";
@@ -71,6 +72,10 @@ export default function PayrollOverviewPage() {
     const [selectedPeriod,  setSelectedPeriod]  = useState("");
     const [defaultsApplied, setDefaultsApplied] = useState(false);
 
+    // ── Pagination ──────────────────────────────────────────────────
+    const [currentPage, setCurrentPage] = useState(0);
+    const itemsPerPage = 10;
+
     const { payPeriod } = usePayPeriod(0);
     useEffect(() => {
         if (payPeriod && !defaultsApplied) {
@@ -87,6 +92,15 @@ export default function PayrollOverviewPage() {
         periodNumber: selectedPeriod,
         enabled:      periodReady,
     });
+
+    // Reset to page 1 whenever the selected pay period changes
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [selectedYear, selectedPeriod]);
+
+    const pageCount      = Math.max(Math.ceil(rows.length / itemsPerPage), 1);
+    const paginatedRows  = rows.slice(currentPage * itemsPerPage, currentPage * itemsPerPage + itemsPerPage);
+    const handlePageClick = (event) => setCurrentPage(event.selected);
 
     const { houses: reviewData } = useHouseReviews({
         payYear:      selectedYear,
@@ -219,8 +233,8 @@ export default function PayrollOverviewPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Community / unassigned hours — always first */}
-                                {periodReady && (
+                                {/* Community / unassigned hours — always first, shown on page 1 only */}
+                                {periodReady && currentPage === 0 && (
                                     <PageTableRow key="__community__" isEven={false}>
                                         <td
                                             className={styles.overviewHomeCell}
@@ -277,7 +291,7 @@ export default function PayrollOverviewPage() {
                                     </PageTableRow>
                                 )}
 
-                                {rows.map(({ home, homeId, totals, isLoading, fetchError }, idx) => {
+                                {paginatedRows.map(({ home, homeId, totals, isLoading, fetchError }, idx) => {
                                     const typeColor   = HOME_TYPE_COLORS[home.homeType] || COLOR_FALLBACK;
                                     const regionColor = REGION_COLORS[home.region]       || COLOR_FALLBACK;
                                     const review      = reviewMap.get(homeId);
@@ -373,6 +387,14 @@ export default function PayrollOverviewPage() {
                                 )}
                             </tbody>
                         </PageTable>
+                    )}
+
+                    {!homesLoading && !homesError && (
+                        <Pagination
+                            pageCount={pageCount}
+                            forcePage={currentPage}
+                            onPageChange={handlePageClick}
+                        />
                     )}
                 </div>
             </div>

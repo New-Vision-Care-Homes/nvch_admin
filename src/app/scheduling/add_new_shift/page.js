@@ -471,6 +471,19 @@ export default function AddNewShiftPage() {
 		}
 	}
 
+	// Submit flow overview — up to 3 modals can appear in sequence before a
+	// shift is actually created:
+	//   1. onSubmit           — if the shift is >12h, pause on the long-shift
+	//                           confirm modal before submitting at all.
+	//   2. buildAndSubmit     — the real create call; if the caregiver is over
+	//                           capacity for the period, the API rejects with
+	//                           CAPACITY_EXCEEDED and we show the
+	//                           capacity-exceeded modal instead of an error.
+	//   3. handleCapacityDecision — resubmits with the admin's choice
+	//                           (mandated overtime vs. voluntary); voluntary
+	//                           shows a third "pending caregiver ack" modal
+	//                           instead of redirecting, since the shift isn't
+	//                           confirmed until the caregiver accepts it.
 	function onSubmit(data) {
 		const start = DateTime.fromISO(data.startTime, { zone: HALIFAX_TZ });
 		const end   = DateTime.fromISO(data.endTime,   { zone: HALIFAX_TZ });

@@ -16,6 +16,7 @@ import { useCertificates } from "@/hooks/useCertificates";
 import { useApprovals } from "@/hooks/useApprovals";
 import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 import CertificateModal from "@components/UI/CertificateModal";
+import RejectReasonField from "@components/UI/RejectReasonField";
 
 export default function Certification() {
 	const { id: userId } = useParams();
@@ -447,19 +448,13 @@ export default function Certification() {
 						Rejecting this request will permanently delete this certificate.
 					</p>
 					{rejectError && <ActionMessage variant="error" message={rejectError} />}
-					<div className={styles.approveReasonField} style={{ textAlign: "left" }}>
-						<label className={styles.approveReasonLabel}>
-							Reason <span style={{ color: "#dc2626" }}>*</span>
-						</label>
-						<textarea
-							className={`${styles.approveReasonTextarea} ${rejectReasonErr ? styles.rejectTextareaError : ""}`}
-							rows={3}
-							placeholder="Explain why this certificate is being rejected…"
-							value={rejectReason}
-							onChange={(e) => { setRejectReason(e.target.value); if (e.target.value.trim()) setRejectReasonErr(""); }}
-						/>
-						{rejectReasonErr && <span className={styles.rejectErrorMsg}>{rejectReasonErr}</span>}
-					</div>
+					<RejectReasonField
+						label="Reason"
+						placeholder="Explain why this certificate is being rejected…"
+						value={rejectReason}
+						error={rejectReasonErr}
+						onChange={(text) => { setRejectReason(text); if (text.trim()) setRejectReasonErr(""); }}
+					/>
 					<div className={styles.modal_buttons}>
 						<Button
 							variant="danger"

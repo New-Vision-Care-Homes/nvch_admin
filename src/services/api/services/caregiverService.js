@@ -19,6 +19,9 @@ export const caregiverService = {
 		if (params.isActive !== undefined && params.isActive !== '') queryParams.append('isActive', params.isActive);
 		if (params.homeId) queryParams.append('homeId', params.homeId);
 		if (params.region) queryParams.append('region', params.region);
+		// Opt-in: also return admins who can be assigned a shift (access_app).
+		// Off by default so the caregiver-listing screens stay caregiver-only.
+		if (params.includeAssignableAdmins) queryParams.append('includeAssignableAdmins', 'true');
 
 		const queryString = queryParams.toString();
 		const url = queryString ? `${API_ENDPOINTS.CAREGIVERS.BASE}?${queryString}` : API_ENDPOINTS.CAREGIVERS.BASE;

@@ -210,7 +210,10 @@ export default function PayrollDetailPage() {
         resetUpdate: resetSupervisor,
     } = useUpdateSupervisorReview();
 
-    // "payroll" in the API error message should read "payroll admin" in the UI
+    // The API returns a generic "payroll" error message meant to cover both
+    // the supervisor-review and payroll-status endpoints; on this screen that
+    // reads as if the reviewing supervisor IS payroll, so we relabel it to
+    // "payroll admin" here rather than changing the shared backend message.
     const supervisorDisplayError = supervisorUpdateError
         ? supervisorUpdateError.replace(/\bpayroll\b(?! admin)/gi, "payroll admin")
         : null;
@@ -306,6 +309,11 @@ export default function PayrollDetailPage() {
     const openPayrollModal = () => {
         resetPayroll();
         setPayrollNote("");
+        // Payroll status advances one step at a time: pending → processing →
+        // processed. From "processed" there's no further forward step, so we
+        // default back to "pending" (re-opening the period for correction)
+        // rather than looping to "processing". The dropdown in the modal
+        // still lets the user pick any status explicitly.
         const defaultNext = payrollStatus === "pending"
             ? "processing"
             : payrollStatus === "processing"
@@ -361,6 +369,12 @@ export default function PayrollDetailPage() {
         ? `?payYear=${payYear}&periodNumber=${periodNumber}`
         : ""}`;
 
+    // Review gating rule: unresolved exceptions must be cleared before the
+    // supervisor can change status; payroll status additionally can't move
+    // until the supervisor review is done, since payroll relies on the
+    // supervisor's sign-off being final. Export is blocked on the same
+    // supervisor-pending condition so nobody exports numbers that haven't
+    // been reviewed yet.
     const hasExceptions = (exceptionCount ?? 0) > 0;
 
     const supervisorBtnDisabled = hasExceptions;

@@ -11,10 +11,19 @@
  * 2. Existing shifts for that period are fetched and shown in the grid
  *    (muted style so they're clearly "already there").
  * 3. Click any cell to cycle it through Day → Night → Custom → clear.
- *    Existing-shift cells cycle the same way; cycling off empty creates a NEW
- *    planned shift on top of the existing one.
+ *    Existing-shift cells cycle the same way; the "+" button under a day adds a
+ *    SECOND shift on that day without disturbing the first.
  * 4. Hit "Publish" → only the NEW (non-existing) assignments are sent to the API
  *    as one bulk call, then a success/failure summary is shown.
+ *
+ * ONE DAY HOLDS MANY SHIFTS
+ * ─────────────────────────
+ * A caregiver can legitimately work more than once on the same date (a day shift
+ * plus a night shift, a short custom top-up, or a multi-day shift ending in the
+ * morning followed by a fresh one). So every grid cell is a *stack*: the
+ * assignments map is `caregiverId → dateStr → array of cells`, and the bulk API
+ * already accepts several assignments for the same date. A cell is addressed by
+ * its index in that array.
  *
  * SHIFT TYPES
  * ───────────
@@ -27,6 +36,28 @@
  * startHour === 7  → Day    (assumes 07:00–19:00 pattern)
  * startHour === 19 → Night  (assumes 19:00–07:00 pattern)
  * anything else   → Custom
+ *
+ * LOCKED CELLS (read-only, never submitted)
+ * ─────────────────────────────────────────
+ * Some shifts occupy a slot but can't be edited from this home's grid. They are
+ * kept in a separate `lockedCells` map — derived, never part of `assignments` —
+ * and rendered above the editable stack so a slot never *looks* free when it
+ * isn't:
+ *   missed     — status "missed"; the slot was scheduled but not worked.
+ *   busy       — the caregiver is committed to a *client* or a *different home*
+ *                during this period (fetched via `caregiverIds`, see below).
+ *   unassigned — an open shift at this home with no caregiver. The bulk endpoint
+ *                keys assignments by caregiverId, so these get their own
+ *                read-only row at the bottom of the grid.
+ *
+ * ADDITIONAL WORKERS (the search row)
+ * ───────────────────────────────────
+ * The grid starts from the home's own roster, but the search row at the bottom
+ * can pull in ANY active caregiver whose regions include this home's region —
+ * not just casuals, since a full-timer from another house in the same region is
+ * a legitimate fill-in. Non-roster workers who already hold a shift at this home
+ * are surfaced there automatically. A home with an empty roster still renders
+ * the whole grid, because that search row is the only way to staff it.
  */
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
@@ -74,12 +105,40 @@ import { fullName } from "@/utils/formatting";
 const HALIFAX_TZ = "America/Halifax";
 const MAX_DAYS   = 42; // safety cap to prevent runaway renders on bad date ranges
 
-// The builder only cares about shifts that actually occupy a slot. Cancelled and
-// missed shifts are void, so we ask the backend (GET /api/shifts?status=…, which
-// accepts a comma-separated list) to exclude them rather than pulling every shift
-// and filtering client-side. This unblocks creating a new shift in a cell that
-// previously held a cancelled/missed one.
+// Statuses that make a shift editable in the grid. Cancelled shifts are void and
+// never fetched at all.
 const BUILDER_SHIFT_STATUSES = "scheduled,in_progress,completed";
+
+// What the home query actually asks for. `missed` is included so a slot that was
+// scheduled but not worked still shows (as a locked ghost) instead of looking as
+// though nothing was ever planned — an admin rebuilding the period needs to see
+// it. Missed shifts land in `lockedCells`, so they never occupy an editable cell
+// and never block scheduling something new on that day.
+const BUILDER_FETCH_STATUSES = `${BUILDER_SHIFT_STATUSES},missed`;
+
+// Sentinel row id for open/unassigned shifts at the home. The bulk endpoint keys
+// assignments by caregiverId, so this row is display-only.
+const UNASSIGNED_ROW_ID = "__unassigned__";
+
+// Shared empty stack. A fresh [] per empty cell would give every DayCell a new
+// prop identity on each render, across ~14 days × every caregiver.
+const EMPTY_CELLS = [];
+
+// Width of the worker-search dropdown. Fixed rather than matched to the search
+// input: that input sits in a colSpan cell spanning the entire grid, so on a
+// 14-day period its width is well over a thousand pixels and the dropdown ran
+// off the side of the screen.
+const SEARCH_DROPDOWN_WIDTH = 340;
+
+/** No-op handler for the read-only unassigned row. */
+const noop = () => {};
+
+// `useShifts` hands back a fresh `[]` for as long as its query has no data
+// (loading, or held by `enabled`). Feeding that straight into a useMemo makes
+// the memo — and the effect that pre-fills the grid from it — see a new
+// dependency on every single render. Pin the empty case to one identity.
+const EMPTY_SHIFTS = [];
+const stableShifts = (shifts) => (shifts?.length ? shifts : EMPTY_SHIFTS);
 
 // Every 30-minute slot from 00:00 → 23:30, used in Custom cell dropdowns and the
 // legend's Day / Night hour pickers.
@@ -124,28 +183,53 @@ function classifyShift(shift) {
 	return "custom";
 }
 
+/** Reads a Mongo id off a populated object or a raw string reference. */
+function entityId(ref) {
+	return (typeof ref === "string" ? ref : (ref?._id || ref?.id))?.toString();
+}
+
+/** Appends one cell to `map[caregiverId][dateStr]`, creating the levels as needed. */
+function pushCell(map, caregiverId, dateStr, cell) {
+	if (!map[caregiverId]) map[caregiverId] = {};
+	if (!map[caregiverId][dateStr]) map[caregiverId][dateStr] = [];
+	map[caregiverId][dateStr].push(cell);
+}
+
 /**
- * Converts an array of API shift objects into the assignments map shape:
- *   { [caregiverId]: { [dateStr]: { type, customStart, customEnd, existing, shiftId } } }
+ * Adds API shift objects to an assignments map:
+ *   { [caregiverId]: { [dateStr]: [ { type, customStart, customEnd, existing, shiftId }, … ] } }
+ *
+ * Each date holds an ARRAY because a caregiver can work more than once on the
+ * same day (day + night, a custom top-up, a multi-day shift that ends in the
+ * morning followed by a fresh one). Writing a single object here silently
+ * dropped every shift after the first.
  *
  * `existing: true`  — cell was loaded from the server; shown muted.
  * `shiftId`         — the shift's DB id; included in the PUT payload to update (not re-create) the shift.
  *
  * Custom shifts store their actual Halifax-time start/end so the cell displays the real range.
+ *
+ * `opts.locked`     — "missed" | "busy" | "unassigned". Produces read-only cells
+ *                     that carry no `type`, so every count and payload filter
+ *                     skips them exactly the way it skips continuation markers.
+ * `opts.rowId`      — forces every shift onto one row (used by the unassigned row).
+ * `opts.lockLabel`  — (shift) => string shown on the locked chip's tooltip.
+ *
+ * This is one of three places that cooperate to render multi-day shifts as
+ * "continuation" cells (a shift starting on one day and spanning into the
+ * next): this function appends a continuation marker to every day the shift
+ * covers after its first, ShiftCell renders that marker as an inert arrow
+ * rather than an editable cell, and cycleCell refuses to act on it (the owning
+ * start-day cell is the editable one). Each is commented locally — this note is
+ * just the map between them.
  */
-function buildAssignmentsFromShifts(shifts) {
-	const map = {};
-	// Continuation markers are placed in a second pass so a real start-day cell
-	// always wins the cell over another shift's continuation on the same day.
-	const continuations = [];
+function addShiftsToAssignments(map, shifts, opts = {}) {
+	const { locked = null, rowId = null, lockLabel = null } = opts;
 
-	for (const shift of shifts) {
+	for (const shift of shifts ?? []) {
 		// caregiver may be a populated object { _id, ... } or a raw string ID.
 		// Newly-created shifts are often returned un-populated (string only).
-		const cg = shift.caregiver;
-		const caregiverId = (
-			typeof cg === "string" ? cg : (cg?._id || cg?.id)
-		)?.toString();
+		const caregiverId = rowId ?? entityId(shift.caregiver);
 		if (!caregiverId) continue;
 
 		const segments = expandShiftDays(shift.startTime, shift.endTime, HALIFAX_TZ);
@@ -156,43 +240,83 @@ function buildAssignmentsFromShifts(shifts) {
 		const type     = classifyShift(shift);
 		const shiftId  = shift._id || shift.id; // needed for PUT /api/shifts/bulk
 		const rangeLabel = `${startHfx.toFormat("HH:mm")}–${endHfx.toFormat("HH:mm")}`;
+		// Orders the day's stack chronologically. Continuation markers cover the
+		// small hours, so they sort ahead of anything starting that morning.
+		const sortMinutes = startHfx.hour * 60 + startHfx.minute;
 
-		if (!map[caregiverId]) map[caregiverId] = {};
-		// Day 1 — the editable representation of the shift.
-		map[caregiverId][segments[0].dateStr] = {
-			type,
-			// For custom shifts, capture the actual times so the cell can display them
-			customStart: type === "custom" ? startHfx.toFormat("HH:mm") : "",
-			customEnd:   type === "custom" ? endHfx.toFormat("HH:mm")   : "",
-			existing:    true,
-			shiftId,
-			spanDays:    segments.length,
-		};
+		// Day 1 — the shift's own cell.
+		pushCell(map, caregiverId, segments[0].dateStr, locked
+			? {
+				locked,
+				lockType:  type,                       // drives the icon only — NOT a schedulable type
+				lockLabel: lockLabel ? lockLabel(shift) : "",
+				rangeLabel,
+				existing:  true,
+				shiftId,
+				spanDays:  segments.length,
+				sortMinutes,
+			}
+			: {
+				type,
+				// For custom shifts, capture the actual times so the cell can display them
+				customStart: type === "custom" ? startHfx.toFormat("HH:mm") : "",
+				customEnd:   type === "custom" ? endHfx.toFormat("HH:mm")   : "",
+				existing:    true,
+				shiftId,
+				spanDays:    segments.length,
+				sortMinutes,
+			});
 
 		// Day 2+ — read-only continuation markers tied to the same shift. They carry
 		// no `type`, so every count/payload filter skips them; only the start-day
 		// cell is editable or published.
 		for (let i = 1; i < segments.length; i++) {
-			continuations.push({
-				caregiverId,
-				dateStr: segments[i].dateStr,
-				marker: {
-					continuation: true,
-					existing:     true,
-					shiftId,
-					rangeLabel,
-					isLast:       segments[i].isLast,
-				},
+			pushCell(map, caregiverId, segments[i].dateStr, {
+				continuation: true,
+				...(locked ? { locked, lockLabel: lockLabel ? lockLabel(shift) : "" } : {}),
+				existing:     true,
+				shiftId,
+				rangeLabel,
+				isLast:       segments[i].isLast,
+				sortMinutes:  -1,
 			});
 		}
 	}
-
-	for (const { caregiverId, dateStr, marker } of continuations) {
-		if (!map[caregiverId]) map[caregiverId] = {};
-		if (!map[caregiverId][dateStr]) map[caregiverId][dateStr] = marker;
-	}
-
 	return map;
+}
+
+/** Orders every day's stack chronologically (continuations first). */
+function sortAssignmentCells(map) {
+	for (const dateMap of Object.values(map)) {
+		for (const cells of Object.values(dateMap)) {
+			cells.sort((a, b) => (a.sortMinutes ?? 0) - (b.sortMinutes ?? 0));
+		}
+	}
+	return map;
+}
+
+/**
+ * Identity of one failed cell in the bulk response.
+ *
+ * Includes `type` because a caregiver can now have several shifts on the same
+ * date — keying on caregiver + date alone would collapse two failures into a
+ * single decision. Two cells on one date can't share a type (identical windows
+ * would overlap and be rejected as a conflict, not an overage), so this is unique.
+ */
+function failureKey(failure) {
+	return `${failure.caregiverId}_${failure.date}_${failure.type ?? ""}`;
+}
+
+/** Counts cells across the whole grid that match `predicate`, ignoring out-of-range dates. */
+function countCells(assignments, dateSet, predicate) {
+	let total = 0;
+	for (const dateMap of Object.values(assignments)) {
+		for (const [dateStr, cells] of Object.entries(dateMap)) {
+			if (!dateSet.has(dateStr)) continue;
+			for (const cell of cells) if (predicate(cell, dateStr)) total++;
+		}
+	}
+	return total;
 }
 
 // ─── Sub-component: ShiftCell ─────────────────────────────────────────────────
@@ -203,6 +327,8 @@ function buildAssignmentsFromShifts(shifts) {
  * Props:
  *   assignment          — current cell value; undefined = empty.
  *                         Shape: { type: 'day'|'night'|'custom', customStart, customEnd, existing? }
+ *                         A cell with no `type` is either a multi-day continuation
+ *                         marker or a locked (read-only) slot — both render inert.
  *   isExisting          — true when the cell was pre-loaded from the API (renders muted).
  *   dayStart/dayEnd     — global day-shift hours shown as a hint inside Day cells.
  *   nightStart/nightEnd — global night-shift hours shown inside Night cells.
@@ -226,39 +352,38 @@ function ShiftCell({
 	const spanNote      = assignment?.spanDays > 1 ? ` · ${assignment.spanDays}-day shift` : "";
 
 	// Continuation of a multi-day shift that started on an earlier day; it belongs
-	// to a shift edited via its start-day cell.
-	// The LAST day ends partway through (e.g. a night shift ending 07:00), so it can
-	// still host a NEW shift for the rest of that day — this unblocks back-to-back
-	// night shifts. Full intermediate days (and past days) stay inert.
+	// to a shift edited via its start-day cell, so it is always inert. A day whose
+	// shift ends partway through (e.g. a night shift ending 07:00) can still host a
+	// new shift for the rest of that day — that is what the stack's "+" button is
+	// for, so the marker itself no longer needs to be clickable.
 	if (assignment?.continuation) {
-		const continuationStyle = {
-			display: "flex", alignItems: "center", justifyContent: "center",
-			minHeight: 34, borderRadius: 6,
-			border: "1px dashed #cbd5e1", color: "#64748b",
-			fontSize: 12, fontWeight: 700,
-			background:
-				"repeating-linear-gradient(45deg,#eef2f7,#eef2f7 6px,#e3e9f1 6px,#e3e9f1 12px)",
-		};
-		if (assignment.isLast && !isPast) {
-			return (
-				<button
-					type="button"
-					className={styles.cellExisting}
-					onClick={onCycle}
-					style={{ ...continuationStyle, width: "100%", cursor: "pointer" }}
-					title={`Ends here from a multi-day shift · ${assignment.rangeLabel}\nClick to schedule a new shift for the rest of this day`}
-				>
-					→|
-				</button>
-			);
-		}
 		return (
 			<div
-				className={`${styles.cellExisting}${pastClass}`}
-				style={{ ...continuationStyle, cursor: "default" }}
-				title={`Part of a multi-day shift · ${assignment.rangeLabel}${assignment.isLast ? " · ends today" : " · continues"}`}
+				className={`${styles.cellContinuation}${pastClass}`}
+				title={assignment.isLast
+					? `Ends here from a multi-day shift · ${assignment.rangeLabel}${assignment.locked ? `\n${assignment.lockLabel}` : "\nUse + to schedule the rest of this day"}`
+					: `Part of a multi-day shift · ${assignment.rangeLabel} · continues${assignment.locked ? `\n${assignment.lockLabel}` : ""}`}
 			>
 				{assignment.isLast ? "→|" : "→"}
+			</div>
+		);
+	}
+
+	// Locked cell — the slot is taken by something this grid cannot edit:
+	// a missed shift, a commitment at another home/client, or an open shift.
+	// It sits above the editable stack purely so the day doesn't look free.
+	if (assignment?.locked) {
+		const lockIcon = assignment.lockType === "day"   ? <Sun size={10} />
+		               : assignment.lockType === "night" ? <Moon size={10} />
+		               :                                   null;
+		return (
+			<div
+				className={`${styles.cellLocked} ${styles[`cellLocked_${assignment.locked}`] ?? ""}`}
+				title={`${assignment.lockLabel} · ${assignment.rangeLabel}${spanNote}\nRead-only here`}
+			>
+				{lockIcon}
+				<span className={styles.cellLockedLabel}>{assignment.lockLabel}</span>
+				<span className={styles.cellLockedRange}>{assignment.rangeLabel}</span>
 			</div>
 		);
 	}
@@ -350,6 +475,96 @@ function ShiftCell({
 					</>
 				)}
 			</div>
+		</div>
+	);
+}
+
+// ─── Sub-component: DayCell ───────────────────────────────────────────────────
+
+/**
+ * One day column for one caregiver — a *stack* of shifts, not a single cell.
+ *
+ * Renders, top to bottom:
+ *   1. locked cells   — missed shifts, commitments at another home/client, open
+ *                       shifts. Read-only; they exist so a taken slot never looks
+ *                       free. They live in their own map and are never submitted.
+ *   2. editable cells — this home's shifts for the day, each addressed by its
+ *                       index in the assignments array.
+ *   3. an "add" affordance — the big empty button when the day has nothing
+ *                       editable yet, otherwise a compact "+" underneath.
+ *
+ * Props:
+ *   cells            — editable cells for this caregiver/date (may be empty).
+ *   lockedCells      — read-only cells for this caregiver/date (may be empty).
+ *   isPast           — past dates are read-only.
+ *   onCycle          — (index) => void, advances one editable cell.
+ *   onSetCustomTime  — (index, field, value) => void.
+ *   onAdd            — () => void, appends a new Day cell to this date.
+ */
+function DayCell({
+	cells,
+	lockedCells,
+	isPast,
+	dayStart,
+	dayEnd,
+	nightStart,
+	nightEnd,
+	dayTimesChanged,
+	nightTimesChanged,
+	onCycle,
+	onSetCustomTime,
+	onAdd,
+}) {
+	// A day fully covered by a multi-day shift can't host another one — the
+	// backend would reject the overlap — so no "+" there. The shift's LAST day
+	// ends partway through, which is exactly the back-to-back-nights case, so
+	// that day stays addable.
+	const fullyCovered = [...lockedCells, ...cells].some(
+		(c) => c.continuation && !c.isLast
+	);
+	const canAdd = !isPast && !fullyCovered;
+
+	return (
+		<div className={styles.cellStack}>
+			{lockedCells.map((cell, i) => (
+				<ShiftCell key={`locked-${cell.shiftId ?? i}`} assignment={cell} isPast={isPast} />
+			))}
+
+			{cells.map((cell, index) => (
+				<ShiftCell
+					key={cell.shiftId ?? `new-${index}`}
+					assignment={cell}
+					isExisting={
+						!!cell.existing &&
+						// Only unmute the type whose times actually changed
+						!(cell.type === "day" && dayTimesChanged) &&
+						!(cell.type === "night" && nightTimesChanged)
+					}
+					isPast={isPast}
+					dayStart={dayStart}
+					dayEnd={dayEnd}
+					nightStart={nightStart}
+					nightEnd={nightEnd}
+					onCycle={() => onCycle(index)}
+					onSetCustomTime={(field, value) => onSetCustomTime(index, field, value)}
+				/>
+			))}
+
+			{cells.length === 0 ? (
+				// Nothing editable yet: the whole cell is the click target, exactly as
+				// before. Locked cells above don't count — you can still schedule
+				// around a missed shift or a commitment elsewhere.
+				<ShiftCell assignment={undefined} isPast={!canAdd} onCycle={onAdd} />
+			) : canAdd ? (
+				<button
+					type="button"
+					className={styles.cellAddBtn}
+					onClick={onAdd}
+					title="Add another shift on this day"
+				>
+					+
+				</button>
+			) : null}
 		</div>
 	);
 }
@@ -475,7 +690,7 @@ function CapacityExceededModal({
 	// The confirm button stays disabled until every failure has a decision.
 	const allDecided =
 		failures.length > 0 &&
-		failures.every((f) => decisions[`${f.caregiverId}_${f.date}`]);
+		failures.every((f) => decisions[failureKey(f)]);
 
 	return (
 		<Modal isOpen onClose={onCancel}>
@@ -488,8 +703,8 @@ function CapacityExceededModal({
 						<h2 className={styles.capacityModalTitle}>Overtime Decision Required</h2>
 						<p className={styles.capacityModalSubtitle}>
 							{failures.length} shift{failures.length !== 1 ? "s" : ""}{" "}
-							exceed{failures.length === 1 ? "s" : ""} the caregiver&apos;s bi-weekly
-							capacity. Choose how to handle each one before resubmitting.
+							add{failures.length === 1 ? "s" : ""} hours past the caregiver&apos;s
+							bi-weekly capacity. Choose how to handle each one before resubmitting.
 						</p>
 					</div>
 				</div>
@@ -500,15 +715,24 @@ function CapacityExceededModal({
 				{/* One card per CAPACITY_EXCEEDED failure */}
 				<div className={styles.capacityFailureList}>
 					{failures.map((failure) => {
-						// Unique key for this caregiver+date combination
-						const key = `${failure.caregiverId}_${failure.date}`;
+						// Unique key for this caregiver + date + shift-type combination
+						const key = failureKey(failure);
 						const {
 							maxHours,
 							committedHours,
 							shiftHours,
 							projectedTotal,
 							overageHours,
+							designatedOverageHours,
+							newOverageHours,
 						} = failure.details ?? {};
+
+						// Overage is attributed incrementally: the decision is about what
+						// THIS cell adds on top of the overage other shifts in the period
+						// already carry, not the period-wide total. Fall back to
+						// `overageHours` so a pre-incremental backend still renders.
+						const newOverage = newOverageHours ?? overageHours;
+						const alreadyDesignated = designatedOverageHours ?? 0;
 
 						// Look up display name from the combined caregiver list
 						const cg = allCaregivers.find(
@@ -537,8 +761,13 @@ function CapacityExceededModal({
 									<span className={styles.capacityStatChip}>Committed {committedHours}h</span>
 									<span className={styles.capacityStatChip}>This shift {shiftHours}h</span>
 									<span className={styles.capacityStatChip}>Total {projectedTotal}h</span>
+									{alreadyDesignated > 0 && (
+										<span className={styles.capacityStatChip}>
+											Designated {alreadyDesignated}h
+										</span>
+									)}
 									<span className={`${styles.capacityStatChip} ${styles.capacityStatOver}`}>
-										+{overageHours}h over
+										+{newOverage}h added
 									</span>
 								</div>
 
@@ -704,26 +933,144 @@ export default function ShiftBuilderPage() {
 		params: {
 			startDate,
 			endDate,
-			status: BUILDER_SHIFT_STATUSES,
+			status: BUILDER_FETCH_STATUSES,
 			...(selectedHomeId ? { homeId: selectedHomeId } : {}),
 			limit: 1000,
 		},
+		// Held until the period and home are known — without the date range the
+		// endpoint falls back to pagination and would return unrelated shifts.
+		enabled: !!startDate && !!endDate && !!selectedHomeId,
 	});
 
-	// The query already excludes cancelled/missed shifts server-side (see
-	// BUILDER_SHIFT_STATUSES); this is a belt-and-suspenders filter so a stray
-	// cancelled shift can never pre-fill the grid, flag casual workers, or flip the
-	// period into PUT (save) mode. Kept as `undefined` while loading so the pre-fill
-	// effect's `if (!activeShifts) return` guard still short-circuits.
-	const activeShifts = useMemo(
-		() => existingShifts?.filter((s) => s.status !== "cancelled"),
-		[existingShifts]
+	// The home query returns everything occupying a slot this period, in three
+	// flavours the grid treats very differently:
+	//
+	//   editableShifts — assigned and workable. These pre-fill the editable grid
+	//                    and decide POST (create-only) vs PUT (create + update).
+	//   missedShifts   — scheduled but not worked. Shown as locked ghosts so the
+	//                    slot doesn't read as "nothing was ever planned"; they
+	//                    don't occupy an editable cell, so a replacement shift can
+	//                    still be scheduled on that day.
+	//   openShifts     — no caregiver. The bulk endpoint keys assignments by
+	//                    caregiverId, so these can't be edited here and get their
+	//                    own read-only row at the bottom of the grid.
+	//
+	// Cancelled shifts are excluded server-side; the guard here is belt-and-
+	// suspenders so a stray one can never pre-fill the grid, flag a casual worker,
+	// or flip the period into PUT (save) mode.
+	const homeShifts = stableShifts(existingShifts);
+
+	const editableShifts = useMemo(
+		() => homeShifts.filter(
+			(s) => s.caregiver && s.status !== "cancelled" && s.status !== "missed"
+		),
+		[homeShifts]
 	);
 
-	// Casual workers for the selected home's region
+	const missedShifts = useMemo(
+		() => homeShifts.filter((s) => s.caregiver && s.status === "missed"),
+		[homeShifts]
+	);
+
+	const openShifts = useMemo(
+		() => homeShifts.filter((s) => !s.caregiver && s.status !== "cancelled"),
+		[homeShifts]
+	);
+
+	// Editable + missed. Used to decide who gets a row: a casual worker whose only
+	// shift here this period was missed still needs one, or the ghost would have
+	// nowhere to render and the slot would look empty all over again.
+	const assignedHomeShifts = useMemo(
+		() => [...editableShifts, ...missedShifts],
+		[editableShifts, missedShifts]
+	);
+
+	// Every worker who gets a row: the home's roster plus the casual workers
+	// surfaced or added below it. Sorted so the query key stays stable.
+	const rosterIds = useMemo(() => {
+		const ids = new Set();
+		for (const cg of homeDetail?.caregivers ?? []) {
+			const id = entityId(cg);
+			if (id) ids.add(id);
+		}
+		for (const cg of addedCasualWorkers) {
+			const id = entityId(cg);
+			if (id) ids.add(id);
+		}
+		return [...ids].sort();
+	}, [homeDetail?.caregivers, addedCasualWorkers]);
+
+	// Second pass over the same period for those same workers, this time WITHOUT
+	// the homeId filter. A shift targets either a home or a client, never both, so
+	// the home query structurally cannot see a roster member's client-targeted
+	// shift — nor one they're working at a different home. Those slots are
+	// genuinely taken, and an admin needs to see that before double-booking.
+	// Rendered locked: visible here, editable only where they belong.
+	const { shifts: rosterShifts } = useShifts({
+		params: {
+			startDate,
+			endDate,
+			status: BUILDER_SHIFT_STATUSES,
+			caregiverIds: rosterIds.join(","),
+			limit: 1000,
+		},
+		enabled: !!startDate && !!endDate && rosterIds.length > 0,
+	});
+
+	// Drop this home's own shifts — the home query above already owns those.
+	const busyShifts = useMemo(
+		() => stableShifts(rosterShifts).filter((s) => entityId(s.home) !== selectedHomeId),
+		[rosterShifts, selectedHomeId]
+	);
+
+	// Read-only overlay: everything occupying a slot that this grid can't edit.
+	// Deliberately kept OUT of `assignments` state so it can never be counted,
+	// published, or clobbered by an edit — the grid merges the two at render time,
+	// and every existing count/payload filter stays untouched.
+	const lockedCells = useMemo(() => {
+		const map = {};
+		addShiftsToAssignments(map, missedShifts, {
+			locked:    "missed",
+			lockLabel: () => "Missed",
+		});
+		addShiftsToAssignments(map, busyShifts, {
+			locked:    "busy",
+			lockLabel: (s) => (s.client
+				? `Client · ${fullName(s.client, "client")}`
+				: `Home · ${s.home?.name ?? "elsewhere"}`),
+		});
+		addShiftsToAssignments(map, openShifts, {
+			locked:    "unassigned",
+			rowId:     UNASSIGNED_ROW_ID,
+			lockLabel: (s) => (s.status === "missed" ? "Open · missed" : "Open"),
+		});
+		return sortAssignmentCells(map);
+	}, [missedShifts, busyShifts, openShifts]);
+
+	// Present only when the home has open shifts this period — drives the extra
+	// read-only row at the bottom of the grid.
+	const unassignedCells = lockedCells[UNASSIGNED_ROW_ID];
+
+	// The pool the search row draws from: every active caregiver whose regions
+	// include this home's region — deliberately NOT restricted to casuals. A
+	// full-timer based at another house in the same region is a legitimate
+	// fill-in, and roster members are filtered out of the results below since
+	// they already have a row.
+	//
+	// Fetched once per region and filtered client-side so typing is instant.
+	// `limit` is therefore the ceiling on how many of a region's caregivers are
+	// searchable — raise it if a region ever outgrows it.
 	const homeRegion = homeDetail?.region ?? null;
-	const { caregivers: allCasualWorkers, isCaregiverLoading: casualLoading } = useCaregivers({
-		params: { employmentStatus: "casual", region: homeRegion, limit: 100 },
+	const { caregivers: regionCaregivers, isCaregiverLoading: casualLoading } = useCaregivers({
+		params: {
+			region: homeRegion,
+			isActive: true,
+			limit: 200,
+			// A shift's worker may be a caregiver or an admin holding access_app,
+			// so the search offers both. Every other caregiver screen leaves this
+			// off and stays caregiver-only.
+			includeAssignableAdmins: true,
+		},
 		enabled: !!homeRegion,
 	});
 
@@ -746,15 +1093,14 @@ export default function ShiftBuilderPage() {
 	}, [homeDetail]);
 
 	// Pre-fill the grid from the API when the home or period changes.
-	// Runs whenever the existingShifts array changes.
+	// Runs whenever the editable shifts change.
 	// Builds a fresh assignments map from server data and saves it as the base
 	// so clearAll can restore to this state.
 	// Also captures the current day/night times as a baseline — if the user later
 	// edits those times, `timesChanged` becomes true and the PUT payload will
 	// include the existing Day/Night cells so their times get updated too.
 	useEffect(() => {
-		if (!activeShifts) return;
-		const base = buildAssignmentsFromShifts(activeShifts);
+		const base = sortAssignmentCells(addShiftsToAssignments({}, editableShifts));
 		baseAssignments.current = base;
 		originalTimes.current = { dayStart, dayEnd, nightStart, nightEnd };
 		setAssignments(base);
@@ -765,7 +1111,7 @@ export default function ShiftBuilderPage() {
 	// dayStart/dayEnd/nightStart/nightEnd are intentionally omitted from deps —
 	// we only want to snapshot them at the moment shifts load, not re-run on every time change.
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeShifts]);
+	}, [editableShifts]);
 
 	// Auto-detect casual workers who have shifts in this home/period but aren't in
 	// the home's permanent roster. Runs whenever existingShifts or homeDetail.caregivers
@@ -775,7 +1121,7 @@ export default function ShiftBuilderPage() {
 	//      (guards against the race where homeDetail resolves after existingShifts
 	//      with an empty caregivers list, causing all shift workers to be flagged
 	//      as "extra" before the real list arrives).
-	//   2. ADD workers from existingShifts whose IDs are not in the roster.
+	//   2. ADD workers from the home's shifts whose IDs are not in the roster.
 	useEffect(() => {
 		if (!homeDetail?.caregivers) return;
 		const homeCgIds = new Set(
@@ -784,8 +1130,8 @@ export default function ShiftBuilderPage() {
 
 		// Build the set of genuinely extra workers from shift data
 		const extraMap = {};
-		if (activeShifts?.length) {
-			for (const shift of activeShifts) {
+		if (assignedHomeShifts.length) {
+			for (const shift of assignedHomeShifts) {
 				const cg = shift.caregiver;
 				if (!cg || typeof cg === "string") continue;
 				const id = (cg._id || cg.id)?.toString();
@@ -811,7 +1157,7 @@ export default function ShiftBuilderPage() {
 			return toAdd.length > 0 ? [...cleaned, ...toAdd] : cleaned;
 		});
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [activeShifts, homeDetail?.caregivers]);
+	}, [assignedHomeShifts, homeDetail?.caregivers]);
 
 	// Close the casual worker search dropdown when the user clicks anywhere outside it.
 	useEffect(() => {
@@ -828,8 +1174,9 @@ export default function ShiftBuilderPage() {
 
 	// ─ Caregiver list & ordering ────────────────────────────────────────────────
 
-	// Caregivers that belong to the selected home
-	const caregivers = homeDetail?.caregivers ?? [];
+	// Caregivers that belong to the selected home. Memoised so the `?? []`
+	// fallback doesn't hand every dependent memo a brand-new array each render.
+	const caregivers = useMemo(() => homeDetail?.caregivers ?? [], [homeDetail?.caregivers]);
 
 	// Caregivers sorted by the user's drag order
 	const sortedCaregivers = useMemo(() => {
@@ -867,55 +1214,56 @@ export default function ShiftBuilderPage() {
 	// Set for O(1) date-in-range checks; also filters out stale assignments
 	const dateSet = useMemo(() => new Set(dates), [dates]);
 
-	// ─ Casual worker search ─────────────────────────────────────────────────────
+	// ─ Worker search ────────────────────────────────────────────────────────────
 
-	// Casual worker search results — excludes already-added workers
+	// Search results — hides anyone who already has a row in the grid: the
+	// home's permanent roster plus the workers added below it. Matches on name
+	// or email so an admin can paste either.
 	const filteredCasualResults = useMemo(() => {
-		const addedIds = new Set(addedCasualWorkers.map((cg) => (cg._id || cg.id)?.toString()));
+		const shownIds = new Set([
+			...caregivers.map(entityId),
+			...addedCasualWorkers.map(entityId),
+		]);
 		const q = casualSearch.trim().toLowerCase();
-		return (allCasualWorkers || []).filter((cg) => {
-			if (addedIds.has((cg._id || cg.id)?.toString())) return false;
+		return (regionCaregivers || []).filter((cg) => {
+			if (shownIds.has(entityId(cg))) return false;
 			if (!q) return true;
 			const name = [cg.firstName, cg.lastName].filter(Boolean).join(" ").toLowerCase();
-			return name.includes(q);
+			return name.includes(q) || (cg.email || "").toLowerCase().includes(q);
 		});
-	}, [allCasualWorkers, casualSearch, addedCasualWorkers]);
+	}, [regionCaregivers, casualSearch, addedCasualWorkers, caregivers]);
 
 	// ─ Grid summary counts ──────────────────────────────────────────────────────
 	// These drive the "Publish N Shifts" / "Save Schedule" button label and
 	// the guard that prevents empty submits.
 
 	// Brand-new cells — no shiftId means they'll be created, not updated
-	const assignmentCount = useMemo(() => {
-		return Object.values(assignments).reduce((total, dateMap) => {
-			const count = Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && !!dateMap[d]?.type && !dateMap[d].existing && !dateMap[d].wasExisting && !dateMap[d].shiftId
-			).length;
-			return total + count;
-		}, 0);
-	}, [assignments, dateSet]);
+	const assignmentCount = useMemo(
+		() => countCells(assignments, dateSet,
+			(c) => !!c.type && !c.existing && !c.wasExisting && !c.shiftId),
+		[assignments, dateSet]
+	);
 
 	// Cells cycled from an existing shift (have shiftId) — these are updates, not creates
-	const updatedCount = useMemo(() => {
-		return Object.values(assignments).reduce((total, dateMap) => {
-			const count = Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && !!dateMap[d]?.type && !dateMap[d].existing && !dateMap[d].wasExisting && !!dateMap[d].shiftId
-			).length;
-			return total + count;
-		}, 0);
-	}, [assignments, dateSet]);
+	const updatedCount = useMemo(
+		() => countCells(assignments, dateSet,
+			(c) => !!c.type && !c.existing && !c.wasExisting && !!c.shiftId),
+		[assignments, dateSet]
+	);
 
 	// Existing custom cells whose inline times were edited (shown separately on the button)
-	const modifiedCustomCount = useMemo(() => {
-		return Object.values(assignments).reduce((total, dateMap) =>
-			total + Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && dateMap[d]?.wasExisting && dateMap[d]?.type === "custom"
-			).length, 0);
-	}, [assignments, dateSet]);
+	const modifiedCustomCount = useMemo(
+		() => countCells(assignments, dateSet,
+			(c) => c.wasExisting && c.type === "custom"),
+		[assignments, dateSet]
+	);
 
 	// True when the selected period already has shifts from the server.
 	// Determines POST (create-only) vs PUT (create + update) mode.
-	const hasExistingShifts = (activeShifts?.length ?? 0) > 0;
+	// Locked cells (missed / busy elsewhere / unassigned) deliberately don't count:
+	// none of them can be updated through the bulk endpoint, so a period holding
+	// only those is still a create-only publish.
+	const hasExistingShifts = editableShifts.length > 0;
 
 	// ─ Time-change tracking ─────────────────────────────────────────────────────
 	// When the user edits the Day/Night hour pickers after shifts have loaded, PUT
@@ -936,21 +1284,19 @@ export default function ShiftBuilderPage() {
 
 	// Number of existing Day/Night cells that will be re-timed on Save.
 	// Used to show the user what will be affected by a time-picker change.
-	const affectedDayCount = useMemo(() => {
-		if (!dayTimesChanged) return 0;
-		return Object.values(assignments).reduce((total, dateMap) =>
-			total + Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && dateMap[d]?.existing && dateMap[d]?.type === "day"
-			).length, 0);
-	}, [assignments, dateSet, dayTimesChanged]);
+	const affectedDayCount = useMemo(
+		() => (dayTimesChanged
+			? countCells(assignments, dateSet, (c) => c.existing && c.type === "day")
+			: 0),
+		[assignments, dateSet, dayTimesChanged]
+	);
 
-	const affectedNightCount = useMemo(() => {
-		if (!nightTimesChanged) return 0;
-		return Object.values(assignments).reduce((total, dateMap) =>
-			total + Object.keys(dateMap).filter(
-				(d) => dateSet.has(d) && dateMap[d]?.existing && dateMap[d]?.type === "night"
-			).length, 0);
-	}, [assignments, dateSet, nightTimesChanged]);
+	const affectedNightCount = useMemo(
+		() => (nightTimesChanged
+			? countCells(assignments, dateSet, (c) => c.existing && c.type === "night")
+			: 0),
+		[assignments, dateSet, nightTimesChanged]
+	);
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -959,47 +1305,67 @@ export default function ShiftBuilderPage() {
 	// They never touch the server — Publish/Save sends the final state in one call.
 
 	/**
-	 * Advances a cell through: empty / existing → day → night → custom → empty.
+	 * Advances one cell of a day's stack through:
+	 *   existing → day → night → custom → day   (updates keep their shiftId)
+	 *   new      → night → custom → gone        (creates can be cleared away)
+	 *
+	 * `index` addresses the cell within `assignments[caregiverId][dateStr]`.
 	 *
 	 * When cycling an existing cell, `shiftId` is preserved so the PUT endpoint
 	 * can update (not duplicate) the shift. `existing: true` is dropped so the cell
 	 * renders bright, signalling it has been modified.
 	 *
-	 * Note: cycling all the way to "clear" on an existing cell does NOT cancel the
-	 * shift on the server — use the cancel flow for that.
+	 * Note: cycling a new cell all the way to "clear" removes it from the stack;
+	 * cycling an EXISTING cell never clears it, because dropping it here would not
+	 * cancel the shift on the server — use the cancel flow for that.
 	 */
-	const cycleCell = useCallback((caregiverId, dateStr) => {
+	const cycleCell = useCallback((caregiverId, dateStr, index) => {
 		setAssignments((prev) => {
 			const caregiverMap = { ...(prev[caregiverId] || {}) };
-			const current      = caregiverMap[dateStr];
-			// A continuation marker belongs to a multi-day shift owned by an
-			// earlier day's cell. Only its LAST day — which ends partway through
-			// (e.g. a night shift ending 07:00) — can still host a NEW shift for
-			// the rest of that day. Full intermediate days stay locked.
-			if (current?.continuation && !current.isLast) return prev;
-			// Never carry a continuation's shiftId onto the new shift — that id
-			// targets the earlier day's shift, not this one (it would make PUT
-			// mutate the wrong shift). New shifts on a continuation day are creates.
-			const shiftId = current?.continuation ? undefined : current?.shiftId;
+			const cells        = [...(caregiverMap[dateStr] || [])];
+			const current      = cells[index];
+			if (!current) return prev;
+			// A continuation marker belongs to a multi-day shift owned by an earlier
+			// day's cell, so it is never edited in place. Scheduling something on a
+			// day a shift runs into is done with the stack's "+" button instead.
+			if (current.continuation) return prev;
+			const shiftId = current.shiftId;
 
-			if (!current || current.existing) {
-				caregiverMap[dateStr] = { type: "day", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
+			if (current.existing) {
+				cells[index] = { type: "day", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
 			} else if (current.type === "day") {
-				caregiverMap[dateStr] = { type: "night", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
+				cells[index] = { type: "night", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
 			} else if (current.type === "night") {
-				caregiverMap[dateStr] = { type: "custom", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
+				cells[index] = { type: "custom", customStart: "", customEnd: "", ...(shiftId ? { shiftId } : {}) };
 			} else if (shiftId) {
 				// Existing shift: custom → Day (DNC loop — no blank state for updates)
-				caregiverMap[dateStr] = { type: "day", customStart: "", customEnd: "", shiftId };
+				cells[index] = { type: "day", customStart: "", customEnd: "", shiftId };
 			} else {
-				// New shift: custom → clear. If this cell was originally a
-				// continuation marker, restore it so the multi-day reference stays
-				// visible instead of leaving the cell blank.
-				const base = baseAssignments.current[caregiverId]?.[dateStr];
-				if (base?.continuation) caregiverMap[dateStr] = base;
-				else delete caregiverMap[dateStr];
+				// New shift: custom → clear. Drop it out of the stack entirely.
+				cells.splice(index, 1);
 			}
 
+			if (cells.length === 0) delete caregiverMap[dateStr];
+			else caregiverMap[dateStr] = cells;
+			return { ...prev, [caregiverId]: caregiverMap };
+		});
+	}, []);
+
+	/**
+	 * Appends a new Day cell to a date's stack.
+	 *
+	 * This is the only way a second shift lands on a day that already has one —
+	 * clicking an existing cell edits it rather than stacking on top of it. The
+	 * bulk endpoint takes assignments as a flat per-caregiver list, so several
+	 * cells on the same date need no special handling on the way out.
+	 */
+	const addCell = useCallback((caregiverId, dateStr) => {
+		setAssignments((prev) => {
+			const caregiverMap = { ...(prev[caregiverId] || {}) };
+			caregiverMap[dateStr] = [
+				...(caregiverMap[dateStr] || []),
+				{ type: "day", customStart: "", customEnd: "" },
+			];
 			return { ...prev, [caregiverId]: caregiverMap };
 		});
 	}, []);
@@ -1008,21 +1374,21 @@ export default function ShiftBuilderPage() {
 	 *  If the cell was loaded from the API (existing: true), editing its times
 	 *  clears that flag so it lights up, counts toward the button total, and
 	 *  gets included in the PUT payload with its shiftId. */
-	const setCustomTime = useCallback((caregiverId, dateStr, field, value) => {
+	const setCustomTime = useCallback((caregiverId, dateStr, index, field, value) => {
 		setAssignments((prev) => {
-			const current = prev[caregiverId]?.[dateStr] || {};
+			const cells   = [...(prev[caregiverId]?.[dateStr] || [])];
+			const current = cells[index];
+			if (!current) return prev;
+			cells[index] = {
+				...current,
+				[field]: value,
+				// Touching the time on an existing cell marks it as modified.
+				// wasExisting distinguishes "edited server shift" from a brand-new cell.
+				...(current.existing ? { existing: false, wasExisting: true } : {}),
+			};
 			return {
 				...prev,
-				[caregiverId]: {
-					...(prev[caregiverId] || {}),
-					[dateStr]: {
-						...current,
-						[field]: value,
-						// Touching the time on an existing cell marks it as modified.
-						// wasExisting distinguishes "edited server shift" from a brand-new cell.
-						...(current.existing ? { existing: false, wasExisting: true } : {}),
-					},
-				},
+				[caregiverId]: { ...(prev[caregiverId] || {}), [dateStr]: cells },
 			};
 		});
 	}, []);
@@ -1182,8 +1548,13 @@ export default function ShiftBuilderPage() {
 
 	const openCasualDropdown = useCallback(() => {
 		if (casualSearchRef.current) {
-			const rect = casualSearchRef.current.getBoundingClientRect();
-			setCasualDropdownPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 260) });
+			const rect  = casualSearchRef.current.getBoundingClientRect();
+			// Anchor to the input's left edge, but keep the whole dropdown on
+			// screen: the row is inside a horizontally scrollable table, so that
+			// edge can sit far to the right (or off-screen) on a wide grid.
+			const width = Math.min(SEARCH_DROPDOWN_WIDTH, window.innerWidth - 16);
+			const left  = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+			setCasualDropdownPos({ top: rect.bottom + 4, left, width });
 		}
 		setShowCasualDropdown(true);
 	}, []);
@@ -1198,26 +1569,18 @@ export default function ShiftBuilderPage() {
 	 */
 	// Counts cells that WILL be written and whose duration exceeds 12 hours, so we
 	// can warn before publishing. Mirrors the payload filters in doSubmit().
-	const countLongShifts = () => {
-		let count = 0;
-		for (const dateMap of Object.values(assignments)) {
-			for (const [d, v] of Object.entries(dateMap)) {
-				if (!dateSet.has(d) || !v?.type) continue;
-				const willWrite = !v.existing || (
-					v.existing && (
-						(v.type === "day" && dayTimesChanged) ||
-						(v.type === "night" && nightTimesChanged)
-					)
-				);
-				if (!willWrite) continue;
-				const hrs = v.type === "day"   ? windowHours(dayStart, dayEnd)
-				          : v.type === "night" ? windowHours(nightStart, nightEnd)
-				          :                      windowHours(v.customStart, v.customEnd);
-				if (hrs > 12) count++;
-			}
-		}
-		return count;
-	};
+	const countLongShifts = () => countCells(assignments, dateSet, (v) => {
+		if (!v.type) return false;
+		const willWrite = !v.existing || (
+			(v.type === "day" && dayTimesChanged) ||
+			(v.type === "night" && nightTimesChanged)
+		);
+		if (!willWrite) return false;
+		const hrs = v.type === "day"   ? windowHours(dayStart, dayEnd)
+		          : v.type === "night" ? windowHours(nightStart, nightEnd)
+		          :                      windowHours(v.customStart, v.customEnd);
+		return hrs > 12;
+	});
 
 	// Gate: warn on any >12h shift, then run the real submit once confirmed.
 	const handleSubmit = () => {
@@ -1255,13 +1618,16 @@ export default function ShiftBuilderPage() {
 
 			const caregiverPayload = [];
 			for (const [caregiverId, dateMap] of Object.entries(assignments)) {
-				const cells = Object.entries(dateMap)
-					.filter(([d, v]) => dateSet.has(d) && !!v?.type && !v.existing)
-					.map(([d, v]) => {
+				const cells = [];
+				for (const [d, dayCells] of Object.entries(dateMap)) {
+					if (!dateSet.has(d)) continue;
+					for (const v of dayCells) {
+						if (!v.type || v.existing) continue;
 						const entry = { date: d, type: v.type };
 						if (v.type === "custom") entry.customTime = { start: v.customStart, end: v.customEnd };
-						return entry;
-					});
+						cells.push(entry);
+					}
+				}
 				if (cells.length > 0) caregiverPayload.push({ caregiverId, assignments: cells });
 			}
 			if (caregiverPayload.length === 0) return;
@@ -1299,22 +1665,27 @@ export default function ShiftBuilderPage() {
 			const caregiverPayload = [];
 			for (const [caregiverId, dateMap] of Object.entries(assignments)) {
 				const cells = [];
-				for (const [d, v] of Object.entries(dateMap)) {
-					if (!dateSet.has(d) || !v?.type) continue;
+				for (const [d, dayCells] of Object.entries(dateMap)) {
+					if (!dateSet.has(d)) continue;
+					for (const v of dayCells) {
+						// Skips continuation markers — they have no `type` and are owned
+						// by their start-day cell.
+						if (!v.type) continue;
 
-					if (!v.existing) {
-						// User modified this cell (new, cycled from existing, or custom time edited)
-						// shiftId present → backend updates; absent → backend creates
-						const entry = { date: d, type: v.type };
-						if (v.shiftId) entry.shiftId = v.shiftId;
-						if (v.type === "custom") entry.customTime = { start: v.customStart, end: v.customEnd };
-						cells.push(entry);
-					} else if (
-						v.existing && v.shiftId &&
-						((v.type === "day" && dayTimesChanged) || (v.type === "night" && nightTimesChanged))
-					) {
-						// Untouched Day/Night cell whose global times changed — re-send so backend updates times
-						cells.push({ shiftId: v.shiftId, date: d, type: v.type });
+						if (!v.existing) {
+							// User modified this cell (new, cycled from existing, or custom time edited)
+							// shiftId present → backend updates; absent → backend creates
+							const entry = { date: d, type: v.type };
+							if (v.shiftId) entry.shiftId = v.shiftId;
+							if (v.type === "custom") entry.customTime = { start: v.customStart, end: v.customEnd };
+							cells.push(entry);
+						} else if (
+							v.shiftId &&
+							((v.type === "day" && dayTimesChanged) || (v.type === "night" && nightTimesChanged))
+						) {
+							// Untouched Day/Night cell whose global times changed — re-send so backend updates times
+							cells.push({ shiftId: v.shiftId, date: d, type: v.type });
+						}
 					}
 				}
 				if (cells.length > 0) caregiverPayload.push({ caregiverId, assignments: cells });
@@ -1384,12 +1755,14 @@ export default function ShiftBuilderPage() {
 		// Build a payload of only the previously-failed cells with overageDecision added.
 		const resubmitPayload = [];
 		for (const failure of failures) {
-			const decision = decisions[`${failure.caregiverId}_${failure.date}`];
+			const decision = decisions[failureKey(failure)];
 			if (!decision) continue; // guarded by allDecided in modal, but safety-first
 
 			// Recover the original cell we sent (type, customTime, shiftId for updates)
 			const cgEntry      = originalPayload.find((p) => p.caregiverId === failure.caregiverId);
-			const originalCell = cgEntry?.assignments?.find((a) => a.date === failure.date);
+			const originalCell = cgEntry?.assignments?.find(
+				(a) => a.date === failure.date && a.type === failure.type
+			);
 			if (!originalCell) continue;
 
 			// Append to the right caregiver bucket in the resubmit payload
@@ -1640,10 +2013,6 @@ export default function ShiftBuilderPage() {
 						<div className={styles.tableCard}>
 							<ErrorState isLoading />
 						</div>
-					) : caregivers.length === 0 ? (
-						<div className={styles.emptyState}>
-							No active caregivers found for this home.
-						</div>
 					) : (
 						<div className={styles.tableCard}>
 							<div className={styles.tableWrap}>
@@ -1681,11 +2050,13 @@ export default function ShiftBuilderPage() {
 										{sortedCaregivers.map((caregiver, rowIndex) => {
 											const caregiverId          = (caregiver._id || caregiver.id)?.toString();
 											const caregiverAssignments = assignments[caregiverId] || {};
+											const caregiverLocked      = lockedCells[caregiverId] || {};
 
 											// Only count NEW (non-existing) assignments for this row
-											const newCount = Object.keys(caregiverAssignments).filter(
-												(d) => dateSet.has(d) && !!caregiverAssignments[d]?.type && !caregiverAssignments[d].existing
-											).length;
+											const newCount = countCells(
+												{ row: caregiverAssignments }, dateSet,
+												(c) => !!c.type && !c.existing
+											);
 
 											const cgName       = fullName(caregiver, "Unknown");
 											const isDragTarget = dragOverId === caregiverId;
@@ -1734,7 +2105,6 @@ export default function ShiftBuilderPage() {
 
 													{/* One shift cell per date */}
 													{dates.map((dateStr) => {
-														const asgn    = caregiverAssignments[dateStr];
 														const isToday = dateStr === todayStr;
 														const isPast  = dateStr < todayStr;
 														return (
@@ -1742,21 +2112,19 @@ export default function ShiftBuilderPage() {
 																key={dateStr}
 																className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}${isPast ? ` ${styles.tdCellPast}` : ""}`}
 															>
-																<ShiftCell
-																	assignment={asgn}
-																	isExisting={
-																		!!asgn?.existing &&
-																		// Only unmute the type whose times actually changed
-																		!(asgn?.type === "day" && dayTimesChanged) &&
-																		!(asgn?.type === "night" && nightTimesChanged)
-																	}
+																<DayCell
+																	cells={caregiverAssignments[dateStr] || EMPTY_CELLS}
+																	lockedCells={caregiverLocked[dateStr] || EMPTY_CELLS}
 																	isPast={isPast}
 																	dayStart={dayStart}
 																	dayEnd={dayEnd}
 																	nightStart={nightStart}
 																	nightEnd={nightEnd}
-																	onCycle={() => cycleCell(caregiverId, dateStr)}
-																	onSetCustomTime={(field, value) => setCustomTime(caregiverId, dateStr, field, value)}
+																	dayTimesChanged={dayTimesChanged}
+																	nightTimesChanged={nightTimesChanged}
+																	onCycle={(index) => cycleCell(caregiverId, dateStr, index)}
+																	onSetCustomTime={(index, field, value) => setCustomTime(caregiverId, dateStr, index, field, value)}
+																	onAdd={() => addCell(caregiverId, dateStr)}
 																/>
 															</td>
 														);
@@ -1772,20 +2140,40 @@ export default function ShiftBuilderPage() {
 											);
 										})}
 
-									{/* ── Casual worker separator + rows ──────── */}
+									{/*
+									 * ── Empty roster hint ────────────────────
+									 * A home with nobody assigned still gets the
+									 * full grid — the search row below is the only
+									 * way to staff it, so hiding the table would
+									 * leave the admin with nothing to act on.
+									 */}
+									{sortedCaregivers.length === 0 && addedCasualWorkers.length === 0 && (
+										<tr className={styles.emptyRosterRow}>
+											<td colSpan={dates.length + 2} className={styles.emptyRosterCell}>
+												No caregivers are assigned to this home
+												{homeRegion
+													? ` — search ${homeRegion} below to add one.`
+													: ". Set a region on this home to search for workers."}
+											</td>
+										</tr>
+									)}
+
+									{/* ── Added worker separator + rows ───────── */}
 									{addedCasualWorkers.length > 0 && (
 										<tr className={styles.casualSeparatorRow}>
 											<td colSpan={dates.length + 2} className={styles.casualSeparatorCell}>
-												Casual Workers
+												Additional Workers
 											</td>
 										</tr>
 									)}
 									{addedCasualWorkers.map((caregiver) => {
 										const caregiverId          = (caregiver._id || caregiver.id)?.toString();
 										const caregiverAssignments = assignments[caregiverId] || {};
-										const newCount = Object.keys(caregiverAssignments).filter(
-											(d) => dateSet.has(d) && !!caregiverAssignments[d]?.type && !caregiverAssignments[d].existing
-										).length;
+										const caregiverLocked      = lockedCells[caregiverId] || {};
+										const newCount = countCells(
+											{ row: caregiverAssignments }, dateSet,
+											(c) => !!c.type && !c.existing
+										);
 										const cgName = fullName(caregiver, "Unknown");
 										// Renamed: outer hasExistingShifts is a period-level check; this is per-caregiver
 										const casualHasShifts = Object.keys(baseAssignments.current[caregiverId] || {}).length > 0;
@@ -1839,7 +2227,6 @@ export default function ShiftBuilderPage() {
 													</div>
 												</td>
 												{dates.map((dateStr) => {
-													const asgn    = caregiverAssignments[dateStr];
 													const isToday = dateStr === todayStr;
 													const isPast  = dateStr < todayStr;
 													return (
@@ -1847,20 +2234,19 @@ export default function ShiftBuilderPage() {
 															key={dateStr}
 															className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}${isPast ? ` ${styles.tdCellPast}` : ""}`}
 														>
-															<ShiftCell
-																assignment={asgn}
-																isExisting={
-																	!!asgn?.existing &&
-																	!(asgn?.type === "day" && dayTimesChanged) &&
-																	!(asgn?.type === "night" && nightTimesChanged)
-																}
+															<DayCell
+																cells={caregiverAssignments[dateStr] || EMPTY_CELLS}
+																lockedCells={caregiverLocked[dateStr] || EMPTY_CELLS}
 																isPast={isPast}
 																dayStart={dayStart}
 																dayEnd={dayEnd}
 																nightStart={nightStart}
 																nightEnd={nightEnd}
-																onCycle={() => cycleCell(caregiverId, dateStr)}
-																onSetCustomTime={(field, value) => setCustomTime(caregiverId, dateStr, field, value)}
+																dayTimesChanged={dayTimesChanged}
+																nightTimesChanged={nightTimesChanged}
+																onCycle={(index) => cycleCell(caregiverId, dateStr, index)}
+																onSetCustomTime={(index, field, value) => setCustomTime(caregiverId, dateStr, index, field, value)}
+																onAdd={() => addCell(caregiverId, dateStr)}
 															/>
 														</td>
 													);
@@ -1872,7 +2258,53 @@ export default function ShiftBuilderPage() {
 										);
 									})}
 
-									{/* ── Casual worker search row ────────────── */}
+									{/*
+									 * ── Unassigned / open shifts ─────────────
+									 * Shifts at this home with no caregiver. They occupy real
+									 * slots, but the bulk endpoint keys every assignment by
+									 * caregiverId, so there's nothing to edit here — the row
+									 * exists so an open shift isn't invisible while the admin
+									 * builds around it. Assign one from the shift detail page.
+									 */}
+									{unassignedCells && (
+										<>
+											<tr className={styles.casualSeparatorRow}>
+												<td colSpan={dates.length + 2} className={styles.casualSeparatorCell}>
+													Unassigned Shifts
+												</td>
+											</tr>
+											<tr className={`${styles.tr} ${styles.casualRow}`}>
+												<td className={styles.tdName}>
+													<div className={styles.tdNameInner}>
+														<span className={styles.unassignedAvatar}>?</span>
+														<span className={styles.tdNameText}>Open / unassigned</span>
+													</div>
+												</td>
+												{dates.map((dateStr) => {
+													const isToday = dateStr === todayStr;
+													const isPast  = dateStr < todayStr;
+													return (
+														<td
+															key={dateStr}
+															className={`${styles.tdCell}${isToday ? ` ${styles.tdCellToday}` : ""}${isPast ? ` ${styles.tdCellPast}` : ""}`}
+														>
+															<DayCell
+																cells={EMPTY_CELLS}
+																lockedCells={unassignedCells[dateStr] || EMPTY_CELLS}
+																isPast
+																onCycle={noop}
+																onSetCustomTime={noop}
+																onAdd={noop}
+															/>
+														</td>
+													);
+												})}
+												<td className={styles.tdTotal} />
+											</tr>
+										</>
+									)}
+
+									{/* ── Worker search row ───────────────────── */}
 									{selectedHomeId && (
 										<tr className={styles.casualSearchRow}>
 											<td colSpan={dates.length + 2} className={styles.casualSearchCell}>
@@ -1881,7 +2313,7 @@ export default function ShiftBuilderPage() {
 													<input
 														ref={casualSearchRef}
 														className={styles.casualSearchInput}
-														placeholder={homeRegion ? `Search casual workers in ${homeRegion}…` : "Search casual workers…"}
+														placeholder={homeRegion ? `Search employees in ${homeRegion}…` : "Search employees…"}
 														value={casualSearch}
 														onChange={(e) => { setCasualSearch(e.target.value); setShowCasualDropdown(true); }}
 														onFocus={openCasualDropdown}
@@ -1898,7 +2330,7 @@ export default function ShiftBuilderPage() {
 					</div>
 					)}
 
-					{/* ── Casual worker dropdown (fixed-position) ─────────── */}
+					{/* ── Worker search dropdown (fixed-position) ─────────── */}
 					{showCasualDropdown && filteredCasualResults.length > 0 && (
 						<div
 							className={styles.casualDropdown}
@@ -1921,7 +2353,14 @@ export default function ShiftBuilderPage() {
 											className={styles.casualDropdownAvatar}
 										/>
 										<div className={styles.casualDropdownInfo}>
-											<span className={styles.casualDropdownName}>{name}</span>
+											<span className={styles.casualDropdownNameRow}>
+												<span className={styles.casualDropdownName}>{name}</span>
+												{/* Admins holding access_app can be assigned shifts too, so the
+												    row says which kind of account this is. */}
+												<span className={`${styles.roleTag} ${cg.role === "admin" ? styles.roleTagAdmin : styles.roleTagCaregiver}`}>
+													{cg.role === "admin" ? "Admin" : "Caregiver"}
+												</span>
+											</span>
 											{cg.email && <span className={styles.casualDropdownSub}>{cg.email}</span>}
 										</div>
 										<UserPlus size={13} className={styles.casualDropdownAddIcon} />
@@ -1971,7 +2410,7 @@ export default function ShiftBuilderPage() {
 							<span>Custom time</span>
 						</div>
 						<span className={styles.legendNote}>
-							Muted = existing &nbsp;·&nbsp; Bright = new &nbsp;·&nbsp; New shifts: D → N → C → clear &nbsp;·&nbsp; Existing shifts: D → N → C → D &nbsp;·&nbsp; Drag <GripVertical size={11} style={{ display: "inline", verticalAlign: "middle" }} /> to reorder
+							Muted = existing &nbsp;·&nbsp; Bright = new &nbsp;·&nbsp; New shifts: D → N → C → clear &nbsp;·&nbsp; Existing shifts: D → N → C → D &nbsp;·&nbsp; <strong>+</strong> adds a second shift on the same day &nbsp;·&nbsp; Greyed chips are read-only (missed, booked elsewhere, or unassigned) &nbsp;·&nbsp; Drag <GripVertical size={11} style={{ display: "inline", verticalAlign: "middle" }} /> to reorder
 						</span>
 					</div>
 

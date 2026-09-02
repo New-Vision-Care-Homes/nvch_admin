@@ -38,6 +38,7 @@ import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
 import ApproveModal           from "./_components/ApproveModal";
 import MandateRejectModal     from "./_components/MandateRejectModal";
+import RejectReasonField      from "@components/UI/RejectReasonField";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -571,27 +572,19 @@ export default function ApprovalDetailPage() {
                                         overtime_mandate uses MandateRejectModal (requires caregiver reassignment). */}
                                     {showRejectForm && (
                                         <div className={styles.rejectForm}>
-                                            <label className={styles.rejectLabel}>
-                                                Reason for rejection
-                                                <span>*</span>
-                                            </label>
-                                            <textarea
-                                                className={`${styles.rejectTextarea} ${rejectReasonErr ? styles.rejectTextareaError : ""}`}
-                                                rows={3}
+                                            <RejectReasonField
                                                 placeholder={
                                                     subjectType === "banked_hours_payout"
                                                         ? "Explain why this payout request is being rejected…"
                                                         : "Explain why this certificate is being rejected…"
                                                 }
                                                 value={rejectReason}
-                                                onChange={(e) => {
-                                                    setRejectReason(e.target.value);
-                                                    if (e.target.value.trim()) setRejectReasonErr("");
+                                                error={rejectReasonErr}
+                                                onChange={(text) => {
+                                                    setRejectReason(text);
+                                                    if (text.trim()) setRejectReasonErr("");
                                                 }}
                                             />
-                                            {rejectReasonErr && (
-                                                <span className={styles.rejectErrorMsg}>{rejectReasonErr}</span>
-                                            )}
                                             <ActionMessage variant="error" message={rejectError} />
                                             <div className={styles.rejectActions}>
                                                 <Button

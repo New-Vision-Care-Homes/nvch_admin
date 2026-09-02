@@ -20,7 +20,12 @@ const HALIFAX_TZ = "America/Halifax";
  *   caregiverName   — display name of the caregiver who exceeded capacity
  *   details         — CAPACITY_EXCEEDED details payload from the 409 response:
  *                     { maxHours, committedHours, shiftHours, projectedTotal,
- *                       overageHours, payPeriod }
+ *                       overageHours, designatedOverageHours, newOverageHours,
+ *                       payPeriod }
+ *                     Overage is attributed incrementally, so the decision is
+ *                     about `newOverageHours` — what THIS shift adds on top of
+ *                     the overage other shifts in the period already carry —
+ *                     not `overageHours`, which is the period-wide total.
  *   decision        — currently selected option: "mandated" | "voluntary" | null
  *   onDecisionChange — (value: string) => void — called when a decision button is clicked
  *   onConfirm       — called when "Confirm & Create Shift" is clicked
@@ -36,6 +41,11 @@ export default function CapacityExceededModal({
 	onConfirm,
 	isSaving,
 }) {
+	// Pre-incremental backends only sent `overageHours`; fall back to it so an
+	// older API still renders a sensible figure.
+	const newOverage = details.newOverageHours ?? details.overageHours;
+	const alreadyDesignated = details.designatedOverageHours ?? 0;
+
 	const pp = details.payPeriod;
 	const ppLabel = pp
 		? `PP${pp.periodNumber} · ${
@@ -54,8 +64,9 @@ export default function CapacityExceededModal({
 					<div>
 						<h2 className={styles.capModalTitle}>Overtime Capacity Exceeded</h2>
 						<p className={styles.capModalSubtitle}>
-							<strong>{caregiverName}</strong> will exceed their bi-weekly capacity
-							for this pay period. Choose how to handle the overage.
+							This shift adds <strong>{newOverage}h</strong> past{" "}
+							<strong>{caregiverName}</strong>&apos;s bi-weekly capacity for this pay
+							period. Choose how to handle those hours.
 						</p>
 					</div>
 				</div>
@@ -78,9 +89,20 @@ export default function CapacityExceededModal({
 						<span className={styles.capStatLabel}>Projected total</span>
 						<span className={styles.capStatValue}>{details.projectedTotal}h</span>
 					</div>
+					{/*
+					 * Only meaningful once another shift in the period is already
+					 * designated — it explains why "This change adds" is smaller
+					 * than the period's total overage.
+					 */}
+					{alreadyDesignated > 0 && (
+						<div className={styles.capStat}>
+							<span className={styles.capStatLabel}>Already designated</span>
+							<span className={styles.capStatValue}>{alreadyDesignated}h</span>
+						</div>
+					)}
 					<div className={`${styles.capStat} ${styles.capStatOverage}`}>
-						<span className={styles.capStatLabel}>Over by</span>
-						<span className={styles.capStatValue}>+{details.overageHours}h</span>
+						<span className={styles.capStatLabel}>This change adds</span>
+						<span className={styles.capStatValue}>+{newOverage}h</span>
 					</div>
 				</div>
 

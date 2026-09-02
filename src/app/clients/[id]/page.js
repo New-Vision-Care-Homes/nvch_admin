@@ -97,6 +97,11 @@ export default function Page() {
 		setHoursError(null);
 		setHoursSuccess(null);
 
+		// The update endpoint is a full PUT, not a partial PATCH, so changing
+		// just allowableHours still requires resending every other field from
+		// the currently loaded client — omitting one would blank it out. This
+		// mirrors the fields buildBody() builds in components/Info.js; keep
+		// both in sync if the client schema gains a field.
 		const cd = clientDetail;
 		const fullPayload = {
 			email: cd.email,
