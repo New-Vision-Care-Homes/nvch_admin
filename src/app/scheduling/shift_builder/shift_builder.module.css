@@ -1321,6 +1321,8 @@
 .casualDropdown {
 	position: fixed;
 	z-index: 9999;
+	/* Belt-and-suspenders against the inline width, which is clamped in JS. */
+	max-width: calc(100vw - 16px);
 	background: #fff;
 	border: 1px solid #e5e7eb;
 	border-radius: 10px;
@@ -1359,6 +1361,35 @@
 	display: flex;
 	flex-direction: column;
 	gap: 1px;
+}
+
+/* Name + role tag share a line; the email sits underneath. */
+.casualDropdownNameRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.roleTag {
+	flex-shrink: 0;
+	padding: 1px 6px;
+	border-radius: 999px;
+	font-size: 9px;
+	font-weight: 800;
+	line-height: 1.5;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.roleTagAdmin {
+	background: #eef2ff;
+	color: #4338ca;
+}
+
+.roleTagCaregiver {
+	background: #ecfdf5;
+	color: #047857;
 }
 
 .casualDropdownName {

@@ -124,6 +124,12 @@ const UNASSIGNED_ROW_ID = "__unassigned__";
 // prop identity on each render, across ~14 days × every caregiver.
 const EMPTY_CELLS = [];
 
+// Width of the worker-search dropdown. Fixed rather than matched to the search
+// input: that input sits in a colSpan cell spanning the entire grid, so on a
+// 14-day period its width is well over a thousand pixels and the dropdown ran
+// off the side of the screen.
+const SEARCH_DROPDOWN_WIDTH = 340;
+
 /** No-op handler for the read-only unassigned row. */
 const noop = () => {};
 
@@ -1534,8 +1540,13 @@ export default function ShiftBuilderPage() {
 
 	const openCasualDropdown = useCallback(() => {
 		if (casualSearchRef.current) {
-			const rect = casualSearchRef.current.getBoundingClientRect();
-			setCasualDropdownPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 260) });
+			const rect  = casualSearchRef.current.getBoundingClientRect();
+			// Anchor to the input's left edge, but keep the whole dropdown on
+			// screen: the row is inside a horizontally scrollable table, so that
+			// edge can sit far to the right (or off-screen) on a wide grid.
+			const width = Math.min(SEARCH_DROPDOWN_WIDTH, window.innerWidth - 16);
+			const left  = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+			setCasualDropdownPos({ top: rect.bottom + 4, left, width });
 		}
 		setShowCasualDropdown(true);
 	}, []);
@@ -2334,7 +2345,14 @@ export default function ShiftBuilderPage() {
 											className={styles.casualDropdownAvatar}
 										/>
 										<div className={styles.casualDropdownInfo}>
-											<span className={styles.casualDropdownName}>{name}</span>
+											<span className={styles.casualDropdownNameRow}>
+												<span className={styles.casualDropdownName}>{name}</span>
+												{/* Admins holding access_app can be assigned shifts too, so the
+												    row says which kind of account this is. */}
+												<span className={`${styles.roleTag} ${cg.role === "admin" ? styles.roleTagAdmin : styles.roleTagCaregiver}`}>
+													{cg.role === "admin" ? "Admin" : "Caregiver"}
+												</span>
+											</span>
 											{cg.email && <span className={styles.casualDropdownSub}>{cg.email}</span>}
 										</div>
 										<UserPlus size={13} className={styles.casualDropdownAddIcon} />
