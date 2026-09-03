@@ -9,7 +9,7 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
@@ -34,7 +34,7 @@ export default function Clients() {
 	const [statusFilter, setStatusFilter]   = useState("");
 	const [homeId, setHomeId]               = useState("");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedClientId, setDeletedClientId] = useState(null);
+	const [deletedClient, setDeletedClient] = useState(null);
 	const [currentPage, setCurrentPage]     = useState(1);
 	const itemsPerPage = 10;
 
@@ -82,8 +82,8 @@ export default function Clients() {
 	}, [clients, isLoading, currentPage]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedClientId(id);
+	const deleteHandler = (client) => {
+		setDeletedClient(client);
 		setShowModal(true);
 	};
 
@@ -93,11 +93,12 @@ export default function Clients() {
 	};
 
 	const confirmDelete = () => {
-		deleteClient(deletedClientId, {
-			onSettled: () => {
+		deleteClient(deletedClient.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedClientId(null);
+				setDeletedClient(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -211,7 +212,7 @@ export default function Clients() {
 															<Eye size={15} />
 														</IconButton>
 														{canDeleteClient(client) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(client.id)} title="Delete Client">
+															<IconButton variant="danger" onClick={() => deleteHandler(client)} title="Delete Client">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -228,17 +229,14 @@ export default function Clients() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this client?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedClient ? `${deletedClient.firstName} ${deletedClient.lastName}` : ""}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }

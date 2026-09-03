@@ -14,7 +14,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { ColorPill } from "@components/UI/Badge";
 import { HOME_TYPE_OPTIONS, HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -72,15 +72,19 @@ export default function Homes() {
 
 	// --- Delete ---
 	const [showModal, setShowModal] = useState(false);
-	const [deletedHomeId, setDeletedHomeId] = useState(null);
+	const [deletedHome, setDeletedHome] = useState(null);
 
-	const handleDeleteClick = (id) => { setDeletedHomeId(id); setShowModal(true); };
+	const handleDeleteClick = (home) => { setDeletedHome(home); setShowModal(true); };
 	const closeModal = () => { if (isActionPending) return; setShowModal(false); };
 	const confirmDelete = async () => {
-		if (!deletedHomeId) return;
-		try { await deleteHome(deletedHomeId); }
-		catch { /* surfaced via actionError */ }
-		finally { setShowModal(false); setDeletedHomeId(null); }
+		if (!deletedHome) return;
+		try {
+			await deleteHome(deletedHome.id || deletedHome._id);
+			setShowModal(false);
+			setDeletedHome(null);
+		} catch {
+			// Keep the modal open so the error (shown via `actionError` below) stays in context.
+		}
 	};
 
 	const handlePageClick = (event) => setCurrentPage(event.selected);
@@ -252,7 +256,7 @@ export default function Homes() {
 																		<Eye size={15} />
 																	</IconButton>
 																	{canDelete && (
-																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(homeId)}>
+																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(home)}>
 																			<Trash2 size={15} />
 																		</IconButton>
 																	)}
@@ -275,17 +279,14 @@ export default function Homes() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={closeModal}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this home?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={closeModal} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={closeModal}
+				onConfirm={confirmDelete}
+				itemName={deletedHome?.name}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }

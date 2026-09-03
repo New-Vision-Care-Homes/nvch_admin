@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2, Loader } from "lucide-react";
+import ActionMessage from "./ActionMessage";
 import styles from "./ConfirmDeleteModal.module.css";
 
 /**
@@ -11,8 +12,10 @@ import styles from "./ConfirmDeleteModal.module.css";
  * @param {Function} onConfirm   - Called when user confirms deletion
  * @param {string}   itemName    - Human-readable name of the item being deleted
  * @param {boolean}  isLoading   - Disables buttons and shows spinner on Delete
+ * @param {string}   [warningText]  - Optional extra line of copy shown below the standard message
+ * @param {string}   [errorMessage] - Shown inline (e.g. when the backend rejects the delete) instead of closing the modal
  */
-export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, itemName, isLoading }) {
+export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, itemName, isLoading, warningText, errorMessage }) {
     if (!isOpen) return null;
 
     return (
@@ -27,6 +30,8 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, itemNam
                     Are you sure you want to permanently delete <strong>{itemName}</strong>?
                     This action cannot be undone.
                 </p>
+                {warningText && <p className={styles.message}>{warningText}</p>}
+                {errorMessage && <ActionMessage variant="error" message={errorMessage} />}
                 <div className={styles.actions}>
                     <button className={styles.cancelBtn} onClick={onClose} disabled={isLoading}>
                         Cancel

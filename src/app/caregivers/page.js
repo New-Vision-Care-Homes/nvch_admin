@@ -10,7 +10,7 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 
@@ -37,7 +37,7 @@ export default function Caregivers() {
 	const [statusFilter, setStatusFilter]   = useState("Active");
 	const [homeId, setHomeId]               = useState("");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null);
+	const [deletedCaregiver, setDeletedCaregiver] = useState(null);
 	const [currentPage, setCurrentPage]     = useState(1);
 	const itemsPerPage = 10;
 
@@ -78,8 +78,8 @@ export default function Caregivers() {
 	}, [debouncedSearch, statusFilter, homeId]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedCaregiverId(id);
+	const deleteHandler = (caregiver) => {
+		setDeletedCaregiver(caregiver);
 		setShowModal(true);
 	};
 
@@ -89,12 +89,13 @@ export default function Caregivers() {
 	};
 
 	const confirmDelete = () => {
-		if (!deletedCaregiverId) return;
-		deleteCaregiver(deletedCaregiverId, {
-			onSettled: () => {
+		if (!deletedCaregiver) return;
+		deleteCaregiver(deletedCaregiver.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedCaregiverId(null);
+				setDeletedCaregiver(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -208,7 +209,7 @@ export default function Caregivers() {
 															</IconButton>
 														)}
 														{canDeleteCaregiver(caregiver) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(caregiver.id)} title="Delete Caregiver">
+															<IconButton variant="danger" onClick={() => deleteHandler(caregiver)} title="Delete Caregiver">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -225,17 +226,14 @@ export default function Caregivers() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this caregiver?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isCaregiverActionPending}>
-							{isCaregiverActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isCaregiverActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedCaregiver ? fullName(deletedCaregiver) : ""}
+				isLoading={isCaregiverActionPending}
+				errorMessage={caregiverActionError}
+			/>
 		</>
 	);
 }

@@ -11,7 +11,7 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
@@ -37,7 +37,7 @@ export default function Admins() {
 	const [statusFilter, setStatusFilter]   = useState("");
 	const [homeId, setHomeId]               = useState("");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedAdminId, setDeletedAdminId] = useState(null);
+	const [deletedAdmin, setDeletedAdmin] = useState(null);
 	const [currentPage, setCurrentPage]     = useState(1);
 	const itemsPerPage = 10;
 
@@ -78,8 +78,8 @@ export default function Admins() {
 	}, [debouncedSearch, statusFilter, homeId]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedAdminId(id);
+	const deleteHandler = (admin) => {
+		setDeletedAdmin(admin);
 		setShowModal(true);
 	};
 
@@ -89,12 +89,13 @@ export default function Admins() {
 	};
 
 	const confirmDelete = () => {
-		if (!deletedAdminId) return;
-		deleteAdmin(deletedAdminId, {
-			onSettled: () => {
+		if (!deletedAdmin) return;
+		deleteAdmin(deletedAdmin.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedAdminId(null);
+				setDeletedAdmin(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -216,7 +217,7 @@ export default function Admins() {
 															<Eye size={15} />
 														</IconButton>
 														{canDeleteAdmin(admin) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(admin.id)} title="Delete Admin">
+															<IconButton variant="danger" onClick={() => deleteHandler(admin)} title="Delete Admin">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -233,17 +234,14 @@ export default function Admins() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this admin?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedAdmin ? fullName(deletedAdmin) : ""}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }
