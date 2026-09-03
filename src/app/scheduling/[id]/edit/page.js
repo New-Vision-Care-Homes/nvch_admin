@@ -6,6 +6,7 @@ import { useShifts } from "@/hooks/useShifts";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
+import { attachClickOutside } from "@/utils/clickOutside";
 import { utcToInputDateTime } from "@utils/timeHandling";
 import { personName } from "@/utils/formatting";
 import GeofenceMap from "@/components/UI/GeofenceMap";
@@ -131,6 +132,8 @@ export default function EditShiftPage() {
 	const [caregiverSearch, setCaregiverSearch] = useState("");
 	const [selectedCaregiver, setSelectedCaregiver] = useState(null);
 	const [showCaregiverDropdown, setShowCaregiverDropdown] = useState(false);
+	const caregiverSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(caregiverSearchRef, () => setShowCaregiverDropdown(false)), []);
 	useEffect(() => {
 		const t = setTimeout(() => setCaregiverSearch(caregiverInput), 400);
 		return () => clearTimeout(t);
@@ -141,6 +144,8 @@ export default function EditShiftPage() {
 	const [clientSearch, setClientSearch] = useState("");
 	const [selectedClient, setSelectedClient] = useState(null);
 	const [showClientDropdown, setShowClientDropdown] = useState(false);
+	const clientSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(clientSearchRef, () => setShowClientDropdown(false)), []);
 	useEffect(() => {
 		const t = setTimeout(() => setClientSearch(clientInput), 400);
 		return () => clearTimeout(t);
@@ -152,6 +157,8 @@ export default function EditShiftPage() {
 	const [homeSearch, setHomeSearch] = useState("");
 	const [selectedHome, setSelectedHome] = useState(null);
 	const [showHomeDropdown, setShowHomeDropdown] = useState(false);
+	const homeSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(homeSearchRef, () => setShowHomeDropdown(false)), []);
 	useEffect(() => {
 		const t = setTimeout(() => setHomeSearch(homeInput), 400);
 		return () => clearTimeout(t);
@@ -576,7 +583,7 @@ export default function EditShiftPage() {
 						<Card>
 							<CardHeader><span className={shiftStyles.cardTitleInner}><User size={15} /> Caregiver</span></CardHeader>
 							<CardContent>
-								<div className={styles.searchContainer}>
+								<div className={styles.searchContainer} ref={caregiverSearchRef}>
 									<label className={cardStyles.label}>Caregiver</label>
 									<div className={styles.searchWrap}>
 										<Search size={15} className={styles.searchIcon} />
@@ -585,7 +592,6 @@ export default function EditShiftPage() {
 											value={caregiverInput}
 											onChange={e => { setCaregiverInput(e.target.value); setShowCaregiverDropdown(true); }}
 											onFocus={() => setShowCaregiverDropdown(true)}
-											onBlur={() => setTimeout(() => setShowCaregiverDropdown(false), 150)}
 											readOnly={!!selectedCaregiver}
 											style={selectedCaregiver ? { background: "#f3f4f6", cursor: "not-allowed" } : {}}
 											placeholder="Search caregiver..."
@@ -647,7 +653,7 @@ export default function EditShiftPage() {
 								</div>
 
 								{targetType === "client" && (
-									<div className={styles.searchContainer}>
+									<div className={styles.searchContainer} ref={clientSearchRef}>
 										<label className={cardStyles.label}>Client</label>
 										<div className={styles.searchWrap}>
 											<Search size={15} className={styles.searchIcon} />
@@ -656,7 +662,6 @@ export default function EditShiftPage() {
 												value={clientInput}
 												onChange={e => { setClientInput(e.target.value); setShowClientDropdown(true); }}
 												onFocus={() => setShowClientDropdown(true)}
-												onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
 												readOnly={!!selectedClient}
 												style={selectedClient ? { background: "#f3f4f6", cursor: "not-allowed" } : {}}
 												placeholder="Search client..."
@@ -672,7 +677,7 @@ export default function EditShiftPage() {
 													<div key={c.id} className={styles.dropdownItem} onMouseDown={() => {
 														setSelectedClient(c); setClientInput(personName(c));
 														setShowClientDropdown(false); scheduledForm.setValue("clientId", c.id);
-													}}>{personName(c)} — {c.email}</div>
+													}}>{personName(c)}</div>
 												))}
 											</div>
 										)}
@@ -680,7 +685,7 @@ export default function EditShiftPage() {
 								)}
 
 								{targetType === "home" && (
-									<div className={styles.searchContainer}>
+									<div className={styles.searchContainer} ref={homeSearchRef}>
 										<label className={cardStyles.label}>Home</label>
 										<div className={styles.searchWrap}>
 											<Search size={15} className={styles.searchIcon} />
@@ -689,7 +694,6 @@ export default function EditShiftPage() {
 												value={homeInput}
 												onChange={e => { setHomeInput(e.target.value); setShowHomeDropdown(true); }}
 												onFocus={() => setShowHomeDropdown(true)}
-												onBlur={() => setTimeout(() => setShowHomeDropdown(false), 150)}
 												readOnly={!!selectedHome}
 												style={selectedHome ? { background: "#f3f4f6", cursor: "not-allowed" } : {}}
 												placeholder="Search home..."
