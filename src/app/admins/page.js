@@ -110,7 +110,7 @@ export default function Admins() {
 						<h1>Admin Management</h1>
 						{canCreate && (
 							<Link href="/admins/add_new_admin">
-								<Button variant="primary" icon={<Plus />}>Add New Admin</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Admin</Button>
 							</Link>
 						)}
 					</div>

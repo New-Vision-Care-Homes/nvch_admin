@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import styles from "./Button.module.css";
 
 /**
@@ -8,6 +9,7 @@ import styles from "./Button.module.css";
  * @param {function} onClick
  * @param {ReactNode} children
  * @param {ReactNode} icon
+ * @param {string} [href] - Renders as a Link instead of a <button> when provided (e.g. "+ Add" actions that just navigate)
  */
 export default function Button({
 	variant = "primary",
@@ -19,17 +21,33 @@ export default function Button({
 	className = "",
 	icon = null,
 	form,
+	href,
 }) {
+	const classes = `${styles.btn} ${styles[variant]} ${styles[size]} ${className}`;
+	const content = (
+		<>
+			{icon && <span className={styles.icon}>{icon}</span>}
+			<span className={styles.text}>{children}</span>
+		</>
+	);
+
+	if (href) {
+		return (
+			<Link href={href} className={classes} aria-disabled={disabled}>
+				{content}
+			</Link>
+		);
+	}
+
 	return (
 		<button
 			type={type}
 			form={form}
-			className={`${styles.btn} ${styles[variant]} ${styles[size]} ${className}`}
+			className={classes}
 			disabled={disabled}
 			onClick={onClick}
 		>
-			{icon && <span className={styles.icon}>{icon}</span>}
-			<span className={styles.text}>{children}</span>
+			{content}
 		</button>
 	);
 }

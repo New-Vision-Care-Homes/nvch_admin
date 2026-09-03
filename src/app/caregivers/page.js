@@ -110,7 +110,7 @@ export default function Caregivers() {
 						<h1>Caregiver Management</h1>
 						{canCreate && (
 							<Link href="/caregivers/add_new_caregiver">
-								<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Caregiver</Button>
 							</Link>
 						)}
 					</div>

@@ -113,7 +113,7 @@ export default function Clients() {
 						<h1>Client Management</h1>
 						{canCreate && (
 							<Link href="/clients/add_new_client">
-								<Button variant="primary" icon={<Plus />}>Add New Client</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Client</Button>
 							</Link>
 						)}
 					</div>

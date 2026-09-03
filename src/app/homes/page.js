@@ -105,7 +105,7 @@ export default function Homes() {
 						<h1>Homes</h1>
 						{canCreate && (
 							<Link href="/homes/add_new_home">
-								<Button variant="primary" icon={<Plus />}>Add New Home</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Home</Button>
 							</Link>
 						)}
 					</div>

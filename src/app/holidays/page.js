@@ -5,18 +5,18 @@
 // ============================================================
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import PageLayout from "@components/layout/PageLayout";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
 import StatusBadge from "@/components/UI/Badge";
 import IconButton  from "@/components/UI/IconButton";
+import Button from "@/components/UI/Button";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useHolidays }    from "@/hooks/useHolidays";
 import { usePayPeriod }   from "@/hooks/usePayPeriods";
 import { useProfile }     from "@/hooks/useProfile";
 import { formatDateOnly } from "@/utils/dates";
-import { Sun, Eye }       from "lucide-react";
+import { Sun, Eye, Plus } from "lucide-react";
 import styles from "./holidays.module.css";
 
 // ============================================================
@@ -115,9 +115,7 @@ export default function HolidaysPage() {
                     <h1>Holidays</h1>
                     <div className={styles.headerActions}>
                         {canManage && (
-                            <Link href="/holidays/new" className={styles.addButton}>
-                                + Add Holiday
-                            </Link>
+                            <Button href="/holidays/new" variant="primary" icon={<Plus size={16} />}>Add Holiday</Button>
                         )}
                     </div>
                 </div>

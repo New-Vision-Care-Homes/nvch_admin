@@ -85,7 +85,7 @@ export default function Permissions() {
 						<h1>Permission Groups</h1>
 						{canUpdate && (
 							<Link href="/permissions/add_new_permissions_group">
-								<Button variant="primary" icon={<Plus />}>New Permission Group</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>New Permission Group</Button>
 							</Link>
 						)}
 					</div>
