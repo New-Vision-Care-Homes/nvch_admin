@@ -88,6 +88,7 @@ import { expandShiftDays, getTodayInHalifax } from "@/utils/timeHandling";
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import ErrorState from "@components/UI/ErrorState";
 import Modal from "@components/UI/Modal";
 import OvertimeInfoBox from "../_components/OvertimeInfoBox";
@@ -909,6 +910,57 @@ export default function ShiftBuilderPage() {
 	// Auto-detected workers are removed when navigating to a period where they have no shifts;
 	// manually-added workers are always kept so the admin can still assign shifts to them.
 	const manuallyAddedCasualIds = useRef(new Set());
+
+	// ── Grid horizontal scroll ────────────────────────────────────────────────
+	const tableWrapRef = useRef(null);
+	// Callback ref (rather than a plain useRef) so the scroll fires as soon as
+	// today's column actually mounts — the grid only renders once a home is
+	// selected and loading finishes, so a dependency-array effect can miss the
+	// moment the ref becomes available.
+	//
+	// Scroll math is done by hand rather than via node.scrollIntoView(): the
+	// header row is sticky (top: 0) and the first column is sticky (left: 0),
+	// and native scrollIntoView is unreliable across browsers when the target
+	// sits inside nested sticky/scrolling containers — it can compute a
+	// zero horizontal delta and silently no-op. Looking the container up via
+	// closest() (rather than tableWrapRef.current) sidesteps a React ref-order
+	// race: child refs attach before their ancestor's ref in the same commit,
+	// so tableWrapRef.current can still be null at the moment this fires.
+	const todayColRef = useCallback((node) => {
+		if (!node) return;
+		requestAnimationFrame(() => {
+			const container = node.closest(`.${styles.tableWrap}`);
+			if (!container) return;
+			const containerRect = container.getBoundingClientRect();
+			const nodeRect      = node.getBoundingClientRect();
+			const delta = nodeRect.left - containerRect.left - (container.clientWidth - node.offsetWidth) / 2;
+			container.scrollLeft += delta;
+		});
+	}, []);
+	const scrollTable = (direction) => {
+		tableWrapRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
+	};
+
+	const [canScrollLeft, setCanScrollLeft]   = useState(false);
+	const [canScrollRight, setCanScrollRight] = useState(false);
+	const updateScrollBounds = () => {
+		const el = tableWrapRef.current;
+		if (!el) return;
+		setCanScrollLeft(el.scrollLeft > 0);
+		setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+	};
+
+	useEffect(() => {
+		const el = tableWrapRef.current;
+		if (!el) return;
+		updateScrollBounds();
+		el.addEventListener("scroll", updateScrollBounds);
+		window.addEventListener("resize", updateScrollBounds);
+		return () => {
+			el.removeEventListener("scroll", updateScrollBounds);
+			window.removeEventListener("resize", updateScrollBounds);
+		};
+	});
 
 	// ── Data fetching ─────────────────────────────────────────────────────────
 
@@ -1895,6 +1947,12 @@ export default function ShiftBuilderPage() {
 
 						{/* Clear all + Publish/Save — kept together so they're always visible */}
 						<div className={styles.controlsActions}>
+							<IconButton title="Scroll left" onClick={() => scrollTable(-1)} disabled={!canScrollLeft}>
+								<ChevronLeft size={16} />
+							</IconButton>
+							<IconButton title="Scroll right" onClick={() => scrollTable(1)} disabled={!canScrollRight}>
+								<ChevronRight size={16} />
+							</IconButton>
 							{assignmentCount > 0 && (
 								<button className={styles.clearBtn} onClick={clearAll}>
 									<RotateCcw size={13} />
@@ -2015,7 +2073,7 @@ export default function ShiftBuilderPage() {
 						</div>
 					) : (
 						<div className={styles.tableCard}>
-							<div className={styles.tableWrap}>
+							<div className={styles.tableWrap} ref={tableWrapRef}>
 								<table className={styles.table}>
 
 									{/* Column headers — one per day of the pay period */}
@@ -2028,6 +2086,7 @@ export default function ShiftBuilderPage() {
 												return (
 													<th
 														key={dateStr}
+														ref={isToday ? todayColRef : null}
 														className={`${styles.thDate}${isToday ? ` ${styles.thDateToday}` : ""}`}
 													>
 														<span className={styles.thDayName}>{format(date, "EEE")}</span>
