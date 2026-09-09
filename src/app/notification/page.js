@@ -22,6 +22,7 @@ import {
 	House,
 	ChevronDown,
 	Info,
+	Smartphone,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -78,9 +79,21 @@ const TYPE_CONFIG = {
 	house_hours_review_overdue:  { Icon: House, color: "#dc2626", bg: "#fef2f2", BadgeIcon: AlertTriangle, badgeColor: "#dc2626" },
 	house_hours_review_not_done: { Icon: House, color: "#7c3aed", bg: "#f5f3ff", BadgeIcon: Clock,         badgeColor: "#7c3aed" },
 	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
+	caregiver_device_enrolled:   { Icon: Smartphone,     color: "#0891b2", bg: "#ecfeff" },
 	// Broadcasts & approvals
 	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+};
+
+/**
+ * Icon/colour override for approval_requested notifications, keyed by the
+ * approval's subjectType (n.data?.subjectType) — mirrors how ApprovalRow.js
+ * differentiates approval types in the queue list. The notification's own
+ * `type` stays the generic "approval_requested" for every subject type; only
+ * caregiver_device_change gets a distinct look here.
+ */
+const APPROVAL_SUBJECT_CONFIG = {
+	caregiver_device_change: { Icon: Smartphone, color: "#0891b2", bg: "#ecfeff" },
 };
 
 /** Human-friendly display name for each notification type. */
@@ -93,6 +106,7 @@ const TYPE_LABEL = {
 	house_hours_review_overdue:  "House Review Overdue",
 	house_hours_review_not_done: "House Review Not Done",
 	bank_cap_exceeded:           "Bank Cap Exceeded",
+	caregiver_device_enrolled:   "Device Enrolled",
 	broadcast:                   "Broadcast",
 	approval_requested:          "Approval Requested",
 };
@@ -107,8 +121,9 @@ const TYPE_DESCRIPTION = {
 	house_hours_review_overdue:  "A home's hours are still unreviewed more than 7 days after the pay period ended. Sent to all admins in that home (supervisors, team leads). Clears once it's marked reviewed.",
 	house_hours_review_not_done: "Same event, sent to payroll and super admins — processing is blocked until the review is done.",
 	bank_cap_exceeded:           "A completed shift pushed a caregiver's banked-hours balance past the cap.",
+	caregiver_device_enrolled:   "A device was bound to a caregiver's account for the mobile app — either their first-ever sign-in, or a re-enrollment after an admin cleared the binding. Sent to their supervisor, team lead, and home admins as an audit trail.",
 	broadcast:                   "A one-off announcement sent by an admin.",
-	approval_requested:          "Something needs your approval — a certificate, overtime, or a banked-hours payout. Clears once any approver decides.",
+	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours payout, or a caregiver device change. Clears once any approver decides.",
 };
 
 /**
@@ -128,6 +143,7 @@ const TYPE_BUCKET = {
 	shift_auto_ended:            "info",
 	house_hours_review_not_done: "info",
 	bank_cap_exceeded:           "info",
+	caregiver_device_enrolled:   "info",
 	broadcast:                   "info",
 };
 
@@ -174,9 +190,10 @@ const HIDDEN_TYPES = new Set(["approval_decided"]);
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
 function NotificationCard({ notification: n, onClick }) {
-	const { Icon, color, bg, BadgeIcon, badgeColor } = TYPE_CONFIG[n.type] ?? {
-		Icon: Bell, color: "#6b7280", bg: "#f9fafb",
-	};
+	const { Icon, color, bg, BadgeIcon, badgeColor } =
+		APPROVAL_SUBJECT_CONFIG[n.data?.subjectType] ??
+		TYPE_CONFIG[n.type] ??
+		{ Icon: Bell, color: "#6b7280", bg: "#f9fafb" };
 	const isShiftLink       = SHIFT_TYPES.has(n.type);
 	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);

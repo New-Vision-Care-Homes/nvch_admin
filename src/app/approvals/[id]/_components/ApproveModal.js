@@ -76,8 +76,9 @@ export default function ApproveModal({
 
                 {/* Title */}
                 <h2 className={styles.approveModalTitle}>
-                    {subjectType === "overtime_mandate"    ? "Mandate Overtime" :
-                     subjectType === "banked_hours_payout" ? "Approve Payout"   :
+                    {subjectType === "overtime_mandate"        ? "Mandate Overtime"     :
+                     subjectType === "banked_hours_payout"     ? "Approve Payout"       :
+                     subjectType === "caregiver_device_change" ? "Approve Device Change" :
                      "Approve Certificate"}
                 </h2>
 
@@ -87,6 +88,8 @@ export default function ApproveModal({
                         ? `${caregiverName} will remain assigned to the shift. Their overage will be recorded as overtime pay and clock-in will unblock.`
                         : subjectType === "banked_hours_payout"
                         ? "The requested hours will be paid out in the specified pay period."
+                        : subjectType === "caregiver_device_change"
+                        ? `${caregiverName}'s account will be bound to the new device. Their session on the old device ends immediately, and they must sign in again on the new one.`
                         : "Are you sure you want to approve this? Please verify the issue and expiry dates are correct before confirming."}
                 </p>
 

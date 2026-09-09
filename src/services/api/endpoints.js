@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
 		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
+		APP_DEVICE: (id) => `/api/auth/admin/users/${id}/app-device`,
 	},
 
 	/* All related endpoints for clients */

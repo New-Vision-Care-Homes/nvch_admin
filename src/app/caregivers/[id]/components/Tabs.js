@@ -4,6 +4,7 @@ import Info from "./Info";
 import Shifts from "./Shifts"
 import Timesheet from "./Timesheet";
 import Certification from "./Certification";
+import Device from "./Device";
 
 
 export default function Tabs() {
@@ -14,6 +15,7 @@ export default function Tabs() {
 		{ id: "certification", label: "Certification", component: <Certification /> },
 		{ id: "shifts", label: "Shifts & Schedule", component: <Shifts /> },
 		{ id: "timesheets", label: "Timesheets & Approvals", component: <Timesheet /> },
+		{ id: "device", label: "Device", component: <Device /> },
 		//{ id: "Performance", label: "Performance & Feedback", component: <div>performance</div> },
 		//{ id: "payroll", label: "Payroll & Payments", component: <div>payroll</div> },
 	];

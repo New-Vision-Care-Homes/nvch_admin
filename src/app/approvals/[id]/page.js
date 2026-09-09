@@ -29,6 +29,7 @@ import {
     Timer,
     Scale,
     Banknote,
+    Smartphone,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
 import { formatDateTime, toDateInput } from "@/utils/dates";
@@ -36,6 +37,7 @@ import AcknowledgmentDecision from "./_components/AcknowledgmentDecision";
 import CertificateApproval   from "./_components/CertificateApproval";
 import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
+import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import ApproveModal           from "./_components/ApproveModal";
 import MandateRejectModal     from "./_components/MandateRejectModal";
 import RejectReasonField      from "@components/UI/RejectReasonField";
@@ -88,6 +90,11 @@ function getBannerMeta(status, subjectType) {
             approved:  { title: "Approved",  msg: "The payout has been approved and will be applied in the requested pay period.", variant: "approved"  },
             rejected:  { title: "Rejected",  msg: "The payout request was rejected.",                                             variant: "rejected"  },
             cancelled: { title: "Cancelled", msg: "This payout request was withdrawn or auto-voided.",                            variant: "cancelled" },
+        },
+        caregiver_device_change: {
+            approved:  { title: "Device Bound", msg: "The new device has been bound. The caregiver's old session ended immediately and they must sign in again on the new device.", variant: "approved"  },
+            rejected:  { title: "Rejected",     msg: "The device change request was rejected. The caregiver remains on their current device.",                                    variant: "rejected"  },
+            cancelled: { title: "Cancelled",    msg: "This request was withdrawn or auto-voided — typically because an admin cleared the caregiver's device binding directly.",    variant: "cancelled" },
         },
     };
     const statusMap = maps[subjectType] ?? {
@@ -171,11 +178,19 @@ export default function ApprovalDetailPage() {
 
     const rawSubjectType = approval?.subjectType;
 
-    // Each approval type maps to a different permission slug
+    // Each approval type maps to a different permission slug — except
+    // caregiver_device_change, which has no slug path at all. Its deciders
+    // are the caregiver's supervisor, team lead, and their active home's
+    // admins (plus super admins), and the approvals queue/detail fetch
+    // already only returns this approval to that same set of people. So
+    // visibility here already implies eligibility to decide — no client-side
+    // slug check to duplicate.
     const canDecide = rawSubjectType === "overtime_mandate"
         ? permissionSlugs.includes("update_shifts")
         : rawSubjectType === "banked_hours_payout"
         ? permissionSlugs.includes("manage_payroll")
+        : rawSubjectType === "caregiver_device_change"
+        ? true
         : permissionSlugs.includes("approve_all_certificates") ||
           permissionSlugs.includes("approve_assigned_certificates");
 
@@ -325,6 +340,11 @@ export default function ApprovalDetailPage() {
                                 <Banknote size={12} />
                                 Hours Payout
                             </span>
+                        ) : subjectType === "caregiver_device_change" ? (
+                            <span className={styles.subjectTypePill}>
+                                <Smartphone size={12} />
+                                Device Change
+                            </span>
                         ) : (
                             <span className={styles.subjectTypePill}>
                                 <Award size={12} />
@@ -365,12 +385,14 @@ export default function ApprovalDetailPage() {
                 variant="success"
                 message={
                     actionSuccess === "approved" ? (
-                        subjectType === "overtime_mandate"    ? "Overtime mandated successfully."  :
-                        subjectType === "banked_hours_payout" ? "Payout approved."                 :
+                        subjectType === "overtime_mandate"       ? "Overtime mandated successfully."  :
+                        subjectType === "banked_hours_payout"    ? "Payout approved."                 :
+                        subjectType === "caregiver_device_change" ? "Device change approved. The caregiver can now sign in on their new device." :
                         "Certificate approved successfully."
                     ) : actionSuccess === "rejected" ? (
-                        subjectType === "overtime_mandate"    ? "Caregiver removed and shift reassigned." :
-                        subjectType === "banked_hours_payout" ? "Payout request rejected."               :
+                        subjectType === "overtime_mandate"       ? "Caregiver removed and shift reassigned." :
+                        subjectType === "banked_hours_payout"    ? "Payout request rejected."               :
+                        subjectType === "caregiver_device_change" ? "Device change request rejected." :
                         "Certificate rejected."
                     ) : null
                 }
@@ -477,6 +499,15 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
+                    {/* caregiver_device_change — read-only request details; admin cannot
+                        choose or replace the device, only approve/reject the exact request */}
+                    {subjectType === "caregiver_device_change" && (
+                        <DeviceChangeApproval
+                            subjectContext={subjectContext}
+                            caregiverName={caregiverName}
+                        />
+                    )}
+
                 </div>
 
                 {/* ── RIGHT: Decision outcome + Actions panel ──────────────── */}
@@ -540,6 +571,8 @@ export default function ApprovalDetailPage() {
                                             ? "Mandate the overtime to keep the caregiver on shift, or decline to remove them. Either action is final."
                                             : subjectType === "banked_hours_payout"
                                             ? "Review the banked hours payout request. Rejection requires a written reason."
+                                            : subjectType === "caregiver_device_change"
+                                            ? "Approving binds the caregiver's account to the new device and ends their old session immediately. Rejecting leaves them on their current device. Rejection requires a written reason."
                                             : "Review the certificate submission above and make a decision. Rejection requires a written reason."}
                                     </p>
 
@@ -576,6 +609,8 @@ export default function ApprovalDetailPage() {
                                                 placeholder={
                                                     subjectType === "banked_hours_payout"
                                                         ? "Explain why this payout request is being rejected…"
+                                                        : subjectType === "caregiver_device_change"
+                                                        ? "Explain why this device change is being rejected…"
                                                         : "Explain why this certificate is being rejected…"
                                                 }
                                                 value={rejectReason}

@@ -76,5 +76,17 @@ export const caregiverService = {
 	toggleStatus: async (id) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.CAREGIVERS.TOGGLE_STATUS(id));
 		return data;
+	},
+
+	/**
+	 * Clear a caregiver's bound mobile device, or revoke its active app session.
+	 * @param {string|number} id - The caregiver's user ID.
+	 * @param {Object} body
+	 * @param {"clear"|"revoke_session"} body.action
+	 * @param {string} [body.reason] - Optional, recorded on the device history entry (max 200 chars).
+	 */
+	updateAppDevice: async (id, body) => {
+		const { data } = await axiosClient.patch(API_ENDPOINTS.CAREGIVERS.APP_DEVICE(id), body);
+		return data;
 	}
 };

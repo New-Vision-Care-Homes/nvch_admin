@@ -105,6 +105,14 @@ export const useCaregivers = (options = {}) => {
 		},
 	});
 
+	// 7. APP DEVICE: Clear a caregiver's device binding, or revoke its active session
+	const updateAppDeviceMutation = useMutation({
+		mutationFn: ({ id, data }) => caregiverService.updateAppDevice(id, data),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["caregiver", variables.id] });
+		},
+	});
+
 	// --- Error Separation ---
 
 	// Fetch errors: from initial data loading (shown via ErrorState component)
@@ -117,7 +125,8 @@ export const useCaregivers = (options = {}) => {
 		deleteMutation.error ||
 		createMutation.error ||
 		updateMutation.error ||
-		toggleStatusMutation.error;
+		toggleStatusMutation.error ||
+		updateAppDeviceMutation.error;
 
 	return {
 		// Data
@@ -136,6 +145,11 @@ export const useCaregivers = (options = {}) => {
 			deleteMutation.isPending ||
 			toggleStatusMutation.isPending,
 
+		// Device action state kept separate from isCaregiverActionPending so the
+		// Device tab's buttons don't disable/re-enable in lockstep with unrelated
+		// tabs' edits (e.g. Personal Info save) on the same caregiver query.
+		isAppDeviceActionPending: updateAppDeviceMutation.isPending,
+
 		// Fetch error → use with <ErrorState> component
 		caregiverFetchError: fetchError ? getErrorMessage(fetchError) : null,
 
@@ -147,6 +161,7 @@ export const useCaregivers = (options = {}) => {
 		updateCaregiver: updateMutation.mutate,
 		deleteCaregiver: deleteMutation.mutate,
 		toggleCaregiverStatus: toggleStatusMutation.mutate,
+		updateAppDevice: updateAppDeviceMutation.mutate,
 		fetchCaregiver,
 		refetch: caregiversQuery.refetch,
 		refetchDetail: caregiverDetailQuery.refetch,
