@@ -144,7 +144,11 @@
 
 
 .section {
-	margin-bottom: 2rem;
+	margin-bottom: var(--spacing-sm);
+}
+
+.section:last-child {
+	margin-bottom: 0;
 }
 
 .gridContainer {

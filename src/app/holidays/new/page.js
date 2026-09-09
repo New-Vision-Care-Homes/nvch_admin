@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import Button from "@/components/UI/Button";
 import { useHolidays }        from "@/hooks/useHolidays";
 import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
@@ -137,20 +138,22 @@ export default function CreateHolidayPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Header ──────────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <h1 className={styles.pageTitle}>Add Holiday</h1>
-                    <div className={styles.headerActions}>
-                        <Button href="/holidays" variant="secondary">Cancel</Button>
-                        <Button
-                            variant="primary"
-                            onClick={handleSubmit(onSubmit)}
-                            disabled={isActionPending}
-                            icon={isActionPending ? <Loader size={14} className={styles.spin} /> : null}
-                        >
-                            {isActionPending ? "Saving…" : "Save"}
-                        </Button>
-                    </div>
-                </div>
+                <PageHeader
+                    title="Add Holiday"
+                    actions={
+                        <>
+                            <Button href="/holidays" variant="secondary">Cancel</Button>
+                            <Button
+                                variant="primary"
+                                onClick={handleSubmit(onSubmit)}
+                                disabled={isActionPending}
+                                icon={isActionPending ? <Loader size={14} className={styles.spin} /> : null}
+                            >
+                                {isActionPending ? "Saving…" : "Save"}
+                            </Button>
+                        </>
+                    }
+                />
 
                 {actionError && (
                     <div className={styles.errorBanner}>

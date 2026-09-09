@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState from "@components/UI/ErrorState";
 import styles from "./admins.module.css";
 import Button from "@components/UI/Button";
@@ -106,14 +107,14 @@ export default function Admins() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Admin Management</h1>
-						{canCreate && (
+					<PageHeader
+						title="Admin Management"
+						actions={canCreate && (
 							<Link href="/admins/add_new_admin">
 								<Button variant="primary" icon={<Plus size={16} />}>Add New Admin</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <p className={styles.actionError}>{actionError}</p>}
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./permissions.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
@@ -81,14 +82,14 @@ export default function Permissions() {
 				<div className={styles.pageContainer}>
 
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Permission Groups</h1>
-						{canUpdate && (
+					<PageHeader
+						title="Permission Groups"
+						actions={canUpdate && (
 							<Link href="/permissions/add_new_permissions_group">
 								<Button variant="primary" icon={<Plus size={16} />}>New Permission Group</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{/* Inline error for delete failures */}
 					{permissionGroupsActionError && (

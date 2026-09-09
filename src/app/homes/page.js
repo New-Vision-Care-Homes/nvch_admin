@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./homes.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
@@ -101,14 +102,14 @@ export default function Homes() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Homes</h1>
-						{canCreate && (
+					<PageHeader
+						title="Homes"
+						actions={canCreate && (
 							<Link href="/homes/add_new_home">
 								<Button variant="primary" icon={<Plus size={16} />}>Add New Home</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <ActionMessage variant="error" message={actionError} />}
 

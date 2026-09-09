@@ -1,13 +1,5 @@
 /* ── Page header ─────────────────────────────────────────────────────────── */
 
-.pageHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	margin-bottom: 1.75rem;
-}
-
 .headerLeft {
 	display: flex;
 	flex-direction: column;
@@ -29,7 +21,6 @@
 .breadcrumb svg {
 	color: var(--color-primary, #1c4a6e);
 }
-
 
 /* ── Filter bar ──────────────────────────────────────────────────────────── */
 
@@ -566,7 +557,6 @@
 	margin-bottom: 1px;
 }
 
-
 /* ── Overview cells ───────────────────────────────────────────────────────── */
 
 .overviewHomeCell {
@@ -592,7 +582,6 @@
 	align-items: flex-start;
 	gap: 5px;
 }
-
 
 .overviewNumCell {
 	text-align: right;

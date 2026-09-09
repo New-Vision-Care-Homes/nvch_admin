@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button";
 import { Card, CardHeader } from "@components/UI/Card";
@@ -184,24 +185,26 @@ export default function Page() {
 			<PageLayout>
 				<InlineBanner message={inlineMessage} />
 				{/* Header */}
-				<div className={styles.header}>
-					<h1>Caregiver Profile: {caregiverDetail.firstName} {caregiverDetail.lastName}</h1>
-					<div className={styles.headerActions}>
-						{canToggle && (
-							<Button
-								variant={activeStatus ? "dangerLight" : "successLight"}
-								icon={<Activity size={16} />}
-								onClick={handleActive}
-								disabled={isCaregiverActionPending}
-							>
-								{activeStatus ? "Inactive" : "Active"}
-							</Button>
-						)}
-						<Link href="/caregivers">
-							<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
-						</Link>
-					</div>
-				</div>
+				<PageHeader
+					title={`Caregiver Profile: ${caregiverDetail.firstName} ${caregiverDetail.lastName}`}
+					actions={
+						<>
+							{canToggle && (
+								<Button
+									variant={activeStatus ? "dangerLight" : "successLight"}
+									icon={<Activity size={16} />}
+									onClick={handleActive}
+									disabled={isCaregiverActionPending}
+								>
+									{activeStatus ? "Inactive" : "Active"}
+								</Button>
+							)}
+							<Link href="/caregivers">
+								<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
+							</Link>
+						</>
+					}
+				/>
 
 				{/* Caregiver Overview */}
 				<Card>

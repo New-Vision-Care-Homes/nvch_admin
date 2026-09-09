@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
 import StatusBadge, { ColorPill } from "@/components/UI/Badge";
@@ -57,14 +58,12 @@ export default function TrainingPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Page header ─────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <h1>Training</h1>
-                    <div className={styles.headerActions}>
-                        {canManage && (
-                            <Button href="/training/new" variant="primary" icon={<Plus size={16} />}>Add Training</Button>
-                        )}
-                    </div>
-                </div>
+                <PageHeader
+                    title="Training"
+                    actions={canManage && (
+                        <Button href="/training/new" variant="primary" icon={<Plus size={16} />}>Add Training</Button>
+                    )}
+                />
 
                 {/* ── Filter bar ──────────────────────────────────────────── */}
                 <div className={styles.filterBar}>

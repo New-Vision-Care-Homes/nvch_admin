@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
 import StatusBadge from "@/components/UI/Badge";
@@ -111,14 +112,12 @@ export default function HolidaysPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Page header ─────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <h1>Holidays</h1>
-                    <div className={styles.headerActions}>
-                        {canManage && (
-                            <Button href="/holidays/new" variant="primary" icon={<Plus size={16} />}>Add Holiday</Button>
-                        )}
-                    </div>
-                </div>
+                <PageHeader
+                    title="Holidays"
+                    actions={canManage && (
+                        <Button href="/holidays/new" variant="primary" icon={<Plus size={16} />}>Add Holiday</Button>
+                    )}
+                />
 
                 {/* ── Filter bar ──────────────────────────────────────────── */}
                 <div className={styles.filterBar}>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./clients.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
@@ -109,14 +110,14 @@ export default function Clients() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Client Management</h1>
-						{canCreate && (
+					<PageHeader
+						title="Client Management"
+						actions={canCreate && (
 							<Link href="/clients/add_new_client">
 								<Button variant="primary" icon={<Plus size={16} />}>Add New Client</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <p className={styles.actionError}>{actionError}</p>}
 

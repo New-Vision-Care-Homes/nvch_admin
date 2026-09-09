@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./add_new_home.module.css";
@@ -145,15 +146,17 @@ export default function AddNewHomePage() {
 	return (
 		<PageLayout>
 			<form onSubmit={handleSubmit(onSubmit)}>
-				<div className={styles.header}>
-					<h1>Add New Home</h1>
-					<div className={styles.buttons}>
-						<Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-						<Button variant="primary" type="submit" disabled={isActionPending}>
-							{isActionPending ? "Saving..." : "Save"}
-						</Button>
-					</div>
-				</div>
+				<PageHeader
+					title="Add New Home"
+					actions={
+						<>
+							<Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+							<Button variant="primary" type="submit" disabled={isActionPending}>
+								{isActionPending ? "Saving..." : "Save"}
+							</Button>
+						</>
+					}
+				/>
 				{actionError && <ActionMessage variant="error" message={actionError} />}
 
 				<div className={styles.content}>

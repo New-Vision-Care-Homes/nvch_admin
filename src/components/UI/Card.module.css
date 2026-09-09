@@ -9,7 +9,7 @@
 	background: #FFFFFFFF;
 	border-radius: var(--border-size-md);
 	box-shadow: var(--shadow-lg);
-	padding: 2rem;
+	padding: 1.25rem;
 	transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -22,7 +22,35 @@
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	gap: 1rem;
+	gap: var(--spacing-sm);
+}
+
+/* ── CardHeader ──────────────────────────────────────────────────────────── */
+.header {
+	width: 100%;
+	margin-bottom: var(--spacing-sm);
+	padding-bottom: var(--spacing-xs);
+	border-bottom: 2px solid rgba(28, 74, 110, 0.15);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.headerWithActions {
+	justify-content: space-between;
+}
+
+.headerTitle {
+	margin: 0;
+	font-size: 1.3rem;
+	font-weight: 700;
+	color: var(--color-primary);
+}
+
+.headerActions {
+	display: flex;
+	gap: var(--spacing-sm);
+	align-items: center;
 }
 
 .field {

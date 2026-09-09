@@ -17,21 +17,9 @@
  HEADER
 ==========================================
 */
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	border-bottom: var(--border-primary);
-	padding-bottom: 1rem;
-	margin-bottom: 1rem;
-}
 
 /* ── Responsive (≤ 768px) ── */
 @media (max-width: 768px) {
-	.header {
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
 
 	.tableWrapper {
 		padding: 1rem;

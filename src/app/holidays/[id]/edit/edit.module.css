@@ -8,29 +8,12 @@
 
 /* ── Page header ──────────────────────────────────────────────────────────── */
 
-.pageHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	border-bottom: 1px solid #e8eef4;
-	padding-bottom: 1.25rem;
-	margin-bottom: 1.75rem;
-}
-
 .pageTitle {
 	font-size: 1.5rem;
 	font-weight: 700;
 	letter-spacing: normal;
 	line-height: 1.3;
 	margin: 0;
-}
-
-.headerActions {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	flex-shrink: 0;
 }
 
 .backBtn {
@@ -418,14 +401,6 @@
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-	.pageHeader {
-		align-items: flex-start;
-	}
-
-	.headerActions {
-		flex-direction: column;
-		align-items: stretch;
-	}
 
 	.backBtn,
 	.submitBtn {

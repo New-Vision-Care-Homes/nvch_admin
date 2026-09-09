@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
 import Button from "@components/UI/Button";
@@ -94,17 +95,19 @@ export default function HomeDetailPage() {
 
 	return (
 		<PageLayout>
-			<div className={styles.header}>
-				<h1>{home.name}</h1>
-				<div className={styles.buttons}>
-					<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.push("/homes")}>Back</Button>
-					{canEdit && (
-						<Link href={`/homes/${id}/edit`}>
-							<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>
-						</Link>
-					)}
-				</div>
-			</div>
+			<PageHeader
+				title={home.name}
+				actions={
+					<>
+						<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.push("/homes")}>Back</Button>
+						{canEdit && (
+							<Link href={`/homes/${id}/edit`}>
+								<Button variant="primary" icon={<Edit size={16} />}>Edit</Button>
+							</Link>
+						)}
+					</>
+				}
+			/>
 
 			<div className={styles.content}>
 

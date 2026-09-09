@@ -18,6 +18,7 @@ import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
@@ -514,15 +515,17 @@ export default function AddNewShiftPage() {
 		<PageLayout>
 
 			{/* Page header */}
-			<div className={styles.header}>
-				<h1>Create New Shift</h1>
-				<div className={styles.buttons}>
-					<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
-					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isShiftActionPending}>
-						{isShiftActionPending ? "Saving..." : "Save"}
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Create New Shift"
+				actions={
+					<>
+						<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
+						<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isShiftActionPending}>
+							{isShiftActionPending ? "Saving..." : "Save"}
+						</Button>
+					</>
+				}
+			/>
 
 			{/*
 			 * Hide the generic error banner while the capacity modal is open —

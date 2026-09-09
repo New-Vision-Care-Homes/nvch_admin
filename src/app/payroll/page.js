@@ -7,6 +7,7 @@ import {
     AlertTriangle, CheckCircle2, Loader2, RefreshCw,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
@@ -148,9 +149,9 @@ export default function PayrollOverviewPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Page header ─────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <div><h1>Payroll Overview</h1></div>
-                    {canRecompute && (
+                <PageHeader
+                    title="Payroll Overview"
+                    actions={canRecompute && (
                         <Button
                             variant="primary"
                             icon={isRecomputing
@@ -163,7 +164,7 @@ export default function PayrollOverviewPage() {
                             {isRecomputing ? "Recomputing…" : "Recompute Stats"}
                         </Button>
                     )}
-                </div>
+                />
 
                 <div className={styles.overviewCard}>
 
