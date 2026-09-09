@@ -24,6 +24,26 @@ const STATUS_BADGE_COLORS = {
 	completed:   { background: "#d1fae5", color: "#065f46", borderColor: "#6ee7b7" },
 };
 
+// Consecutive entries sharing the exact same start+end (e.g. a missed shift
+// and its completed replacement booked for the same slot) stack vertically
+// instead of sitting side by side — same-time chips read as one bar split
+// top/bottom rather than two separate bars left/right. Multi-day spans are
+// excluded since they need to stay in the flat side-by-side bar layout.
+function groupEntriesForStacking(entries) {
+	const groups = [];
+	entries.forEach((entry) => {
+		const stackable = entry.spanDays <= 1;
+		const key       = stackable ? `${entry.startTime}_${entry.endTime}_${entry.isNight}` : null;
+		const last      = groups[groups.length - 1];
+		if (stackable && last?.key === key) {
+			last.entries.push(entry);
+		} else {
+			groups.push({ key, entries: [entry] });
+		}
+	});
+	return groups;
+}
+
 /**
  * Caregivers × dates table for the current pay period, matching the Excel
  * export layout. Status-coloured chips per cell; click any chip to open the
@@ -316,7 +336,8 @@ export default function OverviewView({
 														className={`${styles.overviewCell}${isToday ? ` ${styles.overviewCellToday}` : ""}${cellSpanClass ? ` ${cellSpanClass}` : ""}`}
 													>
 														<div className={styles.overviewCellRow}>
-														{entries.map((entry, i) => {
+														{groupEntriesForStacking(entries).map((group, gi) => {
+														const renderChip = (entry, key, stacked) => {
 															const isMultiDay = entry.spanDays > 1;
 															// Overnight shifts get a "span" modifier so the chip bleeds into
 															// the next/previous day cell, reading as one continuous bar
@@ -362,18 +383,32 @@ export default function OverviewView({
 															}
 															return (
 																<span
-																	key={i}
-																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled} ${spanClass}`}
+																	key={key}
+																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled} ${spanClass}${stacked ? ` ${styles.overviewChipStacked}` : ""}`}
 																	onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
 																	title={`${cgNames[cgId]} · ${entry.fullRange}${entry.spanDays > 1 ? ` · ${entry.spanDays}-day shift${!entry.isFirst ? " (continues)" : ""}` : ""} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
 																>
 																	{content}
 																</span>
 															);
-														})}
-														</div>
-													</td>
-												);
+														};
+
+														if (group.entries.length === 1) {
+															return renderChip(group.entries[0], gi, false);
+														}
+
+														// Same time range, more than one shift (e.g. a missed shift and
+														// its completed replacement) — stack top/bottom instead of the
+														// usual side-by-side layout so both stay equally readable.
+														return (
+															<div key={gi} className={styles.overviewChipStack}>
+																{group.entries.map((entry, si) => renderChip(entry, si, true))}
+															</div>
+														);
+													})}
+													</div>
+												</td>
+											);
 											})}
 											<td className={styles.overviewTotalCell}>
 												{totalShifts > 0 && (

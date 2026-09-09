@@ -534,8 +534,22 @@
    the table's column layout entirely. */
 .overviewCellRow {
 	display: flex;
-	align-items: stretch;
+	align-items: flex-start;
 	gap: 4px;
+}
+
+/* Same-time-range shifts (e.g. a missed shift and its completed replacement)
+   stack top/bottom instead of sitting side by side as separate chips. Column
+   flex's default cross-axis stretch keeps both bars the same width. */
+.overviewChipStack {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	flex: 0 0 auto;
+}
+
+.overviewChipStacked {
+	width: 100%;
 }
 
 .overviewRowEven .overviewCell {
