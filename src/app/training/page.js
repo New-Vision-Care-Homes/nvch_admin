@@ -4,7 +4,6 @@
 // IMPORTS
 // ============================================================
 
-import { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
 import ErrorState  from "@/components/UI/ErrorState";
@@ -15,6 +14,7 @@ import Button from "@/components/UI/Button";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useProfile }    from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { formatDateTime } from "@/utils/dates";
 import { TRAINING_STATUS_META } from "./_components/statusMeta";
 import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
@@ -37,9 +37,12 @@ export default function TrainingPage() {
     const canManage = slugs.includes("manage_trainings");
 
     // ── Filter state ───────────────────────────────────────────────────────────
-    const [from, setFrom] = useState("");
-    const [to, setTo]     = useState("");
-    const [type, setType] = useState("");
+    // Filters persist to sessionStorage so they're still applied when the admin
+    // clicks into a training and then comes back, instead of resetting on every
+    // visit to this page.
+    const [from, setFrom] = usePersistedState("training-filters:from", "");
+    const [to, setTo]     = usePersistedState("training-filters:to", "");
+    const [type, setType] = usePersistedState("training-filters:type", "");
 
     const { trainingTypes, getTrainingTypeColor } = useTrainingTypeDropdown();
 

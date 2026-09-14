@@ -8,6 +8,7 @@ import EmptyState from "@/components/UI/EmptyState";
 import Button from "@components/UI/Button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import styles from "./notification.module.css";
 import {
 	Bell,
@@ -322,8 +323,10 @@ const BROADCAST_SLUGS = [
 
 export default function NotificationsPage() {
 	const router = useRouter();
-	const [filter, setFilter] = useState("all"); // "all" | "unread"
-	const [page,   setPage]   = useState(1);
+	// Persist to sessionStorage so they're still applied when the admin views
+	// a shift/approval/payroll notification's target and then comes back.
+	const [filter, setFilter] = usePersistedState("notifications-filters:filter", "all"); // "all" | "unread"
+	const [page,   setPage]   = usePersistedState("notifications-filters:page", 1);
 
 	const { profile } = useProfile();
 	const permissionSlugs = profile?.permissionSlugs ?? [];

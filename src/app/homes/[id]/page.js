@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import PageLayout from "@components/layout/PageLayout";
@@ -11,6 +11,7 @@ import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import { Edit, Search, Eye, Undo2 } from "lucide-react";
 import Link from "next/link";
@@ -36,7 +37,9 @@ export default function HomeDetailPage() {
 	);
 
 	// --- Caregiver Search ---
-	const [caregiverSearch, setCaregiverSearch] = useState("");
+	// Persisted (scoped by home id) so it's still applied when the admin views
+	// a caregiver/client/admin from this home and then comes back.
+	const [caregiverSearch, setCaregiverSearch] = usePersistedState(`home-detail-filters:${id}:caregiverSearch`, "");
 	const displayCaregivers = useMemo(() => {
 		const assigned = home?.caregivers || [];
 		if (!caregiverSearch) return assigned;
@@ -49,7 +52,7 @@ export default function HomeDetailPage() {
 	}, [home?.caregivers, caregiverSearch]);
 
 	// --- Client Search ---
-	const [clientSearch, setClientSearch] = useState("");
+	const [clientSearch, setClientSearch] = usePersistedState(`home-detail-filters:${id}:clientSearch`, "");
 	const displayClients = useMemo(() => {
 		const assigned = home?.clients || [];
 		if (!clientSearch) return assigned;
@@ -62,7 +65,7 @@ export default function HomeDetailPage() {
 	}, [home?.clients, clientSearch]);
 
 	// --- Admin Search ---
-	const [adminSearch, setAdminSearch] = useState("");
+	const [adminSearch, setAdminSearch] = usePersistedState(`home-detail-filters:${id}:adminSearch`, "");
 	const displayAdmins = useMemo(() => {
 		if (!adminSearch) return normalisedAdmins;
 		const q = adminSearch.toLowerCase();

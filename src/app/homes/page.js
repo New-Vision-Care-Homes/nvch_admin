@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
 import styles from "./homes.module.css";
@@ -15,6 +15,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { ColorPill } from "@components/UI/Badge";
@@ -29,15 +30,19 @@ export default function Homes() {
 	const canDelete = slugs.includes("delete_home");
 
 	// --- Pagination ---
-	const [currentPage, setCurrentPage] = useState(0);
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into a home and
+	// then comes back, instead of resetting on every visit to this page.
+	const [currentPage, setCurrentPage] = usePersistedState("homes-filters:currentPage", 0);
 	const itemsPerPage = 10;
 
 	// --- Filters ---
-	const [searchInput, setSearchInput] = useState("");
-	const [search, setSearch] = useState("");
-	const [regionFilter, setRegionFilter] = useState("");
-	const [homeTypeFilter, setHomeTypeFilter] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
+	const [searchInput, setSearchInput] = usePersistedState("homes-filters:searchInput", "");
+	const [search, setSearch] = useState(searchInput);
+	const [regionFilter, setRegionFilter] = usePersistedState("homes-filters:regionFilter", "");
+	const [homeTypeFilter, setHomeTypeFilter] = usePersistedState("homes-filters:homeTypeFilter", "");
+	const [statusFilter, setStatusFilter] = usePersistedState("homes-filters:statusFilter", "");
+	const prevFiltersRef = useRef({ search, regionFilter, homeTypeFilter, statusFilter });
 
 	// Debounce search 400 ms before sending to API
 	useEffect(() => {
@@ -45,10 +50,20 @@ export default function Homes() {
 		return () => clearTimeout(timer);
 	}, [searchInput]);
 
-	// Reset to page 1 whenever any filter changes
+	// Reset to page 1 whenever any filter changes — but not on the initial
+	// mount, which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(0);
-	}, [search, regionFilter, homeTypeFilter, statusFilter]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.search !== search ||
+			prev.regionFilter !== regionFilter ||
+			prev.homeTypeFilter !== homeTypeFilter ||
+			prev.statusFilter !== statusFilter;
+		prevFiltersRef.current = { search, regionFilter, homeTypeFilter, statusFilter };
+		if (filtersChanged) {
+			setCurrentPage(0);
+		}
+	}, [search, regionFilter, homeTypeFilter, statusFilter, setCurrentPage]);
 
 	// --- Fetch ---
 	const queryParams = {

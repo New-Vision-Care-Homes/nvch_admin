@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
@@ -17,6 +17,7 @@ import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
 import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
@@ -32,14 +33,18 @@ export default function Caregivers() {
 		canManageTarget(profile, caregiver, "delete_all_caregivers", "delete_assigned_caregivers");
 
 	// --- State ---
-	const [search, setSearch]               = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("Active");
-	const [homeId, setHomeId]               = useState("");
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into a caregiver and
+	// then comes back, instead of resetting on every visit to this page.
+	const [search, setSearch]               = usePersistedState("caregivers-filters:search", "");
+	const [debouncedSearch, setDebouncedSearch] = useState(search);
+	const [statusFilter, setStatusFilter]   = usePersistedState("caregivers-filters:statusFilter", "Active");
+	const [homeId, setHomeId]               = usePersistedState("caregivers-filters:homeId", "");
 	const [showModal, setShowModal]         = useState(false);
 	const [deletedCaregiver, setDeletedCaregiver] = useState(null);
-	const [currentPage, setCurrentPage]     = useState(1);
+	const [currentPage, setCurrentPage]     = usePersistedState("caregivers-filters:currentPage", 1);
 	const itemsPerPage = 10;
+	const prevFiltersRef = useRef({ debouncedSearch, statusFilter, homeId });
 
 	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
@@ -72,10 +77,19 @@ export default function Caregivers() {
 		},
 	});
 
-	// Reset to page 1 when any filter changes
+	// Reset to page 1 when any filter changes — but not on the initial mount,
+	// which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter, homeId]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.statusFilter !== statusFilter ||
+			prev.homeId !== homeId;
+		prevFiltersRef.current = { debouncedSearch, statusFilter, homeId };
+		if (filtersChanged) {
+			setCurrentPage(1);
+		}
+	}, [debouncedSearch, statusFilter, homeId, setCurrentPage]);
 
 	// --- Handlers ---
 	const deleteHandler = (caregiver) => {

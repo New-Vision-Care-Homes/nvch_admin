@@ -17,7 +17,7 @@
 //     home + pay period, providing the per-caregiver staff rows.
 // ============================================================
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter }    from "next/navigation";
 import { Eye, Loader2 } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
@@ -27,6 +27,7 @@ import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@comp
 import { useCoverSheet } from "@/hooks/usePayroll";
 import { useHomes }      from "@/hooks/useHomes";
 import { usePayPeriod }  from "@/hooks/usePayPeriods";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import styles from "../payroll.module.css";
 
 
@@ -113,13 +114,18 @@ export default function PayrollManualEntriesPage() {
     // ── State: Filter controls ────────────────────────────────────────────────
     // Three controlled dropdowns: Home, Pay Year, Pay Period.
     // All start empty; populated by auto-fill effects or user interaction.
+    // Persisted to sessionStorage so they're still applied when the admin
+    // views a caregiver's payroll summary and then comes back.
     //
     // defaultsApplied gates the pay-period auto-fill so it only runs once
-    // and does not override a subsequent user selection.
-    const [selectedHomeId,   setSelectedHomeId]   = useState("");
-    const [selectedYear,     setSelectedYear]     = useState("");
-    const [selectedPeriod,   setSelectedPeriod]   = useState("");
-    const [defaultsApplied,  setDefaultsApplied]  = useState(false);
+    // and does not override a subsequent user selection — it's persisted too,
+    // otherwise a plain (non-persisted) flag would reset to false on every
+    // list -> detail -> back remount and re-seed over a period the admin
+    // explicitly picked.
+    const [selectedHomeId,   setSelectedHomeId]   = usePersistedState("payroll-manual-entries-filters:selectedHomeId", "");
+    const [selectedYear,     setSelectedYear]     = usePersistedState("payroll-manual-entries-filters:selectedYear", "");
+    const [selectedPeriod,   setSelectedPeriod]   = usePersistedState("payroll-manual-entries-filters:selectedPeriod", "");
+    const [defaultsApplied,  setDefaultsApplied]  = usePersistedState("payroll-manual-entries-filters:defaultsApplied", false);
 
 
     // ── Data: Homes list ──────────────────────────────────────────────────────
@@ -146,7 +152,7 @@ export default function PayrollManualEntriesPage() {
             setSelectedPeriod(String(payPeriod.periodNumber));
             setDefaultsApplied(true);
         }
-    }, [payPeriod, defaultsApplied]);
+    }, [payPeriod, defaultsApplied, setSelectedYear, setSelectedPeriod, setDefaultsApplied]);
 
 
     // ── Effect: Auto-fill first home ─────────────────────────────────────────
@@ -156,7 +162,7 @@ export default function PayrollManualEntriesPage() {
         if (homes.length > 0 && !selectedHomeId) {
             setSelectedHomeId(homes[0].id);
         }
-    }, [homes, selectedHomeId]);
+    }, [homes, selectedHomeId, setSelectedHomeId]);
 
 
     // ── Data: Cover sheet ─────────────────────────────────────────────────────

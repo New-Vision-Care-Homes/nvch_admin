@@ -75,6 +75,7 @@ import { useShifts } from "@/hooks//useShifts";
 import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
 import { formatPayPeriodLabel } from "@/utils/payPeriod";
 
@@ -163,8 +164,9 @@ export default function SchedulingPage() {
 	// ── Home filter ───────────────────────────────────────────────────────────
 	// When a home is selected, both the calendar and payroll views send homeId
 	// as a query param to the API, which filters the results server-side.
-	// Empty string = "All Homes" (no filter).
-	const [selectedHomeId, setSelectedHomeId] = useState("");
+	// Empty string = "All Homes" (no filter). Persisted so it's still applied
+	// when the admin views a shift and then comes back.
+	const [selectedHomeId, setSelectedHomeId] = usePersistedState("scheduling-filters:selectedHomeId", "");
 	const { homes } = useHomes({ limit: 100 }); // load all homes once for the dropdown
 
 	// ── Shift search bar ──────────────────────────────────────────────────────
@@ -210,14 +212,16 @@ export default function SchedulingPage() {
 	// ── Calendar view & date ──────────────────────────────────────────────────
 	// `view`  — which tab is active: "month" | "week" | "day" | "agenda" | "payroll" | "overview"
 	// `date`  — the anchor date the calendar is centered on (changes when navigating prev/next)
-	const [view, setView] = useState("overview");
+	// Both persisted so the admin lands back on the same view/date after
+	// viewing a shift and coming back, instead of resetting to "today".
+	const [view, setView] = usePersistedState("scheduling-filters:view", "overview");
 
 	// Default to agenda on small screens — week/month grids are unusable on mobile.
 	useEffect(() => {
 		if (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches) {
 			setView("agenda");
 		}
-	}, []);
+	}, [setView]);
 
 	// Start the Halifax clock banner and detect the device timezone.
 	useEffect(() => {
@@ -245,10 +249,21 @@ export default function SchedulingPage() {
 	}, []);
 
 	// Initialize `date` to the current Halifax time (not the browser's local time).
-	const [date, setDate] = useState(() => {
+	// Persisted as an ISO string (Dates don't survive JSON serialization as
+	// Dates), adapted below so `date`/`setDate` behave exactly like the plain
+	// useState<Date> pair they replace — every existing call site (including
+	// the `setDate((d) => ...)` functional updates below) keeps working as-is.
+	const [dateISO, setDateISO] = usePersistedState("scheduling-filters:dateISO", () => {
 		const dt = DateTime.now().setZone(HALIFAX_TZ);
-		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond);
+		return new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond).toISOString();
 	});
+	const date = useMemo(() => new Date(dateISO), [dateISO]);
+	const setDate = useCallback((value) => {
+		setDateISO((currentISO) => {
+			const next = typeof value === "function" ? value(new Date(currentISO)) : value;
+			return next.toISOString();
+		});
+	}, [setDateISO]);
 
 	// ── Visible window (calendar data range) ──────────────────────────────────
 	// The calendar only fetches shifts for the time range currently on screen.
@@ -296,12 +311,23 @@ export default function SchedulingPage() {
 
 	// ── Payroll view state ────────────────────────────────────────────────────
 	// payrollOffset: 0 = current pay period, -1 = one period back, +1 = one ahead.
-	const [payrollOffset, setPayrollOffset] = useState(0);
-	const [payrollPage, setPayrollPage]     = useState(1);
+	// Both persisted so the payroll tab keeps its place after viewing a shift
+	// and coming back.
+	const [payrollOffset, setPayrollOffset] = usePersistedState("scheduling-filters:payrollOffset", 0);
+	const [payrollPage, setPayrollPage]     = usePersistedState("scheduling-filters:payrollPage", 1);
+	const prevPayrollFiltersRef = useRef({ payrollOffset, selectedHomeId });
 
 	// Reset to page 1 whenever the period or home filter changes, so the user
-	// isn't left on a page that doesn't exist for the new dataset.
-	useEffect(() => { setPayrollPage(1); }, [payrollOffset, selectedHomeId]);
+	// isn't left on a page that doesn't exist for the new dataset — but not on
+	// the initial mount, which would otherwise wipe out a restored page number.
+	useEffect(() => {
+		const prev = prevPayrollFiltersRef.current;
+		const changed = prev.payrollOffset !== payrollOffset || prev.selectedHomeId !== selectedHomeId;
+		prevPayrollFiltersRef.current = { payrollOffset, selectedHomeId };
+		if (changed) {
+			setPayrollPage(1);
+		}
+	}, [payrollOffset, selectedHomeId, setPayrollPage]);
 
 	// Resolve the selected pay period from the backend: today's period shifted
 	// by payrollOffset along the rotation. `payPeriod` carries payYear,
@@ -782,13 +808,13 @@ export default function SchedulingPage() {
 		else if (view === "week") setDate((d) => subDays(d, 7));
 		else if (view === "day")  setDate((d) => subDays(d, 1));
 		else                      setDate((d) => subDays(d, 30));
-	}, [view]);
+	}, [view, setDate, setPayrollOffset]);
 
 	const handleToolbarToday = useCallback(() => {
 		if (view === "payroll" || view === "overview") { setPayrollOffset(0); return; }
 		const dt = DateTime.now().setZone(HALIFAX_TZ);
 		setDate(new Date(dt.year, dt.month - 1, dt.day, dt.hour, dt.minute, dt.second, dt.millisecond));
-	}, [view]);
+	}, [view, setDate, setPayrollOffset]);
 
 	const handleToolbarNext = useCallback(() => {
 		if (view === "payroll" || view === "overview") { setPayrollOffset((o) => o + 1); return; }
@@ -796,7 +822,7 @@ export default function SchedulingPage() {
 		else if (view === "week") setDate((d) => addDays(d, 7));
 		else if (view === "day")  setDate((d) => addDays(d, 1));
 		else                      setDate((d) => addDays(d, 30));
-	}, [view]);
+	}, [view, setDate, setPayrollOffset]);
 
 	const StandaloneToolbar = () => (
 		<div className={styles.calendarToolbar}>

@@ -16,6 +16,7 @@ import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useHolidays }    from "@/hooks/useHolidays";
 import { usePayPeriod }   from "@/hooks/usePayPeriods";
 import { useProfile }     from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { formatDateOnly } from "@/utils/dates";
 import { Sun, Eye, Plus } from "lucide-react";
 import styles from "./holidays.module.css";
@@ -72,12 +73,18 @@ export default function HolidaysPage() {
     const canManage = slugs.includes("manage_holidays");
 
     // ── Filter state ───────────────────────────────────────────────────────────
-    const [filterMode,      setFilterMode]      = useState("year"); // "year" | "period"
-    const [selectedYear,    setSelectedYear]    = useState(String(CURRENT_YEAR));
-    const [selectedPayYear, setSelectedPayYear] = useState(String(CURRENT_YEAR));
-    const [selectedPeriod,  setSelectedPeriod]  = useState("");
-    const [isActiveFilter,  setIsActiveFilter]  = useState(""); // "" | "true" | "false"
-    const [defaultsSeeded,  setDefaultsSeeded]  = useState(false);
+    // Filters persist to sessionStorage so they're still applied when the admin
+    // clicks into a holiday and then comes back, instead of resetting on every
+    // visit to this page.
+    const [filterMode,      setFilterMode]      = usePersistedState("holidays-filters:filterMode", "year"); // "year" | "period"
+    const [selectedYear,    setSelectedYear]    = usePersistedState("holidays-filters:selectedYear", String(CURRENT_YEAR));
+    const [selectedPayYear, setSelectedPayYear] = usePersistedState("holidays-filters:selectedPayYear", String(CURRENT_YEAR));
+    const [selectedPeriod,  setSelectedPeriod]  = usePersistedState("holidays-filters:selectedPeriod", "");
+    const [isActiveFilter,  setIsActiveFilter]  = usePersistedState("holidays-filters:isActiveFilter", ""); // "" | "true" | "false"
+    // Also persisted: once the year/pay-year have been seeded from the current
+    // pay period this session, a later remount (e.g. list -> detail -> back)
+    // must NOT re-seed and clobber a year the admin explicitly picked.
+    const [defaultsSeeded,  setDefaultsSeeded]  = usePersistedState("holidays-filters:defaultsSeeded", false);
 
     // Pre-fill year from the current pay period
     const { payPeriod } = usePayPeriod(0);
@@ -87,7 +94,7 @@ export default function HolidaysPage() {
             setSelectedPayYear(String(payPeriod.payYear));
             setDefaultsSeeded(true);
         }
-    }, [payPeriod, defaultsSeeded]);
+    }, [payPeriod, defaultsSeeded, setSelectedYear, setSelectedPayYear, setDefaultsSeeded]);
 
     // ── API params ─────────────────────────────────────────────────────────────
     const queryParams = filterMode === "year"

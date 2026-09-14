@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
@@ -19,6 +19,7 @@ import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { fullName } from "@/utils/formatting";
 import { ColorPill } from "@components/UI/Badge";
 import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
@@ -33,14 +34,18 @@ export default function Admins() {
 		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");
 
 	// --- State ---
-	const [search, setSearch]               = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("");
-	const [homeId, setHomeId]               = useState("");
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into an admin and
+	// then comes back, instead of resetting on every visit to this page.
+	const [search, setSearch]               = usePersistedState("admins-filters:search", "");
+	const [debouncedSearch, setDebouncedSearch] = useState(search);
+	const [statusFilter, setStatusFilter]   = usePersistedState("admins-filters:statusFilter", "");
+	const [homeId, setHomeId]               = usePersistedState("admins-filters:homeId", "");
 	const [showModal, setShowModal]         = useState(false);
 	const [deletedAdmin, setDeletedAdmin] = useState(null);
-	const [currentPage, setCurrentPage]     = useState(1);
+	const [currentPage, setCurrentPage]     = usePersistedState("admins-filters:currentPage", 1);
 	const itemsPerPage = 10;
+	const prevFiltersRef = useRef({ debouncedSearch, statusFilter, homeId });
 
 	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
@@ -73,10 +78,19 @@ export default function Admins() {
 		},
 	});
 
-	// Reset to page 1 when any filter changes
+	// Reset to page 1 when any filter changes — but not on the initial mount,
+	// which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter, homeId]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.statusFilter !== statusFilter ||
+			prev.homeId !== homeId;
+		prevFiltersRef.current = { debouncedSearch, statusFilter, homeId };
+		if (filtersChanged) {
+			setCurrentPage(1);
+		}
+	}, [debouncedSearch, statusFilter, homeId, setCurrentPage]);
 
 	// --- Handlers ---
 	const deleteHandler = (admin) => {

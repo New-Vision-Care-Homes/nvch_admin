@@ -15,13 +15,16 @@ import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { format } from "date-fns";
 
 export default function Permissions() {
 	// Track which group the user clicked "delete" on before the confirmation modal opens.
 	const [showModal, setShowModal] = useState(false);
 	const [deletedGroup, setDeletedGroup] = useState(null);
-	const [currentPage, setCurrentPage] = useState(1);
+	// Persists to sessionStorage so it's still applied when the admin clicks
+	// into a permission group and then comes back.
+	const [currentPage, setCurrentPage] = usePersistedState("permissions-filters:currentPage", 1);
 	const itemsPerPage = 8;
 
 	const { profile } = useProfile();
