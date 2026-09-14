@@ -5,6 +5,7 @@
 	position: sticky;
 	top: 0;
 	overflow-y: auto;
+	overflow-x: hidden;
 	flex-shrink: 0;
 	flex-direction: column;
 	font-family: Inter;
@@ -19,6 +20,22 @@
 	border-color: #DEE1E6FF;
 	/* neutral-300 */
 	border-style: solid;
+	transition: width 0.18s ease;
+}
+
+.sidebarCollapsed {
+	width: 4.5rem;
+}
+
+.sidebarCollapsed .tabLabel {
+	display: none;
+}
+
+.sidebarCollapsed .tab,
+.sidebarCollapsed .collapseToggle {
+	justify-content: center;
+	padding-left: 0;
+	padding-right: 0;
 }
 
 .tab {
@@ -199,6 +216,30 @@
 	margin-top: 1px;
 }
 
+/* ── Collapse/expand toggle, pinned to the bottom of the sidebar ── */
+.collapseToggle {
+	margin-top: auto;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 0.75rem;
+	padding: 16px 1.25rem;
+	color: #565E6CFF;
+	background: transparent;
+	border: none;
+	border-top: 1px solid #DEE1E6FF;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	white-space: nowrap;
+	transition: background 0.2s, color 0.2s;
+}
+
+.collapseToggle:hover {
+	color: var(--color-primary);
+	background: #E9ECEF;
+}
+
 /* Backdrop sits behind the drawer; hidden on desktop */
 .backdrop {
 	display: none;
@@ -221,6 +262,27 @@
 
 	.sidebarOpen {
 		transform: translateX(0);
+	}
+
+	/* Collapse is a desktop-only affordance; the mobile drawer always
+	   shows full labels and has its own open/close control in the navbar. */
+	.sidebarCollapsed {
+		width: 15rem;
+		max-width: 80vw;
+	}
+
+	.sidebarCollapsed .tabLabel {
+		display: block;
+	}
+
+	.sidebarCollapsed .tab {
+		justify-content: flex-start;
+		padding-left: 1.25rem;
+		padding-right: 1.25rem;
+	}
+
+	.collapseToggle {
+		display: none;
 	}
 
 	.backdrop {

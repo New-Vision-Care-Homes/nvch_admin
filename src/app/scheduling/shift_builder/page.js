@@ -87,6 +87,7 @@ import { expandShiftDays, getTodayInHalifax } from "@/utils/timeHandling";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
+import { useSidebarCollapsed } from "@components/layout/useSidebarCollapsed";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
 import ErrorState from "@components/UI/ErrorState";
@@ -824,6 +825,7 @@ function CapacityExceededModal({
 
 export default function ShiftBuilderPage() {
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [sidebarCollapsed, toggleSidebarCollapsed] = useSidebarCollapsed();
 
 	// ── Home selection ────────────────────────────────────────────────────────
 	const [selectedHomeId, setSelectedHomeId] = useState("");
@@ -1876,7 +1878,12 @@ export default function ShiftBuilderPage() {
 		<div className={styles.page}>
 			<Navbar onMenuToggle={() => setMobileOpen(true)} />
 			<div className={styles.container}>
-				<Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
+				<Sidebar
+					open={mobileOpen}
+					onClose={() => setMobileOpen(false)}
+					collapsed={sidebarCollapsed}
+					onToggleCollapsed={toggleSidebarCollapsed}
+				/>
 
 				<main className={styles.body}>
 

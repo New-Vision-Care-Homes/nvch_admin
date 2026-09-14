@@ -64,6 +64,7 @@ import Link from "next/link";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
+import { useSidebarCollapsed } from "@components/layout/useSidebarCollapsed";
 import Button from "@components/UI/Button";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
@@ -146,6 +147,7 @@ export default function SchedulingPage() {
 
 	// ── Layout state ──────────────────────────────────────────────────────────
 	const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [sidebarCollapsed, toggleSidebarCollapsed] = useSidebarCollapsed();
 
 	// Show the current Halifax wall-clock time in a banner when the admin's
 	// browser timezone differs from Halifax (so they don't misread shift times).
@@ -841,7 +843,12 @@ export default function SchedulingPage() {
 		<div className={styles.page}>
 			<Navbar onMenuToggle={() => setSidebarOpen((open) => !open)} />
 			<div className={styles.container}>
-				<Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+				<Sidebar
+					open={sidebarOpen}
+					onClose={() => setSidebarOpen(false)}
+					collapsed={sidebarCollapsed}
+					onToggleCollapsed={toggleSidebarCollapsed}
+				/>
 				<div className={styles.body}>
 
 					{/* Page header — title, view-specific hint, and "Create Shift" button */}
