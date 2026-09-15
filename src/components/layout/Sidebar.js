@@ -177,13 +177,12 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 							<div
 								key={tab.id}
 								className={styles.flyoutWrapper}
-								onMouseEnter={(e) => !collapsed && openFlyout(tab.id, e.currentTarget.getBoundingClientRect())}
+								onMouseEnter={(e) => openFlyout(tab.id, e.currentTarget.getBoundingClientRect())}
 								onMouseLeave={closeFlyout}
 							>
 								<Link
 									href={tab.href}
 									className={`${styles.tab} ${styles.tabFlyout} ${isActive ? styles.activeTab : ""}`}
-									title={collapsed ? tab.label : undefined}
 									onClick={(e) => {
 										if (open) {
 											e.preventDefault();

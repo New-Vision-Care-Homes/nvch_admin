@@ -135,7 +135,9 @@ export const PERMISSION_SCHEMAS = [
 			"review_all_house_hours",
 			"review_assigned_house_hours",
 			"manage_all_banked_hours_requests",
-			"manage_assigned_banked_hours_requests"
+			"manage_assigned_banked_hours_requests",
+			"manage_all_vacation_pay_requests",
+			"manage_assigned_vacation_pay_requests"
 		]
 	},
 	{

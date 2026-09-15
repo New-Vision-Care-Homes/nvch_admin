@@ -15,6 +15,7 @@ import StatusBadge from "@components/UI/Badge";
 import { useCaregiverPayrollSummary, useVoidEntry } from "@/hooks/usePayroll";
 import { useProfile }                              from "@/hooks/useProfile";
 import { formatDateTime } from "@/utils/dates";
+import { PAY_CATEGORY_LABELS } from "@/utils/dropdownList/payCategory";
 import styles       from "./entry_detail.module.css";
 import detailStyles from "../../../../[id]/payroll_detail.module.css";
 
@@ -22,12 +23,6 @@ import detailStyles from "../../../../[id]/payroll_detail.module.css";
 // ============================================================
 // SECTION: Constants
 // ============================================================
-
-const CATEGORY_LABELS = {
-    retro_bonus:  "Retro Bonus",
-    bereavement:  "Bereavement",
-    hours_banked: "Banked Hours Correction",
-};
 
 const STATUS_LABELS = {
     approved: "Approved",
@@ -41,7 +36,7 @@ const STATUS_TONE = {
     reversed: "danger",
 };
 
-const formatCategory = (category) => CATEGORY_LABELS[category] ?? category;
+const formatCategory = (category) => PAY_CATEGORY_LABELS[category] ?? category;
 
 
 // ============================================================
@@ -80,6 +75,7 @@ export default function EntryDetailPage() {
         },
         enabled: !!(caregiverId && payYear && periodNumber),
     });
+
 
     const entry = summary?.entries?.find((e) => e.id === entryId) ?? null;
 
@@ -250,8 +246,11 @@ export default function EntryDetailPage() {
                         <p className={styles.modalTitle}>Void This Entry</p>
                         <p className={styles.modalSubtitle}>
                             This action cannot be undone. The reason will be saved to the audit trail.
-                            {entry?.category === "banked_hours_payout" && (
+                            {entry?.category === "banked_hours_paid" && (
                                 <> The caregiver&apos;s banked-hours balance will be re-credited.</>
+                            )}
+                            {entry?.category === "vacation_pay" && (
+                                <> The caregiver&apos;s vacation-pay balance will be re-credited.</>
                             )}
                         </p>
 

@@ -9,6 +9,7 @@
 //   caregiver_certificate  — shows cert dates (draft values if admin edited them)
 //                            for final verification before confirming
 //   banked_hours_payout    — shows a payout summary (hours, period, balance)
+//   vacation_pay_request   — shows a payout summary (dollars, period, balance)
 //   overtime_mandate       — text description only; no extra summary block
 //
 // An optional note textarea is available for all types.
@@ -21,7 +22,7 @@
 //   isOpen           {boolean}
 //   onClose          {fn}                   called on Cancel or backdrop click
 //   onConfirm        {fn(reason: string)}   called when admin clicks Confirm
-//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout"
+//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout" | "vacation_pay_request"
 //   caregiverName    {string}
 //   subjectContext   {object}               approval.subjectContext
 //   isEditingDates   {boolean}              true when admin has cert dates in edit mode
@@ -33,7 +34,7 @@ import { useState } from "react";
 import Modal from "@components/UI/Modal";
 import Button from "@components/UI/Button";
 import ActionMessage from "@components/UI/ActionMessage";
-import { CheckCircle2, Loader, AlertTriangle, Banknote } from "lucide-react";
+import { CheckCircle2, Loader, AlertTriangle, Banknote, DollarSign } from "lucide-react";
 import { formatDateOnly } from "@/utils/dates";
 import styles from "../approval_detail.module.css";
 
@@ -78,6 +79,7 @@ export default function ApproveModal({
                 <h2 className={styles.approveModalTitle}>
                     {subjectType === "overtime_mandate"        ? "Mandate Overtime"     :
                      subjectType === "banked_hours_payout"     ? "Approve Payout"       :
+                     subjectType === "vacation_pay_request"    ? "Approve Vacation Payout" :
                      subjectType === "caregiver_device_change" ? "Approve Device Change" :
                      "Approve Certificate"}
                 </h2>
@@ -88,6 +90,8 @@ export default function ApproveModal({
                         ? `${caregiverName} will remain assigned to the shift. Their overage will be recorded as overtime pay and clock-in will unblock.`
                         : subjectType === "banked_hours_payout"
                         ? "The requested hours will be paid out in the specified pay period."
+                        : subjectType === "vacation_pay_request"
+                        ? "The requested vacation pay will be paid out in the specified pay period."
                         : subjectType === "caregiver_device_change"
                         ? `${caregiverName}'s account will be bound to the new device. Their session on the old device ends immediately, and they must sign in again on the new one.`
                         : "Are you sure you want to approve this? Please verify the issue and expiry dates are correct before confirming."}
@@ -163,6 +167,36 @@ export default function ApproveModal({
                     </div>
                 )}
 
+                {/* vacation_pay_request — show payout summary for final review */}
+                {subjectType === "vacation_pay_request" && (
+                    <div className={styles.approveModalDatesCheck}>
+                        <div className={styles.approveModalDatesCheckHeader}>
+                            <DollarSign size={13} />
+                            Payout Summary
+                        </div>
+                        <div className={styles.approveModalDatesCheckGrid}>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Requested Amount</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {subjectContext.requestedDollars != null ? `$${subjectContext.requestedDollars}` : "—"}
+                                </span>
+                            </div>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Pay Period</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {formatPayPeriod(subjectContext.payPeriod)}
+                                </span>
+                            </div>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Balance at Request</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {subjectContext.currentBalance != null ? `$${subjectContext.currentBalance}` : "—"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <ActionMessage variant="error" message={approveError} />
 
                 {/* Optional note — available for all approval types */}
@@ -197,6 +231,7 @@ export default function ApproveModal({
                         {isApprovePending                          ? "Submitting…"      :
                          subjectType === "overtime_mandate"        ? "Confirm Mandate"  :
                          subjectType === "banked_hours_payout"     ? "Confirm Payout"   :
+                         subjectType === "vacation_pay_request"    ? "Confirm Payout"   :
                          "Confirm Approve"}
                     </Button>
                 </div>

@@ -55,6 +55,12 @@
 	border-color: #6ee7b7;
 }
 
+.subjectTypePillTeal {
+	color: #0d9488;
+	background: #f0fdfa;
+	border-color: #5eead4;
+}
+
 .headerMeta {
 	display: flex;
 	align-items: center;

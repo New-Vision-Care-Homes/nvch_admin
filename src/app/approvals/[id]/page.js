@@ -29,6 +29,7 @@ import {
     Timer,
     Scale,
     Banknote,
+    DollarSign,
     Smartphone,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
@@ -37,6 +38,7 @@ import AcknowledgmentDecision from "./_components/AcknowledgmentDecision";
 import CertificateApproval   from "./_components/CertificateApproval";
 import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
+import VacationPayPayout      from "./_components/VacationPayPayout";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import ApproveModal           from "./_components/ApproveModal";
 import MandateRejectModal     from "./_components/MandateRejectModal";
@@ -91,6 +93,11 @@ function getBannerMeta(status, subjectType) {
             rejected:  { title: "Rejected",  msg: "The payout request was rejected.",                                             variant: "rejected"  },
             cancelled: { title: "Cancelled", msg: "This payout request was withdrawn or auto-voided.",                            variant: "cancelled" },
         },
+        vacation_pay_request: {
+            approved:  { title: "Approved",  msg: "The vacation pay payout has been approved and will be applied in the requested pay period.", variant: "approved"  },
+            rejected:  { title: "Rejected",  msg: "The vacation pay payout request was rejected.",                                              variant: "rejected"  },
+            cancelled: { title: "Cancelled", msg: "This vacation pay payout request was withdrawn or auto-voided.",                             variant: "cancelled" },
+        },
         caregiver_device_change: {
             approved:  { title: "Device Bound", msg: "The new device has been bound. The caregiver's old session ended immediately and they must sign in again on the new device.", variant: "approved"  },
             rejected:  { title: "Rejected",     msg: "The device change request was rejected. The caregiver remains on their current device.",                                    variant: "rejected"  },
@@ -123,6 +130,7 @@ function getBannerMeta(status, subjectType) {
  *   overtime_acknowledgment → AcknowledgmentDecision (shift info, waiver statement)
  *   overtime_mandate        → OvertimeMandate         (shift link, overage context)
  *   banked_hours_payout     → BankedHoursPayout       (requested hours, pay period)
+ *   vacation_pay_request    → VacationPayPayout       (requested dollars, pay period)
  *
  * Modals are extracted as sub-components as well:
  *   ApproveModal        — confirmation for Approve / Mandate / Approve Payout
@@ -185,10 +193,19 @@ export default function ApprovalDetailPage() {
     // already only returns this approval to that same set of people. So
     // visibility here already implies eligibility to decide — no client-side
     // slug check to duplicate.
+    // vacation_pay_request is gated by the all/assigned region-scoped slugs
+    // rather than a flat manage_payroll check — the approvals list/detail
+    // fetch already scopes visibility server-side to admins holding one of
+    // these two slugs in the caregiver's region, so holding either slug here
+    // is sufficient (there's no per-caregiver region data in subjectContext
+    // to re-check client-side, same reasoning as caregiver_device_change below).
     const canDecide = rawSubjectType === "overtime_mandate"
         ? permissionSlugs.includes("update_shifts")
         : rawSubjectType === "banked_hours_payout"
         ? permissionSlugs.includes("manage_payroll")
+        : rawSubjectType === "vacation_pay_request"
+        ? permissionSlugs.includes("manage_all_vacation_pay_requests") ||
+          permissionSlugs.includes("manage_assigned_vacation_pay_requests")
         : rawSubjectType === "caregiver_device_change"
         ? true
         : permissionSlugs.includes("approve_all_certificates") ||
@@ -340,6 +357,11 @@ export default function ApprovalDetailPage() {
                                 <Banknote size={12} />
                                 Hours Payout
                             </span>
+                        ) : subjectType === "vacation_pay_request" ? (
+                            <span className={`${styles.subjectTypePill} ${styles.subjectTypePillTeal}`}>
+                                <DollarSign size={12} />
+                                Vacation Pay Payout
+                            </span>
                         ) : subjectType === "caregiver_device_change" ? (
                             <span className={styles.subjectTypePill}>
                                 <Smartphone size={12} />
@@ -387,11 +409,13 @@ export default function ApprovalDetailPage() {
                     actionSuccess === "approved" ? (
                         subjectType === "overtime_mandate"       ? "Overtime mandated successfully."  :
                         subjectType === "banked_hours_payout"    ? "Payout approved."                 :
+                        subjectType === "vacation_pay_request"   ? "Vacation pay payout approved."    :
                         subjectType === "caregiver_device_change" ? "Device change approved. The caregiver can now sign in on their new device." :
                         "Certificate approved successfully."
                     ) : actionSuccess === "rejected" ? (
                         subjectType === "overtime_mandate"       ? "Caregiver removed and shift reassigned." :
                         subjectType === "banked_hours_payout"    ? "Payout request rejected."               :
+                        subjectType === "vacation_pay_request"   ? "Vacation pay payout request rejected."  :
                         subjectType === "caregiver_device_change" ? "Device change request rejected." :
                         "Certificate rejected."
                     ) : null
@@ -499,6 +523,14 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
+                    {/* vacation_pay_request — requested dollars, pay period, balance at request */}
+                    {subjectType === "vacation_pay_request" && (
+                        <VacationPayPayout
+                            subjectContext={subjectContext}
+                            caregiverName={caregiverName}
+                        />
+                    )}
+
                     {/* caregiver_device_change — read-only request details; admin cannot
                         choose or replace the device, only approve/reject the exact request */}
                     {subjectType === "caregiver_device_change" && (
@@ -571,6 +603,8 @@ export default function ApprovalDetailPage() {
                                             ? "Mandate the overtime to keep the caregiver on shift, or decline to remove them. Either action is final."
                                             : subjectType === "banked_hours_payout"
                                             ? "Review the banked hours payout request. Rejection requires a written reason."
+                                            : subjectType === "vacation_pay_request"
+                                            ? "Review the vacation pay payout request. Rejection requires a written reason."
                                             : subjectType === "caregiver_device_change"
                                             ? "Approving binds the caregiver's account to the new device and ends their old session immediately. Rejecting leaves them on their current device. Rejection requires a written reason."
                                             : "Review the certificate submission above and make a decision. Rejection requires a written reason."}
@@ -586,6 +620,7 @@ export default function ApprovalDetailPage() {
                                             >
                                                 {subjectType === "overtime_mandate"    ? "Mandate"        :
                                                  subjectType === "banked_hours_payout" ? "Approve Payout" :
+                                                 subjectType === "vacation_pay_request" ? "Approve Payout" :
                                                  "Approve"}
                                             </Button>
                                             <Button
@@ -601,13 +636,15 @@ export default function ApprovalDetailPage() {
                                         </div>
                                     )}
 
-                                    {/* Inline reject form — caregiver_certificate and banked_hours_payout only.
-                                        overtime_mandate uses MandateRejectModal (requires caregiver reassignment). */}
+                                    {/* Inline reject form — caregiver_certificate, banked_hours_payout, and
+                                        vacation_pay_request only. overtime_mandate uses MandateRejectModal
+                                        (requires caregiver reassignment). */}
                                     {showRejectForm && (
                                         <div className={styles.rejectForm}>
                                             <RejectReasonField
                                                 placeholder={
-                                                    subjectType === "banked_hours_payout"
+                                                    subjectType === "banked_hours_payout" ||
+                                                    subjectType === "vacation_pay_request"
                                                         ? "Explain why this payout request is being rejected…"
                                                         : subjectType === "caregiver_device_change"
                                                         ? "Explain why this device change is being rejected…"

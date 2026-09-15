@@ -45,9 +45,10 @@ const HOURS_NOTE_FIELDS = [
 
 /** Dollar sub-fields to surface in Notes. */
 const DOLLARS_NOTE_FIELDS = [
-    { key: "retro_bonus",    label: "Retro Bonus" },
-    { key: "vacation_pay",   label: "Vacation Pay" },
-    { key: "regular_salary", label: "Salary"       },
+    { key: "retro_bonus",          label: "Retro Bonus"      },
+    { key: "vacation_pay",         label: "Vacation Pay"     },
+    { key: "vacation_pay_accrued", label: "Vacation Accrued" },
+    { key: "regular_salary",       label: "Salary"           },
 ];
 
 /**

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, Smartphone } from "lucide-react";
+import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone } from "lucide-react";
 import { timeAgo, formatCertName } from "../_utils/approvalMeta";
 import styles from "../approvals.module.css";
 
@@ -38,6 +38,15 @@ const ROW_TYPE_META = {
 		getSubtitle: (ctx) => ctx.requestedHours != null
 			? `${ctx.requestedHours}h payout request`
 			: "Hours Payout",
+	},
+	vacation_pay_request: {
+		Icon: DollarSign,
+		iconColor: "#0d9488",
+		iconBg:    "#f0fdfa",
+		SubtitleIcon: DollarSign,
+		getSubtitle: (ctx) => ctx.requestedDollars != null
+			? `$${ctx.requestedDollars} vacation payout`
+			: "Vacation Pay Request",
 	},
 	caregiver_device_change: {
 		Icon: Smartphone,
