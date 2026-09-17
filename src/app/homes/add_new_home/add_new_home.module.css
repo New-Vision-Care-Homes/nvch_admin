@@ -1,13 +1,4 @@
-.header {
-	display: flex;
-	justify-content: space-between;
-	margin-bottom: 5rem;
-}
 
-.buttons {
-	display: flex;
-	gap: 1rem;
-}
 
 .content {
 	display: flex;
@@ -34,7 +25,6 @@
 .formError {
 	color: red;
 }
-
 
 .imagePlaceholder {
 	width: 150px;
@@ -70,7 +60,6 @@
 	display: none;
 }
 
-
 .row2 {
 	display: flex;
 	gap: 15px;
@@ -78,11 +67,6 @@
 
 /* ── Responsive (≤ 768px) ── */
 @media (max-width: 768px) {
-	.header {
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin-bottom: 1.5rem;
-	}
 
 	.content {
 		width: 100%;

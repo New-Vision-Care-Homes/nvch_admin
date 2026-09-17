@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
-import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, NotebookPen, ListChecks, Sun, GraduationCap } from "lucide-react";
+import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, NotebookPen, ListChecks, Sun, GraduationCap, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 
 const tabs = [
@@ -49,7 +49,7 @@ const keywordToTabMap = {
 	"/setting": 7,      // any path containing "/setting" -> Settings tab (updated ID)
 };
 
-export default function Sidebar({ open = false, onClose = () => {} }) {
+export default function Sidebar({ open = false, onClose = () => {}, collapsed = false, onToggleCollapsed = () => {} }) {
 	const pathname = usePathname();
 	const { profile, isLoading, fetchError, refetch } = useProfile();
 
@@ -166,7 +166,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 				aria-hidden="true"
 			/>
 
-			<aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ""}`}>
+			<aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ""} ${collapsed ? styles.sidebarCollapsed : ""}`}>
 				{visibleTabs.map(tab => {
 					const Icon = tab.icon;
 					const isActive = tab.id === activeTab;
@@ -194,10 +194,12 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 								>
 									<div className={styles.iconWrapper}><Icon size={24} /></div>
 									<div className={styles.tabLabel}>{tab.label}</div>
-									<ChevronRight
-										size={14}
-										className={`${styles.flyoutArrow} ${isExpanded ? styles.flyoutArrowDown : ""}`}
-									/>
+									{!collapsed && (
+										<ChevronRight
+											size={14}
+											className={`${styles.flyoutArrow} ${isExpanded ? styles.flyoutArrowDown : ""}`}
+										/>
+									)}
 								</Link>
 
 								{/* Mobile inline dropdown */}
@@ -231,10 +233,11 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 							key={tab.id}
 							href={tab.href}
 							className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
+							title={collapsed ? tab.label : undefined}
 							onClick={() => handleTabClick(tab.id)}
 						>
 							<div className={styles.iconWrapper}><Icon size={24} /></div>
-							<div>{tab.label}</div>
+							<div className={styles.tabLabel}>{tab.label}</div>
 						</Link>
 					);
 				})}
@@ -243,33 +246,70 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 				    simply not yet shown; if the fetch failed with no cached profile,
 				    say so instead of silently hiding every module. */}
 				{isLoading && (
-					<div style={{ padding: "0.75rem 1rem", color: "#6B7280", fontSize: "0.85rem" }}>
-						Loading menu…
-					</div>
+					collapsed
+						? <div style={{ padding: "0.75rem", textAlign: "center", color: "#6B7280" }} title="Loading menu…">…</div>
+						: (
+							<div style={{ padding: "0.75rem 1rem", color: "#6B7280", fontSize: "0.85rem" }}>
+								Loading menu…
+							</div>
+						)
 				)}
 				{!isLoading && fetchError && !profile && (
-					<div style={{ padding: "0.75rem 1rem", fontSize: "0.85rem" }}>
-						<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#DC2626" }}>
-							<AlertCircle size={14} />
-							<span>Couldn&apos;t load your permissions</span>
-						</div>
-						<button
-							onClick={() => refetch()}
-							style={{
-								marginTop: "6px",
-								fontSize: "0.8rem",
-								color: "#1D4ED8",
-								background: "none",
-								border: "none",
-								cursor: "pointer",
-								textDecoration: "underline",
-								padding: 0,
-							}}
-						>
-							Try again
-						</button>
-					</div>
+					collapsed
+						? (
+							<button
+								onClick={() => refetch()}
+								title="Couldn't load your permissions — click to retry"
+								style={{
+									display: "flex",
+									justifyContent: "center",
+									padding: "0.75rem",
+									color: "#DC2626",
+									background: "none",
+									border: "none",
+									cursor: "pointer",
+								}}
+							>
+								<AlertCircle size={16} />
+							</button>
+						)
+						: (
+							<div style={{ padding: "0.75rem 1rem", fontSize: "0.85rem" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#DC2626" }}>
+									<AlertCircle size={14} />
+									<span>Couldn&apos;t load your permissions</span>
+								</div>
+								<button
+									onClick={() => refetch()}
+									style={{
+										marginTop: "6px",
+										fontSize: "0.8rem",
+										color: "#1D4ED8",
+										background: "none",
+										border: "none",
+										cursor: "pointer",
+										textDecoration: "underline",
+										padding: 0,
+									}}
+								>
+									Try again
+								</button>
+							</div>
+						)
 				)}
+
+				<button
+					type="button"
+					className={styles.collapseToggle}
+					onClick={onToggleCollapsed}
+					title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+					aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+				>
+					<div className={styles.iconWrapper}>
+						{collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+					</div>
+					<div className={styles.tabLabel}>Collapse</div>
+				</button>
 			</aside>
 
 			{hoveredTabId !== null && flyoutMenus[hoveredTabId] && (

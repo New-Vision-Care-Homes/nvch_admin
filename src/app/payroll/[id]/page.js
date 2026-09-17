@@ -29,6 +29,7 @@ import {
     FileSpreadsheet, Clock, Download, Loader2, AlertTriangle, History,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import styles        from "./payroll_detail.module.css";
@@ -443,27 +444,29 @@ export default function PayrollDetailPage() {
             <div>
 
                 {/* ── Page header: title left, back button right ───────────── */}
-                <div className={styles.pageHeader}>
-                    <div><h1>{isCommunityRow ? "Other Hours" : "Payroll"}</h1></div>
-                    <div className={styles.headerActions}>
-                        {canViewReviewHistory && (
+                <PageHeader
+                    title={isCommunityRow ? "Other Hours" : "Payroll"}
+                    actions={
+                        <>
+                            {canViewReviewHistory && (
+                                <Button
+                                    variant="secondary"
+                                    icon={<History size={15} />}
+                                    onClick={() => router.push(`/payroll/${homeId}/review-history?payYear=${payYear}&periodNumber=${periodNumber}`)}
+                                >
+                                    Review History
+                                </Button>
+                            )}
                             <Button
                                 variant="secondary"
-                                icon={<History size={15} />}
-                                onClick={() => router.push(`/payroll/${homeId}/review-history?payYear=${payYear}&periodNumber=${periodNumber}`)}
+                                icon={<Undo2 size={16} />}
+                                onClick={() => router.push(backHref)}
                             >
-                                Review History
+                                Back
                             </Button>
-                        )}
-                        <Button
-                            variant="secondary"
-                            icon={<Undo2 size={16} />}
-                            onClick={() => router.push(backHref)}
-                        >
-                            Back
-                        </Button>
-                    </div>
-                </div>
+                        </>
+                    }
+                />
 
                 {/* ── Home info card ───────────────────────────────────────── */}
                 {/*

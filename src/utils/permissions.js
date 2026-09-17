@@ -39,7 +39,11 @@ export const PERMISSION_SCHEMAS = [
 			"update_assigned_caregivers",
 			"delete_assigned_caregivers",
 			"view_assigned_caregivers",
-			"toggle_caregiver_status"
+			"toggle_caregiver_status",
+			// Unbinding a device / revoking a session is a security action, not a
+			// profile edit — granted separately from update_*_caregivers.
+			"manage_all_caregiver_devices",
+			"manage_assigned_caregiver_devices"
 		]
 	},
 	{
@@ -129,7 +133,11 @@ export const PERMISSION_SCHEMAS = [
 			"view_payroll",
 			"manage_payroll",
 			"review_all_house_hours",
-			"review_assigned_house_hours"
+			"review_assigned_house_hours",
+			"manage_all_banked_hours_requests",
+			"manage_assigned_banked_hours_requests",
+			"manage_all_vacation_pay_requests",
+			"manage_assigned_vacation_pay_requests"
 		]
 	},
 	{

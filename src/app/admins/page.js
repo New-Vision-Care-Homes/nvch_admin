@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState from "@components/UI/ErrorState";
 import styles from "./admins.module.css";
 import Button from "@components/UI/Button";
@@ -11,13 +12,14 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { fullName } from "@/utils/formatting";
 import { ColorPill } from "@components/UI/Badge";
 import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
@@ -32,14 +34,18 @@ export default function Admins() {
 		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");
 
 	// --- State ---
-	const [search, setSearch]               = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("");
-	const [homeId, setHomeId]               = useState("");
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into an admin and
+	// then comes back, instead of resetting on every visit to this page.
+	const [search, setSearch]               = usePersistedState("admins-filters:search", "");
+	const [debouncedSearch, setDebouncedSearch] = useState(search);
+	const [statusFilter, setStatusFilter]   = usePersistedState("admins-filters:statusFilter", "");
+	const [homeId, setHomeId]               = usePersistedState("admins-filters:homeId", "");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedAdminId, setDeletedAdminId] = useState(null);
-	const [currentPage, setCurrentPage]     = useState(1);
+	const [deletedAdmin, setDeletedAdmin] = useState(null);
+	const [currentPage, setCurrentPage]     = usePersistedState("admins-filters:currentPage", 1);
 	const itemsPerPage = 10;
+	const prevFiltersRef = useRef({ debouncedSearch, statusFilter, homeId });
 
 	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
@@ -72,14 +78,23 @@ export default function Admins() {
 		},
 	});
 
-	// Reset to page 1 when any filter changes
+	// Reset to page 1 when any filter changes — but not on the initial mount,
+	// which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter, homeId]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.statusFilter !== statusFilter ||
+			prev.homeId !== homeId;
+		prevFiltersRef.current = { debouncedSearch, statusFilter, homeId };
+		if (filtersChanged) {
+			setCurrentPage(1);
+		}
+	}, [debouncedSearch, statusFilter, homeId, setCurrentPage]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedAdminId(id);
+	const deleteHandler = (admin) => {
+		setDeletedAdmin(admin);
 		setShowModal(true);
 	};
 
@@ -89,12 +104,13 @@ export default function Admins() {
 	};
 
 	const confirmDelete = () => {
-		if (!deletedAdminId) return;
-		deleteAdmin(deletedAdminId, {
-			onSettled: () => {
+		if (!deletedAdmin) return;
+		deleteAdmin(deletedAdmin.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedAdminId(null);
+				setDeletedAdmin(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -105,14 +121,14 @@ export default function Admins() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Admin Management</h1>
-						{canCreate && (
+					<PageHeader
+						title="Admin Management"
+						actions={canCreate && (
 							<Link href="/admins/add_new_admin">
-								<Button variant="primary" icon={<Plus />}>Add New Admin</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Admin</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <p className={styles.actionError}>{actionError}</p>}
 
@@ -216,7 +232,7 @@ export default function Admins() {
 															<Eye size={15} />
 														</IconButton>
 														{canDeleteAdmin(admin) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(admin.id)} title="Delete Admin">
+															<IconButton variant="danger" onClick={() => deleteHandler(admin)} title="Delete Admin">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -233,17 +249,14 @@ export default function Admins() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this admin?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedAdmin ? fullName(deletedAdmin) : ""}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }

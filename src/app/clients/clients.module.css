@@ -13,14 +13,6 @@
 /* ==========================================
    HEADER
 ========================================== */
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	border-bottom: var(--border-primary);
-	padding-bottom: 1rem;
-	margin-bottom: 1rem;
-}
 
 /* ==========================================
    UNIFIED CARD (filter + table together)
@@ -118,11 +110,6 @@
 		overflow: visible;
 	}
 
-	.header {
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
-
 	.filter_row {
 		flex-direction: column;
 		align-items: stretch;
@@ -181,29 +168,6 @@
 .statusInactive {
 	background-color: #FEE2E2;
 	color: #B91C1C;
-}
-
-/* ==========================================
-   MODAL
-========================================== */
-.modal_content {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-	padding: 1rem 0;
-}
-
-.modal_buttons {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 1rem;
-	margin-top: 1.5rem;
-}
-
-.modal_buttons button {
-	min-width: 80px;
 }
 
 /* ==========================================

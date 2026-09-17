@@ -13,10 +13,12 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
+import { attachClickOutside } from "@/utils/clickOutside";
 import GeofenceMap from "@/components/UI/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import Modal from "@components/UI/Modal";
@@ -195,6 +197,8 @@ export default function AddNewShiftPage() {
 	const [clientSearch, setClientSearch] = useState("");
 	const [selectedClient, setSelectedClient] = useState(null);
 	const [showClientDropdown, setShowClientDropdown] = useState(false);
+	const clientSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(clientSearchRef, () => setShowClientDropdown(false)), []);
 
 	useEffect(() => {
 		const timer = setTimeout(() => setClientSearch(clientInput), 400);
@@ -224,6 +228,8 @@ export default function AddNewShiftPage() {
 	const [homeSearch, setHomeSearch] = useState("");
 	const [selectedHome, setSelectedHome] = useState(null);
 	const [showHomeDropdown, setShowHomeDropdown] = useState(false);
+	const homeSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(homeSearchRef, () => setShowHomeDropdown(false)), []);
 
 	useEffect(() => {
 		const timer = setTimeout(() => setHomeSearch(homeInput), 400);
@@ -294,6 +300,8 @@ export default function AddNewShiftPage() {
 	const [caregiverSearch, setCaregiverSearch] = useState("");
 	const [selectedCaregiver, setSelectedCaregiver] = useState(null);
 	const [showCaregiverDropdown, setShowCaregiverDropdown] = useState(false);
+	const caregiverSearchRef = useRef(null);
+	useEffect(() => attachClickOutside(caregiverSearchRef, () => setShowCaregiverDropdown(false)), []);
 
 	useEffect(() => {
 		const timer = setTimeout(() => setCaregiverSearch(caregiverInput), 400);
@@ -507,15 +515,17 @@ export default function AddNewShiftPage() {
 		<PageLayout>
 
 			{/* Page header */}
-			<div className={styles.header}>
-				<h1>Create New Shift</h1>
-				<div className={styles.buttons}>
-					<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
-					<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isShiftActionPending}>
-						{isShiftActionPending ? "Saving..." : "Save"}
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Create New Shift"
+				actions={
+					<>
+						<Button variant="secondary" onClick={() => router.push("/scheduling")}>Cancel</Button>
+						<Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isShiftActionPending}>
+							{isShiftActionPending ? "Saving..." : "Save"}
+						</Button>
+					</>
+				}
+			/>
 
 			{/*
 			 * Hide the generic error banner while the capacity modal is open —
@@ -556,7 +566,7 @@ export default function AddNewShiftPage() {
 							{/* ── CLIENT mode ── */}
 							{targetType === "client" && (
 								<>
-									<div className={styles.searchContainer}>
+									<div className={styles.searchContainer} ref={clientSearchRef}>
 										<label className={styles.label}>Search Client <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
@@ -567,7 +577,6 @@ export default function AddNewShiftPage() {
 												value={clientInput}
 												onChange={(e) => { setClientInput(e.target.value); setShowClientDropdown(true); }}
 												onFocus={() => setShowClientDropdown(true)}
-												onBlur={() => setTimeout(() => setShowClientDropdown(false), 150)}
 												readOnly={!!selectedClient}
 												style={selectedClient ? { backgroundColor: "#f3f4f6", cursor: "not-allowed" } : {}}
 											/>
@@ -579,7 +588,7 @@ export default function AddNewShiftPage() {
 											<div className={styles.searchResultsDropdown}>
 												{clients.map((client) => (
 													<div key={client.id} className={styles.searchResultItem} onMouseDown={() => handleSelectClient(client)}>
-														{client.firstName} {client.lastName} — {client.email}
+														{client.firstName} {client.lastName}
 													</div>
 												))}
 											</div>
@@ -611,7 +620,7 @@ export default function AddNewShiftPage() {
 							{/* ── HOME mode ── */}
 							{targetType === "home" && (
 								<>
-									<div className={styles.searchContainer}>
+									<div className={styles.searchContainer} ref={homeSearchRef}>
 										<label className={styles.label}>Search Home <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 										<div className={styles.searchWrapper}>
 											<Search className={styles.searchIcon} />
@@ -622,7 +631,6 @@ export default function AddNewShiftPage() {
 												value={homeInput}
 												onChange={(e) => { setHomeInput(e.target.value); setShowHomeDropdown(true); }}
 												onFocus={() => setShowHomeDropdown(true)}
-												onBlur={() => setTimeout(() => setShowHomeDropdown(false), 150)}
 												readOnly={!!selectedHome}
 												style={selectedHome ? { backgroundColor: "#f3f4f6", cursor: "not-allowed" } : {}}
 											/>
@@ -758,7 +766,7 @@ export default function AddNewShiftPage() {
 						<Card>
 							<CardHeader>Caregiver Assignment</CardHeader>
 							<CardContent>
-								<div className={styles.searchContainer}>
+								<div className={styles.searchContainer} ref={caregiverSearchRef}>
 									<label className={styles.label}>Search Caregiver <span style={{ color: '#E53E3E', fontSize: '0.85rem', fontWeight: 700 }}>*</span></label>
 									<div className={styles.searchWrapper}>
 										<Search className={styles.searchIcon} />
@@ -769,7 +777,6 @@ export default function AddNewShiftPage() {
 											value={caregiverInput}
 											onChange={(e) => { setCaregiverInput(e.target.value); setShowCaregiverDropdown(true); }}
 											onFocus={() => setShowCaregiverDropdown(true)}
-											onBlur={() => setTimeout(() => setShowCaregiverDropdown(false), 150)}
 											readOnly={!!selectedCaregiver}
 											style={selectedCaregiver ? { backgroundColor: "#f3f4f6", cursor: "not-allowed" } : {}}
 										/>

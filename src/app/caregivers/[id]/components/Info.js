@@ -251,6 +251,25 @@ export default function Info() {
 			/>
 			<ActionMessage variant={status?.variant} message={status?.text} />
 
+			{canEdit && (
+				<div className={styles.top_bar}>
+					{!isEditing ? (
+						<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)} type="button">
+							Edit
+						</Button>
+					) : (
+						<>
+							<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} type="button" disabled={isCaregiverActionPending}>
+								Cancel
+							</Button>
+							<Button variant="primary" icon={<Save size={16} />} type="submit" disabled={!isDirty || isCaregiverActionPending}>
+								{isCaregiverActionPending ? "Saving..." : "Save Changes"}
+							</Button>
+						</>
+					)}
+				</div>
+			)}
+
 			<div className={styles.body}>
 
 				{/* ── Personal Details ── */}
@@ -461,25 +480,6 @@ export default function Info() {
 					</CardContent>
 				</Card>
 			</div>
-
-			{canEdit && (
-				<div className={styles.bottom_bar}>
-					{!isEditing ? (
-						<Button variant="primary" icon={<Edit size={16} />} onClick={() => setIsEditing(true)} type="button">
-							Edit
-						</Button>
-					) : (
-						<>
-							<Button variant="secondary" icon={<X size={16} />} onClick={handleCancel} type="button" disabled={isCaregiverActionPending}>
-								Cancel
-							</Button>
-							<Button variant="primary" icon={<Save size={16} />} type="submit" disabled={!isDirty || isCaregiverActionPending}>
-								{isCaregiverActionPending ? "Saving..." : "Save Changes"}
-							</Button>
-						</>
-					)}
-				</div>
-			)}
 		</form>
 	);
 }

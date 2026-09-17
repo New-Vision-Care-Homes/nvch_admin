@@ -8,23 +8,6 @@
 
 /* ── Page header ──────────────────────────────────────────────────────────── */
 
-.pageHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	border-bottom: 1px solid #e8eef4;
-	padding-bottom: 1.25rem;
-	margin-bottom: 1.5rem;
-}
-
-.headerActions {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	flex-shrink: 0;
-}
-
 /* ── Add button (manage_trainings only) ──────────────────────────────────── */
 
 .addButton {

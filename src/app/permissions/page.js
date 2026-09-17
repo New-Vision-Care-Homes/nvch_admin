@@ -2,25 +2,29 @@
 
 import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./permissions.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
 import EmptyState from "@/components/UI/EmptyState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { format } from "date-fns";
 
 export default function Permissions() {
 	// Track which group the user clicked "delete" on before the confirmation modal opens.
 	const [showModal, setShowModal] = useState(false);
-	const [deletedGroupId, setDeletedGroupId] = useState(null);
-	const [currentPage, setCurrentPage] = useState(1);
+	const [deletedGroup, setDeletedGroup] = useState(null);
+	// Persists to sessionStorage so it's still applied when the admin clicks
+	// into a permission group and then comes back.
+	const [currentPage, setCurrentPage] = usePersistedState("permissions-filters:currentPage", 1);
 	const itemsPerPage = 8;
 
 	const { profile } = useProfile();
@@ -46,8 +50,8 @@ export default function Permissions() {
 	});
 
 	// Open the confirmation modal and remember which group was targeted.
-	const deleteHandler = (id) => {
-		setDeletedGroupId(id);
+	const deleteHandler = (group) => {
+		setDeletedGroup(group);
 		setShowModal(true);
 	};
 
@@ -56,16 +60,17 @@ export default function Permissions() {
 	};
 
 	const confirmDelete = () => {
-		deletePermissionGroup(deletedGroupId, {
-			onSettled: () => {
+		deletePermissionGroup(deletedGroup._id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedGroupId(null);
+				setDeletedGroup(null);
 				// If the user deleted the last item on a non-first page,
 				// step back one page so they don't land on an empty page.
 				if (permissionGroups.length === 1 && currentPage > 1) {
 					setCurrentPage(prev => prev - 1);
 				}
-			}
+			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -80,14 +85,14 @@ export default function Permissions() {
 				<div className={styles.pageContainer}>
 
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Permission Groups</h1>
-						{canUpdate && (
+					<PageHeader
+						title="Permission Groups"
+						actions={canUpdate && (
 							<Link href="/permissions/add_new_permissions_group">
-								<Button variant="primary" icon={<Plus />}>New Permission Group</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>New Permission Group</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{/* Inline error for delete failures */}
 					{permissionGroupsActionError && (
@@ -149,7 +154,7 @@ export default function Permissions() {
 																<Eye size={15} />
 															</IconButton>
 															{canDelete && (
-																<IconButton variant="danger" onClick={() => deleteHandler(group._id)} title="Delete Permission Group">
+																<IconButton variant="danger" onClick={() => deleteHandler(group)} title="Delete Permission Group">
 																	<Trash2 size={15} />
 																</IconButton>
 															)}
@@ -168,20 +173,15 @@ export default function Permissions() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Delete Permission Group?</h2>
-					<p style={{ marginTop: '0.5rem', color: '#4B5563', fontSize: '0.9rem' }}>
-						Users assigned to this group will lose these permissions if deleted. This action cannot be undone.
-					</p>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isPermissionGroupsActionPending}>
-							{isPermissionGroupsActionPending ? "Deleting..." : "Yes, Delete"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel}>Cancel</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedGroup?.name}
+				isLoading={isPermissionGroupsActionPending}
+				warningText="Users assigned to this group will lose these permissions if deleted."
+				errorMessage={permissionGroupsActionError}
+			/>
 		</>
 	);
 }

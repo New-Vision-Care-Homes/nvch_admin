@@ -14,6 +14,7 @@ import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useProfile } from "@/hooks/useProfile";
 import { formatDateOnly, formatDateTime } from "@/utils/dates";
+import { PAY_CATEGORY_LABELS } from "@/utils/dropdownList/payCategory";
 import styles       from "./caregiver_summary.module.css";
 import detailStyles from "../../[id]/payroll_detail.module.css";
 
@@ -21,13 +22,6 @@ import detailStyles from "../../[id]/payroll_detail.module.css";
 // ============================================================
 // SECTION: Constants
 // ============================================================
-
-/** Maps raw API category keys to human-readable labels for the entries table. */
-const CATEGORY_LABELS = {
-    retro_bonus:  "Retro Bonus",
-    bereavement:  "Bereavement",
-    hours_banked: "Banked Hours Correction",
-};
 
 const STATUS_LABELS = {
     approved: "Approved",
@@ -42,7 +36,7 @@ const STATUS_LABELS = {
  * @param {string} category
  * @returns {string}
  */
-const formatCategory = (category) => CATEGORY_LABELS[category] ?? category;
+const formatCategory = (category) => PAY_CATEGORY_LABELS[category] ?? category;
 
 /**
  * Hour type definitions for the breakdown grid.
@@ -54,6 +48,8 @@ const HOUR_TYPE_DEFINITIONS = [
     { label: "Other",             apiKey: "other"            },
     { label: "Holiday (Stat)",    apiKey: "statPay"          },
     { label: "Bereavement",       apiKey: "bereavement"      },
+    { label: "Staff Meeting",     apiKey: "staffMeeting"     },
+    { label: "Training",          apiKey: "training"         },
     { label: "Banked Hours Paid", apiKey: "bankedHoursPaid"  },
     { label: "Hours Banked",      apiKey: "hoursBanked"      },
 ];
@@ -121,7 +117,7 @@ export default function CaregiverPayrollSummaryPage() {
                     <Button
                         variant="secondary"
                         icon={<Undo2 size={15} />}
-                        onClick={() => router.back()}
+                        onClick={() => router.push("/payroll/manual_entries")}
                     >
                         Back
                     </Button>
@@ -227,6 +223,12 @@ export default function CaregiverPayrollSummaryPage() {
                                     <span className={styles.summaryItemLabel}>Retro Bonus</span>
                                     <span className={styles.summaryItemValue}>
                                         ${breakdown.retroBonusDollars ?? "—"}
+                                    </span>
+                                </div>
+                                <div className={styles.summaryItem}>
+                                    <span className={styles.summaryItemLabel}>Vacation Pay</span>
+                                    <span className={styles.summaryItemValue}>
+                                        ${breakdown.vacationPayDollars ?? "—"}
                                     </span>
                                 </div>
                             </div>

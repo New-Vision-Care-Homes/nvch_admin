@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./homes.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
@@ -14,7 +15,8 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { format } from "date-fns";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
-import Modal from "@components/UI/Modal";
+import { usePersistedState } from "@/hooks/usePersistedState";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { ColorPill } from "@components/UI/Badge";
 import { HOME_TYPE_OPTIONS, HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -28,15 +30,19 @@ export default function Homes() {
 	const canDelete = slugs.includes("delete_home");
 
 	// --- Pagination ---
-	const [currentPage, setCurrentPage] = useState(0);
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into a home and
+	// then comes back, instead of resetting on every visit to this page.
+	const [currentPage, setCurrentPage] = usePersistedState("homes-filters:currentPage", 0);
 	const itemsPerPage = 10;
 
 	// --- Filters ---
-	const [searchInput, setSearchInput] = useState("");
-	const [search, setSearch] = useState("");
-	const [regionFilter, setRegionFilter] = useState("");
-	const [homeTypeFilter, setHomeTypeFilter] = useState("");
-	const [statusFilter, setStatusFilter] = useState("");
+	const [searchInput, setSearchInput] = usePersistedState("homes-filters:searchInput", "");
+	const [search, setSearch] = useState(searchInput);
+	const [regionFilter, setRegionFilter] = usePersistedState("homes-filters:regionFilter", "");
+	const [homeTypeFilter, setHomeTypeFilter] = usePersistedState("homes-filters:homeTypeFilter", "");
+	const [statusFilter, setStatusFilter] = usePersistedState("homes-filters:statusFilter", "");
+	const prevFiltersRef = useRef({ search, regionFilter, homeTypeFilter, statusFilter });
 
 	// Debounce search 400 ms before sending to API
 	useEffect(() => {
@@ -44,10 +50,20 @@ export default function Homes() {
 		return () => clearTimeout(timer);
 	}, [searchInput]);
 
-	// Reset to page 1 whenever any filter changes
+	// Reset to page 1 whenever any filter changes — but not on the initial
+	// mount, which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(0);
-	}, [search, regionFilter, homeTypeFilter, statusFilter]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.search !== search ||
+			prev.regionFilter !== regionFilter ||
+			prev.homeTypeFilter !== homeTypeFilter ||
+			prev.statusFilter !== statusFilter;
+		prevFiltersRef.current = { search, regionFilter, homeTypeFilter, statusFilter };
+		if (filtersChanged) {
+			setCurrentPage(0);
+		}
+	}, [search, regionFilter, homeTypeFilter, statusFilter, setCurrentPage]);
 
 	// --- Fetch ---
 	const queryParams = {
@@ -72,15 +88,19 @@ export default function Homes() {
 
 	// --- Delete ---
 	const [showModal, setShowModal] = useState(false);
-	const [deletedHomeId, setDeletedHomeId] = useState(null);
+	const [deletedHome, setDeletedHome] = useState(null);
 
-	const handleDeleteClick = (id) => { setDeletedHomeId(id); setShowModal(true); };
+	const handleDeleteClick = (home) => { setDeletedHome(home); setShowModal(true); };
 	const closeModal = () => { if (isActionPending) return; setShowModal(false); };
 	const confirmDelete = async () => {
-		if (!deletedHomeId) return;
-		try { await deleteHome(deletedHomeId); }
-		catch { /* surfaced via actionError */ }
-		finally { setShowModal(false); setDeletedHomeId(null); }
+		if (!deletedHome) return;
+		try {
+			await deleteHome(deletedHome.id || deletedHome._id);
+			setShowModal(false);
+			setDeletedHome(null);
+		} catch {
+			// Keep the modal open so the error (shown via `actionError` below) stays in context.
+		}
 	};
 
 	const handlePageClick = (event) => setCurrentPage(event.selected);
@@ -97,14 +117,14 @@ export default function Homes() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Homes</h1>
-						{canCreate && (
+					<PageHeader
+						title="Homes"
+						actions={canCreate && (
 							<Link href="/homes/add_new_home">
-								<Button variant="primary" icon={<Plus />}>Add New Home</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Home</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <ActionMessage variant="error" message={actionError} />}
 
@@ -252,7 +272,7 @@ export default function Homes() {
 																		<Eye size={15} />
 																	</IconButton>
 																	{canDelete && (
-																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(homeId)}>
+																		<IconButton variant="danger" title="Delete home" onClick={() => handleDeleteClick(home)}>
 																			<Trash2 size={15} />
 																		</IconButton>
 																	)}
@@ -275,17 +295,14 @@ export default function Homes() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={closeModal}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this home?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={closeModal} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={closeModal}
+				onConfirm={confirmDelete}
+				itemName={deletedHome?.name}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }

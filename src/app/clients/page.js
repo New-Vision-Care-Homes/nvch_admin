@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import styles from "./clients.module.css";
 import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
@@ -9,7 +10,7 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/ErrorState";
@@ -17,6 +18,7 @@ import EmptyState from "@/components/UI/EmptyState";
 import { useClients } from "@/hooks/useClients";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
 import { ColorPill } from "@components/UI/Badge";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
@@ -29,14 +31,23 @@ export default function Clients() {
 	const canDeleteClient = (client) => canManageTarget(profile, client, "delete_all_clients", "delete_assigned_clients");
 
 	// --- State ---
-	const [search, setSearch]               = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("");
-	const [homeId, setHomeId]               = useState("");
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into a client and
+	// then comes back, instead of resetting on every visit to this page.
+	const [search, setSearch]               = usePersistedState("clients-filters:search", "");
+	const [debouncedSearch, setDebouncedSearch] = useState(search);
+	const [statusFilter, setStatusFilter]   = usePersistedState("clients-filters:statusFilter", "");
+	const [homeId, setHomeId]               = usePersistedState("clients-filters:homeId", "");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedClientId, setDeletedClientId] = useState(null);
-	const [currentPage, setCurrentPage]     = useState(1);
+	const [deletedClient, setDeletedClient] = useState(null);
+	const [currentPage, setCurrentPage]     = usePersistedState("clients-filters:currentPage", 1);
 	const itemsPerPage = 10;
+	// Tracks the filter values as of the last time the reset-page effect ran,
+	// so it can tell "a filter actually changed" apart from "this effect just
+	// happens to be running again" — React's Strict Mode re-invokes effects an
+	// extra time in dev, which broke an earlier isFirstRender-flag version of
+	// this guard (the flag had already flipped by the second invocation).
+	const prevFiltersRef = useRef({ debouncedSearch, statusFilter, homeId });
 
 	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
@@ -69,21 +80,30 @@ export default function Clients() {
 		},
 	});
 
-	// Reset to page 1 when any filter changes
+	// Reset to page 1 when any filter changes — but not on the initial mount,
+	// which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter, homeId]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.statusFilter !== statusFilter ||
+			prev.homeId !== homeId;
+		prevFiltersRef.current = { debouncedSearch, statusFilter, homeId };
+		if (filtersChanged) {
+			setCurrentPage(1);
+		}
+	}, [debouncedSearch, statusFilter, homeId, setCurrentPage]);
 
 	// Step back to the previous page if the current one becomes empty after a delete
 	useEffect(() => {
 		if (!isLoading && clients.length === 0 && currentPage > 1) {
 			setCurrentPage((prev) => prev - 1);
 		}
-	}, [clients, isLoading, currentPage]);
+	}, [clients, isLoading, currentPage, setCurrentPage]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedClientId(id);
+	const deleteHandler = (client) => {
+		setDeletedClient(client);
 		setShowModal(true);
 	};
 
@@ -93,11 +113,12 @@ export default function Clients() {
 	};
 
 	const confirmDelete = () => {
-		deleteClient(deletedClientId, {
-			onSettled: () => {
+		deleteClient(deletedClient.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedClientId(null);
+				setDeletedClient(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -108,14 +129,14 @@ export default function Clients() {
 			<PageLayout>
 				<div className={styles.pageContainer}>
 					{/* Header */}
-					<div className={styles.header}>
-						<h1>Client Management</h1>
-						{canCreate && (
+					<PageHeader
+						title="Client Management"
+						actions={canCreate && (
 							<Link href="/clients/add_new_client">
-								<Button variant="primary" icon={<Plus />}>Add New Client</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Client</Button>
 							</Link>
 						)}
-					</div>
+					/>
 
 					{actionError && <p className={styles.actionError}>{actionError}</p>}
 
@@ -211,7 +232,7 @@ export default function Clients() {
 															<Eye size={15} />
 														</IconButton>
 														{canDeleteClient(client) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(client.id)} title="Delete Client">
+															<IconButton variant="danger" onClick={() => deleteHandler(client)} title="Delete Client">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -228,17 +249,14 @@ export default function Clients() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this client?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isActionPending}>
-							{isActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedClient ? `${deletedClient.firstName} ${deletedClient.lastName}` : ""}
+				isLoading={isActionPending}
+				errorMessage={actionError}
+			/>
 		</>
 	);
 }

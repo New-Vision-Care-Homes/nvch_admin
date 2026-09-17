@@ -1,20 +1,6 @@
 /* --- Global Form Layout and Structure --- */
 
 /* Header Section Styling */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* Vertically center the title and buttons */
-    margin-bottom: 2.5rem; /* Standard vertical spacing below header */
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb; /* Subtle separator line */
-}
-
-
-.buttons {
-    display: flex;
-    gap: 0.75rem; /* Standardized small gap between buttons */
-}
 
 /* Main Card Container Layout */
 .cards {
@@ -42,8 +28,6 @@
     min-width: 300px;
 }
 
-
-
 /* --- Input Field Rows within Cards --- */
 
 /* Row containing two input fields, using a responsive grid */
@@ -62,8 +46,6 @@
 }
 
 /* --- Input and Form Element Styling --- */
-
-
 
 /* --- Task List Section --- */
 
@@ -214,7 +196,6 @@
     color: #999;
 }
 
-
 /* --- Geofence Section (GPS) --- */
 
 .gps {
@@ -261,7 +242,6 @@
     padding-top: 0.5rem;
 }
 
-
 .searchContainer {
     position: relative;
     margin-bottom: 1rem;
@@ -292,14 +272,12 @@
     background-color: #f0f0f0;
 }
 
-
 .selectedTagsContainer {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 12px;
 }
-
 
 .pill {
     display: flex;
@@ -312,7 +290,6 @@
     font-weight: 500;
     border: 1px solid #bae6fd;
 }
-
 
 .removeTagBtn {
     background: none;
@@ -329,7 +306,6 @@
 .removeTagBtn:hover {
     color: #ef4444;
 }
-
 
 .tagCandidateList {
     display: flex;
@@ -353,7 +329,6 @@
     background-color: #e5e7eb;
 }
 
-
 .activeCandidate {
     background-color: #dcfce7;
     color: #15803d;
@@ -366,7 +341,6 @@
     gap: 8px;
     width: 100%;
 }
-
 
 /* --- Switch (Toggle) Style --- */
 .toggleRow {
@@ -435,11 +409,6 @@ input:checked + .slider:before {
 
 /* ── Responsive (≤ 768px) ── */
 @media (max-width: 768px) {
-    .header {
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
 
     /* Cards stack to single column, no min-width to prevent overflow */
     .cards > :nth-child(1),
@@ -465,15 +434,6 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 480px) {
-    .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-    }
-
-    .buttons {
-        justify-content: flex-end;
-    }
 
     .cards {
         gap: 1.25rem;

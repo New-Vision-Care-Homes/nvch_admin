@@ -2,6 +2,7 @@
 
 import React from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -44,9 +45,7 @@ export default function AddPermissionGroupPage() {
 	return (
 		<PageLayout>
 			<div className={styles.container}>
-				<div className={styles.header}>
-					<h1 className={styles.title}>Create New Permission Group</h1>
-				</div>
+				<PageHeader title="Create New Permission Group" titleClassName={styles.title} />
 
 				{/* API error from the create mutation (e.g. duplicate name) */}
 				{permissionGroupsActionError && (

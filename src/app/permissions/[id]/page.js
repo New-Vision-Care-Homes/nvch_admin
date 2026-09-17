@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -109,19 +110,18 @@ export default function PermissionGroupDetailPage() {
 
 				{!isPermissionGroupsLoading && !permissionGroupsFetchError && permissionGroupDetail && (
 					<>
-						<div className={styles.header}>
-							<h1 className={styles.title}>
-								{isEditing ? "Edit Permission Group" : "Permission Group Details"}
-							</h1>
-							{!isEditing && (
-								<div style={{ display: 'flex', gap: '10px' }}>
+						<PageHeader
+							title={isEditing ? "Edit Permission Group" : "Permission Group Details"}
+							titleClassName={styles.title}
+							actions={!isEditing && (
+								<>
 									<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.back()}>Back</Button>
 									{canUpdate && (
 										<Button variant="primary" icon={<Pencil size={16} />} onClick={() => { setIsEditing(true); setSuccessMessage(null); }}>Edit</Button>
 									)}
-								</div>
+								</>
 							)}
-						</div>
+						/>
 
 						{/* Success banner — shown in view mode after a successful save */}
 						<ActionMessage

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./add_new_admin.module.css";
@@ -120,15 +121,17 @@ export default function Page() {
 		<PageLayout>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				{/* Header */}
-				<div className={styles.header}>
-					<h1>Add New Admin</h1>
-					<div className={styles.buttons}>
-						<Button variant="secondary" onClick={() => router.push("/admins")} type="button">Cancel</Button>
-						<Button variant="primary" type="submit" disabled={isActionPending}>
-							{isActionPending ? "Saving..." : "Save"}
-						</Button>
-					</div>
-				</div>
+				<PageHeader
+					title="Add New Admin"
+					actions={
+						<>
+							<Button variant="secondary" onClick={() => router.push("/admins")} type="button">Cancel</Button>
+							<Button variant="primary" type="submit" disabled={isActionPending}>
+								{isActionPending ? "Saving..." : "Save"}
+							</Button>
+						</>
+					}
+				/>
 
 				{/* Action Error Banner */}
 				{actionError && (

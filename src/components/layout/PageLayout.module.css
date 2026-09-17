@@ -20,7 +20,7 @@
 	flex-direction: column;
 	flex: 1;
 	min-height: 0; /* Crucial: prevents huge page content from blowing up flex container height */
-	padding: 1rem 4rem;
+	padding: 0.75rem 2rem;
 	background-color: transparent;
 	border-radius: 0px 0px 0px 0px;
 	overflow-y: auto;
@@ -28,12 +28,12 @@
 
 @media (max-width: 768px) {
 	.main {
-		padding: 1rem 1.25rem;
+		padding: 0.75rem 1rem;
 	}
 }
 
 @media (max-width: 480px) {
 	.main {
-		padding: 1rem 0.75rem;
+		padding: 0.75rem 0.5rem;
 	}
 }

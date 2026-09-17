@@ -8,6 +8,7 @@ import EmptyState from "@/components/UI/EmptyState";
 import Button from "@components/UI/Button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import styles from "./notification.module.css";
 import {
 	Bell,
@@ -22,6 +23,11 @@ import {
 	House,
 	ChevronDown,
 	Info,
+	Smartphone,
+	Timer,
+	Scale,
+	Banknote,
+	DollarSign,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -76,12 +82,71 @@ const TYPE_CONFIG = {
 	// Payroll / house-hours review — house icon with a small corner badge
 	// signalling *why* it's flagged (overdue vs. not started).
 	house_hours_review_overdue:  { Icon: House, color: "#dc2626", bg: "#fef2f2", BadgeIcon: AlertTriangle, badgeColor: "#dc2626" },
-	house_hours_review_not_done: { Icon: House, color: "#7c3aed", bg: "#f5f3ff", BadgeIcon: Clock,         badgeColor: "#7c3aed" },
+	// Purple is reserved for approval_requested (see APPROVAL_SUBJECT_ICONS) —
+	// this used to share that purple, which muddied "purple = needs approval".
+	house_hours_review_not_done: { Icon: House, color: "#2563eb", bg: "#eff6ff", BadgeIcon: Clock,         badgeColor: "#2563eb" },
 	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
-	// Broadcasts & approvals
-	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
+	caregiver_device_enrolled:   { Icon: Smartphone,     color: "#0891b2", bg: "#ecfeff" },
+	// Broadcasts & approvals — broadcast gets its own color, shared with nothing
+	// else, so it reads as its own distinct category at a glance.
+	broadcast:                   { Icon: Megaphone,      color: "#db2777", bg: "#fdf2f8" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
 };
+
+/**
+ * Icon override for approval_requested notifications, keyed by the approval's
+ * subjectType (n.data?.subjectType) — mirrors the icons ApprovalRow.js uses
+ * per type in the queue list. Every approval_requested notification keeps the
+ * same purple color/bg from TYPE_CONFIG regardless of subject type — only the
+ * icon differs — so "purple" reads as "needs your approval" at a glance.
+ * caregiver_certificate has no entry here; it falls back to the default
+ * ClipboardCheck icon from TYPE_CONFIG.
+ */
+const APPROVAL_SUBJECT_ICONS = {
+	overtime_acknowledgment: Timer,
+	overtime_mandate:        Scale,
+	banked_hours_payout:     Banknote,
+	vacation_pay_request:    DollarSign,
+	caregiver_device_change: Smartphone,
+};
+
+/**
+ * One legend row per approval subject type, shown under "Needs Approval"
+ * instead of a single combined "Approval Requested" row — the portal only
+ * ever sees one notification `type` (approval_requested) for all of these,
+ * so without this split admins can't tell at a glance what actually needs
+ * their decision. Limited to subject types an admin can actually decide on
+ * the portal (see the canDecide logic on the approval detail page) —
+ * overtime_acknowledgment is decided by the caregiver on mobile, so it's
+ * left out here even though it has an icon mapping above.
+ */
+const APPROVAL_SUBJECT_LEGEND = [
+	{
+		subjectType: "caregiver_certificate",
+		label:       "Certificate Approval",
+		description: "A caregiver submitted a certificate for review.",
+	},
+	{
+		subjectType: "overtime_mandate",
+		label:       "Overtime Mandate",
+		description: "A caregiver declined voluntary overtime and management needs to decide whether to mandate it.",
+	},
+	{
+		subjectType: "banked_hours_payout",
+		label:       "Banked Hours Payout",
+		description: "A caregiver requested to be paid out their banked hours.",
+	},
+	{
+		subjectType: "vacation_pay_request",
+		label:       "Vacation Pay Payout",
+		description: "A caregiver requested to be paid out accrued vacation pay.",
+	},
+	{
+		subjectType: "caregiver_device_change",
+		label:       "Device Change Approval",
+		description: "A caregiver requested to switch the device bound to their mobile account.",
+	},
+];
 
 /** Human-friendly display name for each notification type. */
 const TYPE_LABEL = {
@@ -93,6 +158,7 @@ const TYPE_LABEL = {
 	house_hours_review_overdue:  "House Review Overdue",
 	house_hours_review_not_done: "House Review Not Done",
 	bank_cap_exceeded:           "Bank Cap Exceeded",
+	caregiver_device_enrolled:   "Device Enrolled",
 	broadcast:                   "Broadcast",
 	approval_requested:          "Approval Requested",
 };
@@ -107,8 +173,9 @@ const TYPE_DESCRIPTION = {
 	house_hours_review_overdue:  "A home's hours are still unreviewed more than 7 days after the pay period ended. Sent to all admins in that home (supervisors, team leads). Clears once it's marked reviewed.",
 	house_hours_review_not_done: "Same event, sent to payroll and super admins — processing is blocked until the review is done.",
 	bank_cap_exceeded:           "A completed shift pushed a caregiver's banked-hours balance past the cap.",
+	caregiver_device_enrolled:   "A device was bound to a caregiver's account for the mobile app — either their first-ever sign-in, or a re-enrollment after an admin cleared the binding. Sent to their supervisor, team lead, and home admins as an audit trail.",
 	broadcast:                   "A one-off announcement sent by an admin.",
-	approval_requested:          "Something needs your approval — a certificate, overtime, or a banked-hours payout. Clears once any approver decides.",
+	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours or vacation-pay payout, or a caregiver device change. Clears once any approver decides.",
 };
 
 /**
@@ -128,6 +195,7 @@ const TYPE_BUCKET = {
 	shift_auto_ended:            "info",
 	house_hours_review_not_done: "info",
 	bank_cap_exceeded:           "info",
+	caregiver_device_enrolled:   "info",
 	broadcast:                   "info",
 };
 
@@ -174,9 +242,11 @@ const HIDDEN_TYPES = new Set(["approval_decided"]);
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
 function NotificationCard({ notification: n, onClick }) {
-	const { Icon, color, bg, BadgeIcon, badgeColor } = TYPE_CONFIG[n.type] ?? {
-		Icon: Bell, color: "#6b7280", bg: "#f9fafb",
-	};
+	const { Icon: baseIcon, color, bg, BadgeIcon, badgeColor } =
+		TYPE_CONFIG[n.type] ?? { Icon: Bell, color: "#6b7280", bg: "#f9fafb" };
+	// Every approval_requested notification stays purple (color/bg above) —
+	// only the icon varies by subject type, so purple always means "needs approval".
+	const Icon = (n.type === "approval_requested" && APPROVAL_SUBJECT_ICONS[n.data?.subjectType]) || baseIcon;
 	const isShiftLink       = SHIFT_TYPES.has(n.type);
 	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);
@@ -265,25 +335,47 @@ function TypeLegend() {
 			{open && (
 				<div className={styles.legendPanel}>
 					{BUCKET_ORDER.map((bucketKey) => {
-						const types = Object.keys(TYPE_BUCKET).filter(t => TYPE_BUCKET[t] === bucketKey);
 						const { label, color } = BUCKET_META[bucketKey];
+						const { Icon: approvalIcon, color: approvalColor, bg: approvalBg } = TYPE_CONFIG.approval_requested;
+
+						// "Needs Approval" lists one row per approval subject type (see
+						// APPROVAL_SUBJECT_LEGEND) instead of a single combined row — the
+						// portal only ever sees one notification `type` (approval_requested)
+						// for all of these.
+						const rows = bucketKey === "approval"
+							? APPROVAL_SUBJECT_LEGEND.map(({ subjectType, label: rowLabel, description }) => ({
+								key:       subjectType,
+								Icon:      APPROVAL_SUBJECT_ICONS[subjectType] ?? approvalIcon,
+								iconColor: approvalColor,
+								bg:        approvalBg,
+								rowLabel,
+								description,
+							}))
+							: Object.keys(TYPE_BUCKET)
+								.filter(t => TYPE_BUCKET[t] === bucketKey)
+								.map((type) => ({
+									key:         type,
+									Icon:        TYPE_CONFIG[type].Icon,
+									iconColor:   TYPE_CONFIG[type].color,
+									bg:          TYPE_CONFIG[type].bg,
+									rowLabel:    TYPE_LABEL[type],
+									description: TYPE_DESCRIPTION[type],
+								}));
+
 						return (
 							<div key={bucketKey} className={styles.legendGroup}>
 								<p className={styles.legendGroupLabel} style={{ color }}>{label}</p>
-								{types.map((type) => {
-									const { Icon, color: iconColor, bg } = TYPE_CONFIG[type];
-									return (
-										<div key={type} className={styles.legendRow}>
-											<span className={styles.legendIconBox} style={{ background: bg }}>
-												<Icon size={14} color={iconColor} strokeWidth={2} />
-											</span>
-											<div>
-												<p className={styles.legendRowLabel}>{TYPE_LABEL[type]}</p>
-												<p className={styles.legendRowDesc}>{TYPE_DESCRIPTION[type]}</p>
-											</div>
+								{rows.map(({ key, Icon, iconColor, bg, rowLabel, description }) => (
+									<div key={key} className={styles.legendRow}>
+										<span className={styles.legendIconBox} style={{ background: bg }}>
+											<Icon size={14} color={iconColor} strokeWidth={2} />
+										</span>
+										<div>
+											<p className={styles.legendRowLabel}>{rowLabel}</p>
+											<p className={styles.legendRowDesc}>{description}</p>
 										</div>
-									);
-								})}
+									</div>
+								))}
 							</div>
 						);
 					})}
@@ -305,8 +397,10 @@ const BROADCAST_SLUGS = [
 
 export default function NotificationsPage() {
 	const router = useRouter();
-	const [filter, setFilter] = useState("all"); // "all" | "unread"
-	const [page,   setPage]   = useState(1);
+	// Persist to sessionStorage so they're still applied when the admin views
+	// a shift/approval/payroll notification's target and then comes back.
+	const [filter, setFilter] = usePersistedState("notifications-filters:filter", "all"); // "all" | "unread"
+	const [page,   setPage]   = usePersistedState("notifications-filters:page", 1);
 
 	const { profile } = useProfile();
 	const permissionSlugs = profile?.permissionSlugs ?? [];

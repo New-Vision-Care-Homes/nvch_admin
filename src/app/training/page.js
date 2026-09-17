@@ -4,20 +4,21 @@
 // IMPORTS
 // ============================================================
 
-import { useState } from "react";
-import Link from "next/link";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState  from "@/components/UI/ErrorState";
 import EmptyState  from "@/components/UI/EmptyState";
 import StatusBadge, { ColorPill } from "@/components/UI/Badge";
 import IconButton  from "@/components/UI/IconButton";
+import Button from "@/components/UI/Button";
 import { PageTable, PageTableRow } from "@components/UI/Table";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useProfile }    from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { formatDateTime } from "@/utils/dates";
 import { TRAINING_STATUS_META } from "./_components/statusMeta";
 import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
-import { Eye } from "lucide-react";
+import { Eye, Plus } from "lucide-react";
 import styles from "./training.module.css";
 
 // ============================================================
@@ -36,9 +37,12 @@ export default function TrainingPage() {
     const canManage = slugs.includes("manage_trainings");
 
     // ── Filter state ───────────────────────────────────────────────────────────
-    const [from, setFrom] = useState("");
-    const [to, setTo]     = useState("");
-    const [type, setType] = useState("");
+    // Filters persist to sessionStorage so they're still applied when the admin
+    // clicks into a training and then comes back, instead of resetting on every
+    // visit to this page.
+    const [from, setFrom] = usePersistedState("training-filters:from", "");
+    const [to, setTo]     = usePersistedState("training-filters:to", "");
+    const [type, setType] = usePersistedState("training-filters:type", "");
 
     const { trainingTypes, getTrainingTypeColor } = useTrainingTypeDropdown();
 
@@ -57,16 +61,12 @@ export default function TrainingPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Page header ─────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <h1>Training</h1>
-                    <div className={styles.headerActions}>
-                        {canManage && (
-                            <Link href="/training/new" className={styles.addButton}>
-                                + Add Training
-                            </Link>
-                        )}
-                    </div>
-                </div>
+                <PageHeader
+                    title="Training"
+                    actions={canManage && (
+                        <Button href="/training/new" variant="primary" icon={<Plus size={16} />}>Add Training</Button>
+                    )}
+                />
 
                 {/* ── Filter bar ──────────────────────────────────────────── */}
                 <div className={styles.filterBar}>

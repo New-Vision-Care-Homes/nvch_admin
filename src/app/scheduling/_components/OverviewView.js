@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, addDays } from "date-fns";
 import { DateTime } from "luxon";
-import { Download, Moon, Sun, User } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Moon, Sun, User } from "lucide-react";
 import Button from "@components/UI/Button";
+import IconButton from "@components/UI/IconButton";
 import ErrorState from "@components/UI/ErrorState";
 import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
 import { exportScheduleToExcel } from "@/utils/excelExport/scheduleSheet";
@@ -23,6 +24,26 @@ const STATUS_BADGE_COLORS = {
 	completed:   { background: "#d1fae5", color: "#065f46", borderColor: "#6ee7b7" },
 };
 
+// Consecutive entries sharing the exact same start+end (e.g. a missed shift
+// and its completed replacement booked for the same slot) stack vertically
+// instead of sitting side by side — same-time chips read as one bar split
+// top/bottom rather than two separate bars left/right. Multi-day spans are
+// excluded since they need to stay in the flat side-by-side bar layout.
+function groupEntriesForStacking(entries) {
+	const groups = [];
+	entries.forEach((entry) => {
+		const stackable = entry.spanDays <= 1;
+		const key       = stackable ? `${entry.startTime}_${entry.endTime}_${entry.isNight}` : null;
+		const last      = groups[groups.length - 1];
+		if (stackable && last?.key === key) {
+			last.entries.push(entry);
+		} else {
+			groups.push({ key, entries: [entry] });
+		}
+	});
+	return groups;
+}
+
 /**
  * Caregivers × dates table for the current pay period, matching the Excel
  * export layout. Status-coloured chips per cell; click any chip to open the
@@ -40,6 +61,33 @@ export default function OverviewView({
 	getCaregiverColor,
 	router,
 }) {
+	const tableWrapRef = useRef(null);
+	const todayColRef  = useRef(null);
+	const scrollTable = (direction) => {
+		tableWrapRef.current?.scrollBy({ left: direction * 300, behavior: "smooth" });
+	};
+
+	const [canScrollLeft, setCanScrollLeft]   = useState(false);
+	const [canScrollRight, setCanScrollRight] = useState(false);
+	const updateScrollBounds = () => {
+		const el = tableWrapRef.current;
+		if (!el) return;
+		setCanScrollLeft(el.scrollLeft > 0);
+		setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+	};
+
+	useEffect(() => {
+		const el = tableWrapRef.current;
+		if (!el) return;
+		updateScrollBounds();
+		el.addEventListener("scroll", updateScrollBounds);
+		window.addEventListener("resize", updateScrollBounds);
+		return () => {
+			el.removeEventListener("scroll", updateScrollBounds);
+			window.removeEventListener("resize", updateScrollBounds);
+		};
+	});
+
 	const dates = useMemo(() => {
 		if (!payrollPeriod) return [];
 		const arr = [];
@@ -127,6 +175,12 @@ export default function OverviewView({
 		};
 	}, [payrollShifts]);
 
+	// On first load of a pay period, jump the horizontal scroll straight to
+	// today's column instead of leaving the user at the leftmost day.
+	useEffect(() => {
+		todayColRef.current?.scrollIntoView({ behavior: "auto", inline: "center", block: "nearest" });
+	}, [payrollPeriod, sortedCgIds.length]);
+
 	if (isPayrollLoading || (!payrollPeriod && !payPeriodError)) return <ErrorState isLoading />;
 	if (payPeriodError)   return <ErrorState errorMessage={payPeriodError} />;
 	if (payrollError)     return <ErrorState errorMessage={payrollError} onRetry={refetchPayroll} />;
@@ -169,7 +223,13 @@ export default function OverviewView({
 								{label}
 							</span>
 						))}
-						<div style={{ marginLeft: "auto" }}>
+						<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+							<IconButton title="Scroll left" onClick={() => scrollTable(-1)} disabled={!canScrollLeft}>
+								<ChevronLeft size={16} />
+							</IconButton>
+							<IconButton title="Scroll right" onClick={() => scrollTable(1)} disabled={!canScrollRight}>
+								<ChevronRight size={16} />
+							</IconButton>
 							<Button
 								variant="excel"
 								size="sm"
@@ -199,7 +259,7 @@ export default function OverviewView({
 					</div>
 
 					{/* Roster grid */}
-					<div className={styles.overviewTableWrap}>
+					<div className={styles.overviewTableWrap} ref={tableWrapRef}>
 						<table className={styles.overviewTable}>
 							<thead>
 								<tr>
@@ -210,6 +270,7 @@ export default function OverviewView({
 										return (
 											<th
 												key={ds}
+												ref={isToday ? todayColRef : null}
 												className={`${styles.overviewDayHeader}${isToday ? ` ${styles.overviewDayHeaderToday}` : ""}`}
 											>
 												<span className={styles.overviewDayName}>{format(d, "EEE")}</span>
@@ -275,7 +336,8 @@ export default function OverviewView({
 														className={`${styles.overviewCell}${isToday ? ` ${styles.overviewCellToday}` : ""}${cellSpanClass ? ` ${cellSpanClass}` : ""}`}
 													>
 														<div className={styles.overviewCellRow}>
-														{entries.map((entry, i) => {
+														{groupEntriesForStacking(entries).map((group, gi) => {
+														const renderChip = (entry, key, stacked) => {
 															const isMultiDay = entry.spanDays > 1;
 															// Overnight shifts get a "span" modifier so the chip bleeds into
 															// the next/previous day cell, reading as one continuous bar
@@ -321,18 +383,32 @@ export default function OverviewView({
 															}
 															return (
 																<span
-																	key={i}
-																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled} ${spanClass}`}
+																	key={key}
+																	className={`${styles.overviewChip} ${styles[`overviewChip_${entry.status}`] || styles.overviewChip_scheduled} ${spanClass}${stacked ? ` ${styles.overviewChipStacked}` : ""}`}
 																	onClick={() => entry.id && router.push(`/scheduling/${entry.id}`)}
 																	title={`${cgNames[cgId]} · ${entry.fullRange}${entry.spanDays > 1 ? ` · ${entry.spanDays}-day shift${!entry.isFirst ? " (continues)" : ""}` : ""} · ${entry.isNight ? "Night" : "Day"} · ${entry.status}`}
 																>
 																	{content}
 																</span>
 															);
-														})}
-														</div>
-													</td>
-												);
+														};
+
+														if (group.entries.length === 1) {
+															return renderChip(group.entries[0], gi, false);
+														}
+
+														// Same time range, more than one shift (e.g. a missed shift and
+														// its completed replacement) — stack top/bottom instead of the
+														// usual side-by-side layout so both stay equally readable.
+														return (
+															<div key={gi} className={styles.overviewChipStack}>
+																{group.entries.map((entry, si) => renderChip(entry, si, true))}
+															</div>
+														);
+													})}
+													</div>
+												</td>
+											);
 											})}
 											<td className={styles.overviewTotalCell}>
 												{totalShifts > 0 && (

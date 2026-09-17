@@ -1,34 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./add_new_home.module.css";
-import cardStyles from "@components/UI/Card.module.css";
 import { useRouter } from "next/navigation";
 import { useHomes } from "@/hooks/useHomes";
-import { useClients } from "@/hooks/useClients";
-import { useCaregivers } from "@/hooks/useCaregivers";
-import { useAdmins } from "@/hooks/useAdmins";
 import GeofenceMap from "@/components/UI/GeofenceMap";
-import { Search, X } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
 import ActionMessage from "@components/UI/ActionMessage";
-import HouseConflictModal from "@/components/UI/HouseConflictModal";
+import PersonAssignmentField, { getStaffId } from "../_components/PersonAssignmentField";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
-
-// Referentially-stable "no results" value — returning a fresh `[]` literal from
-// the useMemo below would give caregiverResults/clientResults a new identity
-// every render (since searchedCaregivers/searchedClients aren't memoized
-// upstream), which retriggers the "assigned" hint effect every render and
-// loops (setCaregiverHomeMap({}) → re-render → new [] → effect fires → ...).
-const EMPTY_LIST = [];
-
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -97,242 +85,14 @@ export default function AddNewHomePage() {
 
 
 
-	// Caregiver search state
-	const [caregiverSearch, setCaregiverSearch] = useState("");
-	const [showCaregiverResults, setShowCaregiverResults] = useState(false);
+	// Staff assignment — each PersonAssignmentField below owns its own search
+	// UI; this page just holds the resulting selections (needed for the submit
+	// payload) and the "moved from another home" flags it sets on conflict.
 	const [selectedCaregivers, setSelectedCaregivers] = useState([]);
-	const [caregiverConflictInfo, setCaregiverConflictInfo] = useState(null); // { caregiver, currentHomeName }
-	const [hasCaregiverMove, setHasCaregiverMove] = useState(false);
-	const [isCheckingCaregiver, setIsCheckingCaregiver] = useState(false);
-	const [caregiverHomeMap, setCaregiverHomeMap] = useState({}); // { caregiverId: boolean }
-
-	// Client search state
-	const [clientSearch, setClientSearch] = useState("");
-	const [showClientResults, setShowClientResults] = useState(false);
 	const [selectedClients, setSelectedClients] = useState([]);
-	const [conflictInfo, setConflictInfo] = useState(null); // { client, currentHomeName }
-	const [hasClientMove, setHasClientMove] = useState(false);
-	const [isCheckingClient, setIsCheckingClient] = useState(false);
-	const [clientHomeMap, setClientHomeMap] = useState({}); // { clientId: boolean }
-
-	// Admin search state
-	const [adminSearch, setAdminSearch] = useState("");
-	const [showAdminResults, setShowAdminResults] = useState(false);
 	const [selectedAdmins, setSelectedAdmins] = useState([]);
-
-	// Debounce function
-	const debounce = (func, delay) => {
-		let timeoutId;
-		return function (...args) {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => func.apply(this, args), delay);
-		};
-	};
-
-	// Search Caregivers
-	const [caregiverSearchParams, setCaregiverSearchParams] = useState({});
-	const { caregivers: searchedCaregivers, fetchCaregiver } = useCaregivers(caregiverSearchParams);
-
-	const searchCaregivers = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setCaregiverSearchParams({});
-			return;
-		}
-		setCaregiverSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	const caregiverResults = useMemo(() => {
-		if (!searchedCaregivers || !caregiverSearchParams.search) return EMPTY_LIST;
-		return searchedCaregivers.filter(c => !selectedCaregivers.find(s => s.id === c.id));
-	}, [searchedCaregivers, caregiverSearchParams.search, selectedCaregivers]);
-
-	const debouncedSearchCaregivers = useCallback(debounce(searchCaregivers, 300), [selectedCaregivers]);
-
-	useEffect(() => {
-		debouncedSearchCaregivers(caregiverSearch);
-	}, [caregiverSearch, debouncedSearchCaregivers]);
-
-	const getStaffId = (person) => person._id || person.id;
-
-	// Batch-fetch full caregiver details when search results change to drive the "· assigned" hint
-	useEffect(() => {
-		if (!caregiverResults.length) {
-			setCaregiverHomeMap(prev => (Object.keys(prev).length === 0 ? prev : {}));
-			return;
-		}
-		let cancelled = false;
-		Promise.all(caregiverResults.map(c => fetchCaregiver(getStaffId(c)))).then(full => {
-			if (cancelled) return;
-			const map = {};
-			full.forEach((f, i) => {
-				const homeRaw = f.home;
-				map[getStaffId(caregiverResults[i])] = !!(
-					(typeof homeRaw === "string" ? homeRaw : (homeRaw?._id || homeRaw?.id)) || f.homeId
-				);
-			});
-			setCaregiverHomeMap(map);
-		}).catch(() => {});
-		return () => { cancelled = true; };
-	}, [caregiverResults]);
-
-	// Same conflict-check workflow as homes/[id]/edit/page.js (mirrored below
-	// for clients too): fetch the selected person's full record, and if
-	// they're already assigned to a different home, pause on a
-	// HouseConflictModal instead of adding them immediately. Confirming sets
-	// hasCaregiverMove so the submit payload includes confirmMove: true.
-	const handleCaregiverSelect = async (caregiver) => {
-		if (isCheckingCaregiver) return;
-		setCaregiverSearch("");
-		setShowCaregiverResults(false);
-		setIsCheckingCaregiver(true);
-		try {
-			const full = await fetchCaregiver(getStaffId(caregiver));
-			const homeRaw = full.home;
-			const existingHomeId =
-				typeof homeRaw === "string" ? homeRaw :
-				(homeRaw?._id || homeRaw?.id || full.homeId || null);
-			if (existingHomeId) {
-				let currentHomeName = null;
-				try {
-					const homeDetail = await fetchHome(existingHomeId);
-					currentHomeName = homeDetail?.name || homeDetail?.home?.name || null;
-				} catch {}
-				setCaregiverConflictInfo({ caregiver, currentHomeName });
-				return;
-			}
-			setSelectedCaregivers(prev => [...prev, caregiver]);
-		} catch {
-			setSelectedCaregivers(prev => [...prev, caregiver]);
-		} finally {
-			setIsCheckingCaregiver(false);
-		}
-	};
-
-	const handleCaregiverConflictConfirm = () => {
-		if (!caregiverConflictInfo) return;
-		setSelectedCaregivers(prev => [...prev, caregiverConflictInfo.caregiver]);
-		setHasCaregiverMove(true);
-		setCaregiverConflictInfo(null);
-	};
-
-	const removeCaregiver = (id) => { setSelectedCaregivers(selectedCaregivers.filter(c => getStaffId(c) !== id)); };
-
-	// Search Clients
-	const [clientSearchParams, setClientSearchParams] = useState({});
-	const { clients: searchedClients, fetchClient } = useClients(clientSearchParams);
-
-	const searchClients = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setClientSearchParams({});
-			return;
-		}
-
-		// Update search params to trigger useClients query
-		setClientSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	// Memoize filtered client results to avoid infinite loops and unnecessary re-renders
-	const clientResults = useMemo(() => {
-		if (!searchedClients || !clientSearchParams.search) return EMPTY_LIST;
-
-		return searchedClients.filter(client => {
-			const exists = selectedClients.find(c => getStaffId(c) === getStaffId(client));
-			return !exists;
-		});
-	}, [searchedClients, clientSearchParams.search, selectedClients]);
-
-	// Batch-fetch full client details when search results change to drive the "· assigned" hint
-	useEffect(() => {
-		if (!clientResults.length) {
-			setClientHomeMap(prev => (Object.keys(prev).length === 0 ? prev : {}));
-			return;
-		}
-		let cancelled = false;
-		Promise.all(clientResults.map(c => fetchClient(getStaffId(c)))).then(full => {
-			if (cancelled) return;
-			const map = {};
-			full.forEach((f, i) => {
-				const homeRaw = f.home;
-				map[getStaffId(clientResults[i])] = !!(
-					(typeof homeRaw === "string" ? homeRaw : (homeRaw?._id || homeRaw?.id)) || f.homeId
-				);
-			});
-			setClientHomeMap(map);
-		}).catch(() => {});
-		return () => { cancelled = true; };
-	}, [clientResults]);
-
-	const debouncedSearchClients = useCallback(debounce(searchClients, 300), [selectedClients]);
-
-	useEffect(() => {
-		debouncedSearchClients(clientSearch);
-	}, [clientSearch, debouncedSearchClients]);
-
-	const handleClientSelect = async (client) => {
-		if (isCheckingClient) return;
-		setClientSearch("");
-		setShowClientResults(false);
-		setIsCheckingClient(true);
-		try {
-			const full = await fetchClient(getStaffId(client));
-			const homeRaw = full.home;
-			const existingHomeId =
-				typeof homeRaw === "string" ? homeRaw :
-				(homeRaw?._id || homeRaw?.id || full.homeId || null);
-			if (existingHomeId) {
-				let currentHomeName = null;
-				try {
-					const homeDetail = await fetchHome(existingHomeId);
-					currentHomeName = homeDetail?.name || homeDetail?.home?.name || null;
-				} catch {}
-				setConflictInfo({ client, currentHomeName });
-				return;
-			}
-			setSelectedClients(prev => [...prev, client]);
-		} catch {
-			setSelectedClients(prev => [...prev, client]);
-		} finally {
-			setIsCheckingClient(false);
-		}
-	};
-
-	const handleConflictConfirm = () => {
-		if (!conflictInfo) return;
-		setSelectedClients(prev => [...prev, conflictInfo.client]);
-		setHasClientMove(true);
-		setConflictInfo(null);
-	};
-
-	const removeClient = (id) => { setSelectedClients(selectedClients.filter(c => getStaffId(c) !== id)); };
-
-	// Search Admins via useAdmins hook (GET /api/auth/admin/admins)
-	const [adminSearchParams, setAdminSearchParams] = useState({});
-	const { admins: searchedAdmins } = useAdmins(adminSearchParams);
-
-	const searchAdmins = (searchTerm) => {
-		if (searchTerm.length < 2) {
-			setAdminSearchParams({});
-			return;
-		}
-		setAdminSearchParams({ search: searchTerm, page: 1, limit: 10 });
-	};
-
-	const adminResults = useMemo(() => {
-		if (!searchedAdmins || !adminSearchParams.search) return [];
-		return searchedAdmins.filter(
-			admin => !selectedAdmins.find(a => getStaffId(a) === getStaffId(admin))
-		);
-	}, [searchedAdmins, adminSearchParams.search, selectedAdmins]);
-
-	const debouncedSearchAdmins = useCallback(debounce(searchAdmins, 300), [selectedAdmins]);
-	useEffect(() => { debouncedSearchAdmins(adminSearch); }, [adminSearch, debouncedSearchAdmins]);
-
-	const handleAdminSelect = (admin) => {
-		setSelectedAdmins([...selectedAdmins, { ...admin, adminLevel: 'supervisor' }]);
-		setAdminSearch("");
-		setShowAdminResults(false);
-	};
-	const removeAdmin = (id) => { setSelectedAdmins(selectedAdmins.filter(a => getStaffId(a) !== id)); };
+	const [hasCaregiverMove, setHasCaregiverMove] = useState(false);
+	const [hasClientMove, setHasClientMove] = useState(false);
 
 	const onSubmit = (data) => {
 		const homeData = {
@@ -385,33 +145,18 @@ export default function AddNewHomePage() {
 
 	return (
 		<PageLayout>
-			<HouseConflictModal
-				isOpen={!!conflictInfo}
-				onClose={() => setConflictInfo(null)}
-				onConfirm={handleConflictConfirm}
-				subjectName={conflictInfo ? `${conflictInfo.client.firstName} ${conflictInfo.client.lastName}` : ""}
-				currentHomeName={conflictInfo?.currentHomeName}
-				newHomeName={newHomeName}
-			/>
-			<HouseConflictModal
-				isOpen={!!caregiverConflictInfo}
-				onClose={() => setCaregiverConflictInfo(null)}
-				onConfirm={handleCaregiverConflictConfirm}
-				subjectLabel="Caregiver"
-				subjectName={caregiverConflictInfo ? `${caregiverConflictInfo.caregiver.firstName} ${caregiverConflictInfo.caregiver.lastName}` : ""}
-				currentHomeName={caregiverConflictInfo?.currentHomeName}
-				newHomeName={newHomeName}
-			/>
 			<form onSubmit={handleSubmit(onSubmit)}>
-				<div className={styles.header}>
-					<h1>Add New Home</h1>
-					<div className={styles.buttons}>
-						<Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-						<Button variant="primary" type="submit" disabled={isActionPending}>
-							{isActionPending ? "Saving..." : "Save"}
-						</Button>
-					</div>
-				</div>
+				<PageHeader
+					title="Add New Home"
+					actions={
+						<>
+							<Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+							<Button variant="primary" type="submit" disabled={isActionPending}>
+								{isActionPending ? "Saving..." : "Save"}
+							</Button>
+						</>
+					}
+				/>
 				{actionError && <ActionMessage variant="error" message={actionError} />}
 
 				<div className={styles.content}>
@@ -484,140 +229,30 @@ export default function AddNewHomePage() {
 						<Card>
 							<CardHeader>Staff Assignment</CardHeader>
 							<CardContent>
-								{/* Caregivers */}
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Caregivers</label>
-									<div style={{ position: 'relative' }}>
-										<input
-											type="text"
-											value={caregiverSearch}
-											onChange={(e) => {
-												setCaregiverSearch(e.target.value);
-												setShowCaregiverResults(e.target.value.length >= 2);
-											}}
-											onFocus={() => caregiverSearch.length >= 2 && setShowCaregiverResults(true)}
-											onBlur={() => setTimeout(() => setShowCaregiverResults(false), 150)}
-											placeholder="Search caregivers..."
-											className={cardStyles.input}
-										/>
-										{showCaregiverResults && caregiverResults.length > 0 && (
-											<div className={cardStyles.searchResults}>
-												{caregiverResults.map(caregiver => {
-													const hasHome = !!caregiverHomeMap[getStaffId(caregiver)];
-													return (
-														<div
-															key={getStaffId(caregiver)}
-															onMouseDown={() => handleCaregiverSelect(caregiver)}
-															className={cardStyles.searchItem}
-														>
-															<span className={cardStyles.searchItemName}>{caregiver.firstName} {caregiver.lastName}</span>
-															<span className={cardStyles.searchItemSub}>
-																{caregiver.email || caregiver.phone}
-																{hasHome && (
-																	<span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
-																		· assigned
-																	</span>
-																)}
-															</span>
-														</div>
-													);
-												})}
-											</div>
-										)}
-									</div>
-									<div className={cardStyles.badgeList}>
-										{selectedCaregivers.map(caregiver => (
-											<div key={getStaffId(caregiver)} className={`${cardStyles.badge} ${cardStyles.badgeCaregiver}`}>
-												<span>{caregiver.firstName} {caregiver.lastName}</span>
-												<X size={14} onClick={() => removeCaregiver(getStaffId(caregiver))} />
-											</div>
-										))}
-									</div>
-								</div>
-
-								{/* Clients */}
-								<div style={{ marginBottom: '1.5rem' }}>
-									<label className={cardStyles.label}>Clients</label>
-									<div style={{ position: 'relative' }}>
-										<input
-											type="text"
-											value={clientSearch}
-											onChange={(e) => {
-												setClientSearch(e.target.value);
-												setShowClientResults(e.target.value.length >= 2);
-											}}
-											onFocus={() => clientSearch.length >= 2 && setShowClientResults(true)}
-											onBlur={() => setTimeout(() => setShowClientResults(false), 150)}
-											placeholder="Search clients..."
-											className={cardStyles.input}
-										/>
-										{showClientResults && clientResults.length > 0 && (
-											<div className={cardStyles.searchResults}>
-												{clientResults.map(client => {
-													const hasHome = !!clientHomeMap[getStaffId(client)];
-													return (
-														<div key={getStaffId(client)} onMouseDown={() => handleClientSelect(client)} className={cardStyles.searchItem}>
-															<span className={cardStyles.searchItemName}>{client.firstName} {client.lastName}</span>
-															<span className={cardStyles.searchItemSub}>
-																{client.email || client.phone}
-																{hasHome && (
-																	<span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#d97706', fontWeight: 600 }}>
-																		· assigned
-																	</span>
-																)}
-															</span>
-														</div>
-													);
-												})}
-											</div>
-										)}
-									</div>
-									<div className={cardStyles.badgeList}>
-										{selectedClients.map(client => (
-											<div key={getStaffId(client)} className={`${cardStyles.badge} ${cardStyles.badgeClient}`}>
-												<span>{client.firstName} {client.lastName}</span>
-												<X size={14} onClick={() => removeClient(getStaffId(client))} />
-											</div>
-										))}
-									</div>
-								</div>
-
-								{/* Admins */}
-								<div>
-									<label className={cardStyles.label}>Admins</label>
-									<div style={{ position: 'relative' }}>
-										<input
-											type="text"
-											value={adminSearch}
-											onChange={(e) => {
-												setAdminSearch(e.target.value);
-												setShowAdminResults(e.target.value.length >= 2);
-											}}
-											onFocus={() => adminSearch.length >= 2 && setShowAdminResults(true)}
-											onBlur={() => setTimeout(() => setShowAdminResults(false), 150)}
-											placeholder="Search admins..."
-											className={cardStyles.input}
-										/>
-										{showAdminResults && adminResults.length > 0 && (
-											<div className={cardStyles.searchResults}>
-												{adminResults.map(admin => (
-													<div key={getStaffId(admin)} onMouseDown={() => handleAdminSelect(admin)} className={cardStyles.searchItem}>
-														<span className={cardStyles.searchItemName}>{admin.firstName} {admin.lastName}</span>
-														<span className={cardStyles.searchItemSub}>{admin.email}</span>
-													</div>
-												))}
-											</div>
-										)}
-									</div>
-									<div className={cardStyles.badgeList}>
-										{selectedAdmins.map(admin => (
-											<div key={getStaffId(admin)} className={`${cardStyles.badge} ${cardStyles.badgeAdmin}`}>
-												<span>{admin.firstName} {admin.lastName}</span>
-												<X size={14} onClick={() => removeAdmin(getStaffId(admin))} />
-											</div>
-										))}
-									</div>
-								</div>
+								<PersonAssignmentField
+									type="caregiver"
+									label="Caregivers"
+									selected={selectedCaregivers}
+									onSelectedChange={setSelectedCaregivers}
+									newHomeName={newHomeName}
+									fetchHome={fetchHome}
+									onMove={() => setHasCaregiverMove(true)}
+								/>
+								<PersonAssignmentField
+									type="client"
+									label="Clients"
+									selected={selectedClients}
+									onSelectedChange={setSelectedClients}
+									newHomeName={newHomeName}
+									fetchHome={fetchHome}
+									onMove={() => setHasClientMove(true)}
+								/>
+								<PersonAssignmentField
+									type="admin"
+									label="Admins"
+									selected={selectedAdmins}
+									onSelectedChange={setSelectedAdmins}
+								/>
 							</CardContent>
 						</Card>
 

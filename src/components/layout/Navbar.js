@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
 	Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck,
-	PiggyBank, House,
+	PiggyBank, House, Smartphone,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
@@ -32,9 +32,20 @@ const TYPE_CONFIG = {
 	house_hours_review_overdue:  { Icon: House,          color: "#dc2626", bg: "#fef2f2" },
 	house_hours_review_not_done: { Icon: House,          color: "#7c3aed", bg: "#f5f3ff" },
 	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
+	caregiver_device_enrolled:   { Icon: Smartphone,     color: "#0891b2", bg: "#ecfeff" },
 	// Broadcasts & approvals
 	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+};
+
+/**
+ * Icon/colour override for approval_requested notifications, keyed by the
+ * approval's subjectType — mirrors notification/page.js's
+ * APPROVAL_SUBJECT_CONFIG. Only caregiver_device_change gets a distinct icon;
+ * every other subject type keeps the generic approval_requested look.
+ */
+const APPROVAL_SUBJECT_CONFIG = {
+	caregiver_device_change: { Icon: Smartphone, color: "#0891b2", bg: "#ecfeff" },
 };
 
 /**
@@ -216,7 +227,10 @@ export default function Navbar({ onMenuToggle = () => {} }) {
 											<p className={styles.dropdownEmpty}>No notifications yet</p>
 										) : (
 											recentNotifications.map(n => {
-												const { Icon, color, bg } = TYPE_CONFIG[n.type] ?? { Icon: Bell, color: "#6b7280", bg: "#f3f4f6" };
+												const { Icon, color, bg } =
+													APPROVAL_SUBJECT_CONFIG[n.data?.subjectType] ??
+													TYPE_CONFIG[n.type] ??
+													{ Icon: Bell, color: "#6b7280", bg: "#f3f4f6" };
 												return (
 													<div
 														key={n._id}

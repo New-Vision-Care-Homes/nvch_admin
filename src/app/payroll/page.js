@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
     Building2, MapPin, Eye,
     AlertTriangle, CheckCircle2, Loader2, RefreshCw,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState    from "@components/UI/ErrorState";
 import ActionMessage from "@components/UI/ActionMessage";
 import Button        from "@components/UI/Button";
@@ -18,6 +19,7 @@ import styles        from "./payroll.module.css";
 import { usePayPeriod }                                          from "@/hooks/usePayPeriods";
 import { usePayrollOverview, useRecomputeStats, useHouseReviews, useCoverSheet } from "@/hooks/usePayroll";
 import { useProfile }                                            from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS }    from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK }   from "@/utils/dropdownList/shared";
@@ -68,13 +70,19 @@ function UnresolvedBadge({ unresolvedHours, isLoading }) {
 export default function PayrollOverviewPage() {
     const router = useRouter();
 
-    const [selectedYear,    setSelectedYear]    = useState("");
-    const [selectedPeriod,  setSelectedPeriod]  = useState("");
-    const [defaultsApplied, setDefaultsApplied] = useState(false);
+    // Filters persist to sessionStorage so they're still applied when the
+    // admin views a home's payroll and then comes back.
+    const [selectedYear,    setSelectedYear]    = usePersistedState("payroll-filters:selectedYear", "");
+    const [selectedPeriod,  setSelectedPeriod]  = usePersistedState("payroll-filters:selectedPeriod", "");
+    // Also persisted: once the year/period have been seeded from the current
+    // pay period this session, a later remount (e.g. list -> detail -> back)
+    // must NOT re-seed and clobber a period the admin explicitly picked.
+    const [defaultsApplied, setDefaultsApplied] = usePersistedState("payroll-filters:defaultsApplied", false);
 
     // ── Pagination ──────────────────────────────────────────────────
-    const [currentPage, setCurrentPage] = useState(0);
+    const [currentPage, setCurrentPage] = usePersistedState("payroll-filters:currentPage", 0);
     const itemsPerPage = 10;
+    const prevFiltersRef = useRef({ selectedYear, selectedPeriod });
 
     const { payPeriod } = usePayPeriod(0);
     useEffect(() => {
@@ -83,7 +91,7 @@ export default function PayrollOverviewPage() {
             setSelectedPeriod(String(payPeriod.periodNumber));
             setDefaultsApplied(true);
         }
-    }, [payPeriod, defaultsApplied]);
+    }, [payPeriod, defaultsApplied, setSelectedYear, setSelectedPeriod, setDefaultsApplied]);
 
     const periodReady = !!(selectedYear && selectedPeriod);
 
@@ -93,10 +101,16 @@ export default function PayrollOverviewPage() {
         enabled:      periodReady,
     });
 
-    // Reset to page 1 whenever the selected pay period changes
+    // Reset to page 1 whenever the selected pay period changes — but not on
+    // the initial mount, which would otherwise wipe out a restored page number.
     useEffect(() => {
-        setCurrentPage(0);
-    }, [selectedYear, selectedPeriod]);
+        const prev = prevFiltersRef.current;
+        const filtersChanged = prev.selectedYear !== selectedYear || prev.selectedPeriod !== selectedPeriod;
+        prevFiltersRef.current = { selectedYear, selectedPeriod };
+        if (filtersChanged) {
+            setCurrentPage(0);
+        }
+    }, [selectedYear, selectedPeriod, setCurrentPage]);
 
     const pageCount      = Math.max(Math.ceil(rows.length / itemsPerPage), 1);
     const paginatedRows  = rows.slice(currentPage * itemsPerPage, currentPage * itemsPerPage + itemsPerPage);
@@ -148,9 +162,9 @@ export default function PayrollOverviewPage() {
             <div className={styles.pageContainer}>
 
                 {/* ── Page header ─────────────────────────────────────────── */}
-                <div className={styles.pageHeader}>
-                    <div><h1>Payroll Overview</h1></div>
-                    {canRecompute && (
+                <PageHeader
+                    title="Payroll Overview"
+                    actions={canRecompute && (
                         <Button
                             variant="primary"
                             icon={isRecomputing
@@ -163,7 +177,7 @@ export default function PayrollOverviewPage() {
                             {isRecomputing ? "Recomputing…" : "Recompute Stats"}
                         </Button>
                     )}
-                </div>
+                />
 
                 <div className={styles.overviewCard}>
 

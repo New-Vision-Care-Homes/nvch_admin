@@ -15,6 +15,7 @@ import ActionMessage from "@components/UI/ActionMessage";
 import { Card, CardHeader, CardContent } from "@components/UI/Card";
 import { useCreateCaregiverEntry, useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useHomes }  from "@/hooks/useHomes";
+import { WRITABLE_PAY_CATEGORIES } from "@/utils/dropdownList/payCategory";
 import styles        from "./add_entry.module.css";
 import detailStyles  from "../../../[id]/payroll_detail.module.css";
 
@@ -23,11 +24,11 @@ import detailStyles  from "../../../[id]/payroll_detail.module.css";
 // SECTION: Constants
 // ============================================================
 
-const CATEGORY_OPTIONS = [
-    { value: "retro_bonus",  label: "Retro Bonus",             unit: "dollars" },
-    { value: "bereavement",  label: "Bereavement",             unit: "hours"   },
-    { value: "hours_banked", label: "Banked Hours Correction", unit: "hours"   },
-];
+// The manually-writable subset of PAY_CATEGORIES (see that file for the full
+// spec: which categories are writable, and which two — hours_banked and
+// vacation_pay_accrued — accept a signed (±) amount so a balance can be
+// restated; every other category here is positive-only).
+const CATEGORY_OPTIONS = WRITABLE_PAY_CATEGORIES;
 
 const CURRENT_YEAR   = new Date().getFullYear();
 const YEAR_OPTIONS   = [CURRENT_YEAR - 1, CURRENT_YEAR, CURRENT_YEAR + 1];
@@ -49,7 +50,7 @@ const schema = yup.object({
         .typeError("Amount must be a number")
         .required("Amount is required")
         .when("category", {
-            is:        "hours_banked",
+            is:        (value) => CATEGORY_OPTIONS.find((o) => o.value === value)?.signed ?? false,
             then:      (s) => s.notOneOf([0], "Amount cannot be zero"),
             otherwise: (s) => s.positive("Amount must be greater than zero"),
         }),
@@ -127,7 +128,7 @@ export default function AddCaregiverEntryPage() {
 
     const selectedCategory = CATEGORY_OPTIONS.find((o) => o.value === watchedCategory);
     const amountUnit       = selectedCategory?.unit ?? "amount";
-    const isBankedHours    = watchedCategory === "hours_banked";
+    const isSignedAmount   = selectedCategory?.signed ?? false;
 
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -250,15 +251,15 @@ export default function AddCaregiverEntryPage() {
                                         className={styles.input}
                                         type="number"
                                         step="0.01"
-                                        placeholder={isBankedHours
-                                            ? "e.g. 8 or -8"
+                                        placeholder={isSignedAmount
+                                            ? (amountUnit === "dollars" ? "e.g. 100 or -100" : "e.g. 8 or -8")
                                             : amountUnit === "dollars" ? "e.g. 500" : "e.g. 8"
                                         }
                                         {...register("amount", { valueAsNumber: true })}
                                     />
-                                    {isBankedHours && (
+                                    {isSignedAmount && (
                                         <p className={styles.fieldHint}>
-                                            Positive adds hours to the balance; negative removes them. Zero is not allowed.
+                                            Positive adds to the balance; negative removes from it. Zero is not allowed.
                                         </p>
                                     )}
                                     {errors.amount && (

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
 import Pagination from "@/components/UI/Pagination";
 import EmptyState from "@/components/UI/EmptyState";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { ClipboardCheck } from "lucide-react";
 import ApprovalRow from "./_components/ApprovalRow";
 import AcknowledgeTab from "./_components/AcknowledgeTab";
@@ -14,8 +14,10 @@ import styles from "./approvals.module.css";
 
 export default function ApprovalsPage() {
 	const router             = useRouter();
-	const [mainTab, setMainTab] = useState("approvals");
-	const [page,    setPage]    = useState(1);
+	// Persist to sessionStorage so they're still applied when the admin views
+	// an approval and then comes back.
+	const [mainTab, setMainTab] = usePersistedState("approvals-filters:mainTab", "approvals");
+	const [page,    setPage]    = usePersistedState("approvals-filters:page", 1);
 
 	const { profile } = useProfile();
 	const canSeeAcknowledge = profile?.permissionSlugs?.some(

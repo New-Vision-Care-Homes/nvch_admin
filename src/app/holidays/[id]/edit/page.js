@@ -6,6 +6,7 @@ import { useForm, useFieldArray }  from "react-hook-form";
 import { yupResolver }             from "@hookform/resolvers/yup";
 import * as yup                    from "yup";
 import PageLayout                  from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import ErrorState                  from "@components/UI/ErrorState";
 import Button                      from "@components/UI/Button";
 import { useHolidays }             from "@/hooks/useHolidays";
@@ -163,26 +164,28 @@ export default function EditHolidayPage() {
                 <div className={styles.pageContainer}>
 
                     {/* ── Header ──────────────────────────────────────────────── */}
-                    <div className={styles.pageHeader}>
-                        <h1>Edit Holiday</h1>
-                        <div className={styles.headerActions}>
-                            <Button
-                                variant="secondary"
-                                onClick={() => router.push(`/holidays/${id}`)}
-                                disabled={isActionPending}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="primary"
-                                icon={isActionPending ? <Loader size={14} className={styles.spin} /> : null}
-                                onClick={handleSubmit(onSubmit)}
-                                disabled={isActionPending}
-                            >
-                                {isActionPending ? "Saving…" : "Save"}
-                            </Button>
-                        </div>
-                    </div>
+                    <PageHeader
+                        title="Edit Holiday"
+                        actions={
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => router.push(`/holidays/${id}`)}
+                                    disabled={isActionPending}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    icon={isActionPending ? <Loader size={14} className={styles.spin} /> : null}
+                                    onClick={handleSubmit(onSubmit)}
+                                    disabled={isActionPending}
+                                >
+                                    {isActionPending ? "Saving…" : "Save"}
+                                </Button>
+                            </>
+                        }
+                    />
 
                     {actionError && (
                         <div className={styles.errorBanner}>

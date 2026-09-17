@@ -29,19 +29,11 @@ export function Card({ children, className }) {
 
 export function CardHeader({ children, className, actions }) {
 	return (
-		<div style={{
-			width: "100%",
-			marginBottom: "1.75rem",
-			paddingBottom: "0.75rem",
-			borderBottom: "2px solid rgba(28, 74, 110, 0.15)",
-			display: "flex",
-			alignItems: "center",
-			justifyContent: actions ? "space-between" : "flex-start",
-		}}>
-			<h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: 700, color: "var(--color-primary)" }} className={className}>
+		<div className={`${styles.header} ${actions ? styles.headerWithActions : ""}`}>
+			<h2 className={`${styles.headerTitle} ${className || ""}`}>
 				{children}
 			</h2>
-			{actions && <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>{actions}</div>}
+			{actions && <div className={styles.headerActions}>{actions}</div>}
 		</div>
 	);
 }

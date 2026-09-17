@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
 import Button from "@components/UI/Button";
 import styles from "./add_new_caregiver.module.css";
@@ -264,15 +265,17 @@ export default function Page() {
 		<PageLayout>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				{/* Header and Actions */}
-				<div className={styles.header}>
-					<h1>Caregiver Profile: Add New Caregiver</h1>
-					<div className={styles.buttons}>
-						<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
-						<Button variant="primary" type="submit" disabled={isCaregiverActionPending}>
-							{isCaregiverActionPending ? "Saving..." : "Save"}
-						</Button>
-					</div>
-				</div>
+				<PageHeader
+					title="Caregiver Profile: Add New Caregiver"
+					actions={
+						<>
+							<Button variant="secondary" onClick={handleCancel} type="button">Cancel</Button>
+							<Button variant="primary" type="submit" disabled={isCaregiverActionPending}>
+								{isCaregiverActionPending ? "Saving..." : "Save"}
+							</Button>
+						</>
+					}
+				/>
 
 				{caregiverActionError && <ActionMessage variant="error" message={caregiverActionError} />}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
@@ -10,13 +10,14 @@ import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Tabl
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Pagination";
-import Modal from "@components/UI/Modal";
+import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
+import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
 import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/ErrorState";
@@ -32,14 +33,18 @@ export default function Caregivers() {
 		canManageTarget(profile, caregiver, "delete_all_caregivers", "delete_assigned_caregivers");
 
 	// --- State ---
-	const [search, setSearch]               = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [statusFilter, setStatusFilter]   = useState("Active");
-	const [homeId, setHomeId]               = useState("");
+	// Filters persist to sessionStorage so they're still applied (and the
+	// matching results still shown) when the admin clicks into a caregiver and
+	// then comes back, instead of resetting on every visit to this page.
+	const [search, setSearch]               = usePersistedState("caregivers-filters:search", "");
+	const [debouncedSearch, setDebouncedSearch] = useState(search);
+	const [statusFilter, setStatusFilter]   = usePersistedState("caregivers-filters:statusFilter", "Active");
+	const [homeId, setHomeId]               = usePersistedState("caregivers-filters:homeId", "");
 	const [showModal, setShowModal]         = useState(false);
-	const [deletedCaregiverId, setDeletedCaregiverId] = useState(null);
-	const [currentPage, setCurrentPage]     = useState(1);
+	const [deletedCaregiver, setDeletedCaregiver] = useState(null);
+	const [currentPage, setCurrentPage]     = usePersistedState("caregivers-filters:currentPage", 1);
 	const itemsPerPage = 10;
+	const prevFiltersRef = useRef({ debouncedSearch, statusFilter, homeId });
 
 	// Debounce search — only fire API after user stops typing for 400 ms
 	useEffect(() => {
@@ -72,14 +77,23 @@ export default function Caregivers() {
 		},
 	});
 
-	// Reset to page 1 when any filter changes
+	// Reset to page 1 when any filter changes — but not on the initial mount,
+	// which would otherwise wipe out a restored (persisted) page number.
 	useEffect(() => {
-		setCurrentPage(1);
-	}, [debouncedSearch, statusFilter, homeId]);
+		const prev = prevFiltersRef.current;
+		const filtersChanged =
+			prev.debouncedSearch !== debouncedSearch ||
+			prev.statusFilter !== statusFilter ||
+			prev.homeId !== homeId;
+		prevFiltersRef.current = { debouncedSearch, statusFilter, homeId };
+		if (filtersChanged) {
+			setCurrentPage(1);
+		}
+	}, [debouncedSearch, statusFilter, homeId, setCurrentPage]);
 
 	// --- Handlers ---
-	const deleteHandler = (id) => {
-		setDeletedCaregiverId(id);
+	const deleteHandler = (caregiver) => {
+		setDeletedCaregiver(caregiver);
 		setShowModal(true);
 	};
 
@@ -89,12 +103,13 @@ export default function Caregivers() {
 	};
 
 	const confirmDelete = () => {
-		if (!deletedCaregiverId) return;
-		deleteCaregiver(deletedCaregiverId, {
-			onSettled: () => {
+		if (!deletedCaregiver) return;
+		deleteCaregiver(deletedCaregiver.id, {
+			onSuccess: () => {
 				setShowModal(false);
-				setDeletedCaregiverId(null);
+				setDeletedCaregiver(null);
 			},
+			// On error, keep the modal open so ConfirmDeleteModal's `errorMessage` stays in context.
 		});
 	};
 
@@ -109,7 +124,7 @@ export default function Caregivers() {
 						<h1>Caregiver Management</h1>
 						{canCreate && (
 							<Link href="/caregivers/add_new_caregiver">
-								<Button variant="primary" icon={<Plus />}>Add New Caregiver</Button>
+								<Button variant="primary" icon={<Plus size={16} />}>Add New Caregiver</Button>
 							</Link>
 						)}
 					</div>
@@ -208,7 +223,7 @@ export default function Caregivers() {
 															</IconButton>
 														)}
 														{canDeleteCaregiver(caregiver) && (
-															<IconButton variant="danger" onClick={() => deleteHandler(caregiver.id)} title="Delete Caregiver">
+															<IconButton variant="danger" onClick={() => deleteHandler(caregiver)} title="Delete Caregiver">
 																<Trash2 size={15} />
 															</IconButton>
 														)}
@@ -225,17 +240,14 @@ export default function Caregivers() {
 				</div>
 			</PageLayout>
 
-			<Modal isOpen={showModal} onClose={handleModalCancel}>
-				<div className={styles.modal_content}>
-					<h2>Are you sure you want to delete this caregiver?</h2>
-					<div className={styles.modal_buttons}>
-						<Button variant="primary" onClick={confirmDelete} disabled={isCaregiverActionPending}>
-							{isCaregiverActionPending ? "Deleting..." : "Yes"}
-						</Button>
-						<Button variant="secondary" onClick={handleModalCancel} disabled={isCaregiverActionPending}>No</Button>
-					</div>
-				</div>
-			</Modal>
+			<ConfirmDeleteModal
+				isOpen={showModal}
+				onClose={handleModalCancel}
+				onConfirm={confirmDelete}
+				itemName={deletedCaregiver ? fullName(deletedCaregiver) : ""}
+				isLoading={isCaregiverActionPending}
+				errorMessage={caregiverActionError}
+			/>
 		</>
 	);
 }
