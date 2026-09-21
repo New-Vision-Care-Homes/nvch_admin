@@ -95,7 +95,10 @@ export async function buildScheduleSheet(wb, { homeName, homeId, payPeriodStart,
 
             if (!shiftMap[cgId]) shiftMap[cgId] = {};
             if (!shiftMap[cgId][seg.dateStr]) shiftMap[cgId][seg.dateStr] = [];
-            shiftMap[cgId][seg.dateStr].push({ timeRange, isOvernight });
+            // sortKey = this segment's start-of-day clock time, so within a cell the
+            // tail end of an overnight shift ("→7:00", segStart = 00:00) sorts before
+            // a same-day shift that starts later ("19:00→") — matching real time order.
+            shiftMap[cgId][seg.dateStr].push({ timeRange, isOvernight, sortKey: seg.segStart.getTime() });
         });
     });
 
@@ -110,7 +113,7 @@ export async function buildScheduleSheet(wb, { homeName, homeId, payPeriodStart,
 
     ws.columns = [
         { width: 24 },
-        ...dates.map(() => ({ width: 13 })),
+        ...dates.map(() => ({ width: 18 })),
     ];
 
     // ── Header section (title + info card with logo) ───────────────────────────
@@ -183,10 +186,10 @@ export async function buildScheduleSheet(wb, { homeName, homeId, payPeriodStart,
                 caregiverNames[cgId],
                 ...dates.map((d) => {
                     const entries = shiftMap[cgId]?.[format(d, "yyyy-MM-dd")];
-                    return entries ? entries.map((e) => e.timeRange).join(", ") : "";
+                    return entries ? [...entries].sort((a, b) => a.sortKey - b.sortKey).map((e) => e.timeRange).join(", ") : "";
                 }),
             ]);
-            row.height = 22;
+            row.height = 30;
 
             row.eachCell({ includeEmpty: true }, (cell, colNum) => {
                 if (colNum > totalCols) return;
@@ -195,6 +198,7 @@ export async function buildScheduleSheet(wb, { homeName, homeId, payPeriodStart,
                     horizontal: colNum === 1 ? "left" : "center",
                     vertical:   "middle",
                     indent:     colNum === 1 ? 1 : 0,
+                    wrapText:   colNum !== 1,
                 };
                 cell.border = {
                     top:    thinSide(),

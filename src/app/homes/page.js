@@ -8,7 +8,7 @@ import Button from "@components/UI/Button";
 import IconButton from "@components/UI/IconButton";
 import Pagination from "@components/UI/Pagination";
 import Link from "next/link";
-import { Building2, Trash2, Eye, Plus, Users, User, MapPin, Search, X } from "lucide-react";
+import { Building2, Trash2, Eye, Plus, Users, User, MapPin, Search, X, Download, Loader2 } from "lucide-react";
 import ErrorState from "@components/UI/ErrorState";
 import EmptyState from "@components/UI/EmptyState";
 import ActionMessage from "@components/UI/ActionMessage";
@@ -22,6 +22,8 @@ import { ColorPill } from "@components/UI/Badge";
 import { HOME_TYPE_OPTIONS, HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { exportHomeWorkbook } from "@/utils/excelExport/homeSheet";
+import logoImg from "@/assets/logo/nv.png";
 
 export default function Homes() {
 	const { profile } = useProfile();
@@ -84,7 +86,30 @@ export default function Homes() {
 		isActionPending,
 		deleteHome,
 		refetch,
+		fetchAllForExport,
 	} = useHomes(queryParams);
+
+	// --- Export ---
+	const [isExporting, setIsExporting] = useState(false);
+	const handleExportAll = async () => {
+		setIsExporting(true);
+		try {
+			const exportParams = {
+				...(search && { search }),
+				...(regionFilter && { region: regionFilter }),
+				...(homeTypeFilter && { homeType: homeTypeFilter }),
+				...(statusFilter !== "" && { isActive: statusFilter }),
+			};
+			const allHomes = await fetchAllForExport(exportParams);
+			await exportHomeWorkbook({
+				homes: allHomes,
+				logoUrl: logoImg.src,
+				filters: exportParams,
+			});
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	// --- Delete ---
 	const [showModal, setShowModal] = useState(false);
@@ -119,11 +144,23 @@ export default function Homes() {
 					{/* Header */}
 					<PageHeader
 						title="Homes"
-						actions={canCreate && (
-							<Link href="/homes/add_new_home">
-								<Button variant="primary" icon={<Plus size={16} />}>Add New Home</Button>
-							</Link>
-						)}
+						actions={
+							<>
+								<Button
+									variant="excel"
+									icon={isExporting ? <Loader2 size={14} className={styles.exportSpinner} /> : <Download size={14} />}
+									onClick={handleExportAll}
+									disabled={isExporting || isLoading}
+								>
+									{isExporting ? "Exporting…" : "Export"}
+								</Button>
+								{canCreate && (
+									<Link href="/homes/add_new_home">
+										<Button variant="primary" icon={<Plus size={16} />}>Add New Home</Button>
+									</Link>
+								)}
+							</>
+						}
 					/>
 
 					{actionError && <ActionMessage variant="error" message={actionError} />}
