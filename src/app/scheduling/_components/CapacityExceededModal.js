@@ -111,7 +111,7 @@ export default function CapacityExceededModal({
 				)}
 
 				{/* Explains the two paths up front so the choice below isn't a guess */}
-				<OvertimeInfoBox />
+				<OvertimeInfoBox maxHours={details.maxHours} />
 
 				{/*
 				 * Decision buttons — mutually exclusive; click to select, then Confirm.

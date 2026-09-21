@@ -48,6 +48,21 @@ export const useHomes = (arg = null) => {
 	const pagination = homesQuery.data?.pagination ?? {};
 	const homeDetail = homeDetailQuery.data?.home ?? homeDetailQuery.data;
 
+	// Fetches every page of the given filters (up to 100 per request) for export.
+	// Runs outside React Query so it can be awaited imperatively on button click.
+	const fetchAllForExport = async (exportParams) => {
+		let allHomes = [];
+		let page = 1;
+		let hasMore = true;
+		while (hasMore) {
+			const result = await homeService.getAll({ ...exportParams, page, limit: 100 });
+			allHomes = [...allHomes, ...(result?.homes ?? [])];
+			hasMore = page < (result?.pagination?.totalPages ?? result?.pagination?.pages ?? 1);
+			page++;
+		}
+		return allHomes;
+	};
+
 	// Imperative fetch for a single home — cache-backed via React Query.
 	const fetchHome = (id) =>
 		queryClient.fetchQuery({
@@ -110,6 +125,7 @@ export const useHomes = (arg = null) => {
 		updateHome: updateMutation.mutate,
 		deleteHome: deleteMutation.mutateAsync,
 		fetchHome,
+		fetchAllForExport,
 
 		isActionPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
 		refetch: homesQuery.refetch

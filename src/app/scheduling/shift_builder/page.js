@@ -694,6 +694,15 @@ function CapacityExceededModal({
 		failures.length > 0 &&
 		failures.every((f) => decisions[failureKey(f)]);
 
+	// This modal can list failures for several caregivers at once, each with
+	// their own bi-weekly cap — only pass a specific number up front if every
+	// failure actually shares the same one, otherwise the shared info box
+	// falls back to generic wording rather than showing a possibly wrong figure.
+	const distinctMaxHours = new Set(
+		failures.map((f) => f.details?.maxHours).filter((v) => v != null)
+	);
+	const sharedMaxHours = distinctMaxHours.size === 1 ? [...distinctMaxHours][0] : undefined;
+
 	return (
 		<Modal isOpen onClose={onCancel}>
 			<div className={styles.capacityModalBody}>
@@ -712,7 +721,7 @@ function CapacityExceededModal({
 				</div>
 
 				{/* Explains the two paths up front so the per-card choice below isn't a guess */}
-				<OvertimeInfoBox />
+				<OvertimeInfoBox maxHours={sharedMaxHours} />
 
 				{/* One card per CAPACITY_EXCEEDED failure */}
 				<div className={styles.capacityFailureList}>
