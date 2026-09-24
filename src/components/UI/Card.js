@@ -81,7 +81,7 @@ function DatePickerField({ control, name, error, placeholder, showTime }) {
 						dateFormat={showTime ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"}
 						showTimeSelect={showTime}
 						timeFormat="HH:mm"
-						timeIntervals={30}
+						timeIntervals={15}
 						showYearDropdown
 						scrollableYearDropdown
 						yearDropdownItemNumber={100}
