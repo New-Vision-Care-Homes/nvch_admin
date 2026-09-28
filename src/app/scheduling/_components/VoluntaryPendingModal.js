@@ -1,8 +1,8 @@
 "use client";
 
 import { CheckCircle2 } from "lucide-react";
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
 import styles from "./VoluntaryPendingModal.module.css";
 
 /**

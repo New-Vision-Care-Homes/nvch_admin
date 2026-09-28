@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
-import Pagination from "@/components/UI/Pagination";
-import EmptyState from "@/components/UI/EmptyState";
-import Button from "@components/UI/Button";
+import Pagination from "@/components/UI/Table/Pagination";
+import EmptyState from "@/components/UI/Feedback/EmptyState";
+import Button from "@components/UI/Button/Button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";

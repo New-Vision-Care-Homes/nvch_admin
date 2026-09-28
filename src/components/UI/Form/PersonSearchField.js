@@ -6,7 +6,7 @@ import { Search, X, User, Loader2 } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useClients } from "@/hooks/useClients";
 import { useAdmins } from "@/hooks/useAdmins";
-import { InfoField } from "@/components/UI/Card";
+import { InfoField } from "@/components/UI/Form/Card";
 import styles from "./PersonSearchField.module.css";
 
 /*

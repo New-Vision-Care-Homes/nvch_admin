@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import Button from "./Button";
+import Button from "../Button/Button";
 import Image from "next/image";
 import styles from "./UploadModal.module.css";
 // Fallback image used if the user doesn't have a profile picture yet

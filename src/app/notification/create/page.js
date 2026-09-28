@@ -10,13 +10,14 @@ import {
 	User, X, Search, Loader2, Send, CheckCircle2,
 } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
-import Button from "@components/UI/Button";
+import Button from "@components/UI/Button/Button";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./create.module.css";
 
 // ─── Debounce ──────────────────────────────────────────────────────────────────
@@ -253,7 +254,7 @@ export default function CreateNotificationPage() {
 
 	const [success, setSuccess] = useState(false);
 
-	const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
+	const { register, handleSubmit, watch, setValue, formState: { errors, isDirty } } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			title:           "",
@@ -265,6 +266,11 @@ export default function CreateNotificationPage() {
 			selectedUsers:   [],
 		},
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const sendPush        = watch("sendPush");
 	const targetType      = watch("targetType");
@@ -299,7 +305,8 @@ export default function CreateNotificationPage() {
 	const toggleRegion = (r) =>
 		setValue("selectedRegions", selectedRegions.includes(r)
 			? selectedRegions.filter(x => x !== r)
-			: [...selectedRegions, r]
+			: [...selectedRegions, r],
+			{ shouldDirty: true }
 		);
 
 	return (
@@ -375,7 +382,7 @@ export default function CreateNotificationPage() {
 							role="switch"
 							aria-pressed={sendPush}
 							className={`${styles.toggle} ${sendPush ? styles.toggleOn : ""}`}
-							onClick={() => setValue("sendPush", !sendPush)}
+							onClick={() => setValue("sendPush", !sendPush, { shouldDirty: true })}
 						>
 							<span className={styles.toggleThumb} />
 						</button>
@@ -394,7 +401,7 @@ export default function CreateNotificationPage() {
 								type="button"
 								className={`${styles.typeOption} ${targetType === value ? styles.typeOptionActive : ""}`}
 								style={targetType === value ? { borderColor: color, background: `${color}0d` } : {}}
-								onClick={() => setValue("targetType", value)}
+								onClick={() => setValue("targetType", value, { shouldDirty: true })}
 							>
 								<span
 									className={styles.typeIconBox}
@@ -447,8 +454,8 @@ export default function CreateNotificationPage() {
 					{targetType === "homes" && (
 						<HomeSearch
 							selected={selectedHomes}
-							onAdd={h  => setValue("selectedHomes", [...selectedHomes, h])}
-							onRemove={id => setValue("selectedHomes", selectedHomes.filter(h => h._id !== id))}
+							onAdd={h  => setValue("selectedHomes", [...selectedHomes, h], { shouldDirty: true })}
+							onRemove={id => setValue("selectedHomes", selectedHomes.filter(h => h._id !== id), { shouldDirty: true })}
 						/>
 					)}
 
@@ -456,8 +463,8 @@ export default function CreateNotificationPage() {
 					{targetType === "users" && (
 						<UserSearch
 							selected={selectedUsers}
-							onAdd={u  => setValue("selectedUsers", [...selectedUsers, u])}
-							onRemove={id => setValue("selectedUsers", selectedUsers.filter(u => u._id !== id))}
+							onAdd={u  => setValue("selectedUsers", [...selectedUsers, u], { shouldDirty: true })}
+							onRemove={id => setValue("selectedUsers", selectedUsers.filter(u => u._id !== id), { shouldDirty: true })}
 						/>
 					)}
 

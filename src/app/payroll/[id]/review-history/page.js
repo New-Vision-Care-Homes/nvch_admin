@@ -7,9 +7,9 @@ import {
     Clock, CalendarClock, Activity, AlertTriangle, User,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
-import ErrorState    from "@components/UI/ErrorState";
-import Button        from "@components/UI/Button";
-import StatusBadge, { ColorPill } from "@components/UI/Badge";
+import ErrorState    from "@components/UI/Feedback/ErrorState";
+import Button        from "@components/UI/Button/Button";
+import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
 import styles from "./review_history.module.css";
 import { useHouseReview } from "@/hooks/usePayroll";
 import { useAdmins }     from "@/hooks/useAdmins";

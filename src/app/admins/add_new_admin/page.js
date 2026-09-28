@@ -1,23 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./add_new_admin.module.css";
 import { useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
-import ActionMessage from "@/components/UI/ActionMessage";
+import ActionMessage from "@/components/UI/Feedback/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
+import RegionCheckboxGroup from "@/components/UI/Form/RegionCheckboxGroup";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
 import { DEPARTMENT_OPTIONS } from "@/utils/dropdownList/department";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -70,7 +71,7 @@ export default function Page() {
 			else next.add(groupId);
 
 			// Sync with react-hook-form so Yup validates it inline
-			setValue("permissionsGroup", Array.from(next), { shouldValidate: true });
+			setValue("permissionsGroup", Array.from(next), { shouldValidate: true, shouldDirty: true });
 
 			return next;
 		});
@@ -81,7 +82,7 @@ export default function Page() {
 		handleSubmit,
 		setValue,
 		watch,
-		formState: { errors },
+		formState: { errors, isDirty },
 	} = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
@@ -90,6 +91,11 @@ export default function Page() {
 			timezone: "America/Halifax",
 		}
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const selectedRegions = watch("regions") || [];
 
@@ -157,7 +163,7 @@ export default function Page() {
 										label="Regions"
 										required
 										value={selectedRegions}
-										onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+										onChange={(next) => setValue("regions", next, { shouldValidate: true, shouldDirty: true })}
 										error={errors.regions}
 									/>
 								</div>

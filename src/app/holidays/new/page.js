@@ -1,12 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import Button from "@/components/UI/Button";
+import Button from "@/components/UI/Button/Button";
 import { useHolidays }        from "@/hooks/useHolidays";
 import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
 import { AlertCircle, Loader } from "lucide-react";
@@ -21,6 +22,7 @@ import {
     rulesToPayload,
     setRequirementField,
 } from "../_components/caregiverRules";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./new.module.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,7 +69,7 @@ export default function CreateHolidayPage() {
 
     const { createHoliday, isActionPending, actionError } = useHolidays({}, { enabled: false });
 
-    const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm({
+    const { register, handleSubmit, watch, setValue, control, formState: { errors, isDirty } } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
             name:                  "",
@@ -79,6 +81,11 @@ export default function CreateHolidayPage() {
             caregiverRules:        [],
         },
     });
+
+    const { setIsDirty } = useRouteDirty();
+    useEffect(() => {
+        setIsDirty(isDirty);
+    }, [isDirty, setIsDirty]);
 
     const { fields, append, remove, update } = useFieldArray({ control, name: "caregiverRules" });
 
@@ -112,7 +119,8 @@ export default function CreateHolidayPage() {
     const toggleAdminLevel = (level) =>
         setValue("adminLevels", adminLevels.includes(level)
             ? adminLevels.filter((l) => l !== level)
-            : [...adminLevels, level]
+            : [...adminLevels, level],
+            { shouldDirty: true }
         );
 
     // Map nested rule errors to the flat format CaregiverRulesSection expects
@@ -209,7 +217,7 @@ export default function CreateHolidayPage() {
                                 <input
                                     type="checkbox"
                                     checked={isActive}
-                                    onChange={(e) => setValue("isActive", e.target.checked)}
+                                    onChange={(e) => setValue("isActive", e.target.checked, { shouldDirty: true })}
                                     disabled={isActionPending}
                                 />
                                 <span className={styles.toggleSlider} />
@@ -233,7 +241,7 @@ export default function CreateHolidayPage() {
                                 <input
                                     type="checkbox"
                                     checked={proratedToWorkedHours}
-                                    onChange={(e) => setValue("proratedToWorkedHours", e.target.checked)}
+                                    onChange={(e) => setValue("proratedToWorkedHours", e.target.checked, { shouldDirty: true })}
                                     disabled={isActionPending}
                                 />
                                 <span className={styles.toggleSlider} />

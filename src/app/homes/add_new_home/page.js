@@ -1,22 +1,23 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./add_new_home.module.css";
 import { useRouter } from "next/navigation";
 import { useHomes } from "@/hooks/useHomes";
-import GeofenceMap from "@/components/UI/GeofenceMap";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
-import ActionMessage from "@components/UI/ActionMessage";
+import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import PersonAssignmentField, { getStaffId } from "../_components/PersonAssignmentField";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const schema = yup.object({
 	name: yup.string().required("Home name is required"),
@@ -41,7 +42,7 @@ export default function AddNewHomePage() {
 	const router = useRouter();
 	const { addHome, isActionPending, actionError, fetchHome } = useHomes();
 
-	const { register, handleSubmit, control, watch, formState: { errors }, setValue } = useForm({
+	const { register, handleSubmit, control, watch, formState: { errors, isDirty }, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			homeType: "",
@@ -52,6 +53,11 @@ export default function AddNewHomePage() {
 		}
 	});
 
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
+
 	// Map and Location States
 	const [mapCenter, setMapCenter] = useState({ lat: 44.6476, lng: -63.5728 }); // Default Halifax
 	const [mapAddress, setMapAddress] = useState("");
@@ -61,11 +67,11 @@ export default function AddNewHomePage() {
 	const handleAddressSelect = useCallback((data) => {
 		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-		if (street) setValue("street", street, { shouldValidate: true });
-		if (city) setValue("city", city, { shouldValidate: true });
-		if (state) setValue("province", state, { shouldValidate: true });
-		if (country) setValue("country", country, { shouldValidate: true });
-		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
+		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
+		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
+		if (state) setValue("province", state, { shouldValidate: true, shouldDirty: true });
+		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
+		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true, shouldDirty: true });
 
 		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
 

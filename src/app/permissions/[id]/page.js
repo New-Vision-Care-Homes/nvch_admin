@@ -6,15 +6,16 @@ import PageHeader from "@components/layout/PageHeader";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import Button from "@components/UI/Button";
+import Button from "@components/UI/Button/Button";
 import { Undo2, Pencil } from "lucide-react";
-import { Card, CardHeader, CardContent, InputField, InfoField } from "@components/UI/Card";
+import { Card, CardHeader, CardContent, InputField, InfoField } from "@components/UI/Form/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
 import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS, permissionGroupSchema } from "@/utils/permissions";
 import { useProfile } from "@/hooks/useProfile";
-import ErrorState from "@/components/UI/ErrorState";
-import ActionMessage from "@/components/UI/ActionMessage";
+import ErrorState from "@/components/UI/Feedback/ErrorState";
+import ActionMessage from "@/components/UI/Feedback/ActionMessage";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 export default function PermissionGroupDetailPage() {
 	const router = useRouter();
@@ -46,10 +47,15 @@ export default function PermissionGroupDetailPage() {
 	const { profile } = useProfile();
 	const canUpdate = profile?.permissionSlugs?.includes("update_permissions_groups");
 
-	const { register, handleSubmit, control, formState: { errors }, setError, reset } = useForm({
+	const { register, handleSubmit, control, formState: { errors, isDirty }, setError, reset } = useForm({
 		resolver: yupResolver(permissionGroupSchema),
 		defaultValues: { name: "", description: "", permissions: [] }
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	// Implicit self slugs may linger in groups saved before they became
 	// non-grantable — hide them from the view-mode pills.

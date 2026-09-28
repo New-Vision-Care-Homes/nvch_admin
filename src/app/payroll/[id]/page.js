@@ -30,8 +30,8 @@ import {
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import ErrorState    from "@components/UI/ErrorState";
-import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState    from "@components/UI/Feedback/ErrorState";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import styles        from "./payroll_detail.module.css";
 import tableStyles   from "../payroll.module.css";
 import { useCoverSheet, usePayrollExceptions, useHouseReview, useUpdateSupervisorReview, useUpdatePayrollStatus } from "@/hooks/usePayroll";
@@ -39,12 +39,12 @@ import { useShifts } from "@/hooks/useShifts";
 import { useProfile } from "@/hooks/useProfile";
 import SummaryTable from "../_components/SummaryTable";
 import DailyTable   from "../_components/DailyTable";
-import StatusBadge, { ColorPill } from "@components/UI/Badge";
+import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 import { exportPayrollWorkbook } from "@/utils/excelExport/payrollWorkbook";
-import Button   from "@components/UI/Button";
+import Button   from "@components/UI/Button/Button";
 import logoImg  from "@/assets/logo/nv.png";
 
 

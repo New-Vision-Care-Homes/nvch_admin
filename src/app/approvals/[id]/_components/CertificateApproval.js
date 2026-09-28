@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import {
     User, FileText, Award, Lock,
     ExternalLink, CalendarDays, Pencil, XCircle,

@@ -6,18 +6,19 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./edit_home.module.css";
 import { useRouter, useParams } from "next/navigation";
 import { useHomes } from "@/hooks/useHomes";
-import GeofenceMap from "@/components/UI/GeofenceMap";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
-import ActionMessage from "@components/UI/ActionMessage";
-import ErrorState from "@components/UI/ErrorState";
+import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import PersonAssignmentField, { getStaffId } from "../../_components/PersonAssignmentField";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const toBoolean = (value) => {
 	if (value === true || value === "true") return true;
@@ -59,13 +60,18 @@ export default function EditHomePage() {
 	} = useHomes(homeId);
 
 
-	const { register, handleSubmit, control, formState: { errors }, setValue, reset } = useForm({
+	const { register, handleSubmit, control, formState: { errors, isDirty }, setValue, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			homeType: "",
 			isActive: true,
 		}
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	// Staff assignment — each PersonAssignmentField below owns its own search
 	// UI; this page just holds the resulting selections (needed for the submit
@@ -136,11 +142,11 @@ export default function EditHomePage() {
 	const handleAddressSelect = useCallback((data) => {
 		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-		if (street) setValue("street", street, { shouldValidate: true });
-		if (city) setValue("city", city, { shouldValidate: true });
-		if (state) setValue("province", state, { shouldValidate: true });
-		if (country) setValue("country", country, { shouldValidate: true });
-		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true });
+		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
+		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
+		if (state) setValue("province", state, { shouldValidate: true, shouldDirty: true });
+		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
+		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true, shouldDirty: true });
 
 		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
 

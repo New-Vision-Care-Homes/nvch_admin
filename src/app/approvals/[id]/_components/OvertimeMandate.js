@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { Timer, User, CalendarDays, ExternalLink } from "lucide-react";
 import { formatDateTime } from "@/utils/dates";
 import styles from "../approval_detail.module.css";

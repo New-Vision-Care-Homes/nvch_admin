@@ -31,9 +31,9 @@
 //   approveError     {string|null}          error message from useApprovals
 
 import { useState } from "react";
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
-import ActionMessage from "@components/UI/ActionMessage";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { CheckCircle2, Loader, AlertTriangle, Banknote, DollarSign } from "lucide-react";
 import { formatDateOnly } from "@/utils/dates";
 import styles from "../approval_detail.module.css";

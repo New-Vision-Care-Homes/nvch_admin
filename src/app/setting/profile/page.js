@@ -1,26 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 // Importing custom validation rules
 import { phoneRule, shortTextRule } from "@/utils/validation";
 
-import { Card, CardHeader, InfoField, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
-import StatusBadge, { ColorPill } from "@components/UI/Badge";
+import { Card, CardHeader, InfoField, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
+import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
 import Image from "next/image";
 import styles from "./profile.module.css";
 import { useProfile } from "@/hooks/useProfile";
-import ErrorState from "@components/UI/ErrorState";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import { Edit, Upload, Save, X } from "lucide-react";
-import ProfilePictureModal from "@components/UI/ProfilePictureModal";
+import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
 import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const schema = yup.object({
 	phone: phoneRule,
@@ -35,7 +36,7 @@ export default function ProfilePage() {
 	const [isEditing, setIsEditing] = useState(false);
 
 
-	const { register, handleSubmit, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, formState: { errors, isDirty }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			phone: profile?.phone || "",
@@ -44,6 +45,11 @@ export default function ProfilePage() {
 			emergencyContactRelationship: profile?.emergencyContact?.relationship || profile?.emergencyContactRelationship || "",
 		}
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	// Image Upload States
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);

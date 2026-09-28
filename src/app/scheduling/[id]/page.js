@@ -6,14 +6,14 @@ import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
-import GeofenceMap from "@/components/UI/GeofenceMap";
+import GeofenceMap from "@/components/UI/Map/GeofenceMap";
 import PageLayout from "@components/layout/PageLayout";
-import Button from "@components/UI/Button";
-import ErrorState from "@components/UI/ErrorState";
-import Modal from "@components/UI/Modal";
-import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge, { ColorPill } from "@components/UI/Badge";
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import Button from "@components/UI/Button/Button";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Modal from "@components/UI/Modal/Modal";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,

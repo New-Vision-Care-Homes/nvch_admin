@@ -4,16 +4,18 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./CarePlan.module.css";
-import ActionMessage from "@components/UI/ActionMessage";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { longTextRule } from "@/utils/validation";
 import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
 import { Edit, Stethoscope, Pill, FileText, ClipboardList } from "lucide-react";
+import { useTabDirty } from "@/context/TabDirtyContext";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 // ── Validation schema ──────────────────────────────────────────────────────────
 const carePlanSchema = yup.object({
@@ -85,10 +87,20 @@ export default function CarePlan() {
 	const { profile } = useProfile();
 	const canEdit = canManageTarget(profile, clientDetail, "update_all_clients", "update_assigned_clients");
 
-	const { register, handleSubmit, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, formState: { errors, isDirty }, reset } = useForm({
 		resolver: yupResolver(carePlanSchema),
 		defaultValues: cleanFetchedData(null),
 	});
+
+	// Reported into both contexts: TabDirtyContext guards switching tabs within
+	// this profile, RouteDirtyContext guards leaving the page entirely via the
+	// sidebar — both need to see the same in-progress edit.
+	const { setIsDirty: setTabIsDirty } = useTabDirty();
+	const { setIsDirty: setRouteIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setTabIsDirty(isDirty);
+		setRouteIsDirty(isDirty);
+	}, [isDirty, setTabIsDirty, setRouteIsDirty]);
 
 	useEffect(() => {
 		if (clientDetail && !isInitialized) {

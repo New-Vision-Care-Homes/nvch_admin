@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Modal from "./Modal";
-import Button from "./Button";
-import { InputField } from "./Card";
+import Button from "../Button/Button";
+import { InputField } from "../Form/Card";
 import styles from "./UploadModal.module.css";
 import { Paperclip, X } from "lucide-react";
 // Import form handling libraries. react-hook-form handles state and validation without re-rendering the whole component on every keystroke.

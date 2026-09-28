@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
-import StatusBadge from "@components/UI/Badge";
-import IconButton from "@components/UI/IconButton";
+import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table/Table";
+import StatusBadge from "@components/UI/Feedback/Badge";
+import IconButton from "@components/UI/Button/IconButton";
 import { Pencil, Trash2, Timer, ChevronDown } from "lucide-react";
 import { formatDateOnly, formatDateTime } from "@/utils/dates";
 import { ATTENDEE_STATUS_META, ATTENDANCE_STATE_LABEL, ATTENDANCE_FLAG_META } from "./statusMeta";

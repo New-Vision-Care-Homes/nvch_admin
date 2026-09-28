@@ -6,13 +6,13 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./add_new_client.module.css";
 import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
-import ActionMessage from "@/components/UI/ActionMessage";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import ActionMessage from "@/components/UI/Feedback/ActionMessage";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 import { useHomes } from "@/hooks/useHomes";
 
 import {
@@ -29,6 +29,7 @@ import {
 } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { joinName } from "@/utils/formatting";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -173,7 +174,7 @@ export default function Page() {
 		control,
 		setValue,
 		watch,
-		formState: { errors },
+		formState: { errors, isDirty },
 	} = useForm({
 		resolver: yupResolver(schema),
 		shouldFocusError: true,
@@ -182,6 +183,11 @@ export default function Page() {
 			noHomeSelected: true,
 		}
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const { homes } = useHomes({ limit: 100 });
 	const watchHomeId = watch("homeId");
@@ -210,14 +216,17 @@ export default function Page() {
 		}
 	}, [watchNoHomeSelected, setValue]);
 
+	// These fields are register()-bound but rendered read-only — their only
+	// mutation path is this callback, so shouldDirty is required or selecting
+	// an address here would never mark the form dirty.
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
-		if (street) setValue("street", street, { shouldValidate: true });
-		if (city) setValue("city", city, { shouldValidate: true });
-		if (state) setValue("state", state, { shouldValidate: true });
-		if (country) setValue("country", country, { shouldValidate: true });
-		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
-		if (latitude !== undefined) setValue("latitude", latitude);
-		if (longitude !== undefined) setValue("longitude", longitude);
+		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
+		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
+		if (state) setValue("state", state, { shouldValidate: true, shouldDirty: true });
+		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
+		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true, shouldDirty: true });
+		if (latitude !== undefined) setValue("latitude", latitude, { shouldDirty: true });
+		if (longitude !== undefined) setValue("longitude", longitude, { shouldDirty: true });
 	}
 
 	const onSubmit = async (data) => {

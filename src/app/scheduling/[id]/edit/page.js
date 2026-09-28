@@ -9,17 +9,17 @@ import { useHomes } from "@/hooks/useHomes";
 import { attachClickOutside } from "@/utils/clickOutside";
 import { utcToInputDateTime } from "@utils/timeHandling";
 import { personName } from "@/utils/formatting";
-import GeofenceMap from "@/components/UI/GeofenceMap";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 import PageLayout from "@components/layout/PageLayout";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
-import IconButton from "@components/UI/IconButton";
-import ActionMessage from "@components/UI/ActionMessage";
-import ErrorState from "@components/UI/ErrorState";
-import Modal from "@components/UI/Modal";
-import StatusBadge from "@components/UI/Badge";
-import cardStyles from "@components/UI/Card.module.css";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
+import IconButton from "@components/UI/Button/IconButton";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Modal from "@components/UI/Modal/Modal";
+import StatusBadge from "@components/UI/Feedback/Badge";
+import cardStyles from "@components/UI/Form/Card.module.css";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
 import {
 	Clock, MapPin, FileText, Save, X, Plus, Trash2,
@@ -31,6 +31,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { DateTime } from "luxon";
 import { shortTextRule, longTextRule, IdRule } from "@/utils/validation";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./edit_shift.module.css";
 import CapacityExceededModal from "../../_components/CapacityExceededModal";
 import VoluntaryPendingModal from "../../_components/VoluntaryPendingModal";
@@ -175,8 +176,13 @@ export default function EditShiftPage() {
 	const scheduledForm = useForm({ resolver: yupResolver(scheduledSchema) });
 	const completedForm = useForm({ resolver: yupResolver(completedSchema) });
 
-	const { register, handleSubmit, setValue, reset, watch, control, formState: { errors } } =
+	const { register, handleSubmit, setValue, reset, watch, control, formState: { errors, isDirty } } =
 		isCompleted ? completedForm : scheduledForm;
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const selectedStartTime = scheduledForm.watch("startTime");
 
@@ -252,10 +258,10 @@ export default function EditShiftPage() {
 				marker?.setPosition(nc); circle?.setCenter(nc);
 			}
 		}
-		if (street) scheduledForm.setValue("geofenceStreet", street);
-		if (city) scheduledForm.setValue("geofenceCity", city);
-		if (state) scheduledForm.setValue("geofenceProvince", state);
-		if (postalCode) scheduledForm.setValue("geofencePostalCode", postalCode);
+		if (street) scheduledForm.setValue("geofenceStreet", street, { shouldDirty: true });
+		if (city) scheduledForm.setValue("geofenceCity", city, { shouldDirty: true });
+		if (state) scheduledForm.setValue("geofenceProvince", state, { shouldDirty: true });
+		if (postalCode) scheduledForm.setValue("geofencePostalCode", postalCode, { shouldDirty: true });
 	}, [scheduledForm]);
 
 	// ── Submit: scheduled ─────────────────────────────────────────────────
@@ -599,7 +605,7 @@ export default function EditShiftPage() {
 										{selectedCaregiver && (
 											<X size={15} className={styles.clearBtn} onClick={() => {
 												setSelectedCaregiver(null); setCaregiverInput(""); setCaregiverSearch("");
-												scheduledForm.setValue("caregiverId", "");
+												scheduledForm.setValue("caregiverId", "", { shouldDirty: true });
 											}} />
 										)}
 									</div>
@@ -608,7 +614,7 @@ export default function EditShiftPage() {
 											{caregivers.map(cg => (
 												<div key={cg.id} className={styles.dropdownItem} onMouseDown={() => {
 													setSelectedCaregiver(cg); setCaregiverInput(personName(cg));
-													setShowCaregiverDropdown(false); scheduledForm.setValue("caregiverId", cg.id);
+													setShowCaregiverDropdown(false); scheduledForm.setValue("caregiverId", cg.id, { shouldDirty: true });
 												}}>{personName(cg)}</div>
 											))}
 										</div>
@@ -638,13 +644,13 @@ export default function EditShiftPage() {
 												// Switching to Client: clear all Home data
 												setSelectedHome(null); 
 												setHomeInput(""); 
-												scheduledForm.setValue("homeId", ""); 
+												scheduledForm.setValue("homeId", "", { shouldDirty: true }); 
 											} else { 
 												// Switching to Home: clear all Client data
 												setSelectedClient(null); 
 												setClientInput(""); 
 												setClientSearch(""); 
-												scheduledForm.setValue("clientId", ""); 
+												scheduledForm.setValue("clientId", "", { shouldDirty: true }); 
 											}
 										}}>
 										<option value="client">Client</option>
@@ -668,7 +674,7 @@ export default function EditShiftPage() {
 											/>
 											{selectedClient && <X size={15} className={styles.clearBtn} onClick={() => {
 												setSelectedClient(null); setClientInput(""); setClientSearch("");
-												scheduledForm.setValue("clientId", "");
+												scheduledForm.setValue("clientId", "", { shouldDirty: true });
 											}} />}
 										</div>
 										{showClientDropdown && !selectedClient && clients?.length > 0 && (
@@ -676,7 +682,7 @@ export default function EditShiftPage() {
 												{clients.map(c => (
 													<div key={c.id} className={styles.dropdownItem} onMouseDown={() => {
 														setSelectedClient(c); setClientInput(personName(c));
-														setShowClientDropdown(false); scheduledForm.setValue("clientId", c.id);
+														setShowClientDropdown(false); scheduledForm.setValue("clientId", c.id, { shouldDirty: true });
 													}}>{personName(c)}</div>
 												))}
 											</div>
@@ -700,7 +706,7 @@ export default function EditShiftPage() {
 											/>
 											{selectedHome && <X size={15} className={styles.clearBtn} onClick={() => {
 												setSelectedHome(null); setHomeInput("");
-												scheduledForm.setValue("homeId", "");
+												scheduledForm.setValue("homeId", "", { shouldDirty: true });
 											}} />}
 										</div>
 										{showHomeDropdown && !selectedHome && (
@@ -708,7 +714,7 @@ export default function EditShiftPage() {
 												{homes?.length > 0 ? homes.map(h => (
 													<div key={h.id || h._id} className={styles.dropdownItem} onMouseDown={() => {
 														setSelectedHome(h); setHomeInput(h.name || h._id);
-														setShowHomeDropdown(false); scheduledForm.setValue("homeId", h.id || h._id);
+														setShowHomeDropdown(false); scheduledForm.setValue("homeId", h.id || h._id, { shouldDirty: true });
 													}}>{h.name || h._id}</div>
 												)) : <div className={styles.dropdownItem} style={{ color: "#9ca3af" }}>No homes found</div>}
 											</div>

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { User } from "lucide-react";
-import ErrorState from "@components/UI/ErrorState";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import { utcToZonedDateObject } from "@/utils/timeHandling";
 import styles from "../scheduling.module.css";
 

@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import styles from "./Sidebar.module.css";
 import { Home, Users, IdCardLanyard, Calendar, CreditCard, AlertCircle, MessageCircle, BarChart2, Settings, Building, UserLock, Key, CalendarDays, LayoutGrid, ChevronRight, ClipboardCheck, DollarSign, FileSpreadsheet, NotebookPen, ListChecks, Sun, GraduationCap, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
+import UnsavedChangesModal from "@components/UI/Modal/UnsavedChangesModal";
 
 const tabs = [
 	{ id: 1, label: "Dashboard", icon: Home, href: "/dashboard" },
@@ -51,6 +53,9 @@ const keywordToTabMap = {
 
 export default function Sidebar({ open = false, onClose = () => {}, collapsed = false, onToggleCollapsed = () => {} }) {
 	const pathname = usePathname();
+	const router = useRouter();
+	const { isDirty, setIsDirty } = useRouteDirty();
+	const [pendingNav, setPendingNav] = useState(null); // { href, after } awaiting confirmation
 	const { profile, isLoading, fetchError, refetch } = useProfile();
 
 	// While the profile is loading (or failed to load) only the ungated tabs
@@ -158,6 +163,26 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 		onClose();
 	};
 
+	// Wraps a navigating Link's onClick: if the current page has unsaved
+	// edits, blocks the navigation and asks for confirmation first instead of
+	// letting it silently discard them.
+	const guardedNav = (href, after) => (e) => {
+		if (isDirty && href !== pathname) {
+			e.preventDefault();
+			setPendingNav({ href, after });
+			return;
+		}
+		after();
+	};
+
+	const confirmPendingNav = () => {
+		setIsDirty(false);
+		const nav = pendingNav;
+		setPendingNav(null);
+		nav.after();
+		router.push(nav.href);
+	};
+
 	return (
 		<>
 			<div
@@ -188,7 +213,7 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 											e.preventDefault();
 											setMobileExpandedId(isExpanded ? null : tab.id);
 										} else {
-											handleTabClick(tab.id);
+											guardedNav(tab.href, () => handleTabClick(tab.id))(e);
 										}
 									}}
 								>
@@ -212,7 +237,7 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 													key={item.href}
 													href={item.href}
 													className={styles.mobileSubItem}
-													onClick={() => { handleTabClick(tab.id); setMobileExpandedId(null); }}
+													onClick={guardedNav(item.href, () => { handleTabClick(tab.id); setMobileExpandedId(null); })}
 												>
 													<ItemIcon size={15} className={styles.flyoutItemIcon} />
 													<div>
@@ -234,7 +259,7 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 							href={tab.href}
 							className={`${styles.tab} ${isActive ? styles.activeTab : ""}`}
 							title={collapsed ? tab.label : undefined}
-							onClick={() => handleTabClick(tab.id)}
+							onClick={guardedNav(tab.href, () => handleTabClick(tab.id))}
 						>
 							<div className={styles.iconWrapper}><Icon size={24} /></div>
 							<div className={styles.tabLabel}>{tab.label}</div>
@@ -329,7 +354,7 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 								key={item.href}
 								href={item.href}
 								className={styles.flyoutItem}
-								onClick={() => { handleTabClick(hoveredTabId); setHoveredTabId(null); }}
+								onClick={guardedNav(item.href, () => { handleTabClick(hoveredTabId); setHoveredTabId(null); })}
 							>
 								<ItemIcon size={16} className={styles.flyoutItemIcon} />
 								<div>
@@ -341,6 +366,12 @@ export default function Sidebar({ open = false, onClose = () => {}, collapsed = 
 					})}
 				</div>
 			)}
+
+			<UnsavedChangesModal
+				isOpen={pendingNav !== null}
+				onClose={() => setPendingNav(null)}
+				onConfirm={confirmPendingNav}
+			/>
 		</>
 	);
 }

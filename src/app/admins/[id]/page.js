@@ -2,32 +2,33 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
-import Button from "@components/UI/Button";
-import { Card, CardHeader, CardContent, InfoField, InputField } from "@components/UI/Card";
+import Button from "@components/UI/Button/Button";
+import { Card, CardHeader, CardContent, InfoField, InputField } from "@components/UI/Form/Card";
 import styles from "./admin_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import Link from "next/link";
+import GuardedLink from "@components/UI/Button/GuardedLink";
 import { Activity, Undo2, Upload, Edit, Save, X } from "lucide-react";
-import Modal from "@components/UI/Modal";
-import InlineBanner from "@components/UI/InlineBanner";
-import StatusToggleConfirmModal from "@components/UI/StatusToggleConfirmModal";
+import Modal from "@components/UI/Modal/Modal";
+import InlineBanner from "@components/UI/Feedback/InlineBanner";
+import StatusToggleConfirmModal from "@components/UI/Modal/StatusToggleConfirmModal";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { ColorPill } from "@components/UI/Badge";
+import { ColorPill } from "@components/UI/Feedback/Badge";
 import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
 import { DEPARTMENT_OPTIONS, DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
 import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
-import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
+import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
-import ErrorState from "@components/UI/ErrorState";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import { usePermissionGroups } from "@/hooks/usePermissions";
-import ProfilePictureModal from "@components/UI/ProfilePictureModal";
+import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const ADMIN_LEVEL_OPTIONS = [
 	{ label: "Super Admin", value: "super" },
@@ -88,13 +89,18 @@ export default function Page() {
 
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
 
-	const { register, handleSubmit, setValue, watch, formState: { errors }, reset } = useForm({
+	const { register, handleSubmit, setValue, watch, formState: { errors, isDirty }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			permissionsGroup: [],
 			regions: []
 		}
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const selectedRegions = watch("regions") || [];
 
@@ -104,7 +110,7 @@ export default function Page() {
 			if (next.has(groupId)) next.delete(groupId);
 			else next.add(groupId);
 
-			setValue("permissionsGroup", Array.from(next), { shouldValidate: true });
+			setValue("permissionsGroup", Array.from(next), { shouldValidate: true, shouldDirty: true });
 			return next;
 		});
 	};
@@ -284,9 +290,9 @@ export default function Page() {
 											{activeStatus ? "Inactive" : "Active"}
 										</Button>
 									)}
-									<Link href="/admins">
+									<GuardedLink href="/admins">
 										<Button variant="secondary" icon={<Undo2 size={16} />} type="button">Back</Button>
-									</Link>
+									</GuardedLink>
 								</>
 							) : (
 								<>
@@ -428,7 +434,7 @@ export default function Page() {
 													label="Regions"
 													required
 													value={selectedRegions}
-													onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+													onChange={(next) => setValue("regions", next, { shouldValidate: true, shouldDirty: true })}
 													error={errors.regions}
 												/>
 											</div>

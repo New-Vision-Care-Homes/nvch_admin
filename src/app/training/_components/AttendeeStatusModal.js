@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { ClipboardCheck, Loader } from "lucide-react";
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
-import ActionMessage from "@components/UI/ActionMessage";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { toDateInput } from "@/utils/dates";
 import { useTrainings } from "@/hooks/useTrainings";
 import PersonName from "./PersonName";

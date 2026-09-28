@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock, CreditCard, Download, Loader2 } from "lucide-react";
-import Button from "@components/UI/Button";
+import Button from "@components/UI/Button/Button";
 import { formatDateTime } from "@/utils/dates";
 import { timeAgo, ACK_STATUS_META } from "../_utils/approvalMeta";
 import styles from "../approvals.module.css";

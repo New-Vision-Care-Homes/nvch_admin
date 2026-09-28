@@ -65,9 +65,9 @@ import Link from "next/link";
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import { useSidebarCollapsed } from "@components/layout/useSidebarCollapsed";
-import Button from "@components/UI/Button";
-import ErrorState from "@components/UI/ErrorState";
-import EmptyState from "@components/UI/EmptyState";
+import Button from "@components/UI/Button/Button";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import EmptyState from "@components/UI/Feedback/EmptyState";
 import PayrollView from "./_components/PayrollView";
 import OverviewView from "./_components/OverviewView";
 

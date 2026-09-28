@@ -2,8 +2,8 @@
 
 import { AlertCircle } from "lucide-react";
 import { DateTime } from "luxon";
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
 import OvertimeInfoBox from "./OvertimeInfoBox";
 import styles from "./CapacityExceededModal.module.css";
 

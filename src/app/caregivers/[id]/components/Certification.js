@@ -1,22 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./Certification.module.css";
 import { Trash2, Upload, Eye, ExternalLink, CheckCircle2, XCircle, Loader, AlertTriangle } from "lucide-react";
-import Button from "@components/UI/Button";
-import IconButton from "@components/UI/IconButton";
-import Modal from "@components/UI/Modal";
-import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
-import ActionMessage from "@components/UI/ActionMessage";
-import ErrorState from "@components/UI/ErrorState";
+import Button from "@components/UI/Button/Button";
+import IconButton from "@components/UI/Button/IconButton";
+import Modal from "@components/UI/Modal/Modal";
+import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table/Table";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import { useParams } from "next/navigation";
 import { formatDateOnly, toDateInput } from "@/utils/dates";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useCertificates } from "@/hooks/useCertificates";
 import { useApprovals } from "@/hooks/useApprovals";
 import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
-import CertificateModal from "@components/UI/CertificateModal";
-import RejectReasonField from "@components/UI/RejectReasonField";
+import CertificateModal from "@components/UI/Modal/CertificateModal";
+import RejectReasonField from "@components/UI/Form/RejectReasonField";
+import { useTabDirty } from "@/context/TabDirtyContext";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 export default function Certification() {
 	const { id: userId } = useParams();
@@ -49,6 +51,7 @@ export default function Certification() {
 	const [approveReason,     setApproveReason]     = useState("");
 	const [targetApproval,    setTargetApproval]    = useState(null);
 	const [approveModalDates, setApproveModalDates] = useState({ startDate: "", expiryDate: "", renewalDate: "" });
+	const [initialApproveDates, setInitialApproveDates] = useState({ startDate: "", expiryDate: "", renewalDate: "" });
 
 	const [showRejectModal, setShowRejectModal] = useState(false);
 	const [rejectReason,    setRejectReason]    = useState("");
@@ -56,6 +59,25 @@ export default function Certification() {
 	const [targetRejectId,  setTargetRejectId]  = useState(null);
 
 	const [actionMsg, setActionMsg] = useState(null);
+
+	// Surface in-progress edits inside the Approve/Reject modals to both the
+	// tab-switch guard and the sidebar's route guard — otherwise clicking
+	// another top tab, or leaving the page entirely, silently discards them
+	// with no warning.
+	const { setIsDirty: setTabIsDirty } = useTabDirty();
+	const { setIsDirty: setRouteIsDirty } = useRouteDirty();
+	const hasUnsavedApproveEdits =
+		showApproveModal &&
+		(approveReason.trim() !== "" ||
+			approveModalDates.startDate !== initialApproveDates.startDate ||
+			approveModalDates.expiryDate !== initialApproveDates.expiryDate ||
+			approveModalDates.renewalDate !== initialApproveDates.renewalDate);
+	const hasUnsavedRejectEdits = showRejectModal && rejectReason.trim() !== "";
+	useEffect(() => {
+		const dirty = hasUnsavedApproveEdits || hasUnsavedRejectEdits;
+		setTabIsDirty(dirty);
+		setRouteIsDirty(dirty);
+	}, [hasUnsavedApproveEdits, hasUnsavedRejectEdits, setTabIsDirty, setRouteIsDirty]);
 
 	const certifications = caregiverDetail?.certifications || [];
 
@@ -81,11 +103,13 @@ export default function Certification() {
 	const handleApproveClick = (approval) => {
 		setTargetApproval(approval);
 		setApproveReason("");
-		setApproveModalDates({
+		const dates = {
 			startDate:   toDateInput(approval.subjectContext?.startDate),
 			expiryDate:  toDateInput(approval.subjectContext?.expiryDate),
 			renewalDate: toDateInput(approval.subjectContext?.renewalDate),
-		});
+		};
+		setApproveModalDates(dates);
+		setInitialApproveDates(dates);
 		setShowApproveModal(true);
 	};
 

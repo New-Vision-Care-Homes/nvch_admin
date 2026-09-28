@@ -6,8 +6,8 @@ import { useCaregivers } from "@/hooks/useCaregivers";
 import { useClients } from "@/hooks/useClients";
 import { useAdmins } from "@/hooks/useAdmins";
 import { attachClickOutside } from "@/utils/clickOutside";
-import HouseConflictModal from "@/components/UI/HouseConflictModal";
-import cardStyles from "@components/UI/Card.module.css";
+import HouseConflictModal from "@/components/UI/Modal/HouseConflictModal";
+import cardStyles from "@components/UI/Form/Card.module.css";
 import { X } from "lucide-react";
 
 // Referentially-stable "no results" value — a fresh `[]` literal from the
