@@ -24,6 +24,16 @@ const BULK_COLS = [
 ];
 const BULK_TOTAL = BULK_COLS.length;
 
+// Estimates how many wrapped lines a text will take within a column of a given
+// character width, so a row's height can grow to fit whichever wrapped cell
+// (address, admins, clients) is actually longest — rather than guessing from
+// just one of them and clipping the others.
+const estimateLines = (text, colWidth) => {
+    if (!text || text === "—") return 1;
+    const charsPerLine = Math.max(colWidth - 2, 8);
+    return Math.max(1, Math.ceil(text.length / charsPerLine));
+};
+
 async function addHomeHeader(ws, wb, { logoUrl, infoRow2 }) {
     const titleRow  = ws.addRow(["Homes Report"]);
     titleRow.height = 30;
@@ -154,8 +164,12 @@ export async function buildHomeSheet(wb, { homes, logoUrl, filters }) {
             formatDateOnly(home.openedAt),
             home.isActive ? "Active" : "Inactive",
         ]);
-        const longestNames = Math.max(adminNames.length, clientNames.length);
-        row.height = longestNames > 60 ? 48 : longestNames > 30 ? 32 : 18;
+        const maxLines = Math.max(
+            estimateLines(address, BULK_COLS[1].width),
+            estimateLines(adminNames, BULK_COLS[5].width),
+            estimateLines(clientNames, BULK_COLS[6].width),
+        );
+        row.height = Math.max(18, maxLines * 14 + 6);
 
         for (let c = 1; c <= BULK_TOTAL; c++) {
             const cell     = row.getCell(c);
@@ -169,6 +183,7 @@ export async function buildHomeSheet(wb, { homes, logoUrl, filters }) {
                 bottom: thinSide(),
             };
         }
+        row.getCell(2).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
         row.getCell(5).alignment = { vertical: "middle", horizontal: "center" };
         row.getCell(6).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
         row.getCell(7).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
