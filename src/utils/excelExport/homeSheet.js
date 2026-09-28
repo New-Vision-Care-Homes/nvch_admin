@@ -17,8 +17,8 @@ const BULK_COLS = [
     { header: "Home Type",  width: 14 },
     { header: "Region",     width: 14 },
     { header: "Caregivers", width: 13 },
-    { header: "Admins",     width: 11 },
-    { header: "Clients",    width: 11 },
+    { header: "Admins",     width: 30 },
+    { header: "Clients",    width: 30 },
     { header: "Opened",     width: 16 },
     { header: "Status",     width: 12 },
 ];
@@ -132,18 +132,30 @@ export async function buildHomeSheet(wb, { homes, logoUrl, filters }) {
             ? [home.address.street, home.address.city, home.address.province, home.address.postalCode].filter(Boolean).join(", ")
             : "—";
 
+        // API may return admins as [{ admin: {...}, adminLevel }] or already-flat user objects.
+        const adminNames = (home.admins || [])
+            .map((entry) => (typeof entry.admin === "object" && entry.admin !== null ? entry.admin : entry))
+            .map((a) => `${a.firstName ?? ""} ${a.lastName ?? ""}`.trim())
+            .filter(Boolean)
+            .join(", ") || "—";
+        const clientNames = (home.clients || [])
+            .map((c) => `${c.firstName ?? ""} ${c.lastName ?? ""}`.trim())
+            .filter(Boolean)
+            .join(", ") || "—";
+
         const row = ws.addRow([
             home.name ?? "—",
             address,
             home.homeType ?? "—",
             home.region ?? "—",
             home.caregivers?.length ?? 0,
-            home.admins?.length ?? 0,
-            home.clients?.length ?? 0,
+            adminNames,
+            clientNames,
             formatDateOnly(home.openedAt),
             home.isActive ? "Active" : "Inactive",
         ]);
-        row.height = 18;
+        const longestNames = Math.max(adminNames.length, clientNames.length);
+        row.height = longestNames > 60 ? 48 : longestNames > 30 ? 32 : 18;
 
         for (let c = 1; c <= BULK_TOTAL; c++) {
             const cell     = row.getCell(c);
@@ -158,8 +170,8 @@ export async function buildHomeSheet(wb, { homes, logoUrl, filters }) {
             };
         }
         row.getCell(5).alignment = { vertical: "middle", horizontal: "center" };
-        row.getCell(6).alignment = { vertical: "middle", horizontal: "center" };
-        row.getCell(7).alignment = { vertical: "middle", horizontal: "center" };
+        row.getCell(6).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+        row.getCell(7).alignment = { vertical: "middle", horizontal: "left", wrapText: true };
     });
 
     const countRow  = ws.addRow([`${homes.length} home${homes.length !== 1 ? "s" : ""}`]);
