@@ -1,27 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./add_new_caregiver.module.css";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
-import ActionMessage from "@components/UI/ActionMessage";
-import PersonSearchField from "@/components/UI/PersonSearchField";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import PersonSearchField from "@/components/UI/Form/PersonSearchField";
 
 // Importing custom validation rules
 import { IdRule, nameRule, emailRule, phoneRule, shortTextRule, birthRule, longTextRule, dateRuleOptional, pinRule, dateRule, passwordRule, addressComponentRule } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
-import RegionCheckboxGroup from "@/components/UI/RegionCheckboxGroup";
+import RegionCheckboxGroup from "@/components/UI/Form/RegionCheckboxGroup";
 import { localDateToUtc } from "@/utils/timeHandling";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -134,7 +135,7 @@ const emptyAvailabilityTemplate = {
 export default function Page() {
 	const router = useRouter();
 
-	const { register, handleSubmit, watch, formState: { errors }, control, setValue } = useForm({
+	const { register, handleSubmit, watch, formState: { errors, isDirty }, control, setValue } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: {
 			// Arrays are initialized as empty, allowing the user to add slots
@@ -145,16 +146,24 @@ export default function Page() {
 		}
 	});
 
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
+
 	const selectedRegions = watch("regions") || [];
 
+	// These fields are register()-bound but rendered read-only — their only
+	// mutation path is this callback, so shouldDirty is required or selecting
+	// an address here would never mark the form dirty.
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
-		if (street) setValue("street", street, { shouldValidate: true });
-		if (city) setValue("city", city, { shouldValidate: true });
-		if (state) setValue("state", state, { shouldValidate: true });
-		if (country) setValue("country", country, { shouldValidate: true });
-		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true });
-		if (latitude !== undefined) setValue("latitude", latitude);
-		if (longitude !== undefined) setValue("longitude", longitude);
+		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
+		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
+		if (state) setValue("state", state, { shouldValidate: true, shouldDirty: true });
+		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
+		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true, shouldDirty: true });
+		if (latitude !== undefined) setValue("latitude", latitude, { shouldDirty: true });
+		if (longitude !== undefined) setValue("longitude", longitude, { shouldDirty: true });
 	}
 
 	// useFieldArray for Availability Schedule
@@ -340,7 +349,7 @@ export default function Page() {
 										label="Regions"
 										required
 										value={selectedRegions}
-										onChange={(next) => setValue("regions", next, { shouldValidate: true })}
+										onChange={(next) => setValue("regions", next, { shouldValidate: true, shouldDirty: true })}
 										error={errors.regions}
 									/>
 								</div>

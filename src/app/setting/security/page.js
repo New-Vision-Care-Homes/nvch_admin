@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Shield, Lock, CheckCircle2, XCircle } from "lucide-react";
-import Button from "@components/UI/Button";
-import { InputField } from "@components/UI/Card";
-import ActionMessage from "@components/UI/ActionMessage";
+import Button from "@components/UI/Button/Button";
+import { InputField } from "@components/UI/Form/Card";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { passwordRule } from "@/utils/validation";
 import { useProfile } from "@/hooks/useProfile";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./stub.module.css";
 
 const schema = yup.object({
@@ -34,11 +35,16 @@ export default function SecurityPage() {
 	const { changePassword, isChangePasswordPending, changePasswordError } = useProfile();
 	const [successMsg, setSuccessMsg] = useState("");
 
-	const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
+	const { register, handleSubmit, watch, reset, formState: { errors, isDirty } } = useForm({
 		resolver: yupResolver(schema),
 		mode: "onChange",
 		defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const newPasswordValue = watch("newPassword") || "";
 

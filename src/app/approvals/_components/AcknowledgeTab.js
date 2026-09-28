@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Search, X, Download, Loader2, Timer, User } from "lucide-react";
-import Pagination from "@/components/UI/Pagination";
-import EmptyState from "@/components/UI/EmptyState";
-import Button from "@components/UI/Button";
+import Pagination from "@/components/UI/Table/Pagination";
+import EmptyState from "@/components/UI/Feedback/EmptyState";
+import Button from "@components/UI/Button/Button";
 import { useOvertimeAcknowledgments } from "@/hooks/useApprovals";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { exportAckWorkbook, exportSingleAckWorkbook } from "@/utils/excelExport/ackSheet";

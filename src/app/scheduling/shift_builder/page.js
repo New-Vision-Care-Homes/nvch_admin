@@ -88,15 +88,16 @@ import { expandShiftDays, getTodayInHalifax } from "@/utils/timeHandling";
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
 import { useSidebarCollapsed } from "@components/layout/useSidebarCollapsed";
-import Button from "@components/UI/Button";
-import IconButton from "@components/UI/IconButton";
-import ErrorState from "@components/UI/ErrorState";
-import Modal from "@components/UI/Modal";
+import Button from "@components/UI/Button/Button";
+import IconButton from "@components/UI/Button/IconButton";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Modal from "@components/UI/Modal/Modal";
 import OvertimeInfoBox from "../_components/OvertimeInfoBox";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 
 import styles from "./shift_builder.module.css";
@@ -1360,6 +1361,16 @@ export default function ShiftBuilderPage() {
 			: 0),
 		[assignments, dateSet, nightTimesChanged]
 	);
+
+	// ── Unsaved-changes guard ────────────────────────────────────────────────
+	// Same "is there anything to submit" signal doSubmit already uses to decide
+	// POST vs PUT vs no-op — mirrored here so navigating away via the sidebar
+	// warns before silently discarding an in-progress schedule.
+	const isDirty = assignmentCount > 0 || updatedCount > 0 || modifiedCustomCount > 0 || timesChanged;
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 

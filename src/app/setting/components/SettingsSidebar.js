@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, Bell, Shield, SlidersHorizontal } from "lucide-react";
+import GuardedLink from "@components/UI/Button/GuardedLink";
 import styles from "./SettingsSidebar.module.css";
 
 const settingsOptions = [
@@ -23,14 +23,14 @@ export default function SettingsSidebar() {
 				const isActive = pathname === option.href || pathname.startsWith(option.href + "/");
 
 				return (
-					<Link
+					<GuardedLink
 						key={option.id}
 						href={option.href}
 						className={`${styles.item} ${isActive ? styles.activeItem : ""}`}
 					>
 						<Icon size={18} className={styles.icon} />
 						<span>{option.label}</span>
-					</Link>
+					</GuardedLink>
 				);
 			})}
 		</div>

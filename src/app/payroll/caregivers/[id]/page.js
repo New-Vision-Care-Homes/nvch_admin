@@ -7,10 +7,10 @@
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Undo2, User, ClipboardList, Plus, Eye } from "lucide-react";
 import PageLayout from "@components/layout/PageLayout";
-import ErrorState from "@components/UI/ErrorState";
-import Button     from "@components/UI/Button";
-import IconButton  from "@components/UI/IconButton";
-import { Card, CardHeader, CardContent } from "@components/UI/Card";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Button     from "@components/UI/Button/Button";
+import IconButton  from "@components/UI/Button/IconButton";
+import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
 import { useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useProfile } from "@/hooks/useProfile";
 import { formatDateOnly, formatDateTime } from "@/utils/dates";

@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from "react";
 import styles from "./Shifts.module.css";
 import { Eye, Filter, Calendar, AlertCircle } from "lucide-react";
-import { Table, TableHeader, TableCell, TableContent } from "@components/UI/Table";
-import Button from "@components/UI/Button";
-import IconButton from "@components/UI/IconButton";
+import { Table, TableHeader, TableCell, TableContent } from "@components/UI/Table/Table";
+import Button from "@components/UI/Button/Button";
+import IconButton from "@components/UI/Button/IconButton";
 import { useShifts } from "@/hooks/useShifts";
 import { useParams, useRouter } from "next/navigation";
 import { DateTime } from "luxon";
-import Pagination from "@components/UI/Pagination";
+import Pagination from "@components/UI/Table/Pagination";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS

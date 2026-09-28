@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 
 import PageLayout from "@components/layout/PageLayout";
 import styles from "./caregivers.module.css";
-import Button from "@components/UI/Button";
-import IconButton from "@components/UI/IconButton";
-import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table";
+import Button from "@components/UI/Button/Button";
+import IconButton from "@components/UI/Button/IconButton";
+import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table/Table";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import Pagination from "@components/UI/Pagination";
-import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
+import Pagination from "@components/UI/Table/Pagination";
+import ConfirmDeleteModal from "@components/UI/Modal/ConfirmDeleteModal";
 import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 
@@ -20,9 +20,9 @@ import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
 import { fullName } from "@/utils/formatting";
-import ErrorState from "@components/UI/ErrorState";
-import EmptyState from "@components/UI/EmptyState";
-import ActionMessage from "@components/UI/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import EmptyState from "@components/UI/Feedback/EmptyState";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 
 export default function Caregivers() {
 	const { profile } = useProfile();

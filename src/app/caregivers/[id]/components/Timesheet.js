@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { SquarePen, Calendar, Clock, Plus, Trash2 } from "lucide-react";
 import styles from "./Timesheet.module.css";
-import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Table";
-import Button from "@components/UI/Button";
-import Modal from "@components/UI/Modal";
-import ActionMessage from "@components/UI/ActionMessage";
-import ErrorState from "@components/UI/ErrorState";
-import { Card, CardHeader, CardContent, InputFieldLR, InfoField } from "@components/UI/Card";
+import { Table, TableContent, TableCell, TableHeader } from "@components/UI/Table/Table";
+import Button from "@components/UI/Button/Button";
+import Modal from "@components/UI/Modal/Modal";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import { Card, CardHeader, CardContent, InputFieldLR, InfoField } from "@components/UI/Form/Card";
 import { useParams, useRouter } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHours } from "@/hooks/useHours";
 import { useProfile } from "@/hooks/useProfile";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { formatPayPeriodLabel } from "@/utils/payPeriod";
+import { useTabDirty } from "@/context/TabDirtyContext";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -227,6 +229,20 @@ export default function Timesheet() {
 	// Re-group whenever the flat availability array changes so the UI always
 	// reflects the latest edits.
 	const groupedAvailability = groupAvailabilityByDay(availability);
+
+	// Surface in-progress edits in the Availability/Work Capacity modals to
+	// both the tab-switch guard and the sidebar's route guard — otherwise
+	// clicking another top tab, or leaving the page entirely, silently
+	// discards them with no warning.
+	const { setIsDirty: setTabIsDirty } = useTabDirty();
+	const { setIsDirty: setRouteIsDirty } = useRouteDirty();
+	const hasUnsavedAvailability = JSON.stringify(availability) !== JSON.stringify(originalAvailability);
+	const hasUnsavedHours = String(maxHours) !== String(originalMaxHours);
+	useEffect(() => {
+		const dirty = hasUnsavedAvailability || hasUnsavedHours;
+		setTabIsDirty(dirty);
+		setRouteIsDirty(dirty);
+	}, [hasUnsavedAvailability, hasUnsavedHours, setTabIsDirty, setRouteIsDirty]);
 
 
 

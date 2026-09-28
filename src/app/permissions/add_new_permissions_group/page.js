@@ -1,16 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import Button from "@components/UI/Button";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
+import Button from "@components/UI/Button/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
 import styles from "../permissions_group.module.css";
 import { usePermissionGroups, usePermissionDefinitions } from "@/hooks/usePermissions";
 import { PERMISSION_SCHEMAS, IMPLICIT_SELF_SLUGS, permissionGroupSchema } from "@/utils/permissions";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 export default function AddPermissionGroupPage() {
 	const router = useRouter();
@@ -27,10 +28,15 @@ export default function AddPermissionGroupPage() {
 		refetchDefinitions,
 	} = usePermissionDefinitions();
 
-	const { register, handleSubmit, control, formState: { errors }, setError } = useForm({
+	const { register, handleSubmit, control, formState: { errors, isDirty }, setError } = useForm({
 		resolver: yupResolver(permissionGroupSchema),
 		defaultValues: { name: "", description: "", permissions: [] },
 	});
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const onSubmit = (data) => {
 		// Runtime check: group name must not clash with an existing permission slug.

@@ -6,15 +6,16 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import PageLayout from "@components/layout/PageLayout";
-import ErrorState from "@components/UI/ErrorState";
-import Button from "@components/UI/Button";
-import ActionMessage from "@components/UI/ActionMessage";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import GeofenceMap from "@components/UI/GeofenceMap";
-import AddressAutocomplete from "@components/UI/AddressAutocomplete";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Button from "@components/UI/Button/Button";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import GeofenceMap from "@components/UI/Map/GeofenceMap";
+import AddressAutocomplete from "@components/UI/Form/AddressAutocomplete";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useTrainingTypeDropdown } from "@/utils/dropdownList/trainingType";
 import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import PayRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../../_components/PayRulesSection";
 import PersonMultiSelect from "../../_components/PersonMultiSelect";
 import { X, Save, Loader } from "lucide-react";
@@ -107,7 +108,7 @@ export default function EditTrainingPage() {
         useTrainings(id);
     const { trainingTypeOptions } = useTrainingTypeDropdown();
 
-    const { register, handleSubmit, watch, setValue, control, reset, formState: { errors } } = useForm({
+    const { register, handleSubmit, watch, setValue, control, reset, formState: { errors, isDirty } } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
             title:                     "",
@@ -126,6 +127,11 @@ export default function EditTrainingPage() {
             payRules:                  [],
         },
     });
+
+    const { setIsDirty } = useRouteDirty();
+    useEffect(() => {
+        setIsDirty(isDirty);
+    }, [isDirty, setIsDirty]);
 
     const { fields, append, remove, update } = useFieldArray({ control, name: "payRules" });
 
@@ -176,10 +182,10 @@ export default function EditTrainingPage() {
     const handleAddressSelect = useCallback((data) => {
         const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-        if (street)     setValue("geofenceStreet", street, { shouldValidate: false });
-        if (city)       setValue("geofenceCity", city, { shouldValidate: false });
-        if (state)      setValue("geofenceProvince", state, { shouldValidate: false });
-        if (postalCode) setValue("geofencePostalCode", postalCode, { shouldValidate: false });
+        if (street)     setValue("geofenceStreet", street, { shouldValidate: false, shouldDirty: true });
+        if (city)       setValue("geofenceCity", city, { shouldValidate: false, shouldDirty: true });
+        if (state)      setValue("geofenceProvince", state, { shouldValidate: false, shouldDirty: true });
+        if (postalCode) setValue("geofencePostalCode", postalCode, { shouldValidate: false, shouldDirty: true });
 
         const fullAddress = [street, city, state, postalCode, country].filter(Boolean).join(", ");
         setGeofenceAddress(fullAddress);
@@ -368,7 +374,7 @@ export default function EditTrainingPage() {
                                             <input
                                                 type="checkbox"
                                                 checked={generatesCertificate}
-                                                onChange={(e) => setValue("generatesCertificate", e.target.checked, { shouldValidate: true })}
+                                                onChange={(e) => setValue("generatesCertificate", e.target.checked, { shouldValidate: true, shouldDirty: true })}
                                                 disabled={isActionPending}
                                             />
                                             <span className={styles.toggleSlider} />

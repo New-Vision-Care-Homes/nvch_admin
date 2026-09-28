@@ -5,11 +5,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
-import Button from "@components/UI/Button";
-import ErrorState from "@components/UI/ErrorState";
-import ActionMessage from "@components/UI/ActionMessage";
-import StatusBadge from "@components/UI/Badge";
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import Button from "@components/UI/Button/Button";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import StatusBadge from "@components/UI/Feedback/Badge";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
@@ -42,7 +42,7 @@ import VacationPayPayout      from "./_components/VacationPayPayout";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import ApproveModal           from "./_components/ApproveModal";
 import MandateRejectModal     from "./_components/MandateRejectModal";
-import RejectReasonField      from "@components/UI/RejectReasonField";
+import RejectReasonField      from "@components/UI/Form/RejectReasonField";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

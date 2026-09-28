@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PageLayout from "@components/layout/PageLayout";
-import ErrorState from "@components/UI/ErrorState";
-import Button from "@components/UI/Button";
-import ConfirmDeleteModal from "@components/UI/ConfirmDeleteModal";
-import GeofenceMap from "@components/UI/GeofenceMap";
-import StatusBadge, { ColorPill } from "@components/UI/Badge";
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import Button from "@components/UI/Button/Button";
+import ConfirmDeleteModal from "@components/UI/Modal/ConfirmDeleteModal";
+import GeofenceMap from "@components/UI/Map/GeofenceMap";
+import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useProfile } from "@/hooks/useProfile";
 import { formatDateTime } from "@/utils/dates";

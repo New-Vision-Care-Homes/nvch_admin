@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Smartphone, ShieldOff, LogOut, AlertTriangle, Clock, ExternalLink } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@components/UI/Card";
-import Button from "@components/UI/Button";
-import Modal from "@components/UI/Modal";
-import ActionMessage from "@components/UI/ActionMessage";
-import ErrorState from "@components/UI/ErrorState";
+import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
+import Modal from "@components/UI/Modal/Modal";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";

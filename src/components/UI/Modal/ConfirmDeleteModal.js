@@ -1,7 +1,7 @@
 "use client";
 
 import { Trash2, Loader } from "lucide-react";
-import ActionMessage from "./ActionMessage";
+import ActionMessage from "../Feedback/ActionMessage";
 import styles from "./ConfirmDeleteModal.module.css";
 
 /**

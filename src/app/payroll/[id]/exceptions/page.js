@@ -29,11 +29,11 @@ import {
     ExternalLink,
 } from "lucide-react";
 import PageLayout  from "@components/layout/PageLayout";
-import ErrorState  from "@components/UI/ErrorState";
-import Button      from "@components/UI/Button";
+import ErrorState  from "@components/UI/Feedback/ErrorState";
+import Button      from "@components/UI/Button/Button";
 import { usePayrollExceptions, useCoverSheet } from "@/hooks/usePayroll";
 import { formatDateTime } from "@/utils/dates";
-import { ColorPill } from "@components/UI/Badge";
+import { ColorPill } from "@components/UI/Feedback/Badge";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";

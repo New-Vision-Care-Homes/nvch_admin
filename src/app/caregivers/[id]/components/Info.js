@@ -4,25 +4,27 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
 import styles from "./info.module.css";
-import ActionMessage from "@components/UI/ActionMessage";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { Edit, Save, X, MapPin, Phone, Mail, Users, Calendar, Globe, Clock, User, Briefcase, Home } from "lucide-react";
 import { nameRule, emailRule, phoneRule, pinRule, birthRule, shortTextRule, dateRuleOptional, addressComponentRule } from "@/utils/validation";
 import { utcToDateString, localDateToUtc } from "@/utils/timeHandling";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { getLabel } from "@/utils/formatting";
-import RegionCheckboxGroup from "@components/UI/RegionCheckboxGroup";
+import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
 import { useHomes } from "@/hooks/useHomes";
 import { canManageTarget } from "@/utils/permissions";
-import ErrorState from "@components/UI/ErrorState";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
-import PersonSearchField from "@/components/UI/PersonSearchField";
-import HouseConflictModal from "@/components/UI/HouseConflictModal";
+import ErrorState from "@components/UI/Feedback/ErrorState";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
+import PersonSearchField from "@/components/UI/Form/PersonSearchField";
+import HouseConflictModal from "@/components/UI/Modal/HouseConflictModal";
+import { useTabDirty } from "@/context/TabDirtyContext";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 const EMPLOYMENT_STATUS_OPTIONS = [
 	{ label: "Full Time", value: "full_time" },
@@ -113,6 +115,16 @@ export default function Info() {
 		defaultValues: cleanFetchedData(null),
 	});
 
+	// Reported into both contexts: TabDirtyContext guards switching tabs within
+	// this profile, RouteDirtyContext guards leaving the page entirely via the
+	// sidebar — both need to see the same in-progress edit.
+	const { setIsDirty: setTabIsDirty } = useTabDirty();
+	const { setIsDirty: setRouteIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setTabIsDirty(isDirty);
+		setRouteIsDirty(isDirty);
+	}, [isDirty, setTabIsDirty, setRouteIsDirty]);
+
 	const watchStreet = watch("street");
 	const watchCity = watch("city");
 	const watchState = watch("state");
@@ -121,12 +133,15 @@ export default function Info() {
 	const watchHomeId = watch("homeId");
 	const selectedRegions = watch("regions") || [];
 
+	// These fields are register()-bound but rendered read-only — their only
+	// mutation path is this callback, so shouldDirty is required or selecting
+	// an address here would never mark the form dirty.
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
-		if (street) setValue("street", street, { shouldValidate: true });
-		if (city) setValue("city", city, { shouldValidate: true });
-		if (state) setValue("state", state, { shouldValidate: true });
-		if (country) setValue("country", country, { shouldValidate: true });
-		if (postalCode) setValue("pincode", postalCode, { shouldValidate: true });
+		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
+		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
+		if (state) setValue("state", state, { shouldValidate: true, shouldDirty: true });
+		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
+		if (postalCode) setValue("pincode", postalCode, { shouldValidate: true, shouldDirty: true });
 		if (latitude != null && longitude != null) setGpsCoordinates({ latitude, longitude });
 	}
 

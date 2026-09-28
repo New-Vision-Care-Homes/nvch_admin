@@ -14,22 +14,23 @@ import { useAdmins } from "@/hooks/useAdmins";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import { attachClickOutside } from "@/utils/clickOutside";
-import GeofenceMap from "@/components/UI/GeofenceMap";
-import AddressAutocomplete from "@/components/UI/AddressAutocomplete";
+import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
-import { Card, CardHeader, CardContent, InputField } from "@components/UI/Card";
-import Button from "@components/UI/Button";
-import Modal from "@components/UI/Modal";
-import ActionMessage from "@components/UI/ActionMessage";
+import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
+import Button from "@components/UI/Button/Button";
+import Modal from "@components/UI/Modal/Modal";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import styles from "./add_new_shift.module.css";
-import cardStyles from "@components/UI/Card.module.css";
+import cardStyles from "@components/UI/Form/Card.module.css";
 import CapacityExceededModal from "../_components/CapacityExceededModal";
 import VoluntaryPendingModal from "../_components/VoluntaryPendingModal";
 
 import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@/utils/validation";
 import { formatAddress } from "@/utils/formatting";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -129,8 +130,13 @@ export default function AddNewShiftPage() {
 		watch,
 		setValue,
 		control,
-		formState: { errors },
+		formState: { errors, isDirty },
 	} = useForm({ resolver: yupResolver(schema), defaultValues: { addPastShift: false } });
+
+	const { setIsDirty } = useRouteDirty();
+	useEffect(() => {
+		setIsDirty(isDirty);
+	}, [isDirty, setIsDirty]);
 
 	const selectedStartTime = watch("startTime");
 	const selectedEndTime = watch("endTime");
@@ -154,7 +160,7 @@ export default function AddNewShiftPage() {
 			setClientInput("");
 			setClientSearch("");
 			setShowClientDropdown(false);
-			setValue("clientId", "");
+			setValue("clientId", "", { shouldDirty: true });
 		}
 	}
 
@@ -169,10 +175,10 @@ export default function AddNewShiftPage() {
 		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
 		// Fill individual split fields
-		if (street) setValue("geofenceStreet", street, { shouldValidate: false });
-		if (city) setValue("geofenceCity", city, { shouldValidate: false });
-		if (state) setValue("geofenceProvince", state, { shouldValidate: false });
-		if (postalCode) setValue("geofencePostalCode", postalCode, { shouldValidate: false });
+		if (street) setValue("geofenceStreet", street, { shouldValidate: false, shouldDirty: true });
+		if (city) setValue("geofenceCity", city, { shouldValidate: false, shouldDirty: true });
+		if (state) setValue("geofenceProvince", state, { shouldValidate: false, shouldDirty: true });
+		if (postalCode) setValue("geofencePostalCode", postalCode, { shouldValidate: false, shouldDirty: true });
 
 		const fullAddress = [street, city, state, postalCode, country].filter(Boolean).join(", ");
 		setGeofenceAddress(fullAddress);
@@ -211,7 +217,7 @@ export default function AddNewShiftPage() {
 		setSelectedClient(client);
 		setClientInput(`${client.firstName} ${client.lastName}`);
 		setShowClientDropdown(false);
-		setValue("clientId", client.id);
+		setValue("clientId", client.id, { shouldDirty: true });
 	}
 
 	function handleClearClient() {
@@ -219,7 +225,7 @@ export default function AddNewShiftPage() {
 		setClientInput("");
 		setClientSearch("");
 		setShowClientDropdown(false);
-		setValue("clientId", "");
+		setValue("clientId", "", { shouldDirty: true });
 	}
 
 	// ── Home search ────────────────────────────────────────────────────────────
@@ -242,7 +248,7 @@ export default function AddNewShiftPage() {
 		setSelectedHome(home);
 		setHomeInput(home.name || home.homeName || `Home ${home.id}`);
 		setShowHomeDropdown(false);
-		setValue("homeId", home.id || home._id);
+		setValue("homeId", home.id || home._id, { shouldDirty: true });
 
 		// Auto-fill the service location from the home's saved address.
 		// This also disables the address search bar (see AddressAutocomplete below).
@@ -253,10 +259,10 @@ export default function AddNewShiftPage() {
 			const postalCode = home.address.postalCode || home.address.pinCode || "";
 			const country = home.address.country || "Canada";
 
-			setValue("geofenceStreet", street, { shouldValidate: false });
-			setValue("geofenceCity", city, { shouldValidate: false });
-			setValue("geofenceProvince", state, { shouldValidate: false });
-			setValue("geofencePostalCode", postalCode, { shouldValidate: false });
+			setValue("geofenceStreet", street, { shouldValidate: false, shouldDirty: true });
+			setValue("geofenceCity", city, { shouldValidate: false, shouldDirty: true });
+			setValue("geofenceProvince", state, { shouldValidate: false, shouldDirty: true });
+			setValue("geofencePostalCode", postalCode, { shouldValidate: false, shouldDirty: true });
 
 			const fullAddress = [street, city, state, postalCode, country].filter(Boolean).join(", ");
 			setGeofenceAddress(fullAddress);
@@ -282,13 +288,13 @@ export default function AddNewShiftPage() {
 		setHomeInput("");
 		setHomeSearch("");
 		setShowHomeDropdown(false);
-		setValue("homeId", "");
+		setValue("homeId", "", { shouldDirty: true });
 
 		// Clear the auto-filled service location so the address search bar is usable again
-		setValue("geofenceStreet", "");
-		setValue("geofenceCity", "");
-		setValue("geofenceProvince", "");
-		setValue("geofencePostalCode", "");
+		setValue("geofenceStreet", "", { shouldDirty: true });
+		setValue("geofenceCity", "", { shouldDirty: true });
+		setValue("geofenceProvince", "", { shouldDirty: true });
+		setValue("geofencePostalCode", "", { shouldDirty: true });
 		setGeofenceAddress("");
 		setHasAddressSelected(false);
 		setMapCenter({ lat: 44.6476, lng: -63.5728 });
@@ -340,7 +346,7 @@ export default function AddNewShiftPage() {
 		setSelectedCaregiver(cg);
 		setCaregiverInput(`${cg.firstName} ${cg.lastName}`);
 		setShowCaregiverDropdown(false);
-		setValue("caregiverId", cg.id);
+		setValue("caregiverId", cg.id, { shouldDirty: true });
 	}
 
 	function handleClearCaregiver() {
@@ -348,7 +354,7 @@ export default function AddNewShiftPage() {
 		setCaregiverInput("");
 		setCaregiverSearch("");
 		setShowCaregiverDropdown(false);
-		setValue("caregiverId", "");
+		setValue("caregiverId", "", { shouldDirty: true });
 	}
 
 	// ── Task list ──────────────────────────────────────────────────────────────
@@ -729,7 +735,7 @@ export default function AddNewShiftPage() {
 												// Confirm before enabling; don't toggle on until the user accepts.
 												setShowPastShiftModal(true);
 											} else {
-												setValue("addPastShift", false, { shouldValidate: true });
+												setValue("addPastShift", false, { shouldValidate: true, shouldDirty: true });
 											}
 										}}
 									/>
@@ -896,7 +902,7 @@ export default function AddNewShiftPage() {
 						<Button
 							variant="primary"
 							onClick={() => {
-								setValue("addPastShift", true, { shouldValidate: true });
+								setValue("addPastShift", true, { shouldValidate: true, shouldDirty: true });
 								setShowPastShiftModal(false);
 							}}
 						>

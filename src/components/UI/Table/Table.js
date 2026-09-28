@@ -283,7 +283,7 @@ export function Table2Pagination({ currentPage, totalPages, totalItems, itemLabe
 // Full example:
 //
 //   import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell }
-//     from "@components/UI/Table";
+//     from "@components/UI/Table/Table";
 //
 //   <PageTable minWidth="820px">
 //     <thead>

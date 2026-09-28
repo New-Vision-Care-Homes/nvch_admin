@@ -4,18 +4,20 @@
 // IMPORTS
 // ============================================================
 
+import { useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Undo2, User } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
-import Button        from "@components/UI/Button";
-import ActionMessage from "@components/UI/ActionMessage";
-import { Card, CardHeader, CardContent } from "@components/UI/Card";
+import Button        from "@components/UI/Button/Button";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
 import { useCreateCaregiverEntry, useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useHomes }  from "@/hooks/useHomes";
 import { WRITABLE_PAY_CATEGORIES } from "@/utils/dropdownList/payCategory";
+import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles        from "./add_entry.module.css";
 import detailStyles  from "../../../[id]/payroll_detail.module.css";
 
@@ -107,7 +109,7 @@ export default function AddCaregiverEntryPage() {
         register,
         handleSubmit,
         watch,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
@@ -120,6 +122,11 @@ export default function AddCaregiverEntryPage() {
             homeId:       "",
         },
     });
+
+    const { setIsDirty } = useRouteDirty();
+    useEffect(() => {
+        setIsDirty(isDirty);
+    }, [isDirty, setIsDirty]);
 
     const watchedCategory = watch("category");
     const watchedYear     = watch("payYear");

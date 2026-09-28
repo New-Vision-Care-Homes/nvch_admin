@@ -34,7 +34,7 @@ import { useGoogleMapsLoader } from "@/hooks/useGoogleMapsLoader";
 import { MapPin, Search, Loader } from "lucide-react";
 import styles from "./AddressAutocomplete.module.css";
 import cardStyles from "./Card.module.css";
-import { InputField } from "@/components/UI/Card";
+import { InputField } from "@/components/UI/Form/Card";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: parseAddressComponents

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Card";
+import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { DollarSign, User } from "lucide-react";
 import { formatDateOnly } from "@/utils/dates";
 import styles from "../approval_detail.module.css";

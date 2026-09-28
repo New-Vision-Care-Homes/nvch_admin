@@ -1,7 +1,7 @@
 "use client";
 
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
 
 /**
  * Confirms activating/deactivating a person record (caregiver, admin, etc).

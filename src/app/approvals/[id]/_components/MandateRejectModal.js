@@ -39,12 +39,12 @@
 //   rejectError          {string|null}        fallback for final reject() failure
 
 import { useState } from "react";
-import Modal from "@components/UI/Modal";
-import Button from "@components/UI/Button";
-import ActionMessage from "@components/UI/ActionMessage";
+import Modal from "@components/UI/Modal/Modal";
+import Button from "@components/UI/Button/Button";
+import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { User, UserMinus, Loader, AlertTriangle } from "lucide-react";
-import RejectReasonField from "@components/UI/RejectReasonField";
+import RejectReasonField from "@components/UI/Form/RejectReasonField";
 import styles from "../approval_detail.module.css";
 
 export default function MandateRejectModal({

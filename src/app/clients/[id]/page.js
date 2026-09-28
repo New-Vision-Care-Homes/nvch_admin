@@ -3,21 +3,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
-import Button from "@components/UI/Button";
-import { Card, CardHeader } from "@components/UI/Card";
+import Button from "@components/UI/Button/Button";
+import { Card, CardHeader } from "@components/UI/Form/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
 import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Home, Pencil, Undo2, Upload, X } from "lucide-react";
 import { utcToFullDisplay } from "@/utils/timeHandling";
-import Modal from "@components/UI/Modal";
+import Modal from "@components/UI/Modal/Modal";
 import { useParams } from "next/navigation";
 
-import ProfilePictureModal from "@components/UI/ProfilePictureModal";
+import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
-import ErrorState from "@components/UI/ErrorState";
+import ErrorState from "@components/UI/Feedback/ErrorState";
 
 
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
