@@ -9,4 +9,5 @@ export const CERTIFICATE_OPTIONS = [
 	{ value: "umab-new", label: "UMAB New" },
 	{ value: "whmis", label: "WHMIS" },
 	{ value: "immigration-documentation", label: "Immigration Documentation" },
+	{ value: "drivers-abstract", label: "Drivers Abstract"},
 ];

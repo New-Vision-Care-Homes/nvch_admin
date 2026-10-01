@@ -403,6 +403,7 @@ export default function Info() {
 								<div className={styles.card_row_2}>
 									<InputField label="Date of Birth" name="birth" register={register} control={control} error={errors.birth} type="date" />
 									<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
+									<InputField label="Email" name="email" register={register} error={errors.email} />
 								</div>
 								<div style={{ marginBottom: "1rem" }}>
 									<RegionCheckboxGroup

@@ -28,6 +28,7 @@ import {
 	Scale,
 	Banknote,
 	DollarSign,
+	FileWarning,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,6 +92,9 @@ const TYPE_CONFIG = {
 	// else, so it reads as its own distinct category at a glance.
 	broadcast:                   { Icon: Megaphone,      color: "#db2777", bg: "#fdf2f8" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
+	// A caregiver's certificate is nearing its expiryDate — admin-facing copy of
+	// the reminder (the caregiver gets their own mobile-only copy of this event).
+	caregiver_certificate_expiring_soon: { Icon: FileWarning, color: "#ca8a04", bg: "#fefce8" },
 };
 
 /**
@@ -161,6 +165,7 @@ const TYPE_LABEL = {
 	caregiver_device_enrolled:   "Device Enrolled",
 	broadcast:                   "Broadcast",
 	approval_requested:          "Approval Requested",
+	caregiver_certificate_expiring_soon: "Certificate Expiring Soon",
 };
 
 /** One-line plain-language explanation of what each notification type means. */
@@ -176,6 +181,7 @@ const TYPE_DESCRIPTION = {
 	caregiver_device_enrolled:   "A device was bound to a caregiver's account for the mobile app — either their first-ever sign-in, or a re-enrollment after an admin cleared the binding. Sent to their supervisor, team lead, and home admins as an audit trail.",
 	broadcast:                   "A one-off announcement sent by an admin.",
 	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours or vacation-pay payout, or a caregiver device change. Clears once any approver decides.",
+	caregiver_certificate_expiring_soon: "A caregiver's certificate is approaching its expiry date (30 and 7 days out). Sent to their supervisor, team lead, and home admins. Names the caregiver and the certificate.",
 };
 
 /**
@@ -197,6 +203,7 @@ const TYPE_BUCKET = {
 	bank_cap_exceeded:           "info",
 	caregiver_device_enrolled:   "info",
 	broadcast:                   "info",
+	caregiver_certificate_expiring_soon: "info",
 };
 
 const BUCKET_META = {
@@ -233,6 +240,13 @@ const APPROVAL_TYPES = new Set(["approval_requested"]);
 const HOUSE_REVIEW_TYPES = new Set(["house_hours_review_overdue", "house_hours_review_not_done"]);
 
 /**
+ * Certificate-expiry reminder — routes straight to the caregiver's profile
+ * (data.caregiverId) rather than a certificate-detail page, since the portal
+ * has no standalone one.
+ */
+const CERTIFICATE_EXPIRY_TYPES = new Set(["caregiver_certificate_expiring_soon"]);
+
+/**
  * Types hidden from the list entirely (not just unstyled) — showing them
  * with no icon/colour and a dead "tap to view details" CTA would be more
  * confusing than not showing them at all.
@@ -250,6 +264,7 @@ function NotificationCard({ notification: n, onClick }) {
 	const isShiftLink       = SHIFT_TYPES.has(n.type);
 	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);
+	const isCertExpiryLink  = CERTIFICATE_EXPIRY_TYPES.has(n.type);
 
 	return (
 		<div
@@ -287,7 +302,7 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink || isHouseReviewLink) && (
+				{(isShiftLink || isApprovalLink || isHouseReviewLink || isCertExpiryLink) && (
 					<ExternalLink size={13} className={styles.linkIcon} />
 				)}
 			</div>
@@ -444,6 +459,11 @@ export default function NotificationsPage() {
 		// cover sheet page, where the payroll is actually approved.
 		if (HOUSE_REVIEW_TYPES.has(n.type) && n.data?.houseId && n.data?.payYear && n.data?.periodNumber) {
 			router.push(`/payroll/${n.data.houseId}?payYear=${n.data.payYear}&periodNumber=${n.data.periodNumber}`);
+			return;
+		}
+		// Certificate-expiry reminders → the caregiver's profile.
+		if (CERTIFICATE_EXPIRY_TYPES.has(n.type) && n.data?.caregiverId) {
+			router.push(`/caregivers/${n.data.caregiverId}`);
 			return;
 		}
 		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.
