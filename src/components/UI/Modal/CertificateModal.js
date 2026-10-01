@@ -29,6 +29,20 @@ const schema = yup.object({
 				if (!issueDate || !value) return true
 				return new Date(value) > new Date(issueDate);
 			}
+		)
+		.test(
+			"not-expiring-within-7-days",
+			"Expiry date can't be within 7 days of today (or already past)",
+			function (value) {
+				if (!value) return true;
+				// Certificate dates are calendar dates stored as midnight UTC (see
+				// src/utils/dates.js), so "today + 7 days" is computed in UTC too —
+				// comparing against local midnight would shift the cutoff by a day
+				// for users west of UTC.
+				const now = new Date();
+				const minExpiry = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 7));
+				return new Date(value) >= minExpiry;
+			}
 		),
 	renewalDate: dateRuleOptional,
 	// Validate the file input. `yup.mixed()` is used because it's a FileList object, not a simple string or number.

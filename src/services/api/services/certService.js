@@ -42,7 +42,9 @@ export const certService = {
 			name:        formData.name,
 			startDate:   formData.issueDate,
 			expiryDate:  formData.expiryDate,
-			renewalDate: formData.renewalDate || null,
+			// Backend validation treats an absent key as "optional" but still runs
+			// .isISO8601() on an explicit null, so omit the key entirely when empty.
+			...(formData.renewalDate ? { renewalDate: formData.renewalDate } : {}),
 		};
 
 		return axiosClient.post(API_ENDPOINTS.UPLOAD.CERTIFICATE, dbPayload);
