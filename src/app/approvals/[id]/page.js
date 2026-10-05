@@ -502,7 +502,11 @@ export default function ApprovalDetailPage() {
 
                     {/* overtime_acknowledgment — caregiver, shift timing, waiver statement */}
                     {subjectType === "overtime_acknowledgment" && (
-                        <AcknowledgmentDecision subjectContext={subjectContext} />
+                        <AcknowledgmentDecision
+                            subjectContext={subjectContext}
+                            onNavigateCaregiver={() => router.push(`/caregivers/${approval.subjectParentId}`)}
+                            onNavigateShift={() => router.push(`/scheduling/${approval.subjectId}`)}
+                        />
                     )}
 
                     {/* overtime_mandate — caregiver, shift link, overage, review context note */}

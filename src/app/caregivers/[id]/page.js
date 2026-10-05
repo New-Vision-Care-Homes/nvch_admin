@@ -9,12 +9,11 @@ import { Card, CardHeader } from "@components/UI/Form/Card";
 import styles from "./caregiver_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import Link from "next/link";
 import { Activity, Calendar, Check, Clock, Hash, Pencil, Undo2, Upload, X } from "lucide-react";
 import Modal from "@components/UI/Modal/Modal";
 import InlineBanner from "@components/UI/Feedback/InlineBanner";
 import StatusToggleConfirmModal from "@components/UI/Modal/StatusToggleConfirmModal";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import ErrorState from "@components/UI/Feedback/ErrorState";
@@ -25,6 +24,7 @@ import { utcToFullDisplay } from "@/utils/timeHandling";
 
 export default function Page() {
 	const { id } = useParams(); // The userId (MongoDB ObjectId) for the caregiver
+	const router = useRouter();
 
 	const {
 		caregiverDetail,
@@ -199,9 +199,7 @@ export default function Page() {
 									{activeStatus ? "Inactive" : "Active"}
 								</Button>
 							)}
-							<Link href="/caregivers">
-								<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
-							</Link>
+							<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.back()}>Back</Button>
 						</>
 					}
 				/>

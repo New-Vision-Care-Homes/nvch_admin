@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
-import { User, Hash, CalendarRange, Timer, FileText } from "lucide-react";
+import { User, Hash, CalendarRange, Timer, FileText, ExternalLink } from "lucide-react";
 import { formatDateTime } from "@/utils/dates";
 import styles from "../approval_detail.module.css";
 
@@ -12,13 +12,16 @@ import styles from "../approval_detail.module.css";
 // (caregiver tapping the approval_decided notification) states.
 //
 // Displays two cards:
-//   1. Shift & Caregiver — name, shift ID, start/end time, planned overage
+//   1. Shift & Caregiver — name (links to caregiver profile), shift ID (links
+//      to the shift detail page), start/end time, planned overage
 //   2. Waiver Statement  — the text the caregiver acknowledged
 //
 // Props:
-//   ctx {object} — approval.subjectContext
+//   subjectContext    {object} — approval.subjectContext
+//   onNavigateCaregiver {fn}   — navigate to the caregiver's profile
+//   onNavigateShift     {fn}   — navigate to the shift detail page
 
-export default function AcknowledgmentDecision({ subjectContext = {} }) {
+export default function AcknowledgmentDecision({ subjectContext = {}, onNavigateCaregiver, onNavigateShift }) {
     const startTime = subjectContext.shiftStartTime ?? subjectContext.shiftStart;
     const endTime   = subjectContext.shiftEndTime   ?? subjectContext.shiftEnd;
 
@@ -35,8 +38,14 @@ export default function AcknowledgmentDecision({ subjectContext = {} }) {
                 <CardContent>
                     <div className={styles.subjectBlock}>
 
-                        {/* Caregiver name */}
-                        <div className={styles.subjectRow}>
+                        {/* Caregiver name — links to the caregiver's profile */}
+                        <div
+                            className={`${styles.subjectRow} ${onNavigateCaregiver ? styles.subjectRowLink : ""}`}
+                            role={onNavigateCaregiver ? "button" : undefined}
+                            tabIndex={onNavigateCaregiver ? 0 : undefined}
+                            onClick={onNavigateCaregiver}
+                            onKeyDown={onNavigateCaregiver ? (event) => event.key === "Enter" && onNavigateCaregiver() : undefined}
+                        >
                             <div className={styles.subjectIconBox}>
                                 <User size={16} color="#d97706" />
                             </div>
@@ -44,11 +53,18 @@ export default function AcknowledgmentDecision({ subjectContext = {} }) {
                                 <span className={styles.subjectRowLabel}>Caregiver</span>
                                 <span className={styles.subjectRowValue}>{subjectContext.caregiverName ?? "—"}</span>
                             </div>
+                            {onNavigateCaregiver && <ExternalLink size={13} className={styles.subjectRowLinkIcon} />}
                         </div>
 
-                        {/* Shift ID */}
+                        {/* Shift ID — links to the shift detail page */}
                         {subjectContext.shiftId && (
-                            <div className={styles.subjectRow}>
+                            <div
+                                className={`${styles.subjectRow} ${onNavigateShift ? styles.subjectRowLink : ""}`}
+                                role={onNavigateShift ? "button" : undefined}
+                                tabIndex={onNavigateShift ? 0 : undefined}
+                                onClick={onNavigateShift}
+                                onKeyDown={onNavigateShift ? (event) => event.key === "Enter" && onNavigateShift() : undefined}
+                            >
                                 <div className={styles.subjectIconBox}>
                                     <Hash size={16} color="#d97706" />
                                 </div>
@@ -58,6 +74,7 @@ export default function AcknowledgmentDecision({ subjectContext = {} }) {
                                         {subjectContext.shiftId}
                                     </span>
                                 </div>
+                                {onNavigateShift && <ExternalLink size={13} className={styles.subjectRowLinkIcon} />}
                             </div>
                         )}
 
