@@ -2,20 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./Certification.module.css";
-import { Trash2, Upload, Eye, ExternalLink, CheckCircle2, XCircle, Loader, AlertTriangle } from "lucide-react";
+import { Trash2, Upload, Eye, ExternalLink, CheckCircle2, XCircle, Loader, AlertTriangle, FileX } from "lucide-react";
 import Button from "@components/UI/Button/Button";
 import IconButton from "@components/UI/Button/IconButton";
 import Modal from "@components/UI/Modal/Modal";
 import { Table, TableHeader, TableContent, TableCell } from "@components/UI/Table/Table";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import ErrorState from "@components/UI/Feedback/ErrorState";
+import EmptyState from "@components/UI/Feedback/EmptyState";
 import { useParams } from "next/navigation";
 import { formatDateOnly, toDateInput } from "@/utils/dates";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useCertificates } from "@/hooks/useCertificates";
 import { useApprovals } from "@/hooks/useApprovals";
-import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
-import CertificateModal from "@components/UI/Modal/CertificateModal";
+import { CERTIFICATE_OPTIONS, getCertificateColor } from "@/utils/dropdownList/certificate";
+import { ColorPill } from "@components/UI/Feedback/Badge";
+import CertificateModal from "./CertificateModal";
 import RejectReasonField from "@components/UI/Form/RejectReasonField";
 import { useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
@@ -175,7 +177,7 @@ export default function Certification() {
 			<div className={styles.desktopTable}>
 				<Table>
 					<TableHeader>
-						<TableCell>Name</TableCell>
+						<TableCell className={styles.typeCol}>Type</TableCell>
 						<TableCell>Issue Date</TableCell>
 						<TableCell>Expiry Date</TableCell>
 						<TableCell>Renewal Date</TableCell>
@@ -185,21 +187,21 @@ export default function Certification() {
 					</TableHeader>
 
 					{isCaregiverLoading ? (
-						<TableContent>
-							<TableCell colSpan={7} style={{ padding: "0" }}>
+						<TableContent className={styles.stateRow}>
+							<TableCell colSpan={7} className={styles.stateCell}>
 								<ErrorState isLoading={true} />
 							</TableCell>
 						</TableContent>
 					) : caregiverFetchError ? (
-						<TableContent>
-							<TableCell colSpan={7} style={{ padding: "0" }}>
+						<TableContent className={styles.stateRow}>
+							<TableCell colSpan={7} className={styles.stateCell}>
 								<ErrorState errorMessage={caregiverFetchError} />
 							</TableCell>
 						</TableContent>
 					) : certifications.length === 0 ? (
-						<TableContent>
-							<TableCell colSpan={7} style={{ textAlign: "center", padding: "2rem" }}>
-								No certifications found.
+						<TableContent className={styles.stateRow}>
+							<TableCell colSpan={7} className={styles.stateCell}>
+								<EmptyState title="No certifications found" message="Upload a certificate to get started." />
 							</TableCell>
 						</TableContent>
 					) : (
@@ -210,7 +212,11 @@ export default function Certification() {
 
 							return (
 								<TableContent key={c._id}>
-									<TableCell style={{ fontWeight: 600 }}>{friendlyName}</TableCell>
+									<TableCell className={styles.typeCol}>
+										<span className={styles.pillWrap}>
+											<ColorPill label={friendlyName} color={getCertificateColor(c.name)} />
+										</span>
+									</TableCell>
 									<TableCell>{formatDateOnly(c.startDate)}</TableCell>
 									<TableCell>{formatDateOnly(c.expiryDate)}</TableCell>
 									<TableCell>{formatDateOnly(c.renewalDate)}</TableCell>
@@ -238,7 +244,10 @@ export default function Certification() {
 												<ExternalLink size={12} className={styles.externalIcon} />
 											</a>
 										) : (
-											<span className={styles.noFile}>No File</span>
+											<span className={styles.noFile}>
+												<FileX size={13} />
+												No File
+											</span>
 										)}
 									</TableCell>
 									<TableCell>
@@ -279,7 +288,7 @@ export default function Certification() {
 				) : caregiverFetchError ? (
 					<ErrorState errorMessage={caregiverFetchError} />
 				) : certifications.length === 0 ? (
-					<p style={{ textAlign: "center", color: "#9ca3af", padding: "2rem 0" }}>No certifications found.</p>
+					<EmptyState title="No certifications found" message="Upload a certificate to get started." />
 				) : (
 					certifications.map((c) => {
 						const option = CERTIFICATE_OPTIONS.find((opt) => opt.value === c.name);
@@ -289,7 +298,9 @@ export default function Certification() {
 						return (
 							<div key={c._id} className={styles.certCard}>
 								<div className={styles.certCardHeader}>
-									<span className={styles.certCardName}>{friendlyName}</span>
+									<span className={styles.pillWrap}>
+										<ColorPill label={friendlyName} color={getCertificateColor(c.name)} />
+									</span>
 									{pendingApproval ? (
 										<span className={styles.statusPill} style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fcd34d" }}>
 											Pending Review
@@ -331,7 +342,10 @@ export default function Certification() {
 											<ExternalLink size={12} className={styles.externalIcon} />
 										</a>
 									) : (
-										<span className={styles.noFile}>No File</span>
+										<span className={styles.noFile}>
+											<FileX size={13} />
+											No File
+										</span>
 									)}
 
 									{pendingApproval ? (

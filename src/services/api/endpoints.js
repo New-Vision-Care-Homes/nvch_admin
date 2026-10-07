@@ -60,11 +60,12 @@ export const API_ENDPOINTS = {
 		GET_PAY_PERIODS: '/api/hours/pay-periods',
 	},
 
-	/* All related endpoints for upload profile picture and certificates */
+	/* All related endpoints for upload profile picture, certificates, and client documents */
 	UPLOAD: {
 		GET_PRE_SIGNED_URL: '/api/upload/signed-url',
 		PROFILE_PICTURE: '/api/upload/profile-picture',
 		CERTIFICATE: '/api/upload/certificate',
+		CLIENT_DOCUMENT: '/api/upload/client-document',
 	},
 
 	/* All related endpoints for permissions */

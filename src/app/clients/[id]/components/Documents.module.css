@@ -1,0 +1,171 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+/* Two-class selector so this reliably outranks .cell's justify-content:
+   flex-start (same single-class specificity would make it order-dependent —
+   i.e. flaky across reloads — on which CSS module gets injected last). */
+.container .stateCell {
+	padding: 0;
+	justify-content: center;
+}
+
+/* ErrorState/EmptyState don't stretch to fill the row on their own (flex
+   items default to content-width), so without this they end up as a small
+   box floating in the centered cell instead of spanning the table. */
+.stateCell > div {
+	width: 100%;
+	margin-top: 0;
+}
+
+/* This row isn't a real data row, so it shouldn't get the hover highlight
+   .content:hover applies to normal rows. :hover raises .content's own
+   specificity, so this needs the extra .container prefix to reliably win. */
+.container .stateRow:hover {
+	background: transparent;
+}
+
+.toolbar {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 1rem;
+}
+
+.viewFileBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #f0f7ff;
+    color: #0066cc;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    border: 1px solid #cce4ff;
+}
+
+.viewFileBtn:hover {
+    background-color: #0066cc;
+    color: #ffffff;
+    border-color: #0066cc;
+    box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+}
+
+.externalIcon {
+    opacity: 0.6;
+}
+
+.noFile {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Give the Type column more of the row's width than the others, since it
+   holds a colored pill whose label can be fairly long (e.g. "Individualized
+   Support Plan"). */
+.typeCol {
+    flex: 2;
+    min-width: 0;
+}
+
+/* ColorPill is itself display:inline-flex with no min-width: 0 of its own,
+   so without this wrapper it refuses to shrink below its label's content
+   size and can visually bleed into the next column instead of clipping. */
+.pillWrap {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/*
+==========================================
+ MODAL
+==========================================
+*/
+.modal_content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.modal_buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.modal_buttons button {
+    min-width: 80px;
+}
+
+/* ── Mobile responsive ──────────────────────────────────────────────────────── */
+
+/* Desktop: show table, hide cards */
+.desktopTable { display: block; }
+.mobileCards  { display: none; }
+
+/* Mobile: hide table, show cards */
+@media (max-width: 768px) {
+    .desktopTable { display: none; }
+    .mobileCards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+.docCard {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.docCardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+
+.docCardDate {
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.docCardMeta {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.docCardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}

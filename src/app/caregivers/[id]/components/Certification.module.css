@@ -4,6 +4,29 @@
 	gap: 0;
 }
 
+/* Two-class selector so this reliably outranks .cell's justify-content:
+   flex-start (same single-class specificity would make it order-dependent —
+   i.e. flaky across reloads — on which CSS module gets injected last). */
+.container .stateCell {
+	padding: 0;
+	justify-content: center;
+}
+
+/* ErrorState/EmptyState don't stretch to fill the row on their own (flex
+   items default to content-width), so without this they end up as a small
+   box floating in the centered cell instead of spanning the table. */
+.stateCell > div {
+	width: 100%;
+	margin-top: 0;
+}
+
+/* This row isn't a real data row, so it shouldn't get the hover highlight
+   .content:hover applies to normal rows. :hover raises .content's own
+   specificity, so this needs the extra .container prefix to reliably win. */
+.container .stateRow:hover {
+	background: transparent;
+}
+
 .toolbar {
 	display: flex;
 	justify-content: flex-end;
@@ -107,9 +130,33 @@
 }
 
 .noFile {
-    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    border-radius: 6px;
     font-size: 13px;
-    font-style: italic;
+    border: 1px solid #e5e7eb;
+}
+
+/* Give the Type column more of the row's width than the others, since it
+   holds a colored pill whose label can be fairly long (e.g. "Criminal &
+   Vulnerable Sector Record Check"). */
+.typeCol {
+    flex: 2;
+    min-width: 0;
+}
+
+/* ColorPill is itself display:inline-flex with no min-width: 0 of its own,
+   so without this wrapper it refuses to shrink below its label's content
+   size and can visually bleed into the next column instead of clipping. */
+.pillWrap {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .statusPill {
@@ -368,14 +415,6 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
-}
-
-.certCardName {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #111827;
-    flex: 1;
-    min-width: 0;
 }
 
 .certCardDates {

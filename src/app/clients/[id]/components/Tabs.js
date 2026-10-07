@@ -3,6 +3,7 @@ import styles from "./Tabs.module.css";
 import Info from "./Info";
 import CarePlan from "./CarePlan";
 import FocusNotes from "./FocusNotes";
+import Documents from "./Documents";
 import { TabDirtyProvider, useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
 import UnsavedChangesModal from "@components/UI/Modal/UnsavedChangesModal";
@@ -26,6 +27,7 @@ function TabsInner() {
 		{ id: "personal", label: "Personal Info", component: <Info /> },
 		{ id: "care", label: "Care Plan", component: <CarePlan /> },
 		{ id: "focus", label: "Focus Notes", component: <FocusNotes /> },
+		{ id: "documents", label: "Documents", component: <Documents /> },
 	];
 
 	const activeComponent = tabs.find((tab) => tab.id === activeTab)?.component;
