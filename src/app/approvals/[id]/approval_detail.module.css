@@ -61,6 +61,12 @@
 	border-color: #5eead4;
 }
 
+.subjectTypePillBlue {
+	color: #2563eb;
+	background: #eff6ff;
+	border-color: #93c5fd;
+}
+
 .headerMeta {
 	display: flex;
 	align-items: center;
@@ -604,6 +610,31 @@
 	background: #ede9fe;
 }
 
+/* ── Alternate location photo (alternate_location_clock_in) ──────────────── */
+
+/* Modifier on .fileImageWrap / .fileFallback — the photo opens its card, so no top gap */
+.photoPreview {
+	margin-top: 0;
+	max-height: 400px;
+}
+
+.photoPreview .fileImage {
+	max-height: 400px;
+}
+
+.photoDetailsGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 16px;
+	margin-top: 8px;
+}
+
+.coordinatesText {
+	font-family: ui-monospace, monospace;
+	font-size: 0.8rem;
+	color: #6b7280;
+}
+
 /* ── Cancelled/decided banner ─────────────────────────────────────────────── */
 
 .decidedBanner {
@@ -953,6 +984,10 @@
 
 	.actionBtns {
 		flex-direction: column;
+	}
+
+	.photoDetailsGrid {
+		grid-template-columns: 1fr;
 	}
 
 	/* Approve/Mandate-reject modal footers can hold up to 3 buttons

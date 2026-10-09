@@ -8,7 +8,7 @@
 //   utilities this page depends on.
 //
 // Relationship:
-//   - usePayrollExceptions fetches the three exception arrays.
+//   - usePayrollExceptions fetches the four exception arrays.
 //   - useCoverSheet is called purely for home info (name, type,
 //     region). It shares the same React Query cache key as the
 //     detail page so this is usually a cache-hit — no extra
@@ -27,6 +27,7 @@ import {
     TrendingDown,
     CheckCircle2,
     ExternalLink,
+    MapPin,
 } from "lucide-react";
 import PageLayout  from "@components/layout/PageLayout";
 import ErrorState  from "@components/UI/Feedback/ErrorState";
@@ -46,10 +47,10 @@ import detailStyles from "../payroll_detail.module.css";
 // ------------------------------------------------------------
 // Purpose:
 //   Full list of payroll exceptions for a single home and pay
-//   period. Displays three categorised sections — Unresolved
-//   Overage, Bank Cap Exceeded, and Negative Balances — so
-//   payroll coordinators can identify and resolve problems
-//   before exporting.
+//   period. Displays four categorised sections — Unresolved
+//   Overage, Bank Cap Exceeded, Negative Balances, and Alternate
+//   Clock-In Locations — so payroll coordinators can identify
+//   and resolve problems before exporting.
 //
 // Relationship:
 //   - Reached from PayrollDetailPage via the exception banner.
@@ -63,9 +64,10 @@ import detailStyles from "../payroll_detail.module.css";
 //   URL params parsed (homeId, payYear, periodNumber)
 //        ↓
 //   useCoverSheet  → coverSheet.home (for the home card)
-//   usePayrollExceptions → { unresolvedOverage, bankCapExceeded, negativeBalances }
+//   usePayrollExceptions → { unresolvedOverage, bankCapExceeded,
+//                            negativeBalances, alternateLocationClockIns }
 //        ↓
-//   Three section cards rendered — each empty section shows a
+//   Four section cards rendered — each empty section shows a
 //   green "All clear" confirmation row instead of items.
 // ============================================================
 
@@ -101,6 +103,7 @@ export default function PayrollExceptionsPage() {
         unresolvedOverage,
         bankCapExceeded,
         negativeBalances,
+        alternateLocationClockIns,
         isLoading,
         fetchError,
         refetch,
@@ -326,6 +329,78 @@ export default function PayrollExceptionsPage() {
                                                         <span className={styles.exceptionMeta}>{item.balanceHours}h</span>
                                                     )}
                                                 </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── Section 4: Alternate Clock-In Locations ──────── */}
+                        {/*
+                            Blue theme. Shifts started outside the geofence.
+                            Pending reviews block export until an approver
+                            decides; a decline is final, so declined rows are
+                            for payroll's review only. Links to the shift — the
+                            approval itself is visible to its approvers only.
+                        */}
+                        <div className={styles.sectionCard}>
+                            <div className={styles.sectionHeader}>
+                                <MapPin size={16} color="#2563eb" />
+                                <span className={styles.sectionTitle}>Alternate Clock-In Locations</span>
+                                <span className={styles.sectionCountBlue}>
+                                    {alternateLocationClockIns.length} item{alternateLocationClockIns.length !== 1 ? "s" : ""}
+                                </span>
+                            </div>
+                            {alternateLocationClockIns.length > 0 && (
+                                <p className={styles.sectionNote}>
+                                    Pending reviews must be decided before export. Declined clock-ins are for payroll&apos;s review and don&apos;t block export.
+                                </p>
+                            )}
+                            <div className={styles.sectionBody}>
+                                {alternateLocationClockIns.length === 0 ? (
+                                    <div className={styles.allClear}>
+                                        <CheckCircle2 size={15} />
+                                        All clear — no alternate clock-in locations
+                                    </div>
+                                ) : (
+                                    alternateLocationClockIns.map((item, index) => {
+                                        const isLastRow       = index === alternateLocationClockIns.length - 1;
+                                        const isPending       = item.reviewStatus === "pending";
+                                        const destinationPath = `/scheduling/${item.shiftId}`;
+
+                                        return (
+                                            <div
+                                                key={item.shiftId ?? index}
+                                                className={`${styles.exceptionRow} ${isLastRow ? styles.exceptionRowLast : ""}`}
+                                                onClick={() => router.push(destinationPath)}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(event) => event.key === "Enter" && router.push(destinationPath)}
+                                            >
+                                                <div className={styles.exceptionIconBox} style={{ background: "#eff6ff" }}>
+                                                    <MapPin size={14} color="#2563eb" />
+                                                </div>
+                                                <div className={styles.exceptionBody}>
+                                                    <span className={styles.exceptionName}>{`${item.caregiver?.firstName ?? ""} ${item.caregiver?.lastName ?? ""}`.trim() || "—"}</span>
+                                                    <span className={styles.exceptionMeta}>
+                                                        {item.startTime && formatDateTime(item.startTime)}
+                                                        <span
+                                                            className={styles.exceptionBadge}
+                                                            style={isPending
+                                                                ? { color: "#d97706", background: "#fffbeb", borderColor: "#fcd34d" }
+                                                                : { color: "#dc2626", background: "#fef2f2", borderColor: "#fca5a5" }}
+                                                        >
+                                                            {isPending ? "Pending review" : "Declined"}
+                                                        </span>
+                                                    </span>
+                                                    {!isPending && item.decisionReason && (
+                                                        <span className={styles.exceptionReason}>
+                                                            Reason: {item.decisionReason}{item.decidedByName ? ` — ${item.decidedByName}` : ""}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <ExternalLink size={14} className={styles.exceptionLink} />
                                             </div>
                                         );
                                     })

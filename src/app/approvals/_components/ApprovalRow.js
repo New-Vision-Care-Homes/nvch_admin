@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone } from "lucide-react";
+import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone, MapPin } from "lucide-react";
 import { timeAgo, formatCertName } from "../_utils/approvalMeta";
 import styles from "../approvals.module.css";
 
@@ -56,6 +56,15 @@ const ROW_TYPE_META = {
 		getSubtitle: (ctx) => ctx.deviceLabel
 			? `Device change: ${ctx.deviceLabel}`
 			: "Device Change Request",
+	},
+	alternate_location_clock_in: {
+		Icon: MapPin,
+		iconColor: "#2563eb",
+		iconBg:    "#eff6ff",
+		SubtitleIcon: MapPin,
+		getSubtitle: (ctx) => Number.isFinite(ctx.distanceMeters)
+			? `${ctx.homeName || "Client visit"} · ${Math.round(ctx.distanceMeters)} m away`
+			: `${ctx.homeName || "Client visit"} · Alternate location clock-in`,
 	},
 };
 

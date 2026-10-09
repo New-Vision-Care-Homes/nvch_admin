@@ -11,6 +11,7 @@
 //   banked_hours_payout    — shows a payout summary (hours, period, balance)
 //   vacation_pay_request   — shows a payout summary (dollars, period, balance)
 //   overtime_mandate       — text description only; no extra summary block
+//   caregiver_device_change, alternate_location_clock_in — text description only
 //
 // An optional note textarea is available for all types.
 //
@@ -22,7 +23,7 @@
 //   isOpen           {boolean}
 //   onClose          {fn}                   called on Cancel or backdrop click
 //   onConfirm        {fn(reason: string)}   called when admin clicks Confirm
-//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout" | "vacation_pay_request"
+//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout" | "vacation_pay_request" | "caregiver_device_change" | "alternate_location_clock_in"
 //   caregiverName    {string}
 //   subjectContext   {object}               approval.subjectContext
 //   isEditingDates   {boolean}              true when admin has cert dates in edit mode
@@ -81,6 +82,7 @@ export default function ApproveModal({
                      subjectType === "banked_hours_payout"     ? "Approve Payout"       :
                      subjectType === "vacation_pay_request"    ? "Approve Vacation Payout" :
                      subjectType === "caregiver_device_change" ? "Approve Device Change" :
+                     subjectType === "alternate_location_clock_in" ? "Approve Alternate Location" :
                      "Approve Certificate"}
                 </h2>
 
@@ -94,6 +96,8 @@ export default function ApproveModal({
                         ? "The requested vacation pay will be paid out in the specified pay period."
                         : subjectType === "caregiver_device_change"
                         ? `${caregiverName}'s account will be bound to the new device. Their session on the old device ends immediately, and they must sign in again on the new one.`
+                        : subjectType === "alternate_location_clock_in"
+                        ? `This confirms ${caregiverName} was allowed to start the shift from this location. It doesn't change the shift's times or pay.`
                         : "Are you sure you want to approve this? Please verify the issue and expiry dates are correct before confirming."}
                 </p>
 
@@ -232,6 +236,7 @@ export default function ApproveModal({
                          subjectType === "overtime_mandate"        ? "Confirm Mandate"  :
                          subjectType === "banked_hours_payout"     ? "Confirm Payout"   :
                          subjectType === "vacation_pay_request"    ? "Confirm Payout"   :
+                         subjectType === "alternate_location_clock_in" ? "Approve Location" :
                          "Confirm Approve"}
                     </Button>
                 </div>

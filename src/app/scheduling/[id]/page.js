@@ -19,7 +19,7 @@ import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History, XCircle,
-	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass,
+	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass, MapPinned,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -36,6 +36,13 @@ function AdminName({ adminId }) {
 	if (!adminDetail) return adminId;
 	return personName(adminDetail);
 }
+
+const ALTERNATE_LOCATION_STATUS = {
+	pending:   { label: "Pending review", tone: "warning" },
+	approved:  { label: "Approved",       tone: "success" },
+	rejected:  { label: "Declined",       tone: "danger"  },
+	cancelled: { label: "Cancelled",      tone: "neutral" },
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page component
@@ -70,6 +77,9 @@ export default function ShiftDetailPage() {
 	// Build address display string from geofence address or home/client address
 	const geofenceAddressStr = shift.geofence?.address || null;
 
+	const alternateLocation       = shift.alternateLocation ?? null;
+	const alternateLocationStatus = ALTERNATE_LOCATION_STATUS[alternateLocation?.status] ?? ALTERNATE_LOCATION_STATUS.pending;
+
 	return (
 		<PageLayout>
 
@@ -85,6 +95,9 @@ export default function ShiftDetailPage() {
 						{/* Secondary badge when a voluntary overtime acknowledgment is still pending */}
 						{shift.extraHours?.ackStatus === "pending" && (
 							<span className={styles.overtimePendingBadge}>Overtime Pending</span>
+						)}
+						{alternateLocation?.status === "pending" && (
+							<span className={styles.locationReviewPendingBadge}>Location Review Pending</span>
 						)}
 					</div>
 					<h1>Shift Details</h1>
@@ -418,6 +431,44 @@ export default function ShiftDetailPage() {
 							</div>
 						) : (
 							<p className={styles.emptyText}>No location data available for this shift.</p>
+						)}
+
+						{/* Clocked in outside the geofence — the photo stays on the approval, so none here */}
+						{alternateLocation && (
+							<div className={`${styles.addrBlock} ${styles.addrBlockAmber}`}>
+								<div className={styles.addrBlockIcon}><MapPinned size={13} /></div>
+								<div className={styles.alternateLocationBody}>
+									<p className={styles.addrBlockLabel}>Alternate Clock-In</p>
+									<dl className={styles.alternateLocationDetails}>
+										<dt>Explanation</dt>
+										<dd>{alternateLocation.note || "—"}</dd>
+										<dt>Review</dt>
+										<dd>
+											<StatusBadge label={alternateLocationStatus.label} tone={alternateLocationStatus.tone} size="pill" />
+										</dd>
+										{Number.isFinite(alternateLocation.distanceMeters) && (
+											<>
+												<dt>Distance</dt>
+												<dd>{Math.round(alternateLocation.distanceMeters)} m from the service location</dd>
+											</>
+										)}
+										{alternateLocation.decidedAt && (
+											<>
+												<dt>{alternateLocation.status === "cancelled" ? "Cancelled by" : "Reviewed by"}</dt>
+												<dd>
+													{alternateLocation.decidedByName || "—"} · {utcToFullDisplay(alternateLocation.decidedAt, "America/Halifax")}
+												</dd>
+											</>
+										)}
+										{alternateLocation.decisionReason && (
+											<>
+												<dt>{alternateLocation.status === "rejected" ? "Reason" : "Note"}</dt>
+												<dd>{alternateLocation.decisionReason}</dd>
+											</>
+										)}
+									</dl>
+								</div>
+							</div>
 						)}
 					</CardContent>
 				</Card>

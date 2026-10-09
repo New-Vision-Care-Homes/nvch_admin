@@ -26,7 +26,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
     Undo2, Building2,
-    FileSpreadsheet, Clock, Download, Loader2, AlertTriangle, History,
+    FileSpreadsheet, Clock, Download, Loader2, AlertTriangle, History, Info,
 } from "lucide-react";
 import PageLayout    from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
@@ -151,6 +151,7 @@ export default function PayrollDetailPage() {
     // exception count without a separate user-triggered request.
     const {
         totalCount: exceptionCount,
+        reviewOnlyCount,
         isLoading:  exceptionsLoading,
     } = usePayrollExceptions({
         params: {
@@ -607,6 +608,22 @@ export default function PayrollDetailPage() {
                         <AlertTriangle size={15} className={styles.exceptionBannerIcon} />
                         <span className={styles.exceptionBannerText}>
                             {exceptionCount} payroll exception{exceptionCount !== 1 ? "s" : ""} require attention before export.
+                        </span>
+                        <span className={styles.exceptionBannerCta}>View Exceptions →</span>
+                    </button>
+                )}
+
+                {/* Declined alternate-location clock-ins never block export, but
+                    this banner is the only way to the exceptions page, so they
+                    get a softer one of their own when nothing else is listed */}
+                {!exceptionsLoading && exceptionCount === 0 && reviewOnlyCount > 0 && (
+                    <button
+                        className={`${styles.exceptionBanner} ${styles.exceptionBannerInfo}`}
+                        onClick={() => router.push(`/payroll/${homeId}/exceptions?payYear=${payYear}&periodNumber=${periodNumber}`)}
+                    >
+                        <Info size={15} className={styles.exceptionBannerIcon} />
+                        <span className={styles.exceptionBannerText}>
+                            {reviewOnlyCount} declined alternate-location clock-in{reviewOnlyCount !== 1 ? "s" : ""} to review. These don&apos;t block export.
                         </span>
                         <span className={styles.exceptionBannerCta}>View Exceptions →</span>
                     </button>

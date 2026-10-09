@@ -314,6 +314,26 @@
 	white-space: nowrap;
 }
 
+/* Non-blocking variant: items to look at that don't stop export */
+.exceptionBannerInfo {
+	background: #fffbeb;
+	border-color: #fcd34d;
+}
+
+.exceptionBannerInfo:hover {
+	background: #fef3c7;
+	border-color: #f59e0b;
+}
+
+.exceptionBannerInfo .exceptionBannerIcon,
+.exceptionBannerInfo .exceptionBannerCta {
+	color: #d97706;
+}
+
+.exceptionBannerInfo .exceptionBannerText {
+	color: #92400e;
+}
+
 /* ── Review action buttons (period strip) ─────────────────────────────────── */
 
 .periodItemRow {

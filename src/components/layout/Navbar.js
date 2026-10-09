@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
 	Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck,
-	PiggyBank, House, Smartphone, FileWarning,
+	PiggyBank, House, Smartphone, FileWarning, MapPin,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
@@ -42,11 +42,13 @@ const TYPE_CONFIG = {
 /**
  * Icon/colour override for approval_requested notifications, keyed by the
  * approval's subjectType — mirrors notification/page.js's
- * APPROVAL_SUBJECT_CONFIG. Only caregiver_device_change gets a distinct icon;
- * every other subject type keeps the generic approval_requested look.
+ * APPROVAL_SUBJECT_CONFIG. Only caregiver_device_change and
+ * alternate_location_clock_in get a distinct icon; every other subject type
+ * keeps the generic approval_requested look.
  */
 const APPROVAL_SUBJECT_CONFIG = {
-	caregiver_device_change: { Icon: Smartphone, color: "#0891b2", bg: "#ecfeff" },
+	caregiver_device_change:     { Icon: Smartphone, color: "#0891b2", bg: "#ecfeff" },
+	alternate_location_clock_in: { Icon: MapPin,     color: "#2563eb", bg: "#eff6ff" },
 };
 
 /**

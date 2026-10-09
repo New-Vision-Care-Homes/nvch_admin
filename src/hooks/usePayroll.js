@@ -57,17 +57,25 @@ export const usePayrollExceptions = ({ params = {}, enabled = true } = {}) => {
 		),
 	});
 
-	const responseData      = query.data ?? {};
-	const unresolvedOverage = responseData.unresolvedOverage ?? [];
-	const bankCapExceeded   = responseData.bankCapExceeded   ?? [];
-	const negativeBalances  = responseData.negativeBalances  ?? [];
-	const totalCount        = unresolvedOverage.length + bankCapExceeded.length + negativeBalances.length;
+	const responseData              = query.data ?? {};
+	const unresolvedOverage         = responseData.unresolvedOverage         ?? [];
+	const bankCapExceeded           = responseData.bankCapExceeded           ?? [];
+	const negativeBalances          = responseData.negativeBalances          ?? [];
+	const alternateLocationClockIns = responseData.alternateLocationClockIns ?? [];
+	// totalCount blocks payroll export. A declined alternate location is final —
+	// nothing can ever clear it — so only pending reviews count; declined ones
+	// are reviewOnlyCount: listed for payroll to check, never blocking.
+	const pendingAlternateLocations = alternateLocationClockIns.filter((item) => item.reviewStatus === "pending");
+	const totalCount                = unresolvedOverage.length + bankCapExceeded.length + negativeBalances.length + pendingAlternateLocations.length;
+	const reviewOnlyCount           = alternateLocationClockIns.length - pendingAlternateLocations.length;
 
 	return {
 		unresolvedOverage,
 		bankCapExceeded,
 		negativeBalances,
+		alternateLocationClockIns,
 		totalCount,
+		reviewOnlyCount,
 		isLoading:  query.isLoading || query.isFetching,
 		fetchError: query.error ? getErrorMessage(query.error) : null,
 		refetch:    query.refetch,

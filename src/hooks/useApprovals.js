@@ -88,6 +88,14 @@ export const useApprovals = (options = {}) => {
 		placeholderData: keepPreviousData,
 	});
 
+	// A decision can change its shift (alternate location, overtime mandate) and
+	// the payroll exceptions list, so pages already loaded must not show the old state.
+	const invalidateDecisionSubjects = () => {
+		queryClient.invalidateQueries({ queryKey: ["shift"] });
+		queryClient.invalidateQueries({ queryKey: ["shifts"] });
+		queryClient.invalidateQueries({ queryKey: ["payroll", "exceptions"] });
+	};
+
 	// ── Approve ─────────────────────────────────────────────────────────────────
 	const approveMutation = useMutation({
 		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate }) => {
@@ -102,6 +110,7 @@ export const useApprovals = (options = {}) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", variables.id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });
 			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+			invalidateDecisionSubjects();
 		},
 	});
 
@@ -112,6 +121,7 @@ export const useApprovals = (options = {}) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", variables.id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });
 			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+			invalidateDecisionSubjects();
 		},
 	});
 
@@ -122,6 +132,7 @@ export const useApprovals = (options = {}) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });
 			queryClient.invalidateQueries({ queryKey: ["notifications"] });
+			invalidateDecisionSubjects();
 		},
 	});
 

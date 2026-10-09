@@ -24,13 +24,14 @@ export const payrollService = {
 
 	/**
 	 * Fetch the payroll exceptions list for a given home and pay period.
-	 * Returns three arrays: unresolvedOverage, bankCapExceeded, negativeBalances.
+	 * Returns four arrays: unresolvedOverage, bankCapExceeded, negativeBalances,
+	 * alternateLocationClockIns.
 	 *
 	 * @param {Object} params
 	 * @param {string}  params.homeId
 	 * @param {number}  params.payYear
 	 * @param {number}  params.periodNumber
-	 * @returns {Promise<{ unresolvedOverage: Array, bankCapExceeded: Array, negativeBalances: Array }>}
+	 * @returns {Promise<{ unresolvedOverage: Array, bankCapExceeded: Array, negativeBalances: Array, alternateLocationClockIns: Array }>}
 	 */
 	getExceptions: async (params = {}) => {
 		const { data } = await axiosClient.get(API_ENDPOINTS.PAYROLL.EXCEPTIONS, { params });

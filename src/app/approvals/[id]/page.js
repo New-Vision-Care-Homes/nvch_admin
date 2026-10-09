@@ -31,6 +31,7 @@ import {
     Banknote,
     DollarSign,
     Smartphone,
+    MapPin,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
 import { formatDateTime, toDateInput } from "@/utils/dates";
@@ -40,6 +41,7 @@ import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
 import VacationPayPayout      from "./_components/VacationPayPayout";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
+import AlternateLocationApproval from "./_components/AlternateLocationApproval";
 import ApproveModal           from "./_components/ApproveModal";
 import MandateRejectModal     from "./_components/MandateRejectModal";
 import RejectReasonField      from "@components/UI/Form/RejectReasonField";
@@ -103,6 +105,11 @@ function getBannerMeta(status, subjectType) {
             rejected:  { title: "Rejected",     msg: "The device change request was rejected. The caregiver remains on their current device.",                                    variant: "rejected"  },
             cancelled: { title: "Cancelled",    msg: "This request was withdrawn or auto-voided — typically because an admin cleared the caregiver's device binding directly.",    variant: "cancelled" },
         },
+        alternate_location_clock_in: {
+            approved:  { title: "Location Approved", msg: "The caregiver was allowed to start the shift from this location. The shift's times and pay are unchanged.", variant: "approved"  },
+            rejected:  { title: "Location Declined", msg: "The clock-in location was not accepted. The decline and its reason are recorded on the shift.",             variant: "rejected"  },
+            cancelled: { title: "Cancelled",         msg: "This request was cancelled before a decision was made.",                                                    variant: "cancelled" },
+        },
     };
     const statusMap = maps[subjectType] ?? {
         approved:  { title: "Approved",  msg: "This certificate has been approved and is now active.", variant: "approved"  },
@@ -131,6 +138,8 @@ function getBannerMeta(status, subjectType) {
  *   overtime_mandate        → OvertimeMandate         (shift link, overage context)
  *   banked_hours_payout     → BankedHoursPayout       (requested hours, pay period)
  *   vacation_pay_request    → VacationPayPayout       (requested dollars, pay period)
+ *   caregiver_device_change → DeviceChangeApproval    (requested device, caregiver's reason)
+ *   alternate_location_clock_in → AlternateLocationApproval (explanation, live photo, map)
  *
  * Modals are extracted as sub-components as well:
  *   ApproveModal        — confirmation for Approve / Mandate / Approve Payout
@@ -183,6 +192,7 @@ export default function ApprovalDetailPage() {
 
     const { profile } = useProfile();
     const permissionSlugs = profile?.permissionSlugs ?? [];
+    const profileId = profile?.id ?? profile?._id;
 
     const rawSubjectType = approval?.subjectType;
 
@@ -199,6 +209,10 @@ export default function ApprovalDetailPage() {
     // these two slugs in the caregiver's region, so holding either slug here
     // is sufficient (there's no per-caregiver region data in subjectContext
     // to re-check client-side, same reasoning as caregiver_device_change below).
+    // alternate_location_clock_in uses the same named-approver model, except
+    // that an admin who worked the shift can open their own request while the
+    // server never lets anyone decide a request they filed. Until the profile
+    // loads we don't know who is looking, so the actions stay hidden.
     const canDecide = rawSubjectType === "overtime_mandate"
         ? permissionSlugs.includes("update_shifts")
         : rawSubjectType === "banked_hours_payout"
@@ -208,6 +222,8 @@ export default function ApprovalDetailPage() {
           permissionSlugs.includes("manage_assigned_vacation_pay_requests")
         : rawSubjectType === "caregiver_device_change"
         ? true
+        : rawSubjectType === "alternate_location_clock_in"
+        ? profileId != null && String(approval.requestedBy) !== String(profileId)
         : permissionSlugs.includes("approve_all_certificates") ||
           permissionSlugs.includes("approve_assigned_certificates");
 
@@ -367,6 +383,11 @@ export default function ApprovalDetailPage() {
                                 <Smartphone size={12} />
                                 Device Change
                             </span>
+                        ) : subjectType === "alternate_location_clock_in" ? (
+                            <span className={`${styles.subjectTypePill} ${styles.subjectTypePillBlue}`}>
+                                <MapPin size={12} />
+                                Alternate Location Clock-In
+                            </span>
                         ) : (
                             <span className={styles.subjectTypePill}>
                                 <Award size={12} />
@@ -411,12 +432,14 @@ export default function ApprovalDetailPage() {
                         subjectType === "banked_hours_payout"    ? "Payout approved."                 :
                         subjectType === "vacation_pay_request"   ? "Vacation pay payout approved."    :
                         subjectType === "caregiver_device_change" ? "Device change approved. The caregiver can now sign in on their new device." :
+                        subjectType === "alternate_location_clock_in" ? "Alternate clock-in location approved." :
                         "Certificate approved successfully."
                     ) : actionSuccess === "rejected" ? (
                         subjectType === "overtime_mandate"       ? "Caregiver removed and shift reassigned." :
                         subjectType === "banked_hours_payout"    ? "Payout request rejected."               :
                         subjectType === "vacation_pay_request"   ? "Vacation pay payout request rejected."  :
                         subjectType === "caregiver_device_change" ? "Device change request rejected." :
+                        subjectType === "alternate_location_clock_in" ? "Alternate clock-in location declined. The reason is recorded on the shift." :
                         "Certificate rejected."
                     ) : null
                 }
@@ -454,7 +477,10 @@ export default function ApprovalDetailPage() {
                             <InfoField label="Requested By">
                                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                                     <User size={14} style={{ color: "#9ca3af" }} />
-                                    {approval.requestedByRole === "caregiver" ? caregiverName : "Admin"}
+                                    {/* An admin who worked the shift files alternate_location_clock_in as "admin" */}
+                                    {approval.requestedByRole === "caregiver" || subjectType === "alternate_location_clock_in"
+                                        ? caregiverName
+                                        : "Admin"}
                                 </span>
                             </InfoField>
                             <InfoField label="Role">
@@ -544,6 +570,17 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
+                    {/* alternate_location_clock_in — explanation, live photo, and a map of the
+                        shift location vs. where the caregiver clocked in */}
+                    {subjectType === "alternate_location_clock_in" && (
+                        <AlternateLocationApproval
+                            approvalId={approval._id}
+                            subjectContext={subjectContext}
+                            caregiverName={caregiverName}
+                            onNavigateShift={() => router.push(`/scheduling/${approval.subjectId}`)}
+                        />
+                    )}
+
                 </div>
 
                 {/* ── RIGHT: Decision outcome + Actions panel ──────────────── */}
@@ -611,6 +648,8 @@ export default function ApprovalDetailPage() {
                                             ? "Review the vacation pay payout request. Rejection requires a written reason."
                                             : subjectType === "caregiver_device_change"
                                             ? "Approving binds the caregiver's account to the new device and ends their old session immediately. Rejecting leaves them on their current device. Rejection requires a written reason."
+                                            : subjectType === "alternate_location_clock_in"
+                                            ? "Review the explanation, photo, and map. Approving confirms the caregiver was allowed to start from this location; it doesn't change the shift's times or pay. Declining requires a written reason, which is recorded on the shift."
                                             : "Review the certificate submission above and make a decision. Rejection requires a written reason."}
                                     </p>
 
@@ -635,7 +674,9 @@ export default function ApprovalDetailPage() {
                                                     : setShowRejectForm(true)
                                                 }
                                             >
-                                                {subjectType === "overtime_mandate" ? "Remove from Shift" : "Reject"}
+                                                {subjectType === "overtime_mandate"            ? "Remove from Shift" :
+                                                 subjectType === "alternate_location_clock_in" ? "Decline"           :
+                                                 "Reject"}
                                             </Button>
                                         </div>
                                     )}
@@ -652,6 +693,8 @@ export default function ApprovalDetailPage() {
                                                         ? "Explain why this payout request is being rejected…"
                                                         : subjectType === "caregiver_device_change"
                                                         ? "Explain why this device change is being rejected…"
+                                                        : subjectType === "alternate_location_clock_in"
+                                                        ? "Explain why this location is not accepted…"
                                                         : "Explain why this certificate is being rejected…"
                                                 }
                                                 value={rejectReason}
@@ -683,7 +726,9 @@ export default function ApprovalDetailPage() {
                                                     disabled={isRejectPending}
                                                     onClick={handleReject}
                                                 >
-                                                    {isRejectPending ? "Submitting…" : "Confirm Reject"}
+                                                    {isRejectPending                               ? "Submitting…"     :
+                                                     subjectType === "alternate_location_clock_in" ? "Confirm Decline" :
+                                                     "Confirm Reject"}
                                                 </Button>
                                             </div>
                                         </div>
