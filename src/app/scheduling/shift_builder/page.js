@@ -1829,7 +1829,6 @@ export default function ShiftBuilderPage() {
 
 			try {
 				const result = await saveBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
-				console.log("[shift_builder] PUT /shifts/bulk result:", result);
 				setBulkResult(result);
 
 				// Same rest handling as the POST path above.
@@ -1932,7 +1931,6 @@ export default function ShiftBuilderPage() {
 			// Use the same endpoint (POST for new period, PUT for existing)
 			const apiCall = mode === "save" ? saveBulkShifts : createBulkShifts;
 			const result  = await apiCall({ ...sharedBody, caregivers: resubmitPayload });
-			console.log("[shift_builder] overtime resubmit result:", result);
 
 			// The resubmit is checked again, so a cell can still fail the rest rule.
 			// The capacity modal is already closed, so the rest popup opens right away.
