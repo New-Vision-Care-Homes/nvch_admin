@@ -16,7 +16,7 @@ import { useShifts } from "@/hooks/useShifts";
 import { attachClickOutside } from "@/utils/clickOutside";
 import GeofenceMap from "@/components/UI/Map/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
-
+import { localShiftLabel } from "@utils/timeHandling";
 import PageLayout from "@components/layout/PageLayout";
 import PageHeader from "@components/layout/PageHeader";
 import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/Card";
@@ -27,6 +27,7 @@ import styles from "./add_new_shift.module.css";
 import cardStyles from "@components/UI/Form/Card.module.css";
 import CapacityExceededModal from "../_components/CapacityExceededModal";
 import VoluntaryPendingModal from "../_components/VoluntaryPendingModal";
+import InsufficientRestModal from "../_components/InsufficientRestModal";
 
 import { IdRule, nameRule, phoneRule, shortTextRule, longTextRule } from "@/utils/validation";
 import { formatAddress } from "@/utils/formatting";
@@ -406,6 +407,13 @@ export default function AddNewShiftPage() {
 	const [capacityDecision,     setCapacityDecision]     = useState(null);
 	const [voluntaryPendingShift, setVoluntaryPendingShift] = useState(null);
 
+	// ── 8-hour minimum rest (hard block) ───────────────────────────────────────
+	// 400 INSUFFICIENT_REST_BETWEEN_SHIFTS — the caregiver has another shift less
+	// than 8 hours before or after this one. Nothing to resubmit; the popup
+	// explains the block. restError — null (closed) or
+	// { message, details, title } — title labels the shift that was blocked.
+	const [restError, setRestError] = useState(null);
+
 	// Using mutateAsync (not mutate) so the error and our setCapacityData call
 	// land in the same React 18 batch — no render gap where the banner flashes.
 	async function buildAndSubmit(data) {
@@ -443,6 +451,12 @@ export default function AddNewShiftPage() {
 					pendingData: shiftData,
 				});
 				setCapacityDecision(null);
+			} else if (err?.response?.data?.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS") {
+				setRestError({
+					message: err.response.data.error,
+					details: err.response.data.details,
+					title:   err.response.data.title || localShiftLabel(data.startTime, data.endTime, HALIFAX_TZ)
+				});
 			}
 			// All other errors surface via actionShiftError automatically.
 		}
@@ -481,18 +495,29 @@ export default function AddNewShiftPage() {
 				router.push("/scheduling");
 			}
 		} catch (err) {
+			// The overage resubmit is checked again, so the rest rule can still block it.
+			if (err?.response?.data?.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS") {
+				setRestError({
+					message: err.response.data.error,
+					details: err.response.data.details,
+					title:   err.response.data.title || localShiftLabel(data.startTime, data.endTime, HALIFAX_TZ)
+				});
+			}
 			// actionShiftError displays any non-CAPACITY error automatically.
 		}
 	}
 
-	// Submit flow overview — up to 3 modals can appear in sequence before a
+	// Submit flow overview — up to 4 modals can appear in sequence before a
 	// shift is actually created:
 	//   1. onSubmit           — if the shift is >12h, pause on the long-shift
 	//                           confirm modal before submitting at all.
-	//   2. buildAndSubmit     — the real create call; if the caregiver is over
-	//                           capacity for the period, the API rejects with
-	//                           CAPACITY_EXCEEDED and we show the
-	//                           capacity-exceeded modal instead of an error.
+	//   2. buildAndSubmit     — the real create call; Two rejections get a
+	//                           modal instead of the plain error banner:
+	//                           • INSUFFICIENT_REST_BETWEEN_SHIFTS — shows the
+	//                             rest popup. A hard block: the flow ends there.
+	//                             and the admin changes the caregiver or time.
+	//							 • CAPACITY_EXCEEDED — shows the capacity-exceeded 
+	// 							   modal (continues at step 3).
 	//   3. handleCapacityDecision — resubmits with the admin's choice
 	//                           (mandated overtime vs. voluntary); voluntary
 	//                           shows a third "pending caregiver ack" modal
@@ -534,14 +559,14 @@ export default function AddNewShiftPage() {
 			/>
 
 			{/*
-			 * Hide the generic error banner while the capacity modal is open —
-			 * the modal already communicates why the shift was blocked and it's
-			 * cleaner than showing both at once.  After cancel, capacityData
+			 * Hide the generic error banner while the capacity or rest modal is
+			 * open — the modal already communicates why the shift was blocked and
+			 * it's cleaner than showing both at once.  After closing, the state
 			 * becomes null and the banner re-appears so the admin has context.
 			 */}
-			{/* Hidden while the capacity modal is open (it already explains the block)
+			{/* Hidden while the capacity or rest popup is open (it already explains the block)
 			    and after voluntary success (the shift was created — error is stale). */}
-			{actionShiftError && !capacityData && !voluntaryPendingShift && (
+			{actionShiftError && !capacityData && !voluntaryPendingShift && !restError && (
 				<ActionMessage variant="error" message={actionShiftError} />
 			)}
 
@@ -934,6 +959,13 @@ export default function AddNewShiftPage() {
 				caregiverName={voluntaryPendingShift?.caregiverName}
 				plannedOverageHours={voluntaryPendingShift?.plannedOverageHours}
 				approvalId={voluntaryPendingShift?.approvalId}
+			/>
+
+			<InsufficientRestModal
+				isOpen={!!restError}
+				onClose={() => setRestError(null)}
+				message={restError?.message}
+				conflicts={restError ? [{ key: "rest", title: restError.title, details: restError.details }] : []}
 			/>
 
 			{/* Warning before saving a shift longer than 12 hours (allowed, not blocked) */}
