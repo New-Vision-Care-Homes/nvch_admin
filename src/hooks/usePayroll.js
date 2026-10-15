@@ -41,6 +41,10 @@ export const useCoverSheet = ({ params = {}, enabled = true } = {}) => {
  * Fetches payroll exceptions for a single home and pay period.
  * Used on both the detail page (banner) and the exceptions page (full list).
  *
+ * homeId is required here (not just allowed) so these two pages can never
+ * accidentally fetch every house's exceptions — only the one the user is
+ * currently viewing.
+ *
  * @param {Object} options
  * @param {Object}  options.params   - { homeId, payYear, periodNumber }
  * @param {boolean} options.enabled
