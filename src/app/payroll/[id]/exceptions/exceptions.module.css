@@ -57,6 +57,24 @@
 	border: 1px solid #fed7aa;
 }
 
+.sectionCountBlue {
+	composes: sectionCount;
+	color: #2563eb;
+	background: #eff6ff;
+	border: 1px solid #93c5fd;
+}
+
+/* ── Section note (one line explaining how a section affects export) ──────── */
+
+.sectionNote {
+	margin: 0;
+	padding: 0.6rem 1.25rem;
+	font-size: 0.78rem;
+	color: #6b7280;
+	background: #f9fafb;
+	border-bottom: 1px solid #e8eef4;
+}
+
 /* ── Section body ─────────────────────────────────────────────────────────── */
 
 .sectionBody {
@@ -138,6 +156,17 @@
 	border-radius: 999px;
 	border: 1px solid;
 	white-space: nowrap;
+}
+
+/* Decline reasons can run to 1,000 characters — the shift page shows them in full */
+.exceptionReason {
+	font-size: 0.78rem;
+	color: #991b1b;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
 }
 
 /* ── External link icon ───────────────────────────────────────────────────── */

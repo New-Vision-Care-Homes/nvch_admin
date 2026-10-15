@@ -26,8 +26,8 @@ export const payrollService = {
 	 * Fetch the payroll exceptions list for a given pay period, scoped to a
 	 * single home when homeId is provided (every exception belongs to exactly
 	 * one house, so this always returns that house's own exceptions — never
-	 * another house's). Returns three arrays: unresolvedOverage, bankCapExceeded,
-	 * negativeBalances.
+	 * another house's). Returns four arrays: unresolvedOverage, bankCapExceeded,
+	 * negativeBalances, alternateLocationClockIns.
 	 *
 	 * @param {Object} params
 	 * @param {string}  [params.homeId]      - Home's _id or "community". Same vocabulary as
@@ -36,7 +36,7 @@ export const payrollService = {
 	 *                                         INVALID_HOUSE_ID, unknown home → 404 HOME_NOT_FOUND.
 	 * @param {number}  params.payYear
 	 * @param {number}  params.periodNumber
-	 * @returns {Promise<{ unresolvedOverage: Array, bankCapExceeded: Array, negativeBalances: Array }>}
+	 * @returns {Promise<{ unresolvedOverage: Array, bankCapExceeded: Array, negativeBalances: Array, alternateLocationClockIns: Array }>}
 	 */
 	getExceptions: async (params = {}) => {
 		const { data } = await axiosClient.get(API_ENDPOINTS.PAYROLL.EXCEPTIONS, { params });

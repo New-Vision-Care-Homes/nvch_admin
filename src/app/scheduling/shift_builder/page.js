@@ -93,6 +93,7 @@ import IconButton from "@components/UI/Button/IconButton";
 import ErrorState from "@components/UI/Feedback/ErrorState";
 import Modal from "@components/UI/Modal/Modal";
 import OvertimeInfoBox from "../_components/OvertimeInfoBox";
+import InsufficientRestModal from "../_components/InsufficientRestModal";
 import { useHomes } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -308,6 +309,41 @@ function sortAssignmentCells(map) {
  */
 function failureKey(failure) {
 	return `${failure.caregiverId}_${failure.date}_${failure.type ?? ""}`;
+}
+
+/**
+ * Maps one INSUFFICIENT_REST_BETWEEN_SHIFTS failure to an InsufficientRestModal conflict:
+ *   group   — caregiver name, so the popup lists each person's shifts together
+ *   title   — the blocked shift, e.g. "Tue, Oct 14 · Night · 7:00 PM – 7:00 AM"
+ *   sortKey — "yyyy-MM-ddTHH:mm" local start, so shifts sort earliest first
+ * A failure row only carries date + type, so the cell's hours come from the
+ * request that was sent: the batch day/night times, or the cell's customTime.
+ * The index in the key keeps two custom cells on one date apart.
+ */
+function toRestConflict(failure, index, allCaregivers, payload, sharedBody) {
+	const cg = allCaregivers.find((c) => (c._id || c.id)?.toString() === failure.caregiverId);
+	const cell = payload
+		.find((p) => p.caregiverId === failure.caregiverId)
+		?.assignments.find((a) => a.date === failure.date && a.type === failure.type);
+	const { start, end } = (failure.type === "day"   ? sharedBody.dayShift
+	                     :  failure.type === "night" ? sharedBody.nightShift
+	                     :                             cell?.customTime) ?? {};
+
+	const date = DateTime.fromISO(failure.date);
+	const dateLabel = date.isValid ? date.toFormat("EEE, MMM d") : failure.date;
+	const typeLabel = failure.type ? failure.type[0].toUpperCase() + failure.type.slice(1) : null;
+	const toAmPm = (hhmm) => DateTime.fromFormat(hhmm ?? "", "HH:mm");
+	const timeLabel = toAmPm(start).isValid && toAmPm(end).isValid
+		? `${toAmPm(start).toFormat("h:mm a")} – ${toAmPm(end).toFormat("h:mm a")}`
+		: null;
+
+	return {
+		key:     `${failureKey(failure)}_${index}`,
+		group:   cg ? fullName(cg, "Unknown") : failure.caregiverId,
+		title:   [dateLabel, typeLabel, timeLabel].filter(Boolean).join(" · "),
+		sortKey: `${failure.date}T${start ?? "00:00"}`,
+		details: failure.details,
+	};
 }
 
 /** Counts cells across the whole grid that match `predicate`, ignoring out-of-range dates. */
@@ -905,6 +941,18 @@ export default function ShiftBuilderPage() {
 	//   mode            — "create" (POST, empty period) | "save" (PUT, period has existing shifts)
 	// null = modal is closed.
 	const [capacityModalData, setCapacityModalData] = useState(null);
+
+	// ── 8-hour minimum rest popup ─────────────────────────────────────────────
+	// Populated when the bulk API returns INSUFFICIENT_REST_BETWEEN_SHIFTS
+	// failures (caregiver has another shift less than 8h before/after). A hard
+	// block — nothing to resubmit, the popup just lists them. Shown before the
+	// capacity modal, which needs a decision and a resubmit.
+	// Holds:
+	//   failures   — the failed cells from result.failed
+	//   payload    — the caregiverPayload we sent, to look up each cell's hours
+	//   sharedBody — the endpoint params (day/night shift times)
+	// null = popup is closed.
+	const [restModalData, setRestModalData] = useState(null);
 
 	// ── Drag-to-reorder ───────────────────────────────────────────────────────
 	const [caregiverOrder, setCaregiverOrder] = useState([]);
@@ -1676,6 +1724,7 @@ export default function ShiftBuilderPage() {
 
 		setBulkResult(null);
 		setSubmitError(null);
+		setRestModalData(null);
 
 		const sharedBody = {
 			startDate,
@@ -1709,6 +1758,18 @@ export default function ShiftBuilderPage() {
 			try {
 				const result = await createBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
 				setBulkResult(result);
+
+				// Cells blocked by the 8-hour rest rule — shown first, in the rest popup.
+				const restFailures = (result.failed ?? []).filter(
+					(f) => f.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS"
+				);
+				if (restFailures.length > 0) {
+					setRestModalData({
+						failures: restFailures,     // blocked shifts
+						payload:  caregiverPayload, // shift times
+						sharedBody,                 // day/night shift times
+					});
+				}
 
 				// If any cells failed because they push the caregiver past their bi-weekly
 				// capacity, open the overage-decision modal.  The admin picks "mandated" or
@@ -1769,6 +1830,14 @@ export default function ShiftBuilderPage() {
 			try {
 				const result = await saveBulkShifts({ ...sharedBody, caregivers: caregiverPayload });
 				setBulkResult(result);
+
+				// Same rest handling as the POST path above.
+				const restFailures = (result.failed ?? []).filter(
+					(f) => f.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS"
+				);
+				if (restFailures.length > 0) {
+					setRestModalData({ failures: restFailures, payload: caregiverPayload, sharedBody });
+				}
 
 				// Same CAPACITY_EXCEEDED handling as the POST path above, but for the
 				// PUT (save) endpoint when the period already has existing shifts.
@@ -1862,6 +1931,15 @@ export default function ShiftBuilderPage() {
 			// Use the same endpoint (POST for new period, PUT for existing)
 			const apiCall = mode === "save" ? saveBulkShifts : createBulkShifts;
 			const result  = await apiCall({ ...sharedBody, caregivers: resubmitPayload });
+
+			// The resubmit is checked again, so a cell can still fail the rest rule.
+			// The capacity modal is already closed, so the rest popup opens right away.
+			const restFailures = (result.failed ?? []).filter(
+				(f) => f.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS"
+			);
+			if (restFailures.length > 0) {
+				setRestModalData({ failures: restFailures, payload: resubmitPayload, sharedBody });
+			}
 
 			// Merge the resubmission result into the existing result banner.
 			// The CAPACITY_EXCEEDED entries are removed from both the failed list
@@ -2050,8 +2128,9 @@ export default function ShiftBuilderPage() {
 					 * ── Capacity-exceeded overage decision modal ──────────────
 					 *
 					 * Opens automatically after a publish that has CAPACITY_EXCEEDED
-					 * failures.  The admin sees one card per over-capacity shift with
-					 * the hours breakdown and picks a decision:
+					 * failures — once the rest popup (if any) is closed, so the two
+					 * never stack.  The admin sees one card per over-capacity shift
+					 * with the hours breakdown and picks a decision:
 					 *
 					 *   Mandate overtime — shift created immediately as overtime pay.
 					 *                      No caregiver action required.
@@ -2071,7 +2150,7 @@ export default function ShiftBuilderPage() {
 					 * EXCEEDED cells remain unscheduled; the admin can re-publish them
 					 * (which will reopen this modal) or leave them out of the schedule.
 					 */}
-					{capacityModalData && (
+					{capacityModalData && !restModalData && (
 						<CapacityExceededModal
 							failures={capacityModalData.failures}
 							allCaregivers={[...caregivers, ...addedCasualWorkers]}
@@ -2087,6 +2166,29 @@ export default function ShiftBuilderPage() {
 							isSubmitting={isBulkPending || isSaveBulkPending}
 						/>
 					)}
+
+					{/*
+					 * ── 8-hour minimum rest popup ─────────────────────────────
+					 * Lists every cell that failed INSUFFICIENT_REST_BETWEEN_SHIFTS
+					 * with the shift it sits too close to, grouped by caregiver and
+					 * sorted by time inside each group. Shown first, before the
+					 * capacity modal: it needs no decision, so the admin reads it and
+					 * moves on to the overtime choices. Dismissed cells remain in the
+					 * result banner's failed list.
+					 */}
+					<InsufficientRestModal
+						isOpen={!!restModalData}
+						onClose={() => setRestModalData(null)}
+						message={restModalData?.failures[0]?.error}
+						conflicts={(restModalData?.failures ?? []).map((f, i) =>
+							toRestConflict(
+								f, i,
+								[...caregivers, ...addedCasualWorkers],
+								restModalData.payload,
+								restModalData.sharedBody,
+							)
+						)}
+					/>
 
 					{/* ── Schedule grid ─────────────────────────────────────── */}
 					{!selectedHomeId ? (

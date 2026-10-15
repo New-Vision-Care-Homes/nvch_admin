@@ -129,6 +129,19 @@ export function utcToDateString(utcString, timeZone) {
         .toFormat("yyyy-MM-dd");
 }
 
+// For labelling a shift from its datetime-local form values
+// ("YYYY-MM-DDTHH:mm", already local to timeZone) like "Tue, Oct 14 · 7:00 AM – 7:00 PM".
+// When the end falls on another day (an overnight shift) it gets its own date:
+// "Tue, Oct 14 · 7:00 PM – Wed, Oct 15 · 7:00 AM".
+export function localShiftLabel(startLocal, endLocal, timeZone) {
+    const start = DateTime.fromISO(startLocal ?? "", { zone: timeZone });
+    const end   = DateTime.fromISO(endLocal ?? "",   { zone: timeZone });
+    if (!start.isValid || !end.isValid) return null;
+    const fmt    = "EEE, MMM d · h:mm a";
+    const endFmt = start.hasSame(end, "day") ? "h:mm a" : fmt;
+    return `${start.toFormat(fmt)} – ${end.toFormat(endFmt)}`;
+}
+
 // For form submission: treat a "YYYY-MM-DD" date string as midnight in the
 // given timezone and return the equivalent UTC ISO string for the backend.
 export function localDateToUtc(dateString, timeZone) {

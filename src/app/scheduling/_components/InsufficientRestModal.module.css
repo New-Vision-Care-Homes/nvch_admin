@@ -1,0 +1,155 @@
+/* ══════════════════════════════════════════════════════════════
+   Insufficient-rest (8-hour minimum) modal
+   Rendered inside the shared Modal wrapper component.
+══════════════════════════════════════════════════════════════ */
+
+/* Outer column */
+.restModalBody {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 0.25rem 0 0.25rem;
+}
+
+/* Icon + title row */
+.restModalHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.restModalIcon {
+    color: #ef4444;
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.restModalTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-primary, #1c4a6e);
+}
+
+/* The API's popup text */
+.restModalSubtitle {
+    margin: 4px 0 0;
+    font-size: 0.84rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+/* Conflicting shift status, e.g. "· Completed" */
+.restConflictStatus {
+    text-transform: capitalize;
+}
+
+/* ── Blocked-shift cards ──────────────────────────────────────── */
+
+/* Stack of caregiver cards — scrolls when many shifts were blocked */
+.restGroupList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* One caregiver (header + their blocked shifts), or the single shift on Add / Edit */
+.restGroup {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Caregiver name + "2 shifts" count (Schedule Builder only) */
+.restGroupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    border-bottom: 1px solid #fee2e2;
+}
+
+.restGroupName {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #7f1d1d;
+}
+
+.restGroupCount {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #b91c1c;
+    background: #fff;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    padding: 1px 8px;
+    white-space: nowrap;
+}
+
+.restGroupRows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* One blocked shift: details on the left, rest chip on the right */
+.restGroupRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    background: #fff;
+}
+
+/* Divider between rows only — no stray line at the top of a header-less card */
+.restGroupRow + .restGroupRow {
+    border-top: 1px solid #fee2e2;
+}
+
+.restGroupRowMain {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+/* "Tue, Oct 14 · Night · 7:00 PM – 7:00 AM" — the shift that was blocked */
+.restGroupRowTitle {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* "Conflicts with: …" — the existing shift it sits too close to */
+.restGroupRowConflict {
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+/* "0h rest" — red pill, the shortfall at a glance */
+.restRestChip {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Hint under the list */
+.restModalNote {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #64748b;
+}

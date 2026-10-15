@@ -7,7 +7,7 @@ import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
 import { attachClickOutside } from "@/utils/clickOutside";
-import { utcToInputDateTime } from "@utils/timeHandling";
+import { utcToInputDateTime, localShiftLabel } from "@utils/timeHandling";
 import { personName } from "@/utils/formatting";
 import GeofenceMap from "@/components/UI/Map/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
@@ -35,6 +35,7 @@ import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./edit_shift.module.css";
 import CapacityExceededModal from "../../_components/CapacityExceededModal";
 import VoluntaryPendingModal from "../../_components/VoluntaryPendingModal";
+import InsufficientRestModal from "../../_components/InsufficientRestModal";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 const SCHEDULED_STATUSES = ["scheduled"];
@@ -105,6 +106,13 @@ export default function EditShiftPage() {
 	const [capacityData,          setCapacityData]          = useState(null);
 	const [capacityDecision,      setCapacityDecision]      = useState(null);
 	const [voluntaryPendingShift, setVoluntaryPendingShift] = useState(null);
+
+	// ── 8-hour minimum rest ────────────────────────────────────
+	// When a caregiver or time change leaves less than 8 hours to another of the
+	// caregiver's shifts, the API rejects with 400 INSUFFICIENT_REST_BETWEEN_SHIFTS.
+	// restError — null (closed) or { message, details, title } for the popup;
+	// title labels the shift as it was submitted.
+	const [restError, setRestError] = useState(null);
 
 	const hoursBetween = (startISO, endISO) => {
 		const s = DateTime.fromISO(startISO, { zone: HALIFAX_TZ });
@@ -320,6 +328,12 @@ export default function EditShiftPage() {
 					pendingData: data,
 				});
 				setCapacityDecision(null);
+			} else if (err?.response?.data?.code === "INSUFFICIENT_REST_BETWEEN_SHIFTS") {
+				setRestError({
+					message: err.response.data.error,
+					details: err.response.data.details,
+					title:   err.response.data.title || localShiftLabel(data.startTime, data.endTime, HALIFAX_TZ),
+				});
 			}
 			// All other errors are surfaced via actionShiftError from the hook.
 		}
@@ -335,13 +349,17 @@ export default function EditShiftPage() {
 		doSubmitScheduled(pendingData, decision);
 	}
 
-	// Submit flow overview (same shape as add_new_shift/page.js) — up to 3
+	// Submit flow overview (same shape as add_new_shift/page.js) — up to 4
 	// modals can appear before an edit is saved:
 	//   1. onSubmitScheduled  — if the edited shift is >12h, pause on the
 	//                           long-shift confirm modal first.
-	//   2. doSubmitScheduled  — the real update call; a CAPACITY_EXCEEDED
-	//                           response shows the capacity-exceeded modal
-	//                           instead of a plain error.
+	//   2. doSubmitScheduled  — the real update call. Two rejections get a
+	//                           modal instead of the plain error banner:
+	//                           • INSUFFICIENT_REST_BETWEEN_SHIFTS — shows the
+	//                             rest popup. A hard block: the flow ends there.
+	//                             and the admin changes the caregiver or time.
+	//							 • CAPACITY_EXCEEDED — shows the capacity-exceeded 
+	// 							   modal (continues at step 3).
 	//   3. handleCapacityDecision — resubmits with the admin's overage
 	//                           decision; "voluntary" shows a pending
 	//                           caregiver-acknowledgment modal instead of
@@ -520,7 +538,7 @@ export default function EditShiftPage() {
 	return (
 		<PageLayout>
 			<Header onSave={sSubmit(onSubmitScheduled)} />
-			{actionShiftError && !capacityData && !voluntaryPendingShift && <ActionMessage variant="error" message={actionShiftError} />}
+			{actionShiftError && !capacityData && !voluntaryPendingShift && !restError && <ActionMessage variant="error" message={actionShiftError} />}
 
 			<form onSubmit={sSubmit(onSubmitScheduled)}>
 				{/* ═══════════════════ ROW 1: 2-column — left wider */}
@@ -771,6 +789,12 @@ export default function EditShiftPage() {
 				caregiverName={voluntaryPendingShift?.caregiverName}
 				plannedOverageHours={voluntaryPendingShift?.plannedOverageHours}
 				approvalId={voluntaryPendingShift?.approvalId}
+			/>
+			<InsufficientRestModal
+				isOpen={!!restError}
+				onClose={() => setRestError(null)}
+				message={restError?.message}
+				conflicts={restError ? [{ key: "rest", title: restError.title, details: restError.details }] : []}
 			/>
 		</PageLayout>
 	);

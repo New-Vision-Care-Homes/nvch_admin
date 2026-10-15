@@ -59,6 +59,7 @@
 
 .badgeRow {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
 	align-items: center;
 	margin-bottom: 6px;
@@ -103,6 +104,20 @@
 	background: #fff7ed;
 	color: #c2410c;
 	border: 1px solid #fed7aa;
+}
+
+/* Shown inside .badgeRow when alternateLocation.status === "pending" */
+.locationReviewPendingBadge {
+	padding: 3px 10px;
+	border-radius: 9999px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
+	background: #fffbeb;
+	color: #b45309;
+	border: 1px solid #fcd34d;
 }
 
 /* ── Main 2-column layout ────────────────────────────────────────────────── */
@@ -181,6 +196,7 @@
 .addrBlockBlue  { background: #eff6ff; border-color: #bfdbfe; }
 .addrBlockGreen { background: #f0fdf4; border-color: #bbf7d0; }
 .addrBlockRed   { background: #fff1f2; border-color: #fecdd3; }
+.addrBlockAmber { background: #fffbeb; border-color: #fde68a; }
 
 .addrBlockIcon {
 	flex-shrink: 0;
@@ -192,6 +208,7 @@
 .addrBlockBlue  .addrBlockIcon { color: #2563eb; }
 .addrBlockGreen .addrBlockIcon { color: #16a34a; }
 .addrBlockRed   .addrBlockIcon { color: #dc2626; }
+.addrBlockAmber .addrBlockIcon { color: #d97706; }
 
 .addrBlockLabel {
 	font-size: 0.68rem;
@@ -204,12 +221,42 @@
 .addrBlockBlue  .addrBlockLabel { color: #1d4ed8; }
 .addrBlockGreen .addrBlockLabel { color: #15803d; }
 .addrBlockRed   .addrBlockLabel { color: #b91c1c; }
+.addrBlockAmber .addrBlockLabel { color: #b45309; }
 
 .addrBlockVal {
 	font-size: 0.82rem;
 	color: #1e293b;
 	line-height: 1.4;
 	margin: 0;
+}
+
+/* ── Alternate clock-in (amber block under the map) ──────────────────────── */
+.alternateLocationBody {
+	flex: 1;
+	min-width: 0;
+}
+
+.alternateLocationDetails {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 6px 14px;
+	align-items: baseline;
+	margin: 6px 0 0;
+}
+
+.alternateLocationDetails dt {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: #92400e;
+	white-space: nowrap;
+}
+
+.alternateLocationDetails dd {
+	margin: 0;
+	font-size: 0.85rem;
+	color: #1e293b;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
 }
 
 /* ── Mini label ──────────────────────────────────────────────────────────── */
