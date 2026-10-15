@@ -52,6 +52,7 @@ const HOUR_TYPE_DEFINITIONS = [
     { label: "Training",          apiKey: "training"         },
     { label: "Banked Hours Paid", apiKey: "bankedHoursPaid"  },
     { label: "Hours Banked",      apiKey: "hoursBanked"      },
+    { label: "Sick",              apiKey: "sick"             },
 ];
 
 

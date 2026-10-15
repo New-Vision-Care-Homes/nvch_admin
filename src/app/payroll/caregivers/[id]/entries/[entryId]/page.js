@@ -14,7 +14,7 @@ import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import StatusBadge from "@components/UI/Feedback/Badge";
 import { useCaregiverPayrollSummary, useVoidEntry } from "@/hooks/usePayroll";
 import { useProfile }                              from "@/hooks/useProfile";
-import { formatDateTime } from "@/utils/dates";
+import { formatDateTime, formatDateOnly } from "@/utils/dates";
 import { PAY_CATEGORY_LABELS } from "@/utils/dropdownList/payCategory";
 import styles       from "./entry_detail.module.css";
 import detailStyles from "../../../../[id]/payroll_detail.module.css";
@@ -186,6 +186,13 @@ export default function EntryDetailPage() {
                                     <span className={styles.detailFieldLabel}>Pay Period</span>
                                     <span className={styles.detailFieldValue}>Period {entry.periodNumber ?? "—"}</span>
                                 </div>
+                                {/* show the sick date if for the sick entry */}
+                                {entry.source?.sickDate && (
+                                    <div className={styles.detailField}>
+                                        <span className={styles.detailFieldLabel}>Sick Date</span>
+                                        <span className={styles.detailFieldValue}>{formatDateOnly(entry.source.sickDate)}</span>
+                                    </div>
+                                )}
                                 <div className={styles.detailField}>
                                     <span className={styles.detailFieldLabel}>Home</span>
                                     <span className={styles.detailFieldValue}>{entry.home?.name ?? "—"}</span>

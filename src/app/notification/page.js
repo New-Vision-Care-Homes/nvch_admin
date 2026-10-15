@@ -30,6 +30,7 @@ import {
 	DollarSign,
 	FileWarning,
 	MapPin,
+	Thermometer,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -112,6 +113,7 @@ const APPROVAL_SUBJECT_ICONS = {
 	overtime_mandate:        Scale,
 	banked_hours_payout:     Banknote,
 	vacation_pay_request:    DollarSign,
+	paid_sick_time_request:  Thermometer,
 	caregiver_device_change: Smartphone,
 	alternate_location_clock_in: MapPin,
 };
@@ -146,6 +148,11 @@ const APPROVAL_SUBJECT_LEGEND = [
 		subjectType: "vacation_pay_request",
 		label:       "Vacation Pay Payout",
 		description: "A caregiver requested to be paid out accrued vacation pay.",
+	},
+	{
+		subjectType: "paid_sick_time_request",
+		label:       "Paid Sick Time",
+		description: "A caregiver requested paid sick time (PST) hours for a date.",
 	},
 	{
 		subjectType: "caregiver_device_change",
@@ -187,7 +194,7 @@ const TYPE_DESCRIPTION = {
 	bank_cap_exceeded:           "A completed shift pushed a caregiver's banked-hours balance past the cap.",
 	caregiver_device_enrolled:   "A device was bound to a caregiver's account for the mobile app — either their first-ever sign-in, or a re-enrollment after an admin cleared the binding. Sent to their supervisor, team lead, and home admins as an audit trail.",
 	broadcast:                   "A one-off announcement sent by an admin.",
-	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours or vacation-pay payout, a caregiver device change, or a clock-in from outside the shift's location. Clears once any approver decides.",
+	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours or vacation-pay payout, paid sick time, a caregiver device change, or a clock-in from outside the shift's location. Clears once any approver decides.",
 	caregiver_certificate_expiring_soon: "A caregiver's certificate is approaching its expiry date (30 and 7 days out). Sent to their supervisor, team lead, and home admins. Names the caregiver and the certificate.",
 };
 
