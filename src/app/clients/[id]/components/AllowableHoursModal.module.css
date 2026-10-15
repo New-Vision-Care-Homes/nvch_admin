@@ -1,0 +1,51 @@
+.modalHeader {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 1.25rem;
+}
+
+.modalIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	background: #e8f0f7;
+	color: var(--color-primary, #1c4a6e);
+	flex-shrink: 0;
+}
+
+.modalTitle {
+	margin: 0;
+	font-size: 1.1rem;
+	color: #111827;
+}
+
+.modalSubtitle {
+	margin: 3px 0 0;
+	font-size: 0.85rem;
+	color: #6b7280;
+}
+
+/* Matches InputField's label styling (Card.module.css .label/.required_star)
+   so the Supporting Document label reads the same as the fields above it. */
+.fieldLabel {
+	display: block;
+	font-family: var(--font-family-inter);
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	margin-bottom: 0.2rem;
+}
+
+.requiredStar {
+	color: #E53E3E;
+	margin-left: 3px;
+	font-size: 0.85rem;
+	font-weight: 700;
+	text-transform: none;
+}

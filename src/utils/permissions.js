@@ -56,7 +56,10 @@ export const PERMISSION_SCHEMAS = [
 			"delete_assigned_clients",
 			"update_assigned_clients",
 			"view_assigned_clients",
-			"toggle_client_status"
+			"toggle_client_status",
+			// Recipients are resolved by this slug directly, not by home/region —
+			// any admin granted it receives client_allowable_hours_changed notifications.
+			"allowable_hour_changed_notification"
 		]
 	},
 	{

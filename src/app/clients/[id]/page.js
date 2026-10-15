@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button/Button";
@@ -8,12 +8,13 @@ import { Card, CardHeader } from "@components/UI/Form/Card";
 import styles from "./client_profile.module.css";
 import Image from "next/image";
 import Link from "next/link";
-import { Activity, AlarmClockCheck, Calendar, Check, Clock, Hash, Home, Pencil, Undo2, Upload, X } from "lucide-react";
+import { Activity, AlarmClockCheck, Calendar, Clock, Hash, Home, Pencil, Undo2, Upload } from "lucide-react";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import Modal from "@components/UI/Modal/Modal";
 import { useParams } from "next/navigation";
 
 import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
+import AllowableHoursModal from "./components/AllowableHoursModal";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
@@ -40,7 +41,6 @@ export default function Page() {
 		isLoading,
 		fetchError,
 		isActionPending,
-		updateClient,
 		toggleClientStatus
 	} = useClients(id);
 
@@ -61,147 +61,9 @@ export default function Page() {
 	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
 
-	// --- Editable Allowable Hours ---
-	const [editingHours, setEditingHours] = useState(false);
-	const [hoursValue, setHoursValue] = useState("");
-	const [hoursSaving, setHoursSaving] = useState(false);
-	const [hoursError, setHoursError] = useState(null);
+	// --- Allowable Hours change modal ---
+	const [isHoursModalOpen, setIsHoursModalOpen] = useState(false);
 	const [hoursSuccess, setHoursSuccess] = useState(null);
-	const hoursInitialized = useRef(false);
-
-	// Initialize once when clientDetail first loads. Using a ref instead of a
-	// dependency-tracked effect prevents background refetches from silently
-	// overwriting a value the user is actively typing.
-	useEffect(() => {
-		if (clientDetail && !hoursInitialized.current) {
-			setHoursValue(clientDetail.allowableHours ?? "");
-			hoursInitialized.current = true;
-		}
-	}, [clientDetail]);
-
-
-
-
-	const handleSaveHours = () => {
-		const trimmed = String(hoursValue).trim();
-		if (trimmed === "" || isNaN(Number(trimmed))) {
-			setHoursError("Please enter a valid number.");
-			return;
-		}
-		const numValue = Number(trimmed);
-		if (numValue < 0) {
-			setHoursError("Hours cannot be negative.");
-			return;
-		}
-		setHoursSaving(true);
-		setHoursError(null);
-		setHoursSuccess(null);
-
-		// The update endpoint is a full PUT, not a partial PATCH, so changing
-		// just allowableHours still requires resending every other field from
-		// the currently loaded client — omitting one would blank it out. This
-		// mirrors the fields buildBody() builds in components/Info.js; keep
-		// both in sync if the client schema gains a field.
-		const cd = clientDetail;
-		const fullPayload = {
-			email: cd.email,
-			firstName: cd.firstName,
-			lastName: cd.lastName,
-			phone: cd.phone || null,
-			dateOfBirth: cd.dateOfBirth || null,
-			region: cd.region || null,
-			maritalStatus: cd.maritalStatus || null,
-			levelOfSupport: cd.levelOfSupport || null,
-			notes: cd.notes || null,
-			homeId: typeof cd.home === "string" ? cd.home : (cd.home?._id || cd.home?.id || cd.homeId || null),
-			address: {
-				street: cd.address?.street,
-				unit: cd.address?.unit || undefined,
-				city: cd.address?.city,
-				state: cd.address?.state,
-				pinCode: cd.address?.pinCode,
-				country: cd.address?.country,
-				gpsCoordinates: {
-					latitude: cd.address?.gpsCoordinates?.latitude ?? 44.6476,
-					longitude: cd.address?.gpsCoordinates?.longitude ?? -63.5728,
-				},
-			},
-			healthCard: {
-				number: cd.healthCard?.number || null,
-				expiryDate: cd.healthCard?.expiryDate || null,
-			},
-			emergencyContact: {
-				name: cd.emergencyContact?.name || null,
-				phone: cd.emergencyContact?.phone || null,
-				relationship: cd.emergencyContact?.relationship || null,
-			},
-			nextOfKin: {
-				name: cd.nextOfKin?.name || null,
-				phone: cd.nextOfKin?.phone || null,
-				email: cd.nextOfKin?.email || null,
-			},
-			statutoryDecisionMaker: {
-				name: cd.statutoryDecisionMaker?.name || null,
-				phoneNumber: cd.statutoryDecisionMaker?.phoneNumber || null,
-				email: cd.statutoryDecisionMaker?.email || null,
-			},
-			careCoordinatorOrDspCaseManager: {
-				name: cd.careCoordinatorOrDspCaseManager?.name || null,
-				phone: cd.careCoordinatorOrDspCaseManager?.phone || null,
-				email: cd.careCoordinatorOrDspCaseManager?.email || null,
-			},
-			powerOfAttorney: {
-				name: cd.powerOfAttorney?.name || null,
-				phone: cd.powerOfAttorney?.phone || null,
-				email: cd.powerOfAttorney?.email || null,
-			},
-			personalDirective: {
-				name: cd.personalDirective?.name || null,
-				phone: cd.personalDirective?.phone || null,
-				email: cd.personalDirective?.email || null,
-			},
-			legalGuardianship: {
-				name: cd.legalGuardianship?.name || null,
-				phone: cd.legalGuardianship?.phone || null,
-				email: cd.legalGuardianship?.email || null,
-			},
-			adultProtectionOrPublicTrustee: {
-				name: cd.adultProtectionOrPublicTrustee?.name || null,
-				phone: cd.adultProtectionOrPublicTrustee?.phone || null,
-				email: cd.adultProtectionOrPublicTrustee?.email || null,
-			},
-			communityTreatmentOrder: {
-				notes: cd.communityTreatmentOrder?.notes || null,
-			},
-			allowableHours: numValue,
-		};
-
-		updateClient(
-			{ id, data: fullPayload },
-			{
-				onSuccess: () => {
-					setHoursSaving(false);
-					setEditingHours(false);
-					setHoursSuccess("Allowable hours updated.");
-					setTimeout(() => setHoursSuccess(null), 4000);
-				},
-				onError: (err) => {
-					setHoursSaving(false);
-					setHoursError(
-						err?.response?.data?.details?.[0]?.msg ||
-						err?.response?.data?.error ||
-						"Failed to update allowable hours."
-					);
-				},
-			}
-		);
-	};
-
-	const handleCancelHoursEdit = () => {
-		setEditingHours(false);
-		setHoursValue(clientDetail?.allowableHours ?? "");
-		setHoursError(null);
-	};
 
 	const handleActive = () => {
 		setIsStatusConfirmModalOpen(true);
@@ -342,47 +204,22 @@ export default function Page() {
 								<div className={styles.hoursCardLabel}>
 									<AlarmClockCheck size={13} />
 									<span>Allowable Hours</span>
-									{canEdit && !editingHours && (
+									{canEdit && (
 										<button
 											className={styles.hoursEditTrigger}
-											onClick={() => { setEditingHours(true); setHoursError(null); setHoursSuccess(null); }}
-											title="Edit Allowable Hours"
+											onClick={() => { setHoursSuccess(null); setIsHoursModalOpen(true); }}
+											title="Update Allowable Hours"
 										>
 											<Pencil size={14} />
 										</button>
 									)}
 								</div>
-								{editingHours ? (
-									<div className={styles.hoursEditArea}>
-										<div className={styles.hoursEditRow}>
-											<input
-												type="number"
-												min="0"
-												step="0.5"
-												className={styles.hoursInput}
-												value={hoursValue}
-												onChange={(e) => setHoursValue(e.target.value)}
-												onKeyDown={(e) => { if (e.key === "Enter") handleSaveHours(); if (e.key === "Escape") handleCancelHoursEdit(); }}
-												disabled={hoursSaving}
-												autoFocus
-											/>
-											<button className={styles.hoursSaveBtn} onClick={handleSaveHours} disabled={hoursSaving} title="Save">
-												<Check size={13} />
-											</button>
-											<button className={styles.hoursCancelBtn} onClick={handleCancelHoursEdit} disabled={hoursSaving} title="Cancel">
-												<X size={13} />
-											</button>
-										</div>
-										{hoursError && <div className={styles.hoursFeedbackError}>{hoursError}</div>}
-									</div>
-								) : (
-									<div className={styles.hoursCardCenter}>
-										<span className={styles.hoursNumber}>
-											{clientDetail.allowableHours != null ? clientDetail.allowableHours : "\u2014"}
-										</span>
-										<span className={styles.hoursUnit}>hrs / week</span>
-									</div>
-								)}
+								<div className={styles.hoursCardCenter}>
+									<span className={styles.hoursNumber}>
+										{clientDetail.allowableHours != null ? clientDetail.allowableHours : "\u2014"}
+									</span>
+									<span className={styles.hoursUnit}>hrs / week</span>
+								</div>
 								{hoursSuccess && <div className={styles.hoursFeedbackSuccess}>{hoursSuccess}</div>}
 							</div>}
 						</div>
@@ -428,6 +265,19 @@ export default function Page() {
 				onSuccess={() => {
 					setMessage("Profile picture updated successfully!");
 					setIsGeneralModalOpen(true);
+				}}
+			/>
+
+			{/* Allowable Hours Change Modal */}
+			<AllowableHoursModal
+				isOpen={isHoursModalOpen}
+				onClose={() => setIsHoursModalOpen(false)}
+				clientId={id}
+				currentHours={clientDetail.allowableHours}
+				requiresPositiveHours={homeType === "ILS" || homeType === "IF"}
+				onSuccess={() => {
+					setHoursSuccess("Allowable hours updated.");
+					setTimeout(() => setHoursSuccess(null), 4000);
 				}}
 			/>
 		</>

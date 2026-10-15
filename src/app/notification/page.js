@@ -29,6 +29,7 @@ import {
 	Banknote,
 	DollarSign,
 	FileWarning,
+	AlarmClockCheck,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -95,6 +96,10 @@ const TYPE_CONFIG = {
 	// A caregiver's certificate is nearing its expiryDate — admin-facing copy of
 	// the reminder (the caregiver gets their own mobile-only copy of this event).
 	caregiver_certificate_expiring_soon: { Icon: FileWarning, color: "#ca8a04", bg: "#fefce8" },
+	// A client's weekly allowable hours were changed. Recipients are resolved by
+	// permission slug, not by home/region — distinct indigo so it doesn't read
+	// as a house-hours-review item (which uses blue).
+	client_allowable_hours_changed: { Icon: AlarmClockCheck, color: "#4f46e5", bg: "#eef2ff" },
 };
 
 /**
@@ -166,6 +171,7 @@ const TYPE_LABEL = {
 	broadcast:                   "Broadcast",
 	approval_requested:          "Approval Requested",
 	caregiver_certificate_expiring_soon: "Certificate Expiring Soon",
+	client_allowable_hours_changed: "Client Allowable Hours Changed",
 };
 
 /** One-line plain-language explanation of what each notification type means. */
@@ -182,14 +188,18 @@ const TYPE_DESCRIPTION = {
 	broadcast:                   "A one-off announcement sent by an admin.",
 	approval_requested:          "Something needs your approval — a certificate, overtime, a banked-hours or vacation-pay payout, or a caregiver device change. Clears once any approver decides.",
 	caregiver_certificate_expiring_soon: "A caregiver's certificate is approaching its expiry date (30 and 7 days out). Sent to their supervisor, team lead, and home admins. Names the caregiver and the certificate.",
+	client_allowable_hours_changed: "Sent only to office admins holding the allowable-hours notification permission, whenever an admin changes a client's allowable hours. Review the change and make sure the supporting document is valid.",
 };
 
 /**
  * Groups every type into one of three plain-language buckets so people can
  * tell at a glance whether a notification needs a decision, needs follow-up,
- * or is just informational. Matches the "kind" column of the notification
- * spec (action vs. info) — only house_hours_review_overdue and
- * approval_requested are "action"; everything else portal-facing is "info".
+ * or is just informational. This is a UI-only grouping, not a 1:1 mirror of
+ * the backend's "kind" field — client_allowable_hours_changed is backend
+ * kind "info" but surfaced here as "action" since recipients are expected to
+ * verify the supporting document and follow up with the admin who made the
+ * change. house_hours_review_overdue and approval_requested are the other
+ * "action"/"approval" types; everything else portal-facing is "info".
  */
 const TYPE_BUCKET = {
 	approval_requested:          "approval",
@@ -204,6 +214,7 @@ const TYPE_BUCKET = {
 	caregiver_device_enrolled:   "info",
 	broadcast:                   "info",
 	caregiver_certificate_expiring_soon: "info",
+	client_allowable_hours_changed: "action",
 };
 
 const BUCKET_META = {
@@ -247,6 +258,13 @@ const HOUSE_REVIEW_TYPES = new Set(["house_hours_review_overdue", "house_hours_r
 const CERTIFICATE_EXPIRY_TYPES = new Set(["caregiver_certificate_expiring_soon"]);
 
 /**
+ * Allowable-hours change notification — routes to its own detail page
+ * (not directly to the client), since the reason and supporting document
+ * are only ever available on the notification itself, not the client record.
+ */
+const ALLOWABLE_HOURS_TYPES = new Set(["client_allowable_hours_changed"]);
+
+/**
  * Types hidden from the list entirely (not just unstyled) — showing them
  * with no icon/colour and a dead "tap to view details" CTA would be more
  * confusing than not showing them at all.
@@ -265,6 +283,7 @@ function NotificationCard({ notification: n, onClick }) {
 	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);
 	const isCertExpiryLink  = CERTIFICATE_EXPIRY_TYPES.has(n.type);
+	const isAllowableHoursLink = ALLOWABLE_HOURS_TYPES.has(n.type);
 
 	return (
 		<div
@@ -302,7 +321,7 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink || isHouseReviewLink || isCertExpiryLink) && (
+				{(isShiftLink || isApprovalLink || isHouseReviewLink || isCertExpiryLink || isAllowableHoursLink) && (
 					<ExternalLink size={13} className={styles.linkIcon} />
 				)}
 			</div>
@@ -464,6 +483,12 @@ export default function NotificationsPage() {
 		// Certificate-expiry reminders → the caregiver's profile.
 		if (CERTIFICATE_EXPIRY_TYPES.has(n.type) && n.data?.caregiverId) {
 			router.push(`/caregivers/${n.data.caregiverId}`);
+			return;
+		}
+		// Allowable-hours change → its own detail page (reason + document live
+		// only on the notification, not the client record).
+		if (ALLOWABLE_HOURS_TYPES.has(n.type)) {
+			router.push(`/notification/${n._id}`);
 			return;
 		}
 		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.

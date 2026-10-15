@@ -67,6 +67,48 @@ export const clientService = {
 	},
 
 	/**
+	 * Update a client's weekly allowable hours. This is the only way to change
+	 * this field after creation — the general update endpoint silently ignores it.
+	 * A supporting document and a reason are required; there's no separate
+	 * "confirm upload" step — the PUT below both records the document and
+	 * updates the hours in one request.
+	 * @param {string|number} id - The unique identifier of the client.
+	 * @param {Object} params
+	 * @param {number} params.allowableHours - Integer 0-168. 0 means unset.
+	 * @param {string} params.reason - Justification for the change (max 2000 chars).
+	 * @param {File} params.file - Supporting document (PDF/JPG/PNG, max 5MB).
+	 */
+	updateAllowableHours: async (id, { allowableHours, reason, file }) => {
+		// STEP 1: Request a signed URL from the backend
+		const { data: { data: { uploadUrl, fileKey } } } = await axiosClient.get(API_ENDPOINTS.UPLOAD.GET_PRE_SIGNED_URL, {
+			params: {
+				uploadType: 'allowable-hours-change-support',
+				userId: id,
+				mimeType: file.type,
+				fileSize: file.size,
+			}
+		});
+
+		// STEP 2: Upload the binary file directly to AWS S3 bucket
+		const s3Response = await fetch(uploadUrl, {
+			method: 'PUT',
+			body: file,
+			headers: { 'Content-Type': file.type }
+		});
+		if (!s3Response.ok) throw new Error("Cloud Storage upload failed");
+
+		// STEP 3: Update the hours and record the supporting document in one request
+		const { data } = await axiosClient.put(API_ENDPOINTS.CLIENTS.UPDATE_ALLOWABLE_HOURS(id), {
+			allowableHours,
+			reason,
+			fileKey,
+			fileName: file.name,
+			mimeType: file.type,
+		});
+		return data.data.user;
+	},
+
+	/**
 	 * Toggle active/inactive status of an client.
 	 * @param {string|number} id - The unique identifier of the client.
 	 */

@@ -117,6 +117,17 @@ export const useNotifications = (options = {}) => {
 		enabled:  !!notificationId,
 	});
 
+	// Resolve the attached supporting document (e.g. an allowable-hours change's
+	// document.fileKey) to a signed download URL, once the detail above has
+	// loaded and actually carries one. Kept separate from fetchError below —
+	// a broken/expired link shouldn't block the rest of the detail page.
+	const documentFileKey = notificationDetailQuery.data?.data?.document?.fileKey;
+	const documentUrlQuery = useQuery({
+		queryKey: ["notificationFileUrl", documentFileKey],
+		queryFn:  () => notificationService.getFileUrl(documentFileKey),
+		enabled:  !!documentFileKey,
+	});
+
 	// ── Mutations ──────────────────────────────────────────────────────────────
 
 	// Clear the unread dot on one notification (call this on tap, before navigating).
@@ -255,6 +266,9 @@ export const useNotifications = (options = {}) => {
 		// ── Data ──────────────────────────────────────────────────────────────
 		notifications:      notificationsQuery.data?.notifications ?? [],
 		notificationDetail: notificationDetailQuery.data,
+		documentUrl:        documentUrlQuery.data,
+		isDocumentUrlLoading: documentUrlQuery.isLoading,
+		documentUrlError:   documentUrlQuery.isError,
 		unreadCount:        countQuery.data?.unread          ?? 0,
 		pendingActionsCount: countQuery.data?.pendingActions ?? 0,
 

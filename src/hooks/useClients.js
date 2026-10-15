@@ -104,7 +104,18 @@ export const useClients = (options = {}) => {
 		},
 	});
 
-	// 6. TOGGLE STATUS: Toggle an client's active status
+	// 6. Update a client's weekly allowable hours (dedicated endpoint — the
+	// general update endpoint silently ignores this field). Requires a reason
+	// and a supporting document file; see clientService.updateAllowableHours.
+	const updateAllowableHoursMutation = useMutation({
+		mutationFn: ({ id, allowableHours, reason, file }) => clientService.updateAllowableHours(id, { allowableHours, reason, file }),
+		onSuccess: (data, variables) => {
+			queryClient.invalidateQueries({ queryKey: ["clients"] });
+			queryClient.invalidateQueries({ queryKey: ["client", variables.id] });
+		},
+	});
+
+	// 7. TOGGLE STATUS: Toggle an client's active status
 	const toggleStatusMutation = useMutation({
 		mutationFn: (id) => clientService.toggleStatus(id),
 		onSuccess: (data, variables) => {
@@ -126,6 +137,7 @@ export const useClients = (options = {}) => {
 		deleteMutation.error ||
 		createMutation.error ||
 		updateMutation.error ||
+		updateAllowableHoursMutation.error ||
 		toggleStatusMutation.error;
 
 	return {
@@ -142,6 +154,7 @@ export const useClients = (options = {}) => {
 		isActionPending:
 			createMutation.isPending ||
 			updateMutation.isPending ||
+			updateAllowableHoursMutation.isPending ||
 			deleteMutation.isPending ||
 			toggleStatusMutation.isPending,
 
@@ -154,6 +167,7 @@ export const useClients = (options = {}) => {
 		// Methods
 		addClient: createMutation.mutate,
 		updateClient: updateMutation.mutate,
+		updateAllowableHours: updateAllowableHoursMutation.mutate,
 		deleteClient: deleteMutation.mutate,
 		toggleClientStatus: toggleStatusMutation.mutate,
 		fetchClient,
