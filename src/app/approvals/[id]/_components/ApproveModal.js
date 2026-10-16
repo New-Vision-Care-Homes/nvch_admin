@@ -137,7 +137,7 @@ export default function ApproveModal({
                         : subjectType === "vacation_pay_request"
                         ? "The requested vacation pay will be paid out in the specified pay period."
                         : subjectType === "paid_sick_time_request"
-                        ? "The sick hours will be paid in the sick date's pay period if it is still open, otherwise the next open one. You can pay fewer hours than requested, but not more."
+                        ? "The sick hours will be paid in the sick date's pay period if it is still open, otherwise the current pay period. You can pay fewer hours than requested, but not more."
                         : subjectType === "caregiver_device_change"
                         ? `${caregiverName}'s account will be bound to the new device. Their session on the old device ends immediately, and they must sign in again on the new one.`
                         : subjectType === "alternate_location_clock_in"
