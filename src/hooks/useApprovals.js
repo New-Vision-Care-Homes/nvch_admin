@@ -98,12 +98,13 @@ export const useApprovals = (options = {}) => {
 
 	// ── Approve ─────────────────────────────────────────────────────────────────
 	const approveMutation = useMutation({
-		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate }) => {
+		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate, hours }) => {
 			const body = {};
 			if (reason)      body.reason      = reason;
 			if (startDate)   body.startDate   = startDate;
 			if (expiryDate)  body.expiryDate  = expiryDate;
 			if (renewalDate) body.renewalDate  = renewalDate;
+			if (hours != null) body.hours     = hours; // paid_sick_time_request only
 			return approvalService.approve(id, body);
 		},
 		onSuccess: (_, variables) => {

@@ -61,6 +61,12 @@
 	border-color: #5eead4;
 }
 
+.subjectTypePillFuchsia {
+	color: #bc29b7;
+	background: #f9effc;
+	border-color: #f0abfc;
+}
+
 .subjectTypePillBlue {
 	color: #2563eb;
 	background: #eff6ff;
@@ -412,6 +418,30 @@
 	outline: none;
 	border-color: #6ee7b7;
 	box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+}
+
+.approveHoursInput {
+	width: 100%;
+	padding: 9px 12px;
+	font-size: 0.875rem;
+	color: #111827;
+	background: #fff;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	box-sizing: border-box;
+	font-family: inherit;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.approveHoursInput:focus {
+	outline: none;
+	border-color: #6ee7b7;
+	box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+}
+
+.approveFieldError {
+	font-size: 0.78rem;
+	color: #dc2626;
 }
 
 .approveModalActions {
