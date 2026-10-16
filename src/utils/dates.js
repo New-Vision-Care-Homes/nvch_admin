@@ -75,20 +75,20 @@ export function formatDateTime(iso, fallback = "—") {
  *
  * @param {string|null|undefined} iso
  *   ISO 8601 string, e.g. "2024-01-01" or "2024-01-01T00:00:00.000Z"
- * @param {string} [fallback="—"]
- *   Returned when `iso` is falsy or cannot be parsed.
  * @param {string} [timeZone="UTC"]
  *   IANA timezone to read the date in, e.g. DISPLAY_TZ.
+ * @param {string} [fallback="—"]
+ *   Returned when `iso` is falsy or cannot be parsed.
  * @returns {string}
  *   Human-readable date, e.g. "Jan 1, 2024"
  *
  * @example
- * formatDateOnly("2024-01-01T00:00:00.000Z")                // "Jan 1, 2024"
- * formatDateOnly("2026-06-15")                               // "Jun 15, 2026"
- * formatDateOnly("2026-10-22T02:59:59.999Z", "—", DISPLAY_TZ) // "Oct 21, 2026"
- * formatDateOnly(null)                                       // "—"
+ * formatDateOnly("2024-01-01T00:00:00.000Z")           // "Jan 1, 2024"
+ * formatDateOnly("2026-06-15")                          // "Jun 15, 2026"
+ * formatDateOnly("2026-10-22T02:59:59.999Z", DISPLAY_TZ) // "Oct 21, 2026"
+ * formatDateOnly(null)                                  // "—"
  */
-export function formatDateOnly(iso, fallback = "—", timeZone = "UTC") {
+export function formatDateOnly(iso, timeZone = "UTC", fallback = "—") {
 	if (!iso) return fallback;
 	try {
 		return new Date(iso).toLocaleDateString("en-CA", {
