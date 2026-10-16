@@ -33,7 +33,7 @@ export const notificationService = {
 	 */
 	getOne: async (id) => {
 		const { data } = await axiosClient.get(API_ENDPOINTS.NOTIFICATIONS.BY_ID(id));
-		return data?.data;
+		return data?.data?.notification;
 	},
 
 	/**
@@ -64,6 +64,18 @@ export const notificationService = {
 	getStreamToken: async () => {
 		const { data } = await axiosClient.post(API_ENDPOINTS.NOTIFICATIONS.STREAM_TOKEN);
 		return data?.data; // unwrap { success, data: { streamToken, expiresIn } }
+	},
+
+	/**
+	 * Resolve a saved fileKey (e.g. a notification's attached supporting
+	 * document) to a short-lived signed GET URL (~5 min expiry).
+	 * Response body is a bare JSON string, not the usual {success,data} envelope.
+	 * @param {string} fileKey
+	 * @returns {Promise<string>}
+	 */
+	getFileUrl: async (fileKey) => {
+		const { data } = await axiosClient.get(API_ENDPOINTS.UPLOAD.FILE_URL, { params: { fileKey } });
+		return data;
 	},
 
 	/**

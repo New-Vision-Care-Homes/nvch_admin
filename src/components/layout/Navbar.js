@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
 	Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck,
-	PiggyBank, House, Smartphone, FileWarning, MapPin,
+	PiggyBank, House, Smartphone, FileWarning, AlarmClockCheck, MapPin,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
@@ -37,6 +37,7 @@ const TYPE_CONFIG = {
 	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
 	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
 	caregiver_certificate_expiring_soon: { Icon: FileWarning, color: "#ca8a04", bg: "#fefce8" },
+	client_allowable_hours_changed: { Icon: AlarmClockCheck, color: "#4f46e5", bg: "#eef2ff" },
 };
 
 /**

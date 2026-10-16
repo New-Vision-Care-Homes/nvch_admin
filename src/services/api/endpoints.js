@@ -29,6 +29,9 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
 		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
+		// PUT /api/auth/admin/users/:id silently ignores allowableHours — this
+		// is the only endpoint that can change it after client creation.
+		UPDATE_ALLOWABLE_HOURS: (id) => `/api/auth/admin/clients/${id}/allowable-hours`,
 	},
 
 	/* All related endpoints for shifts */
@@ -66,6 +69,9 @@ export const API_ENDPOINTS = {
 		PROFILE_PICTURE: '/api/upload/profile-picture',
 		CERTIFICATE: '/api/upload/certificate',
 		CLIENT_DOCUMENT: '/api/upload/client-document',
+		// Resolves a saved fileKey (profile picture / certificate / allowable-hours
+		// support doc) to a short-lived signed GET URL.
+		FILE_URL: '/api/upload/file-url',
 	},
 
 	/* All related endpoints for permissions */

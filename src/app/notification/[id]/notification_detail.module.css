@@ -1,0 +1,227 @@
+.cardStack {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Hero: hours transition ──────────────────────────────────────────────── */
+
+.reviewNotice {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	width: 100%;
+	margin-bottom: 1.5rem;
+	padding: 10px 14px;
+	background: #eff6ff;
+	border: 1px solid #bfdbfe;
+	border-radius: 8px;
+	color: #1c4a6e;
+	font-size: 0.85rem;
+	line-height: 1.5;
+}
+
+.reviewNotice svg {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.hoursRow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2.5rem;
+	width: 100%;
+	padding: 1.5rem 0;
+}
+
+.hoursBlock {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	min-width: 100px;
+}
+
+.hoursValue {
+	font-size: 2.5rem;
+	font-weight: 700;
+	line-height: 1;
+	color: #9ca3af;
+}
+
+.hoursValueNew {
+	color: #1c4a6e;
+}
+
+.hoursCaption {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: #9ca3af;
+}
+
+.hoursArrow {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	color: #d1d5db;
+}
+
+.trendUp { color: #16a34a; }
+.trendDown { color: #dc2626; }
+.trendFlat { color: #9ca3af; }
+
+.heroMeta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	width: 100%;
+	padding-top: 1.25rem;
+	border-top: 1px solid #eef0f2;
+}
+
+.clientChip, .metaChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	font-weight: 500;
+}
+
+.clientChip {
+	background: #eff6ff;
+	color: #1c4a6e;
+}
+
+a.clientChip:hover {
+	background: #dbeafe;
+}
+
+.metaChip {
+	background: #f3f4f6;
+	color: #4b5563;
+}
+
+.metaText {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.85rem;
+	color: #6b7280;
+}
+
+.metaText strong {
+	color: #374151;
+	font-weight: 600;
+}
+
+/* ── Reason ───────────────────────────────────────────────────────────────── */
+
+.reasonBox {
+	padding: 10px 14px;
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	font-size: 0.875rem;
+	color: #374151;
+	line-height: 1.55;
+	white-space: pre-wrap;
+}
+
+/* ── Document ─────────────────────────────────────────────────────────────── */
+
+.docPreview {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	max-width: 420px;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.docPreview:hover {
+	border-color: #1c4a6e;
+	background: #f9fafb;
+}
+
+.docThumb {
+	width: 56px;
+	height: 56px;
+	object-fit: cover;
+	border-radius: 8px;
+	flex-shrink: 0;
+}
+
+.docIconBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 8px;
+	background: #eff6ff;
+	color: #1c4a6e;
+	flex-shrink: 0;
+}
+
+.docInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.docName {
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #171a1f;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.docOpenHint {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.78rem;
+	color: #1c4a6e;
+}
+
+.docSkeleton {
+	width: 100%;
+	max-width: 420px;
+	height: 76px;
+	border-radius: 10px;
+	background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
+}
+
+.docStatus {
+	font-size: 0.875rem;
+	color: #6b7280;
+}
+
+@media (max-width: 768px) {
+	.hoursRow {
+		gap: 1.25rem;
+	}
+	.hoursValue {
+		font-size: 2rem;
+	}
+}

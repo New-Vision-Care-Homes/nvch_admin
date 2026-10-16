@@ -23,12 +23,17 @@ export const payrollService = {
 	},
 
 	/**
-	 * Fetch the payroll exceptions list for a given home and pay period.
-	 * Returns four arrays: unresolvedOverage, bankCapExceeded, negativeBalances,
-	 * alternateLocationClockIns.
+	 * Fetch the payroll exceptions list for a given pay period, scoped to a
+	 * single home when homeId is provided (every exception belongs to exactly
+	 * one house, so this always returns that house's own exceptions — never
+	 * another house's). Returns four arrays: unresolvedOverage, bankCapExceeded,
+	 * negativeBalances, alternateLocationClockIns.
 	 *
 	 * @param {Object} params
-	 * @param {string}  params.homeId
+	 * @param {string}  [params.homeId]      - Home's _id or "community". Same vocabulary as
+	 *                                         getCoverSheet. Omitting it returns every house's
+	 *                                         exceptions instead of one. Bad id → 400
+	 *                                         INVALID_HOUSE_ID, unknown home → 404 HOME_NOT_FOUND.
 	 * @param {number}  params.payYear
 	 * @param {number}  params.periodNumber
 	 * @returns {Promise<{ unresolvedOverage: Array, bankCapExceeded: Array, negativeBalances: Array, alternateLocationClockIns: Array }>}

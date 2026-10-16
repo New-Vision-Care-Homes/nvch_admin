@@ -131,7 +131,7 @@ export const addressRule = yup
 export const shortTextRule = yup
 	.string()
 	.trim()
-	.max(20, "Cannot exceed 20 characters")
+	.max(50, "Cannot exceed 50 characters")
 	.optional();
 
 export const addressComponentRule = yup.string().trim().optional();
