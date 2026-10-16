@@ -13,10 +13,13 @@ import { useClients } from "@/hooks/useClients";
 /**
  * Mirrors the backend's ALLOWABLE_HOURS_REQUIRED / ALLOWABLE_HOURS_NOT_ALLOWED
  * rule: a positive value requires an ILS/IF home; 0/unset requires any other
- * home (or no home at all). Validating this client-side prevents a round
- * trip just to learn the backend will reject the combination.
+ * home. The compatibility check only applies once the client actually has a
+ * home on file — with no home yet, the backend accepts any 0-168 value (this
+ * is the normal path for setting hours before assigning an ILS/IF home, so
+ * the two steps don't deadlock each other).
  */
-function buildSchema(requiresPositiveHours) {
+function buildSchema({ hasHome, isIlsOrIfHome }) {
+	const requiresPositiveHours = hasHome && isIlsOrIfHome;
 	return yup.object({
 		allowableHours: yup
 			.number()
@@ -28,9 +31,12 @@ function buildSchema(requiresPositiveHours) {
 			.test(
 				"home-type-compatibility",
 				requiresPositiveHours
-					? "This client's home requires a positive value — 0 isn't allowed here."
-					: "This client has no ILS/IF home on file, so hours must be 0 until one is assigned.",
-				(value) => (value == null ? true : requiresPositiveHours ? value > 0 : value === 0)
+					? "This client's home requires a positive value — 0 isn't allowed here. To set hours to 0, first move the client off this home from the Info tab, then update hours here."
+					: "This client's current home doesn't support a positive value — it must be 0.",
+				(value) => {
+					if (value == null || !hasHome) return true;
+					return requiresPositiveHours ? value > 0 : value === 0;
+				}
 			),
 		reason: yup
 			.string()
@@ -64,14 +70,15 @@ function buildSchema(requiresPositiveHours) {
  * @param {function} onClose - Function to call when the modal is closed.
  * @param {string} clientId - The ID of the client whose hours are changing.
  * @param {number|null} currentHours - The client's current allowable hours, used as the form default.
- * @param {boolean} requiresPositiveHours - True when the client's current home is ILS/IF
- *   (must stay positive); false when there's no home or a non-ILS/IF one (must be 0).
+ * @param {boolean} hasHome - Whether the client currently has a home assigned at all.
+ * @param {string|null} homeType - The client's current home type (e.g. "ILS", "IF"), if any.
  * @param {function} onSuccess - Optional callback executed after a successful update.
  */
-export default function AllowableHoursModal({ isOpen, onClose, clientId, currentHours, requiresPositiveHours, onSuccess }) {
+export default function AllowableHoursModal({ isOpen, onClose, clientId, currentHours, hasHome, homeType, onSuccess }) {
 	const { updateAllowableHours, isActionPending, actionError } = useClients(clientId);
 
-	const schema = useMemo(() => buildSchema(requiresPositiveHours), [requiresPositiveHours]);
+	const isIlsOrIfHome = homeType === "ILS" || homeType === "IF";
+	const schema = useMemo(() => buildSchema({ hasHome, isIlsOrIfHome }), [hasHome, isIlsOrIfHome]);
 
 	const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm({
 		resolver: yupResolver(schema),

@@ -274,7 +274,8 @@ export default function Page() {
 				onClose={() => setIsHoursModalOpen(false)}
 				clientId={id}
 				currentHours={clientDetail.allowableHours}
-				requiresPositiveHours={homeType === "ILS" || homeType === "IF"}
+				hasHome={hasHome}
+				homeType={homeType}
 				onSuccess={() => {
 					setHoursSuccess("Allowable hours updated.");
 					setTimeout(() => setHoursSuccess(null), 4000);
