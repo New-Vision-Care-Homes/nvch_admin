@@ -13,7 +13,7 @@ import IconButton  from "@components/UI/Button/IconButton";
 import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
 import { useCaregiverPayrollSummary } from "@/hooks/usePayroll";
 import { useProfile } from "@/hooks/useProfile";
-import { formatDateOnly, formatDateTime } from "@/utils/dates";
+import { DISPLAY_TZ, formatDateOnly, formatDateTime } from "@/utils/dates";
 import { PAY_CATEGORY_LABELS } from "@/utils/dropdownList/payCategory";
 import styles       from "./caregiver_summary.module.css";
 import detailStyles from "../../[id]/payroll_detail.module.css";
@@ -52,6 +52,7 @@ const HOUR_TYPE_DEFINITIONS = [
     { label: "Training",          apiKey: "training"         },
     { label: "Banked Hours Paid", apiKey: "bankedHoursPaid"  },
     { label: "Hours Banked",      apiKey: "hoursBanked"      },
+    { label: "Sick",              apiKey: "sick"             },
 ];
 
 
@@ -168,13 +169,13 @@ export default function CaregiverPayrollSummaryPage() {
                         {period.periodStart && (
                             <div className={detailStyles.periodItem}>
                                 <span className={detailStyles.periodItemLabel}>Start</span>
-                                <span className={detailStyles.periodItemValue}>{formatDateOnly(period.periodStart)}</span>
+                                <span className={detailStyles.periodItemValue}>{formatDateOnly(period.periodStart, DISPLAY_TZ)}</span>
                             </div>
                         )}
                         {period.periodEnd && (
                             <div className={detailStyles.periodItem}>
                                 <span className={detailStyles.periodItemLabel}>End</span>
-                                <span className={detailStyles.periodItemValue}>{formatDateOnly(period.periodEnd)}</span>
+                                <span className={detailStyles.periodItemValue}>{formatDateOnly(period.periodEnd, DISPLAY_TZ)}</span>
                             </div>
                         )}
                         {summary?.maxHours != null && (

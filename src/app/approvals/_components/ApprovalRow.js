@@ -1,6 +1,7 @@
 "use client";
 
-import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone, MapPin } from "lucide-react";
+import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone, MapPin, Thermometer } from "lucide-react";
+import { formatDateOnly } from "@/utils/dates";
 import { timeAgo, formatCertName } from "../_utils/approvalMeta";
 import styles from "../approvals.module.css";
 
@@ -47,6 +48,15 @@ const ROW_TYPE_META = {
 		getSubtitle: (ctx) => ctx.requestedDollars != null
 			? `$${ctx.requestedDollars} vacation payout`
 			: "Vacation Pay Request",
+	},
+	paid_sick_time_request: {
+		Icon: Thermometer,
+		iconColor: "#bc29b7",
+		iconBg:    "#f9effc",
+		SubtitleIcon: Thermometer,
+		getSubtitle: (ctx) => ctx.requestedHours != null
+			? `${ctx.requestedHours}h sick time${ctx.sickDate ? ` · ${formatDateOnly(ctx.sickDate)}` : ""}`
+			: "Paid Sick Time Request",
 	},
 	caregiver_device_change: {
 		Icon: Smartphone,

@@ -32,6 +32,7 @@ import {
     DollarSign,
     Smartphone,
     MapPin,
+    Thermometer,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
 import { formatDateTime, toDateInput } from "@/utils/dates";
@@ -40,6 +41,7 @@ import CertificateApproval   from "./_components/CertificateApproval";
 import OvertimeMandate        from "./_components/OvertimeMandate";
 import BankedHoursPayout      from "./_components/BankedHoursPayout";
 import VacationPayPayout      from "./_components/VacationPayPayout";
+import PaidSickTimeRequest    from "./_components/PaidSickTimeRequest";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import AlternateLocationApproval from "./_components/AlternateLocationApproval";
 import ApproveModal           from "./_components/ApproveModal";
@@ -100,6 +102,11 @@ function getBannerMeta(status, subjectType) {
             rejected:  { title: "Rejected",  msg: "The vacation pay payout request was rejected.",                                              variant: "rejected"  },
             cancelled: { title: "Cancelled", msg: "This vacation pay payout request was withdrawn or auto-voided.",                             variant: "cancelled" },
         },
+        paid_sick_time_request: {
+            approved:  { title: "Approved",  msg: "The sick time has been approved and will be paid in the pay period shown.", variant: "approved"  },
+            rejected:  { title: "Rejected",  msg: "The sick time request was rejected.",                                     variant: "rejected"  },
+            cancelled: { title: "Cancelled", msg: "This sick time request was withdrawn or auto-voided.",                    variant: "cancelled" },
+        },
         caregiver_device_change: {
             approved:  { title: "Device Bound", msg: "The new device has been bound. The caregiver's old session ended immediately and they must sign in again on the new device.", variant: "approved"  },
             rejected:  { title: "Rejected",     msg: "The device change request was rejected. The caregiver remains on their current device.",                                    variant: "rejected"  },
@@ -138,6 +145,7 @@ function getBannerMeta(status, subjectType) {
  *   overtime_mandate        → OvertimeMandate         (shift link, overage context)
  *   banked_hours_payout     → BankedHoursPayout       (requested hours, pay period)
  *   vacation_pay_request    → VacationPayPayout       (requested dollars, pay period)
+ *   paid_sick_time_request  → PaidSickTimeRequest     (sick date, requested hours, reason, disclaimer)
  *   caregiver_device_change → DeviceChangeApproval    (requested device, caregiver's reason)
  *   alternate_location_clock_in → AlternateLocationApproval (explanation, live photo, map)
  *
@@ -203,12 +211,19 @@ export default function ApprovalDetailPage() {
     // already only returns this approval to that same set of people. So
     // visibility here already implies eligibility to decide — no client-side
     // slug check to duplicate.
+
     // vacation_pay_request is gated by the all/assigned region-scoped slugs
     // rather than a flat manage_payroll check — the approvals list/detail
     // fetch already scopes visibility server-side to admins holding one of
     // these two slugs in the caregiver's region, so holding either slug here
     // is sufficient (there's no per-caregiver region data in subjectContext
     // to re-check client-side, same reasoning as caregiver_device_change below).
+
+    // paid_sick_time_request follows the same explicit-approver model as
+    // caregiver_device_change (supervisor, team lead, home admins, super
+    // admins — no slug path, for the caregiver's privacy), so it needs no
+    // client-side check either.
+    
     // alternate_location_clock_in uses the same named-approver model, except
     // that an admin who worked the shift can open their own request while the
     // server never lets anyone decide a request they filed. Until the profile
@@ -220,7 +235,7 @@ export default function ApprovalDetailPage() {
         : rawSubjectType === "vacation_pay_request"
         ? permissionSlugs.includes("manage_all_vacation_pay_requests") ||
           permissionSlugs.includes("manage_assigned_vacation_pay_requests")
-        : rawSubjectType === "caregiver_device_change"
+        : rawSubjectType === "caregiver_device_change" || rawSubjectType === "paid_sick_time_request"
         ? true
         : rawSubjectType === "alternate_location_clock_in"
         ? profileId != null && String(approval.requestedBy) !== String(profileId)
@@ -308,9 +323,12 @@ export default function ApprovalDetailPage() {
      * values are sent as overrides so the API records the corrected dates.
      * Called by ApproveModal's onConfirm with the note reason the admin typed.
      *
-     * @param {string} reason — optional note from the admin
+     * @param {string} reason — optional note from the admin (required by
+     *                          ApproveModal when sick-time hours are cut)
+     * @param {{ hours?: number }} [extra] — paid_sick_time_request only: pay
+     *                          fewer hours than requested
      */
-    const handleApprove = async (reason) => {
+    const handleApprove = async (reason, extra = {}) => {
         try {
             const overrides = {};
             if (isEditingDates) {
@@ -318,7 +336,7 @@ export default function ApprovalDetailPage() {
                 if (draftDates.expiryDate)  overrides.expiryDate  = draftDates.expiryDate;
                 if (draftDates.renewalDate) overrides.renewalDate = draftDates.renewalDate;
             }
-            await approve({ id, reason: reason || undefined, ...overrides });
+            await approve({ id, reason: reason || undefined, hours: extra.hours, ...overrides });
             setShowApproveModal(false);
             setIsEditingDates(false);
             setDraftDates({ startDate: "", expiryDate: "", renewalDate: "" });
@@ -378,6 +396,11 @@ export default function ApprovalDetailPage() {
                                 <DollarSign size={12} />
                                 Vacation Pay Payout
                             </span>
+                        ) : subjectType === "paid_sick_time_request" ? (
+                            <span className={`${styles.subjectTypePill} ${styles.subjectTypePillFuchsia}`}>
+                                <Thermometer size={12} />
+                                Paid Sick Time
+                            </span>
                         ) : subjectType === "caregiver_device_change" ? (
                             <span className={styles.subjectTypePill}>
                                 <Smartphone size={12} />
@@ -431,6 +454,7 @@ export default function ApprovalDetailPage() {
                         subjectType === "overtime_mandate"       ? "Overtime mandated successfully."  :
                         subjectType === "banked_hours_payout"    ? "Payout approved."                 :
                         subjectType === "vacation_pay_request"   ? "Vacation pay payout approved."    :
+                        subjectType === "paid_sick_time_request" ? "Paid sick time approved."              :
                         subjectType === "caregiver_device_change" ? "Device change approved. The caregiver can now sign in on their new device." :
                         subjectType === "alternate_location_clock_in" ? "Alternate clock-in location approved." :
                         "Certificate approved successfully."
@@ -438,6 +462,7 @@ export default function ApprovalDetailPage() {
                         subjectType === "overtime_mandate"       ? "Caregiver removed and shift reassigned." :
                         subjectType === "banked_hours_payout"    ? "Payout request rejected."               :
                         subjectType === "vacation_pay_request"   ? "Vacation pay payout request rejected."  :
+                        subjectType === "paid_sick_time_request" ? "Paid sick time request rejected."            :
                         subjectType === "caregiver_device_change" ? "Device change request rejected." :
                         subjectType === "alternate_location_clock_in" ? "Alternate clock-in location declined. The reason is recorded on the shift." :
                         "Certificate rejected."
@@ -561,6 +586,14 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
+                    {/* paid_sick_time_request — sick date, hours, reason, accepted disclaimer */}
+                    {subjectType === "paid_sick_time_request" && (
+                        <PaidSickTimeRequest
+                            subjectContext={subjectContext}
+                            caregiverName={caregiverName}
+                        />
+                    )}
+
                     {/* caregiver_device_change — read-only request details; admin cannot
                         choose or replace the device, only approve/reject the exact request */}
                     {subjectType === "caregiver_device_change" && (
@@ -646,6 +679,8 @@ export default function ApprovalDetailPage() {
                                             ? "Review the banked hours payout request. Rejection requires a written reason."
                                             : subjectType === "vacation_pay_request"
                                             ? "Review the vacation pay payout request. Rejection requires a written reason."
+                                            : subjectType === "paid_sick_time_request"
+                                            ? "Review the paid sick time request. You may approve fewer hours than requested (never more) with a note explaining the cut. Check the schedule — nothing stops a future date from also being worked. Rejection requires a written reason."
                                             : subjectType === "caregiver_device_change"
                                             ? "Approving binds the caregiver's account to the new device and ends their old session immediately. Rejecting leaves them on their current device. Rejection requires a written reason."
                                             : subjectType === "alternate_location_clock_in"
@@ -681,8 +716,7 @@ export default function ApprovalDetailPage() {
                                         </div>
                                     )}
 
-                                    {/* Inline reject form — caregiver_certificate, banked_hours_payout, and
-                                        vacation_pay_request only. overtime_mandate uses MandateRejectModal
+                                    {/* Inline reject form — every type except overtime_mandate. overtime_mandate uses MandateRejectModal
                                         (requires caregiver reassignment). */}
                                     {showRejectForm && (
                                         <div className={styles.rejectForm}>
@@ -691,6 +725,8 @@ export default function ApprovalDetailPage() {
                                                     subjectType === "banked_hours_payout" ||
                                                     subjectType === "vacation_pay_request"
                                                         ? "Explain why this payout request is being rejected…"
+                                                        : subjectType === "paid_sick_time_request"
+                                                        ? "Explain why this sick time request is being rejected…"
                                                         : subjectType === "caregiver_device_change"
                                                         ? "Explain why this device change is being rejected…"
                                                         : subjectType === "alternate_location_clock_in"
