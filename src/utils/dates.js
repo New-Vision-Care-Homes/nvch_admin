@@ -23,7 +23,7 @@
  */
 
 /** IANA timezone identifier for the project's display timezone. */
-const DISPLAY_TZ = "America/Halifax";
+export const DISPLAY_TZ = "America/Halifax";
 
 /**
  * Formats an ISO 8601 datetime string for display with both date and time,
@@ -60,30 +60,39 @@ export function formatDateTime(iso, fallback = "—") {
 /**
  * Formats an ISO 8601 date or datetime string as a date-only label.
  *
- * Pinned to UTC (NOT Atlantic Time) intentionally — see module comment above.
+ * Pinned to UTC (NOT Atlantic Time) by default — see module comment above.
  * Certificate dates are stored as midnight UTC; converting to Atlantic Time
  * would shift them one day back for all AT users.
  *
- * Use this for certificate issue/expiry/renewal dates and any other field
- * that represents a calendar date rather than a wall-clock moment.
+ * Use the default for certificate issue/expiry/renewal dates, "YYYY-MM-DD"
+ * strings, and any other field that represents a calendar date rather than a
+ * wall-clock moment.
+ *
+ * Pass `timeZone` when the value IS a moment and you want the date it falls on
+ * in that zone — e.g. pay period bounds, which the server sends as Halifax
+ * start/end-of-day in UTC. Formatted as UTC, a period ending
+ * "2026-10-22T02:59:59.999Z" shows "Oct 22" instead of "Oct 21".
  *
  * @param {string|null|undefined} iso
  *   ISO 8601 string, e.g. "2024-01-01" or "2024-01-01T00:00:00.000Z"
  * @param {string} [fallback="—"]
  *   Returned when `iso` is falsy or cannot be parsed.
+ * @param {string} [timeZone="UTC"]
+ *   IANA timezone to read the date in, e.g. DISPLAY_TZ.
  * @returns {string}
  *   Human-readable date, e.g. "Jan 1, 2024"
  *
  * @example
- * formatDateOnly("2024-01-01T00:00:00.000Z") // "Jan 1, 2024"
- * formatDateOnly("2026-06-15")                // "Jun 15, 2026"
- * formatDateOnly(null)                         // "—"
+ * formatDateOnly("2024-01-01T00:00:00.000Z")                // "Jan 1, 2024"
+ * formatDateOnly("2026-06-15")                               // "Jun 15, 2026"
+ * formatDateOnly("2026-10-22T02:59:59.999Z", "—", DISPLAY_TZ) // "Oct 21, 2026"
+ * formatDateOnly(null)                                       // "—"
  */
-export function formatDateOnly(iso, fallback = "—") {
+export function formatDateOnly(iso, fallback = "—", timeZone = "UTC") {
 	if (!iso) return fallback;
 	try {
 		return new Date(iso).toLocaleDateString("en-CA", {
-			year: "numeric", month: "short", day: "numeric", timeZone: "UTC",
+			year: "numeric", month: "short", day: "numeric", timeZone,
 		});
 	} catch {
 		return fallback;

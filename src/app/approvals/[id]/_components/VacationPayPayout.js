@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { DollarSign, User } from "lucide-react";
-import { formatDateOnly } from "@/utils/dates";
+import { DISPLAY_TZ, formatDateOnly } from "@/utils/dates";
 import styles from "../approval_detail.module.css";
 
 // ─── VacationPayPayout ────────────────────────────────────────────────────────
@@ -18,8 +18,10 @@ import styles from "../approval_detail.module.css";
 
 function formatPayPeriod(payPeriod) {
     if (!payPeriod) return "—";
-    const start = payPeriod.start ? formatDateOnly(payPeriod.start) : "";
-    const end   = payPeriod.end   ? formatDateOnly(payPeriod.end)   : "";
+    // Period bounds are Halifax start/end-of-day moments, so read them in
+    // Halifax time — the UTC default would show the end a day late.
+    const start = payPeriod.start ? formatDateOnly(payPeriod.start, "—", DISPLAY_TZ) : "";
+    const end   = payPeriod.end   ? formatDateOnly(payPeriod.end,   "—", DISPLAY_TZ) : "";
     return start && end ? `${start} – ${end}` : start || end || "—";
 }
 
