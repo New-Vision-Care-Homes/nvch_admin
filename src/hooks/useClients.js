@@ -81,6 +81,21 @@ export const useClients = (options = {}) => {
 			staleTime: 30_000,
 		});
 
+	// Fetches every page of the given filters (up to 100 per request) for export.
+	// Runs outside React Query so it can be awaited imperatively on button click.
+	const fetchAllForExport = async (exportParams) => {
+		let allClients = [];
+		let page = 1;
+		let hasMore = true;
+		while (hasMore) {
+			const result = await clientService.getAll({ ...exportParams, page, limit: 100 });
+			allClients = [...allClients, ...(result?.clients ?? [])];
+			hasMore = page < (result?.pagination?.totalPages ?? result?.pagination?.pages ?? 1);
+			page++;
+		}
+		return allClients;
+	};
+
 	// --- Mutations ---
 
 	// 3. Delete a client record
@@ -171,6 +186,7 @@ export const useClients = (options = {}) => {
 		deleteClient: deleteMutation.mutate,
 		toggleClientStatus: toggleStatusMutation.mutate,
 		fetchClient,
+		fetchAllForExport,
 		refetch: clientsQuery.refetch,
 	};
 };

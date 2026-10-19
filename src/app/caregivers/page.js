@@ -12,7 +12,7 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Table/Pagination";
 import ConfirmDeleteModal from "@components/UI/Modal/ConfirmDeleteModal";
 import Link from "next/link";
-import { Plus, Eye, Search, Trash2 } from "lucide-react";
+import { Plus, Eye, Search, Trash2, Download, Loader2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useHomes } from "@/hooks/useHomes";
@@ -23,6 +23,8 @@ import { fullName } from "@/utils/formatting";
 import ErrorState from "@components/UI/Feedback/ErrorState";
 import EmptyState from "@components/UI/Feedback/EmptyState";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
+import { exportCaregiverWorkbook } from "@/utils/excelExport/caregiverSheet";
+import logoImg from "@/assets/logo/nv.png";
 
 export default function Caregivers() {
 	const { profile } = useProfile();
@@ -67,6 +69,7 @@ export default function Caregivers() {
 		caregiverActionError,
 		deleteCaregiver,
 		refetch,
+		fetchAllForExport,
 	} = useCaregivers({
 		params: {
 			page:     currentPage,
@@ -76,6 +79,30 @@ export default function Caregivers() {
 			homeId,
 		},
 	});
+
+	const [isExporting, setIsExporting] = useState(false);
+	const handleExportAll = async () => {
+		setIsExporting(true);
+		try {
+			const exportParams = {
+				...(debouncedSearch && { search: debouncedSearch }),
+				...(homeId && { homeId }),
+				...(isActiveParam !== "" && { isActive: isActiveParam }),
+			};
+			const allCaregivers = await fetchAllForExport(exportParams);
+			// Resolve the filter's raw homeId to a display name using the homes
+			// already loaded for the filter dropdown — the caregiver list endpoint
+			// itself doesn't return a usable home name per caregiver (see below).
+			const homeName = homeId ? (homes.find((h) => (h.id || h._id) === homeId)?.name ?? homeId) : null;
+			await exportCaregiverWorkbook({
+				caregivers: allCaregivers,
+				logoUrl: logoImg.src,
+				filters: { ...exportParams, homeName },
+			});
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	// Reset to page 1 when any filter changes — but not on the initial mount,
 	// which would otherwise wipe out a restored (persisted) page number.
@@ -122,11 +149,21 @@ export default function Caregivers() {
 					{/* Header */}
 					<div className={styles.header}>
 						<h1>Caregiver Management</h1>
-						{canCreate && (
-							<Link href="/caregivers/add_new_caregiver">
-								<Button variant="primary" icon={<Plus size={16} />}>Add New Caregiver</Button>
-							</Link>
-						)}
+						<div className={styles.headerActions}>
+							<Button
+								variant="excel"
+								icon={isExporting ? <Loader2 size={14} className={styles.exportSpinner} /> : <Download size={14} />}
+								onClick={handleExportAll}
+								disabled={isExporting || isCaregiverLoading}
+							>
+								{isExporting ? "Exporting…" : "Caregivers Export"}
+							</Button>
+							{canCreate && (
+								<Link href="/caregivers/add_new_caregiver">
+									<Button variant="primary" icon={<Plus size={16} />}>Add New Caregiver</Button>
+								</Link>
+							)}
+						</div>
 					</div>
 
 					<ActionMessage variant="error" message={caregiverActionError} />
