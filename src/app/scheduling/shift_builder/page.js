@@ -93,7 +93,7 @@ import IconButton from "@components/UI/Button/IconButton";
 import ErrorState from "@components/UI/Feedback/ErrorState";
 import Modal from "@components/UI/Modal/Modal";
 import OvertimeInfoBox from "../_components/OvertimeInfoBox";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { useShifts } from "@/hooks/useShifts";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
@@ -977,7 +977,7 @@ export default function ShiftBuilderPage() {
 	// ── Data fetching ─────────────────────────────────────────────────────────
 
 	// All homes for the dropdown
-	const { homes, isLoading: homesLoading } = useHomes({ limit: 100 });
+	const { homes, isLoading: homesLoading } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	// The selected home's full record — includes its caregivers list
 	const { homeDetail, isLoading: homeDetailLoading } = useHomes(selectedHomeId);

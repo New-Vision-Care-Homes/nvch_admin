@@ -15,7 +15,7 @@ import Button        from "@components/UI/Button/Button";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { Card, CardHeader, CardContent } from "@components/UI/Form/Card";
 import { useCreateCaregiverEntry, useCaregiverPayrollSummary } from "@/hooks/usePayroll";
-import { useHomes }  from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { WRITABLE_PAY_CATEGORIES } from "@/utils/dropdownList/payCategory";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles        from "./add_entry.module.css";
@@ -139,7 +139,7 @@ export default function AddCaregiverEntryPage() {
 
 
     // ── Data ──────────────────────────────────────────────────────────────────
-    const { homes, isLoading: homesLoading } = useHomes({ limit: 100 });
+    const { homes, isLoading: homesLoading } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
     const { summary: caregiverSummary } = useCaregiverPayrollSummary({
         params: {

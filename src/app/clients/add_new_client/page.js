@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import ActionMessage from "@/components/UI/Feedback/ActionMessage";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 
 import {
 	IdRule,
@@ -189,7 +189,7 @@ export default function Page() {
 		setIsDirty(isDirty);
 	}, [isDirty, setIsDirty]);
 
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 	const watchHomeId = watch("homeId");
 	const watchNoHomeSelected = watch("noHomeSelected");
 

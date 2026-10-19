@@ -15,7 +15,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
 import styles from "./create.module.css";
@@ -167,7 +167,7 @@ function HomeSearch({ selected, onAdd, onRemove }) {
 	const debouncedQuery      = useDebounce(query, 350);
 	const wrapperRef          = useRef(null);
 
-	const { homes, isLoading } = useHomes(debouncedQuery ? { search: debouncedQuery } : {});
+	const { homes, isLoading } = useHomes(debouncedQuery ? { search: debouncedQuery, limit: HOMES_DROPDOWN_LIMIT } : { limit: HOMES_DROPDOWN_LIMIT });
 	const selectedIds = new Set(selected.map(h => h._id));
 	// Normalize: backend may return `id` or `_id` depending on serialization
 	const results = homes.filter(h => !selectedIds.has(h._id || h.id));

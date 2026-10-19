@@ -25,7 +25,7 @@ import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import HouseConflictModal from "@/components/UI/Modal/HouseConflictModal";
 import { useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
@@ -278,7 +278,7 @@ export default function Info() {
 		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true, shouldDirty: true });
 	}
 
-	const { homes, fetchHome } = useHomes({ limit: 100 });
+	const { homes, fetchHome } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 	const watchHomeId = watch("homeId");
 	const watchNoHomeSelected = watch("noHomeSelected");
 	const watchStreet = watch("street");

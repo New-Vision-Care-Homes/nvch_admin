@@ -73,7 +73,7 @@ import OverviewView from "./_components/OverviewView";
 
 import { useShifts } from "@/hooks//useShifts";
 import { useProfile } from "@/hooks/useProfile";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { usePayPeriod } from "@/hooks/usePayPeriods";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { utcToZonedDateObject, expandShiftDays } from "@/utils/timeHandling";
@@ -167,7 +167,7 @@ export default function SchedulingPage() {
 	// Empty string = "All Homes" (no filter). Persisted so it's still applied
 	// when the admin views a shift and then comes back.
 	const [selectedHomeId, setSelectedHomeId] = usePersistedState("scheduling-filters:selectedHomeId", "");
-	const { homes } = useHomes({ limit: 100 }); // load all homes once for the dropdown
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT }); // load all homes once for the dropdown
 
 	// ── Shift search bar ──────────────────────────────────────────────────────
 	// Lets admins jump straight to a shift by typing its ID.

@@ -15,7 +15,7 @@ import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 
 import { useCaregivers } from "@/hooks/useCaregivers";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
@@ -56,7 +56,7 @@ export default function Caregivers() {
 	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
 
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	const {
 		caregivers,

@@ -16,7 +16,7 @@ import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import ErrorState from "@/components/UI/Feedback/ErrorState";
 import EmptyState from "@/components/UI/Feedback/EmptyState";
 import { useClients } from "@/hooks/useClients";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { canManageTarget } from "@/utils/permissions";
@@ -59,7 +59,7 @@ export default function Clients() {
 	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
 
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	const {
 		clients,

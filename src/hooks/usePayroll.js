@@ -1,6 +1,6 @@
 import { useQuery, useQueries, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { payrollService } from "@/services/api/services/payrollService";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 
 const getErrorMessage = (err) =>
 	err?.response?.data?.details?.[0]?.msg ||
@@ -91,7 +91,7 @@ export const usePayrollOverview = ({ payYear, periodNumber, enabled = true } = {
 		isLoading: homesLoading,
 		fetchError: homesError,
 		refetch: refetchHomes,
-	} = useHomes({ limit: 100 });
+	} = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	const canFetch = !!(enabled && payYear && periodNumber && homes.length > 0);
 

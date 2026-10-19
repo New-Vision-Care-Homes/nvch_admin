@@ -25,7 +25,7 @@ import ErrorState from "@components/UI/Feedback/ErrorState";
 import IconButton  from "@components/UI/Button/IconButton";
 import { PageTable, PageTableRow, PageTableHeadCell, PageTableCell } from "@components/UI/Table/Table";
 import { useCoverSheet } from "@/hooks/usePayroll";
-import { useHomes }      from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { usePayPeriod }  from "@/hooks/usePayPeriods";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import styles from "../payroll.module.css";
@@ -135,7 +135,7 @@ export default function PayrollManualEntriesPage() {
         isLoading: homesLoading,
         fetchError: homesError,
         refetch: refetchHomes,
-    } = useHomes({ limit: 100 });
+    } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 
     // ── Data: Current pay period (for auto-fill) ──────────────────────────────
