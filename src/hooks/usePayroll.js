@@ -66,18 +66,24 @@ export const usePayrollExceptions = ({ params = {}, enabled = true } = {}) => {
 	const bankCapExceeded           = responseData.bankCapExceeded           ?? [];
 	const negativeBalances          = responseData.negativeBalances          ?? [];
 	const alternateLocationClockIns = responseData.alternateLocationClockIns ?? [];
-	// totalCount blocks payroll export. A declined alternate location is final —
-	// nothing can ever clear it — so only pending reviews count; declined ones
-	// are reviewOnlyCount: listed for payroll to check, never blocking.
+	const clockOutReviews           = responseData.clockOutReviews           ?? [];
+	// totalCount blocks payroll export. A declined alternate location or a
+	// rejected clock-out review is final — nothing can ever clear it — so only
+	// pending reviews count; decided ones are reviewOnlyCount: listed for
+	// payroll to check, never blocking.
 	const pendingAlternateLocations = alternateLocationClockIns.filter((item) => item.reviewStatus === "pending");
-	const totalCount                = unresolvedOverage.length + bankCapExceeded.length + negativeBalances.length + pendingAlternateLocations.length;
-	const reviewOnlyCount           = alternateLocationClockIns.length - pendingAlternateLocations.length;
+	const pendingClockOutReviews    = clockOutReviews.filter((item) => item.reviewStatus === "pending");
+	const totalCount                = unresolvedOverage.length + bankCapExceeded.length + negativeBalances.length
+	                                + pendingAlternateLocations.length + pendingClockOutReviews.length;
+	const reviewOnlyCount           = (alternateLocationClockIns.length - pendingAlternateLocations.length)
+	                                + (clockOutReviews.length - pendingClockOutReviews.length);
 
 	return {
 		unresolvedOverage,
 		bankCapExceeded,
 		negativeBalances,
 		alternateLocationClockIns,
+		clockOutReviews,
 		totalCount,
 		reviewOnlyCount,
 		isLoading:  query.isLoading || query.isFetching,

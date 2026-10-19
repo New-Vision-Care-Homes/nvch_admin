@@ -8,7 +8,7 @@
 //   utilities this page depends on.
 //
 // Relationship:
-//   - usePayrollExceptions fetches the four exception arrays.
+//   - usePayrollExceptions fetches the five exception arrays.
 //   - useCoverSheet is called purely for home info (name, type,
 //     region). It shares the same React Query cache key as the
 //     detail page so this is usually a cache-hit — no extra
@@ -28,12 +28,14 @@ import {
     CheckCircle2,
     ExternalLink,
     MapPin,
+    ClockAlert,
 } from "lucide-react";
 import PageLayout  from "@components/layout/PageLayout";
 import ErrorState  from "@components/UI/Feedback/ErrorState";
 import Button      from "@components/UI/Button/Button";
 import { usePayrollExceptions, useCoverSheet } from "@/hooks/usePayroll";
 import { formatDateTime } from "@/utils/dates";
+import { CLOCK_OUT_TRIGGER_LABELS } from "@/app/approvals/_utils/approvalMeta";
 import { ColorPill } from "@components/UI/Feedback/Badge";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
@@ -47,10 +49,10 @@ import detailStyles from "../payroll_detail.module.css";
 // ------------------------------------------------------------
 // Purpose:
 //   Full list of payroll exceptions for a single home and pay
-//   period. Displays four categorised sections — Unresolved
-//   Overage, Bank Cap Exceeded, Negative Balances, and Alternate
-//   Clock-In Locations — so payroll coordinators can identify
-//   and resolve problems before exporting.
+//   period. Displays five categorised sections — Unresolved
+//   Overage, Bank Cap Exceeded, Negative Balances, Alternate
+//   Clock-In Locations, and Clock-Out Reviews — so payroll
+//   coordinators can identify and resolve problems before exporting.
 //
 // Relationship:
 //   - Reached from PayrollDetailPage via the exception banner.
@@ -65,9 +67,10 @@ import detailStyles from "../payroll_detail.module.css";
 //        ↓
 //   useCoverSheet  → coverSheet.home (for the home card)
 //   usePayrollExceptions → { unresolvedOverage, bankCapExceeded,
-//                            negativeBalances, alternateLocationClockIns }
+//                            negativeBalances, alternateLocationClockIns,
+//                            clockOutReviews }
 //        ↓
-//   Four section cards rendered — each empty section shows a
+//   Five section cards rendered — each empty section shows a
 //   green "All clear" confirmation row instead of items.
 // ============================================================
 
@@ -104,6 +107,7 @@ export default function PayrollExceptionsPage() {
         bankCapExceeded,
         negativeBalances,
         alternateLocationClockIns,
+        clockOutReviews,
         isLoading,
         fetchError,
         refetch,
@@ -397,6 +401,93 @@ export default function PayrollExceptionsPage() {
                                                     {!isPending && item.decisionReason && (
                                                         <span className={styles.exceptionReason}>
                                                             Reason: {item.decisionReason}{item.decidedByName ? ` — ${item.decidedByName}` : ""}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <ExternalLink size={14} className={styles.exceptionLink} />
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── Section 5: Clock-Out Reviews ─────────────────── */}
+                        {/*
+                            Amber theme, like the clock-out review icon on the
+                            approvals pages. Clock-outs that couldn't be verified
+                            at the home. Pending reviews block export until an
+                            approver sets the paid end; a rejection is final (the
+                            pay is already cut), so rejected rows are for payroll's
+                            review only. Links to the shift — the approval itself
+                            is visible to its approvers only.
+                        */}
+                        <div className={styles.sectionCard}>
+                            <div className={styles.sectionHeader}>
+                                <ClockAlert size={16} color="#ff5500" />
+                                <span className={styles.sectionTitle}>Clock-Out Reviews</span>
+                                <span className={styles.sectionCountDarkOrange}>
+                                    {clockOutReviews.length} item{clockOutReviews.length !== 1 ? "s" : ""}
+                                </span>
+                            </div>
+                            {clockOutReviews.length > 0 && (
+                                <p className={styles.sectionNote}>
+                                    Pending reviews must be decided before export. Rejected reviews have already cut the pay — they&apos;re listed so payroll can check the hours and not block export.
+                                </p>
+                            )}
+                            <div className={styles.sectionBody}>
+                                {clockOutReviews.length === 0 ? (
+                                    <div className={styles.allClear}>
+                                        <CheckCircle2 size={15} />
+                                        All clear — no clock-out reviews
+                                    </div>
+                                ) : (
+                                    clockOutReviews.map((item, index) => {
+                                        const isLastRow       = index === clockOutReviews.length - 1;
+                                        const isPending       = item.reviewStatus === "pending";
+                                        const destinationPath = `/scheduling/${item.shiftId}`;
+
+                                        return (
+                                            <div
+                                                key={item.shiftId ?? index}
+                                                className={`${styles.exceptionRow} ${isLastRow ? styles.exceptionRowLast : ""}`}
+                                                onClick={() => router.push(destinationPath)}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(event) => event.key === "Enter" && router.push(destinationPath)}
+                                            >
+                                                <div className={styles.exceptionIconBox} style={{ background: "#fff2eb" }}>
+                                                    <ClockAlert size={14} color="#ff5500" />
+                                                </div>
+                                                <div className={styles.exceptionBody}>
+                                                    <span className={styles.exceptionName}>{`${item.caregiver?.firstName ?? ""} ${item.caregiver?.lastName ?? ""}`.trim() || "—"}</span>
+                                                    <span className={styles.exceptionMeta}>
+                                                        {item.startTime && formatDateTime(item.startTime)}
+                                                        {CLOCK_OUT_TRIGGER_LABELS[item.trigger] && (
+                                                            <span>{CLOCK_OUT_TRIGGER_LABELS[item.trigger]}</span>
+                                                        )}
+                                                        <span
+                                                            className={styles.exceptionBadge}
+                                                            style={isPending
+                                                                ? { color: "#d97706", background: "#fffbeb", borderColor: "#fcd34d" }
+                                                                : { color: "#dc2626", background: "#fef2f2", borderColor: "#fca5a5" }}
+                                                        >
+                                                            {isPending ? "Pending review" : "Rejected"}
+                                                        </span>
+                                                    </span>
+                                                    {/* Pending: the caregiver's side, if they've sent it.
+                                                        Rejected: what's now paid, and why. */}
+                                                    {isPending && item.explanationNote && (
+                                                        <span className={styles.exceptionReason}>
+                                                            Caregiver&apos;s explanation: {item.explanationNote}
+                                                        </span>
+                                                    )}
+                                                    {!isPending && (
+                                                        <span className={styles.exceptionReason}>
+                                                            {item.paidUntil && `Paid until ${formatDateTime(item.paidUntil)}`}
+                                                            {item.paidUntil && item.hoursWorked != null && ` (${item.hoursWorked} h)`}
+                                                            {item.decisionReason && `${item.paidUntil ? " — " : ""}Reason: ${item.decisionReason}`}
+                                                            {item.decidedByName && ` — ${item.decidedByName}`}
                                                         </span>
                                                     )}
                                                 </div>

@@ -50,6 +50,13 @@
 	border: 1px solid #fcd34d;
 }
 
+.sectionCountDarkOrange {
+	composes: sectionCount;
+	color: #ff5500;
+	background: #fff2eb;
+	border: 1px solid #ff550066;
+}
+
 .sectionCountOrange {
 	composes: sectionCount;
 	color: #ea580c;
