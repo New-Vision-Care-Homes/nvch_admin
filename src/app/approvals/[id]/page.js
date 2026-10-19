@@ -33,6 +33,7 @@ import {
     Smartphone,
     MapPin,
     Thermometer,
+    ClockAlert,
 } from "lucide-react";
 import styles from "./approval_detail.module.css";
 import { formatDateTime, toDateInput } from "@/utils/dates";
@@ -44,7 +45,9 @@ import VacationPayPayout      from "./_components/VacationPayPayout";
 import PaidSickTimeRequest    from "./_components/PaidSickTimeRequest";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import AlternateLocationApproval from "./_components/AlternateLocationApproval";
+import ClockOutReviewApproval from "./_components/ClockOutReviewApproval";
 import ApproveModal           from "./_components/ApproveModal";
+import PaidUntilField, { checkPaidUntil, defaultPaidUntil } from "./_components/PaidUntilField";
 import MandateRejectModal     from "./_components/MandateRejectModal";
 import RejectReasonField      from "@components/UI/Form/RejectReasonField";
 
@@ -117,6 +120,11 @@ function getBannerMeta(status, subjectType) {
             rejected:  { title: "Location Declined", msg: "The clock-in location was not accepted. The decline and its reason are recorded on the shift.",             variant: "rejected"  },
             cancelled: { title: "Cancelled",         msg: "This request was cancelled before a decision was made.",                                                    variant: "cancelled" },
         },
+        clock_out_review: {
+            approved:  { title: "Clock-Out Approved", msg: "The shift is paid until the time shown under Outcome, and its hours were updated to match.",       variant: "approved"  },
+            rejected:  { title: "Clock-Out Rejected", msg: "The caregiver is paid only until the time shown under Outcome. The cut is recorded on the shift's hours.", variant: "rejected"  },
+            cancelled: { title: "Cancelled",          msg: "This review was cancelled without a decision. The shift's hours were not changed.",                variant: "cancelled" },
+        },
     };
     const statusMap = maps[subjectType] ?? {
         approved:  { title: "Approved",  msg: "This certificate has been approved and is now active.", variant: "approved"  },
@@ -148,6 +156,7 @@ function getBannerMeta(status, subjectType) {
  *   paid_sick_time_request  → PaidSickTimeRequest     (sick date, requested hours, reason, disclaimer)
  *   caregiver_device_change → DeviceChangeApproval    (requested device, caregiver's reason)
  *   alternate_location_clock_in → AlternateLocationApproval (explanation, live photo, map)
+ *   clock_out_review        → ClockOutReviewApproval  (what happened, map, app activity, explanation, outcome)
  *
  * Modals are extracted as sub-components as well:
  *   ApproveModal        — confirmation for Approve / Mandate / Approve Payout
@@ -164,12 +173,17 @@ export default function ApprovalDetailPage() {
 
     // Approve modal — note / reason is managed inside ApproveModal itself
     const [showApproveModal, setShowApproveModal] = useState(false);
+    // clock_out_review only — "full" (Approve full shift) or "until" (Approve until…)
+    const [clockOutMode,     setClockOutMode]     = useState("full");
 
     // Inline reject form — used for caregiver_certificate and banked_hours_payout.
     // overtime_mandate uses the MandateRejectModal instead (requires caregiver reassignment).
     const [showRejectForm,  setShowRejectForm]  = useState(false);
     const [rejectReason,    setRejectReason]    = useState("");
     const [rejectReasonErr, setRejectReasonErr] = useState("");
+    // clock_out_review only — the "pay until" time a reject requires
+    const [rejectPaidUntil,    setRejectPaidUntil]    = useState("");
+    const [rejectPaidUntilErr, setRejectPaidUntilErr] = useState("");
 
     // Mandate reject modal — all form state lives inside MandateRejectModal
     const [showMandateRejectModal, setShowMandateRejectModal] = useState(false);
@@ -228,6 +242,9 @@ export default function ApprovalDetailPage() {
     // that an admin who worked the shift can open their own request while the
     // server never lets anyone decide a request they filed. Until the profile
     // loads we don't know who is looking, so the actions stay hidden.
+
+    // clock_out_review follows the same rule: it's filed in the worker's name,
+    // and its deciders are the same named approvers.
     const canDecide = rawSubjectType === "overtime_mandate"
         ? permissionSlugs.includes("update_shifts")
         : rawSubjectType === "banked_hours_payout"
@@ -237,7 +254,7 @@ export default function ApprovalDetailPage() {
           permissionSlugs.includes("manage_assigned_vacation_pay_requests")
         : rawSubjectType === "caregiver_device_change" || rawSubjectType === "paid_sick_time_request"
         ? true
-        : rawSubjectType === "alternate_location_clock_in"
+        : rawSubjectType === "alternate_location_clock_in" || rawSubjectType === "clock_out_review"
         ? profileId != null && String(approval.requestedBy) !== String(profileId)
         : permissionSlugs.includes("approve_all_certificates") ||
           permissionSlugs.includes("approve_assigned_certificates");
@@ -294,6 +311,13 @@ export default function ApprovalDetailPage() {
 
     // overtime_acknowledgment is decided by the caregiver on mobile — use their name
     // from context rather than looking up an admin record.
+    // clock_out_review — both pay cuts (Approve until… and Reject) wait until the
+    // caregiver has explained or their deadline has passed; the server enforces
+    // it too (CLOCK_OUT_REVIEW_AWAITING_EXPLANATION).
+    const isClockOutReview = subjectType === "clock_out_review";
+    const isPayCutBlocked  = isClockOutReview && subjectContext.awaitingExplanation === true;
+    const rejectPaidUntilCheck = isClockOutReview ? checkPaidUntil(rejectPaidUntil, subjectContext) : null;
+
     const decidedByName = subjectType === "overtime_acknowledgment"
         ? caregiverName
         : decidedByAdmin
@@ -325,8 +349,10 @@ export default function ApprovalDetailPage() {
      *
      * @param {string} reason — optional note from the admin (required by
      *                          ApproveModal when sick-time hours are cut)
-     * @param {{ hours?: number }} [extra] — paid_sick_time_request only: pay
-     *                          fewer hours than requested
+     * @param {{ hours?: number, paidUntil?: string }} [extra]
+     *                          hours — paid_sick_time_request only: pay fewer
+     *                          hours than requested
+     *                          paidUntil — clock_out_review "Approve until…" only
      */
     const handleApprove = async (reason, extra = {}) => {
         try {
@@ -336,7 +362,7 @@ export default function ApprovalDetailPage() {
                 if (draftDates.expiryDate)  overrides.expiryDate  = draftDates.expiryDate;
                 if (draftDates.renewalDate) overrides.renewalDate = draftDates.renewalDate;
             }
-            await approve({ id, reason: reason || undefined, hours: extra.hours, ...overrides });
+            await approve({ id, reason: reason || undefined, hours: extra.hours, paidUntil: extra.paidUntil, ...overrides });
             setShowApproveModal(false);
             setIsEditingDates(false);
             setDraftDates({ startDate: "", expiryDate: "", renewalDate: "" });
@@ -352,19 +378,45 @@ export default function ApprovalDetailPage() {
      * overtime_mandate rejections go through MandateRejectModal instead.
      */
     const handleReject = async () => {
-        if (!rejectReason.trim()) {
-            setRejectReasonErr("Please provide a reason for rejection.");
-            return;
+        const missingReason = !rejectReason.trim();
+        // clock_out_review also needs the time the caregiver actually left.
+        const missingPaidUntil = isClockOutReview && !rejectPaidUntilCheck.paidUntil;
+        if (missingReason) setRejectReasonErr("Please provide a reason for rejection.");
+        if (missingPaidUntil && !rejectPaidUntilCheck.error) {
+            setRejectPaidUntilErr("Choose the time the caregiver actually left.");
         }
+        if (missingReason || missingPaidUntil) return;
         try {
-            await reject({ id, reason: rejectReason.trim() });
-            setShowRejectForm(false);
-            setRejectReason("");
-            setRejectReasonErr("");
+            await reject({
+                id,
+                reason: rejectReason.trim(),
+                paidUntil: isClockOutReview ? rejectPaidUntilCheck.paidUntil : undefined,
+            });
+            closeRejectForm();
             setActionSuccess("rejected");
         } catch (_) {
             // rejectError is populated by React Query and rendered inline.
         }
+    };
+
+    /** Open the inline reject form — for a clock-out review, starting at the caregiver's "time I left". */
+    const openRejectForm = () => {
+        if (isClockOutReview) setRejectPaidUntil(defaultPaidUntil(subjectContext));
+        setShowRejectForm(true);
+    };
+
+    const closeRejectForm = () => {
+        setShowRejectForm(false);
+        setRejectReason("");
+        setRejectReasonErr("");
+        setRejectPaidUntil("");
+        setRejectPaidUntilErr("");
+    };
+
+    /** clock_out_review — open the approve modal as "Approve full shift" or "Approve until…". */
+    const openClockOutApprove = (mode) => {
+        setClockOutMode(mode);
+        setShowApproveModal(true);
     };
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -410,6 +462,11 @@ export default function ApprovalDetailPage() {
                             <span className={`${styles.subjectTypePill} ${styles.subjectTypePillBlue}`}>
                                 <MapPin size={12} />
                                 Alternate Location Clock-In
+                            </span>
+                        ) : subjectType === "clock_out_review" ? (
+                            <span className={`${styles.subjectTypePill} ${styles.subjectTypePillDarkOrange}`}>
+                                <ClockAlert size={12} />
+                                Clock-Out Review
                             </span>
                         ) : (
                             <span className={styles.subjectTypePill}>
@@ -457,6 +514,7 @@ export default function ApprovalDetailPage() {
                         subjectType === "paid_sick_time_request" ? "Paid sick time approved."              :
                         subjectType === "caregiver_device_change" ? "Device change approved. The caregiver can now sign in on their new device." :
                         subjectType === "alternate_location_clock_in" ? "Alternate clock-in location approved." :
+                        subjectType === "clock_out_review" ? "Clock-out review approved. The shift's paid hours are up to date." :
                         "Certificate approved successfully."
                     ) : actionSuccess === "rejected" ? (
                         subjectType === "overtime_mandate"       ? "Caregiver removed and shift reassigned." :
@@ -465,6 +523,7 @@ export default function ApprovalDetailPage() {
                         subjectType === "paid_sick_time_request" ? "Paid sick time request rejected."            :
                         subjectType === "caregiver_device_change" ? "Device change request rejected." :
                         subjectType === "alternate_location_clock_in" ? "Alternate clock-in location declined. The reason is recorded on the shift." :
+                        subjectType === "clock_out_review" ? "Clock-out review rejected. The shift is now paid only until the time you chose." :
                         "Certificate rejected."
                     ) : null
                 }
@@ -502,8 +561,11 @@ export default function ApprovalDetailPage() {
                             <InfoField label="Requested By">
                                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                                     <User size={14} style={{ color: "#9ca3af" }} />
-                                    {/* An admin who worked the shift files alternate_location_clock_in as "admin" */}
-                                    {approval.requestedByRole === "caregiver" || subjectType === "alternate_location_clock_in"
+                                    {/* An admin who worked the shift files alternate_location_clock_in /
+                                        clock_out_review as "admin" — it's still the worker's request */}
+                                    {approval.requestedByRole === "caregiver" ||
+                                     subjectType === "alternate_location_clock_in" ||
+                                     subjectType === "clock_out_review"
                                         ? caregiverName
                                         : "Admin"}
                                 </span>
@@ -614,6 +676,17 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
+                    {/* clock_out_review — what happened, map, app activity, the caregiver's
+                        explanation, and the outcome once decided */}
+                    {subjectType === "clock_out_review" && (
+                        <ClockOutReviewApproval
+                            approvalId={approval._id}
+                            subjectContext={subjectContext}
+                            caregiverName={caregiverName}
+                            onNavigateShift={() => router.push(`/scheduling/${approval.subjectId}`)}
+                        />
+                    )}
+
                 </div>
 
                 {/* ── RIGHT: Decision outcome + Actions panel ──────────────── */}
@@ -685,11 +758,56 @@ export default function ApprovalDetailPage() {
                                             ? "Approving binds the caregiver's account to the new device and ends their old session immediately. Rejecting leaves them on their current device. Rejection requires a written reason."
                                             : subjectType === "alternate_location_clock_in"
                                             ? "Review the explanation, photo, and map. Approving confirms the caregiver was allowed to start from this location; it doesn't change the shift's times or pay. Declining requires a written reason, which is recorded on the shift."
+                                            : subjectType === "clock_out_review"
+                                            ? "Decide how much of this shift to pay. Approve the full shift to pay it as credited. To pay less, approve until the time the caregiver left, or reject if they left without clocking out properly — both need a reason, which the caregiver sees."
                                             : "Review the certificate submission above and make a decision. Rejection requires a written reason."}
                                     </p>
 
-                                    {/* Approve / open-reject buttons */}
-                                    {!showRejectForm && (
+                                    {/* clock_out_review — pay cuts wait for the caregiver's explanation */}
+                                    {isPayCutBlocked && (
+                                        <div className={styles.rejectWarn}>
+                                            <Clock size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                                            <span>
+                                                Waiting for the caregiver&apos;s explanation until{" "}
+                                                <strong>{formatDateTime(subjectContext.canReduceAfter ?? subjectContext.explanationDueAt)}</strong>{" "}
+                                                — you can approve the full shift now, but reducing the pay has to wait.
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* clock_out_review — Approve full shift / Approve until… / Reject */}
+                                    {!showRejectForm && isClockOutReview && (
+                                        <>
+                                            <Button
+                                                variant="primary"
+                                                icon={<CheckCircle2 size={15} />}
+                                                onClick={() => openClockOutApprove("full")}
+                                            >
+                                                Approve Full Shift
+                                            </Button>
+                                            <div className={styles.actionBtns}>
+                                                <Button
+                                                    variant="secondary"
+                                                    icon={<Clock size={15} />}
+                                                    disabled={isPayCutBlocked}
+                                                    onClick={() => openClockOutApprove("until")}
+                                                >
+                                                    Approve Until…
+                                                </Button>
+                                                <Button
+                                                    variant="danger"
+                                                    icon={<XCircle size={15} />}
+                                                    disabled={isPayCutBlocked}
+                                                    onClick={openRejectForm}
+                                                >
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Approve / open-reject buttons — every other type */}
+                                    {!showRejectForm && !isClockOutReview && (
                                         <div className={styles.actionBtns}>
                                             <Button
                                                 variant="primary"
@@ -706,7 +824,7 @@ export default function ApprovalDetailPage() {
                                                 icon={<XCircle size={15} />}
                                                 onClick={() => subjectType === "overtime_mandate"
                                                     ? setShowMandateRejectModal(true)
-                                                    : setShowRejectForm(true)
+                                                    : openRejectForm()
                                                 }
                                             >
                                                 {subjectType === "overtime_mandate"            ? "Remove from Shift" :
@@ -720,6 +838,18 @@ export default function ApprovalDetailPage() {
                                         (requires caregiver reassignment). */}
                                     {showRejectForm && (
                                         <div className={styles.rejectForm}>
+                                            {/* clock_out_review — a reject pays the shift only until this time */}
+                                            {isClockOutReview && (
+                                                <PaidUntilField
+                                                    value={rejectPaidUntil}
+                                                    onChange={(value) => {
+                                                        setRejectPaidUntil(value);
+                                                        setRejectPaidUntilErr("");
+                                                    }}
+                                                    subjectContext={subjectContext}
+                                                    error={rejectPaidUntilCheck.error || rejectPaidUntilErr}
+                                                />
+                                            )}
                                             <RejectReasonField
                                                 placeholder={
                                                     subjectType === "banked_hours_payout" ||
@@ -731,6 +861,8 @@ export default function ApprovalDetailPage() {
                                                         ? "Explain why this device change is being rejected…"
                                                         : subjectType === "alternate_location_clock_in"
                                                         ? "Explain why this location is not accepted…"
+                                                        : subjectType === "clock_out_review"
+                                                        ? "Explain why the shift is paid only until this time — the caregiver sees it…"
                                                         : "Explain why this certificate is being rejected…"
                                                 }
                                                 value={rejectReason}
@@ -744,11 +876,7 @@ export default function ApprovalDetailPage() {
                                             <div className={styles.rejectActions}>
                                                 <Button
                                                     variant="secondary"
-                                                    onClick={() => {
-                                                        setShowRejectForm(false);
-                                                        setRejectReason("");
-                                                        setRejectReasonErr("");
-                                                    }}
+                                                    onClick={closeRejectForm}
                                                     disabled={isRejectPending}
                                                 >
                                                     Cancel
@@ -791,6 +919,7 @@ export default function ApprovalDetailPage() {
                 draftDates={draftDates}
                 isApprovePending={isApprovePending}
                 approveError={approveError}
+                clockOutMode={clockOutMode}
             />
 
             {/* ── Mandate reject modal ───────────────────────────────────── */}
