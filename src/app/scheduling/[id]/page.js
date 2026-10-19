@@ -6,7 +6,7 @@ import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
-import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import ServiceLocationPanel from "@/components/UI/Map/ServiceLocationPanel";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button/Button";
 import ErrorState from "@components/UI/Feedback/ErrorState";
@@ -79,6 +79,10 @@ export default function ShiftDetailPage() {
 
 	const alternateLocation       = shift.alternateLocation ?? null;
 	const alternateLocationStatus = ALTERNATE_LOCATION_STATUS[alternateLocation?.status] ?? ALTERNATE_LOCATION_STATUS.pending;
+
+	// The end-of-shift location check — the latest one (an extended shift can have several)
+	const latestLocationCheck = [...(shift.locationChecks ?? [])]
+		.sort((a, b) => Date.parse(b.requestedAt ?? 0) - Date.parse(a.requestedAt ?? 0))[0] ?? null;
 
 	return (
 		<PageLayout>
@@ -383,55 +387,23 @@ export default function ShiftDetailPage() {
 						<span className={styles.cardTitleInner}><MapPin size={15} /> Service Location</span>
 					</CardHeader>
 					<CardContent>
-						{shift.geofence ? (
-							<div className={styles.locationLayout}>
-								{/* Address info panel */}
-								<div className={styles.locationInfo}>
-									{geofenceAddressStr && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockBlue}`}>
-											<div className={styles.addrBlockIcon}><MapPin size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Service Address</p>
-												<p className={styles.addrBlockVal}>{geofenceAddressStr}</p>
-											</div>
-										</div>
-									)}
-									{shift.startLocation?.address && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockGreen}`}>
-											<div className={styles.addrBlockIcon}><LogIn size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Clock In Address</p>
-												<p className={styles.addrBlockVal}>{shift.startLocation.address}</p>
-											</div>
-										</div>
-									)}
-									{shift.endLocation?.address && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockRed}`}>
-											<div className={styles.addrBlockIcon}><LogOut size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Clock Out Address</p>
-												<p className={styles.addrBlockVal}>{shift.endLocation.address}</p>
-											</div>
-										</div>
-									)}
-									{!geofenceAddressStr && !shift.startLocation?.address && !shift.endLocation?.address && (
-										<p className={styles.emptyText}>No address recorded.</p>
-									)}
-								</div>
-								{/* Map */}
-								<div className={styles.mapWrap}>
-									<GeofenceMap
-										center={mapCenter}
-										radius={shift.geofence.radius || 100}
-										height="300px"
-										clockInLocation={shift.startLocation ?? null}
-										clockOutLocation={shift.endLocation ?? null}
-									/>
-								</div>
-							</div>
-						) : (
-							<p className={styles.emptyText}>No location data available for this shift.</p>
-						)}
+						<ServiceLocationPanel
+							mapKey={shift._id}
+							site={shift.geofence ? { latitude: mapCenter.lat, longitude: mapCenter.lng, radius: shift.geofence.radius } : null}
+							noMapText="No location data available for this shift."
+							serviceAddress={geofenceAddressStr}
+							clockIn={{ location: shift.startLocation, address: shift.startLocation?.address }}
+							clockOut={{
+								location:       shift.endLocation,
+								address:        shift.endLocation?.address,
+								distanceMeters: shift.endLocation?.distanceMeters,
+								// (0, 0) is the server's "no fix" placeholder when it closed the shift itself
+								note: shift.endLocation?.latitude === 0 && shift.endLocation?.longitude === 0
+									? "No location — closed by the system"
+									: null,
+							}}
+							locationCheck={latestLocationCheck}
+						/>
 
 						{/* Clocked in outside the geofence — the photo stays on the approval, so none here */}
 						{alternateLocation && (

@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import StatusBadge from "@components/UI/Feedback/Badge";
-import GeofenceMap from "@components/UI/Map/GeofenceMap";
+import ServiceLocationPanel from "@components/UI/Map/ServiceLocationPanel";
 import {
     User, Home, CalendarDays, ExternalLink, ClockAlert,
     MapPin, MessageSquare, Activity, Smartphone, BadgeCheck,
@@ -23,9 +23,10 @@ import styles from "../approval_detail.module.css";
 // Five cards:
 //   1. What happened — caregiver, house, shift link, trigger, clock-in/out,
 //                      credited end and hours, reminders sent, prior reviews
-//   2. Map           — site circle with clock-in, clock-out and location-check
-//                      pins. Polygon geofences send site: null, so the map
-//                      only renders for circle geofences.
+//   2. Map           — ServiceLocationPanel (shared with the shift detail
+//                      page): address blocks beside the map with clock-in,
+//                      clock-out and location-check pins. Polygon geofences
+//                      send site: null, so only the blocks show.
 //   3. App activity  — whether the app kept answering the background checks,
 //                      gaps, Low Power Mode, and the phone setup at clock-in
 //   4. Explanation   — the caregiver's note, or when it's due
@@ -47,20 +48,6 @@ const REMINDER_LABELS = {
     "t-15m": "15 min before end — shift checklist",
     "t-5m":  "5 min before end — \"Clock out in 5 minutes\"",
     "t0":    "At the end — \"Your shift has ended\"",
-};
-
-const LOCATION_CHECK_LABELS = {
-    received:    "Received",
-    no_response: "No response",
-    sent:        "Sent, no reply yet",
-    not_sent:    "Not sent",
-};
-
-const NOT_SENT_REASON_LABELS = {
-    no_device:               "no registered phone",
-    app_version_unsupported: "app version too old",
-    push_unavailable:        "notifications unavailable",
-    push_failed:             "the push failed",
 };
 
 const PRESENCE_META = {
@@ -91,41 +78,6 @@ function formatHours(hours) {
     return Number.isFinite(hours) ? `${Math.round(hours * 100) / 100} h` : "—";
 }
 
-function formatMeters(meters) {
-    return Number.isFinite(meters) ? `${Math.round(meters)} m` : null;
-}
-
-/** "120 m from the site · outside" — distance plus the geofence verdict when known. */
-function describePosition(distanceMeters, insideGeofence, accuracy) {
-    const parts = [];
-    const distance = formatMeters(distanceMeters);
-    if (distance) parts.push(`${distance} from the site`);
-    if (insideGeofence === true)  parts.push("inside the geofence");
-    if (insideGeofence === false) parts.push("outside the geofence");
-    const acc = formatMeters(accuracy);
-    if (acc) parts.push(`GPS accuracy ±${acc}`);
-    return parts.join(" · ");
-}
-
-function hasCoordinates(location) {
-    return Number.isFinite(location?.latitude) && Number.isFinite(location?.longitude);
-}
-
-/**
- * Address on top with the distance underneath — never raw coordinates. Without
- * an address the distance becomes the main line; the map shows the exact spot.
- */
-function LocationSummary({ address, position }) {
-    if (!address && !position) return "Recorded — see the map";
-    if (!address) return position;
-    return (
-        <>
-            <div>{address}</div>
-            {position && <div className={styles.mutedText}>{position}</div>}
-        </>
-    );
-}
-
 export default function ClockOutReviewApproval({
     approvalId,
     subjectContext,
@@ -145,17 +97,10 @@ export default function ClockOutReviewApproval({
     const prior         = ctx.priorReviews30d ?? null;
     const isServerClose = ctx.trigger === "server_auto";
 
-    const hasSiteCoordinates = hasCoordinates(site);
-    const checkPin = locationCheck?.status === "received" && hasCoordinates(locationCheck)
-        ? { latitude: locationCheck.latitude, longitude: locationCheck.longitude }
-        : null;
-
     // The open gap (no endedAt) is the current quiet stretch — its first missed
     // check is when the app stopped answering.
     const openGap      = presence?.gaps?.find((gap) => !gap.endedAt) ?? null;
     const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
-
-    const clockOutPosition = describePosition(clockOut.distanceMeters, clockOut.insideGeofence, clockOut.accuracy);
 
     return (
         <>
@@ -339,64 +284,21 @@ export default function ClockOutReviewApproval({
                     </span>
                 </CardHeader>
                 <CardContent>
-                    {hasSiteCoordinates ? (
-                        <GeofenceMap
-                            key={approvalId}
-                            center={{ latitude: site.latitude, longitude: site.longitude }}
-                            radius={site.radius}
-                            height="300px"
-                            clockInLocation={hasCoordinates(clockIn.location) ? clockIn.location : null}
-                            clockOutLocation={hasCoordinates(clockOut.location) ? clockOut.location : null}
-                            locationCheckLocation={checkPin}
-                        />
-                    ) : (
-                        <p className={styles.mutedText} style={{ margin: 0 }}>
-                            No map — this shift&apos;s location isn&apos;t a circle geofence.
-                        </p>
-                    )}
-
-                    <div style={{ marginTop: "12px" }}>
-                        <InfoField label="Clock-In Location">
-                            {clockIn.location ? (
-                                <LocationSummary
-                                    address={clockIn.location.address}
-                                    position={formatMeters(clockIn.distanceMeters) && `${formatMeters(clockIn.distanceMeters)} from the site`}
-                                />
-                            ) : "—"}
-                        </InfoField>
-                        <InfoField label="Clock-Out Location">
-                            {isServerClose ? (
-                                "No location — closed by the system"
-                            ) : clockOut.location ? (
-                                <LocationSummary address={clockOut.location.address} position={clockOutPosition} />
-                            ) : "—"}
-                        </InfoField>
-                        <InfoField label="Location Check (5 min before end)">
-                            {!locationCheck ? "None sent" : (
-                                <>
-                                    <div>
-                                        {LOCATION_CHECK_LABELS[locationCheck.status] ?? locationCheck.status}
-                                        {locationCheck.status === "not_sent" && NOT_SENT_REASON_LABELS[locationCheck.notSentReason]
-                                            ? ` — ${NOT_SENT_REASON_LABELS[locationCheck.notSentReason]}`
-                                            : ""}
-                                        {locationCheck.respondedAt ? ` at ${formatTime(locationCheck.respondedAt)}` : ""}
-                                    </div>
-                                    {locationCheck.status === "received" && (
-                                        <div className={styles.mutedText}>
-                                            {describePosition(locationCheck.distanceMeters, locationCheck.insideGeofence, locationCheck.accuracy)}
-                                            {locationCheck.staleFix ? " · older GPS fix" : ""}
-                                            {locationCheck.isMocked ? " · mocked location reported" : ""}
-                                        </div>
-                                    )}
-                                    {locationCheck.status === "no_response" && (
-                                        <div className={styles.mutedText}>
-                                            A phone whose app was swiped away can&apos;t answer — this isn&apos;t proof the caregiver had left.
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </InfoField>
-                    </div>
+                    <ServiceLocationPanel
+                        mapKey={approvalId}
+                        site={site}
+                        noMapText="No map — this shift's location isn't a circle geofence."
+                        serviceAddress={site?.address}
+                        clockIn={{ location: clockIn.location, distanceMeters: clockIn.distanceMeters }}
+                        clockOut={isServerClose
+                            ? { note: "No location — closed by the system" }
+                            : {
+                                location:       clockOut.location,
+                                distanceMeters: clockOut.distanceMeters,
+                                insideGeofence: clockOut.insideGeofence,
+                            }}
+                        locationCheck={locationCheck}
+                    />
                 </CardContent>
             </Card>
 
