@@ -4,7 +4,7 @@ import {
     C_NAVY, C_WHITE, C_INFO_BG, C_ROW_EVEN, C_ROW_ALT,
     C_TOTALS,
     thinSide, medSide, solidFill,
-    addFooter, downloadWorkbook, lockSheet,
+    addFooter, downloadWorkbook,
 } from "./helpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -208,7 +208,9 @@ export async function exportHomeWorkbook({ homes, logoUrl, filters }) {
     wb.created    = new Date();
 
     await buildHomeSheet(wb, { homes, logoUrl, filters });
-    await lockSheet(wb.worksheets[0]);
+    // Non-payroll export: left unlocked (editable) so staff can annotate/filter
+    // the sheet after download. Only payroll exports are protected — see
+    // lockSheet() in helpers.js for the payroll-only locking rule.
 
     const datestamp = format(new Date(), "yyyy-MM-dd");
     await downloadWorkbook(wb, `homes_${datestamp}.xlsx`);

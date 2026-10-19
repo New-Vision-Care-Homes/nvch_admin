@@ -210,6 +210,7 @@ export async function exportPayrollHoursToExcel(params) {
     wb.created = new Date();
 
     const ws = await buildPayrollHoursSheet(wb, params);
+    // Payroll export: locked read-only. See lockSheet() in helpers.js.
     await lockSheet(ws);
     await downloadWorkbook(wb, `payroll_hours_${params.homeName || "home"}_${params.payYear}_period${params.periodNumber}.xlsx`);
 }

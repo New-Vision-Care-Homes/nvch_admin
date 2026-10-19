@@ -206,6 +206,12 @@ export function addFooter(ws, totalCols) {
  * never stored or logged anywhere. This means each sheet has a unique,
  * non-recoverable password, so recipients cannot unprotect it from within Excel.
  *
+ * Call this ONLY for payroll exports (cover sheet, payroll hours, and the
+ * combined payroll package in payrollWorkbook.js) — payroll figures must not
+ * be editable after export. Every other export (homes, acknowledgments, the
+ * standalone schedule export) must stay editable, so those builders must NOT
+ * call lockSheet().
+ *
  * @param {import("exceljs").Worksheet} ws
  */
 export async function lockSheet(ws) {

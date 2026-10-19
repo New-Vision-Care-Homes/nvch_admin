@@ -70,6 +70,21 @@ export const useCaregivers = (options = {}) => {
 			staleTime: 30_000,
 		});
 
+	// Fetches every page of the given filters (up to 100 per request) for export.
+	// Runs outside React Query so it can be awaited imperatively on button click.
+	const fetchAllForExport = async (exportParams) => {
+		let allCaregivers = [];
+		let page = 1;
+		let hasMore = true;
+		while (hasMore) {
+			const result = await caregiverService.getAll({ ...exportParams, page, limit: 100 });
+			allCaregivers = [...allCaregivers, ...(result?.caregivers ?? [])];
+			hasMore = page < (result?.pagination?.totalPages ?? result?.pagination?.pages ?? 1);
+			page++;
+		}
+		return allCaregivers;
+	};
+
 	// 3. DELETE: Remove a caregiver
 	const deleteMutation = useMutation({
 		mutationFn: (id) => caregiverService.delete(id),
@@ -163,6 +178,7 @@ export const useCaregivers = (options = {}) => {
 		toggleCaregiverStatus: toggleStatusMutation.mutate,
 		updateAppDevice: updateAppDeviceMutation.mutate,
 		fetchCaregiver,
+		fetchAllForExport,
 		refetch: caregiversQuery.refetch,
 		refetchDetail: caregiverDetailQuery.refetch,
 	};
