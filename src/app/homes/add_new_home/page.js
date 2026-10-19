@@ -15,6 +15,7 @@ import GeofenceMap from "@/components/UI/Map/GeofenceMap";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import PersonAssignmentField, { getStaffId } from "../_components/PersonAssignmentField";
+import ReportingTimeField, { reportingTimeSchema, reportingPayload, REPORTING_TIME_DEFAULTS } from "../_components/ReportingTimeField";
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
@@ -34,6 +35,7 @@ const schema = yup.object({
 	openedAt: yup.date().nullable(),
 	notes: yup.string().nullable(),
 	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
+	...reportingTimeSchema,
 });
 
 
@@ -50,6 +52,7 @@ export default function AddNewHomePage() {
 			isActive: true,
 			geofenceRadius: 100,
 			geofenceShape: "circle",
+			...REPORTING_TIME_DEFAULTS,
 		}
 	});
 
@@ -125,6 +128,7 @@ export default function AddNewHomePage() {
 			admins: selectedAdmins.map(a => ({ admin: getStaffId(a), adminLevel: a.adminLevel || 'supervisor' })),
 			clients: selectedClients.map(c => getStaffId(c)),
 			...((hasClientMove || hasCaregiverMove) && { confirmMove: true }),
+			...reportingPayload(data),
 			nightChecksEnabled: data.nightChecksEnabled || false,
 			nightCheckFrequency: data.nightChecksEnabled ? data.nightCheckFrequency : null,
 			allowTemporaryLeave: data.allowTemporaryLeave || false,
@@ -228,6 +232,14 @@ export default function AddNewHomePage() {
 									error={errors.notes}
 									placeholder="Additional notes about this home..."
 								/>
+							</CardContent>
+						</Card>
+
+						{/* Reporting Time */}
+						<Card>
+							<CardHeader>Reporting Time</CardHeader>
+							<CardContent>
+								<ReportingTimeField register={register} watch={watch} setValue={setValue} errors={errors} />
 							</CardContent>
 						</Card>
 

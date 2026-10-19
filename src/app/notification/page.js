@@ -192,8 +192,8 @@ const TYPE_LABEL = {
 const TYPE_DESCRIPTION = {
 	shift_missed:                "A caregiver didn't show up for a scheduled shift. Names the caregiver.",
 	shift_late_start:            "A caregiver started their shift later than scheduled. Names the caregiver.",
-	shift_missed_reporting:      "SOH/TSA/TEA homes only. The caregiver's shift start time passed without them checking in during the required 15-minute early check-in window. The shift stays scheduled and can still be started late. Names the caregiver.",
-	shift_late_reporting:        "SOH/TSA/TEA homes only. The caregiver checked in, but more than a minute after the 15-minute early check-in window closed — so their check-in wasn't early enough. This is separate from starting the shift late. Names the caregiver.",
+	shift_missed_reporting:      "Homes with reporting time on only (SOH/TSA/TEA by default). The caregiver's shift start time passed without them checking in during the home's early check-in window. The shift stays scheduled and can still be started late. Names the caregiver.",
+	shift_late_reporting:        "Homes with reporting time on only (SOH/TSA/TEA by default). The caregiver checked in, but more than a minute after the home's reporting time (15 minutes before the start unless the home sets its own) — so their check-in wasn't early enough. This is separate from starting the shift late. Names the caregiver.",
 	shift_auto_ended:            "The caregiver didn't clock out, so the system closed the shift by itself. Names the caregiver.",
 	house_hours_review_overdue:  "A home's hours are still unreviewed more than 7 days after the pay period ended. Sent to all admins in that home (supervisors, team leads). Clears once it's marked reviewed.",
 	house_hours_review_not_done: "Same event, sent to payroll and super admins — processing is blocked until the review is done.",
