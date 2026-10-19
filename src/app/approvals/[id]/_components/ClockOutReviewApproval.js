@@ -5,7 +5,7 @@ import StatusBadge from "@components/UI/Feedback/Badge";
 import ServiceLocationPanel from "@components/UI/Map/ServiceLocationPanel";
 import {
     User, Home, CalendarDays, ExternalLink, ClockAlert,
-    MapPin, MessageSquare, Activity, Smartphone, BadgeCheck,
+    MapPin, MessageSquare, Activity, Smartphone, BadgeCheck, ChevronDown,
 } from "lucide-react";
 import { formatDateTime, DISPLAY_TZ } from "@/utils/dates";
 import { utcToDisplayTime } from "@/utils/timeHandling";
@@ -14,29 +14,32 @@ import styles from "../approval_detail.module.css";
 
 // ─── ClockOutReviewApproval ───────────────────────────────────────────────────
 //
-// Renders the left-column subject cards for clock_out_review approvals: a
-// shift ended without a verified clock-out at the home (signed out by the
-// system or the app, or clocked out off-site), and the reviewer decides how
-// much of it to pay. subjectContext is a snapshot taken when the review opened;
-// explanation and decision are filled in later.
+// The subject cards for clock_out_review approvals: a shift ended without a
+// verified clock-out at the home (signed out by the system or the app, or
+// clocked out off-site), and the reviewer decides how much of it to pay.
+// subjectContext is a snapshot taken when the review opened; explanation and
+// decision are filled in later.
 //
-// Five cards:
-//   1. What happened — caregiver, house, shift link, trigger, clock-in/out,
-//                      credited end and hours, reminders sent, prior reviews
-//   2. Map           — ServiceLocationPanel (shared with the shift detail
-//                      page): address blocks beside the map with clock-in,
-//                      clock-out and location-check pins. Polygon geofences
-//                      send site: null, so only the blocks show.
-//   3. App activity  — whether the app kept answering the background checks,
-//                      gaps, Low Power Mode, and the phone setup at clock-in
-//   4. Explanation   — the caregiver's note, or when it's due
-//   5. Outcome       — subjectContext.decision, once decided
+// Split into three parts so the detail page can lay this type out as
+// "evidence | decide" without changing any other approval type:
 //
-// Props:
-//   approvalId      {string}  — keys the map so it re-initialises per approval
+//   ClockOutEvidence    — left column: What Happened (caregiver, house, shift
+//                         link, trigger, clock-in/out, credited end and hours,
+//                         reminders, prior reviews) and App Activity (status,
+//                         gaps, Low Power Mode, collapsible phone setup)
+//   ClockOutOutcome     — right column, under Decision once decided:
+//                         subjectContext.decision (paid until, hours before/after)
+//   ClockOutExplanation — right column, after Decision/Outcome and before the
+//                         actions: the caregiver's explanation, or when it's due
+//   ClockOutLocation    — full width under the grid: ServiceLocationPanel
+//                         (shared with the shift detail page). Polygon
+//                         geofences send site: null, so only the blocks show.
+//
+// Props (each part takes what it needs):
 //   subjectContext  {object}  — approval.subjectContext
-//   caregiverName   {string}
-//   onNavigateShift {fn}      — navigate to the shift detail page
+//   caregiverName   {string}  — ClockOutEvidence
+//   onNavigateShift {fn}      — ClockOutEvidence: open the shift detail page
+//   approvalId      {string}  — ClockOutLocation: keys the map per approval
 
 const TRIGGER_DESCRIPTIONS = {
     server_auto:     "The caregiver never clocked out, so the server closed the shift 10 minutes after its scheduled end. No location was captured.",
@@ -78,29 +81,32 @@ function formatHours(hours) {
     return Number.isFinite(hours) ? `${Math.round(hours * 100) / 100} h` : "—";
 }
 
-export default function ClockOutReviewApproval({
-    approvalId,
-    subjectContext,
-    caregiverName,
-    onNavigateShift,
-}) {
-    const ctx           = subjectContext ?? {};
-    const site          = ctx.site ?? null;
-    const clockIn       = ctx.clockIn ?? {};
-    const clockOut      = ctx.clockOut ?? {};
-    const locationCheck = ctx.locationCheck ?? null;
-    const presence      = ctx.presence ?? null;
-    const device        = clockIn.device ?? null;
-    const explanation   = ctx.explanation ?? null;
-    const decision      = ctx.decision ?? null;
-    const reminders     = ctx.remindersSent ?? [];
-    const prior         = ctx.priorReviews30d ?? null;
-    const isServerClose = ctx.trigger === "server_auto";
+// ─── Left column: the evidence ────────────────────────────────────────────────
+
+export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShift }) {
+    const ctx       = subjectContext ?? {};
+    const clockIn   = ctx.clockIn ?? {};
+    const clockOut  = ctx.clockOut ?? {};
+    const presence  = ctx.presence ?? null;
+    const device    = clockIn.device ?? null;
+    const reminders = ctx.remindersSent ?? [];
+    const prior     = ctx.priorReviews30d ?? null;
 
     // The open gap (no endedAt) is the current quiet stretch — its first missed
     // check is when the app stopped answering.
     const openGap      = presence?.gaps?.find((gap) => !gap.endedAt) ?? null;
     const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
+
+    // Phone setup rows, and how many settings weaken the checks (for the summary).
+    // "Unknown" and "N/A" values are never counted as off.
+    const deviceRows = device
+        ? DEVICE_FIELDS.map(([key, label, valueLabels, isOk]) => {
+            const text  = valueLabels[String(device[key])] ?? "Unknown";
+            const known = text !== "Unknown" && !text.startsWith("N/A");
+            return { key, label, text, isBad: known && !isOk(device[key]) };
+        })
+        : [];
+    const weakSettings = deviceRows.filter((row) => row.isBad).length;
 
     return (
         <>
@@ -208,100 +214,6 @@ export default function ClockOutReviewApproval({
                 </CardContent>
             </Card>
 
-            {/* ── Caregiver's explanation ──────────────────────────────────── */}
-            <Card>
-                <CardHeader>
-                    <span className={styles.cardTitleInner}>
-                        <MessageSquare size={15} />
-                        Caregiver&apos;s Explanation
-                    </span>
-                </CardHeader>
-                <CardContent>
-                    {explanation ? (
-                        <>
-                            <div className={styles.decisionReasonBox}>{explanation.note}</div>
-                            <div className={styles.photoDetailsGrid}>
-                                <InfoField label="Time They Left">
-                                    {explanation.leftAt ? formatDateTime(explanation.leftAt) : "Not given"}
-                                </InfoField>
-                                <InfoField label="Submitted">
-                                    {formatDateTime(explanation.submittedAt)}
-                                </InfoField>
-                            </div>
-                        </>
-                    ) : decision ? (
-                        <p className={styles.mutedText} style={{ margin: 0 }}>No explanation was submitted.</p>
-                    ) : (
-                        <p className={styles.mutedText} style={{ margin: 0 }}>
-                            Not submitted yet — they have until <strong>{formatDateTime(ctx.explanationDueAt)}</strong>.
-                            {ctx.awaitingExplanation && " Pay can't be reduced until they explain or the deadline passes."}
-                        </p>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* ── Outcome ──────────────────────────────────────────────────── */}
-            {decision && (
-                <Card>
-                    <CardHeader>
-                        <span className={styles.cardTitleInner}>
-                            <BadgeCheck size={15} />
-                            Outcome
-                        </span>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={styles.photoDetailsGrid}>
-                            <InfoField label="Decision">
-                                <StatusBadge
-                                    label={decision.outcome === "rejected" ? "Rejected" : "Approved"}
-                                    tone={decision.outcome === "rejected" ? "danger" : "success"}
-                                    size="pill"
-                                />
-                            </InfoField>
-                            <InfoField label="Paid Until">
-                                {formatDateTime(decision.paidUntil)}
-                            </InfoField>
-                            <InfoField label="Hours Before">
-                                {formatHours(decision.hoursBefore)}
-                            </InfoField>
-                            <InfoField label="Hours Paid">
-                                {formatHours(decision.hoursAfter)}
-                                {decision.hoursAfter === decision.hoursBefore && (
-                                    <span className={styles.mutedText}> (unchanged)</span>
-                                )}
-                            </InfoField>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* ── Map ──────────────────────────────────────────────────────── */}
-            <Card>
-                <CardHeader>
-                    <span className={styles.cardTitleInner}>
-                        <MapPin size={15} />
-                        Service Location
-                    </span>
-                </CardHeader>
-                <CardContent>
-                    <ServiceLocationPanel
-                        mapKey={approvalId}
-                        site={site}
-                        noMapText="No map — this shift's location isn't a circle geofence."
-                        serviceAddress={site?.address}
-                        clockIn={{ location: clockIn.location, distanceMeters: clockIn.distanceMeters }}
-                        clockOut={isServerClose
-                            ? { note: "No location — closed by the system" }
-                            : {
-                                location:       clockOut.location,
-                                distanceMeters: clockOut.distanceMeters,
-                                insideGeofence: clockOut.insideGeofence,
-                            }}
-                        locationCheck={locationCheck}
-                    />
-                </CardContent>
-            </Card>
-
             {/* ── App activity ─────────────────────────────────────────────── */}
             <Card>
                 <CardHeader>
@@ -352,34 +264,170 @@ export default function ClockOutReviewApproval({
                             </p>
                         </>
                     )}
-                    <div className={styles.cardSubheading}>
-                        <Smartphone size={13} />
-                        Phone Setup at Clock-In
-                    </div>
+                    {/* Phone setup — collapsed to a one-line summary; rarely needed in full */}
                     {!device ? (
-                        <p className={styles.mutedText} style={{ margin: 0 }}>
-                            Not reported — the app version used doesn&apos;t send it.
-                        </p>
+                        <div className={styles.cardSubheading}>
+                            <Smartphone size={13} />
+                            Phone Setup at Clock-In
+                            <span className={styles.phoneSetupSummary}>Not reported — the app version used doesn&apos;t send it</span>
+                        </div>
                     ) : (
-                        <div className={styles.photoDetailsGrid}>
-                            <InfoField label="Phone">
-                                {[PLATFORM_LABELS[device.platform] ?? device.platform, device.appVersion && `app ${device.appVersion}`]
-                                    .filter(Boolean).join(" · ") || "—"}
-                            </InfoField>
-                            {DEVICE_FIELDS.map(([key, label, valueLabels, isOk]) => {
-                                const value = device[key];
-                                const text  = valueLabels[String(value)] ?? "Unknown";
-                                const known = text !== "Unknown" && !text.startsWith("N/A");
-                                return (
+                        <details className={styles.phoneSetup}>
+                            <summary className={styles.cardSubheading}>
+                                <Smartphone size={13} />
+                                Phone Setup at Clock-In
+                                <span className={`${styles.phoneSetupSummary} ${weakSettings ? styles.phoneSetupSummaryBad : ""}`}>
+                                    {weakSettings
+                                        // "needs attention", not "off" — a setting can be wrong by being
+                                        // on (Low Power Mode) as well as off (notifications)
+                                        ? `${weakSettings} setting${weakSettings === 1 ? " needs" : "s need"} attention`
+                                        : "All settings OK"}
+                                </span>
+                                <ChevronDown size={14} className={styles.phoneSetupChevron} />
+                            </summary>
+                            <div className={styles.photoDetailsGrid}>
+                                <InfoField label="Phone">
+                                    {[PLATFORM_LABELS[device.platform] ?? device.platform, device.appVersion && `app ${device.appVersion}`]
+                                        .filter(Boolean).join(" · ") || "—"}
+                                </InfoField>
+                                {deviceRows.map(({ key, label, text, isBad }) => (
                                     <InfoField key={key} label={label}>
-                                        <span style={known && !isOk(value) ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
+                                        <span style={isBad ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
                                             {text}
                                         </span>
                                     </InfoField>
-                                );
-                            })}
-                        </div>
+                                ))}
+                            </div>
+                        </details>
                     )}
+                </CardContent>
+            </Card>
+        </>
+    );
+}
+
+// ─── Right column: the caregiver's side ───────────────────────────────────────
+
+export function ClockOutExplanation({ subjectContext }) {
+    const ctx         = subjectContext ?? {};
+    const explanation = ctx.explanation ?? null;
+    const decision    = ctx.decision ?? null;
+
+    return (
+        <>
+            {/* ── Caregiver's explanation ──────────────────────────────────── */}
+            <Card>
+                <CardHeader>
+                    <span className={styles.cardTitleInner}>
+                        <MessageSquare size={15} />
+                        Caregiver&apos;s Explanation
+                    </span>
+                </CardHeader>
+                <CardContent>
+                    {explanation ? (
+                        <>
+                            <div className={styles.decisionReasonBox}>{explanation.note}</div>
+                            <div className={styles.photoDetailsGrid}>
+                                <InfoField label="Time They Left">
+                                    {explanation.leftAt ? formatDateTime(explanation.leftAt) : "Not given"}
+                                </InfoField>
+                                <InfoField label="Submitted">
+                                    {formatDateTime(explanation.submittedAt)}
+                                </InfoField>
+                            </div>
+                        </>
+                    ) : decision ? (
+                        <p className={styles.mutedText} style={{ margin: 0 }}>No explanation was submitted.</p>
+                    ) : (
+                        <p className={styles.mutedText} style={{ margin: 0 }}>
+                            Not submitted yet — they have until <strong>{formatDateTime(ctx.explanationDueAt)}</strong>.
+                            {ctx.awaitingExplanation && " Pay can't be reduced until they explain or the deadline passes."}
+                        </p>
+                    )}
+                </CardContent>
+            </Card>
+
+        </>
+    );
+}
+
+// ─── Right column: the outcome, once decided ──────────────────────────────────
+
+export function ClockOutOutcome({ subjectContext }) {
+    const decision = subjectContext?.decision ?? null;
+    if (!decision) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <span className={styles.cardTitleInner}>
+                    <BadgeCheck size={15} />
+                    Outcome
+                </span>
+            </CardHeader>
+            <CardContent>
+                <div className={styles.photoDetailsGrid}>
+                    <InfoField label="Decision">
+                        <StatusBadge
+                            label={decision.outcome === "rejected" ? "Rejected" : "Approved"}
+                            tone={decision.outcome === "rejected" ? "danger" : "success"}
+                            size="pill"
+                        />
+                    </InfoField>
+                    <InfoField label="Paid Until">
+                        {formatDateTime(decision.paidUntil)}
+                    </InfoField>
+                    <InfoField label="Hours Before">
+                        {formatHours(decision.hoursBefore)}
+                    </InfoField>
+                    <InfoField label="Hours Paid">
+                        {formatHours(decision.hoursAfter)}
+                        {decision.hoursAfter === decision.hoursBefore && (
+                            <span className={styles.mutedText}> (unchanged)</span>
+                        )}
+                    </InfoField>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ─── Full width: where it happened ────────────────────────────────────────────
+
+export function ClockOutLocation({ approvalId, subjectContext }) {
+    const ctx           = subjectContext ?? {};
+    const site          = ctx.site ?? null;
+    const clockIn       = ctx.clockIn ?? {};
+    const clockOut      = ctx.clockOut ?? {};
+    const locationCheck = ctx.locationCheck ?? null;
+    const isServerClose = ctx.trigger === "server_auto";
+
+    return (
+        <>
+            {/* ── Map ──────────────────────────────────────────────────────── */}
+            <Card>
+                <CardHeader>
+                    <span className={styles.cardTitleInner}>
+                        <MapPin size={15} />
+                        Service Location
+                    </span>
+                </CardHeader>
+                <CardContent>
+                    <ServiceLocationPanel
+                        mapKey={approvalId}
+                        site={site}
+                        noMapText="No map — this shift's location isn't a circle geofence."
+                        serviceAddress={site?.address}
+                        clockIn={{ location: clockIn.location, distanceMeters: clockIn.distanceMeters }}
+                        clockOut={isServerClose
+                            ? { note: "No location — closed by the system" }
+                            : {
+                                location:       clockOut.location,
+                                distanceMeters: clockOut.distanceMeters,
+                                insideGeofence: clockOut.insideGeofence,
+                            }}
+                        locationCheck={locationCheck}
+                    />
                 </CardContent>
             </Card>
         </>

@@ -45,7 +45,7 @@ import VacationPayPayout      from "./_components/VacationPayPayout";
 import PaidSickTimeRequest    from "./_components/PaidSickTimeRequest";
 import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import AlternateLocationApproval from "./_components/AlternateLocationApproval";
-import ClockOutReviewApproval from "./_components/ClockOutReviewApproval";
+import { ClockOutEvidence, ClockOutOutcome, ClockOutExplanation, ClockOutLocation } from "./_components/ClockOutReviewApproval";
 import ApproveModal           from "./_components/ApproveModal";
 import PaidUntilField, { checkPaidUntil, defaultPaidUntil } from "./_components/PaidUntilField";
 import MandateRejectModal     from "./_components/MandateRejectModal";
@@ -156,7 +156,10 @@ function getBannerMeta(status, subjectType) {
  *   paid_sick_time_request  → PaidSickTimeRequest     (sick date, requested hours, reason, disclaimer)
  *   caregiver_device_change → DeviceChangeApproval    (requested device, caregiver's reason)
  *   alternate_location_clock_in → AlternateLocationApproval (explanation, live photo, map)
- *   clock_out_review        → ClockOutReviewApproval  (what happened, map, app activity, explanation, outcome)
+ *   clock_out_review        → ClockOutReviewApproval, split across the layout:
+ *                             ClockOutEvidence (left); ClockOutOutcome + ClockOutExplanation
+ *                             (right column, under Decision and above Actions);
+ *                             ClockOutLocation (full width below).
  *
  * Modals are extracted as sub-components as well:
  *   ApproveModal        — confirmation for Approve / Mandate / Approve Payout
@@ -676,11 +679,10 @@ export default function ApprovalDetailPage() {
                         />
                     )}
 
-                    {/* clock_out_review — what happened, map, app activity, the caregiver's
-                        explanation, and the outcome once decided */}
+                    {/* clock_out_review — the evidence: what happened and the app activity.
+                        Its explanation/outcome sit in the right column, its map below the grid. */}
                     {subjectType === "clock_out_review" && (
-                        <ClockOutReviewApproval
-                            approvalId={approval._id}
+                        <ClockOutEvidence
                             subjectContext={subjectContext}
                             caregiverName={caregiverName}
                             onNavigateShift={() => router.push(`/scheduling/${approval.subjectId}`)}
@@ -732,6 +734,17 @@ export default function ApprovalDetailPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* clock_out_review — under the Decision card: the Outcome once decided,
+                        then the caregiver's explanation, then (while pending) the actions.
+                        Pending:  Decision → Explanation → Actions
+                        Decided:  Decision → Outcome → Explanation */}
+                    {isClockOutReview && (
+                        <>
+                            <ClockOutOutcome subjectContext={subjectContext} />
+                            <ClockOutExplanation subjectContext={subjectContext} />
+                        </>
+                    )}
 
                     {/* Actions — only visible to admins with the required permission on pending
                         approvals. overtime_acknowledgment is decided by the caregiver on mobile. */}
@@ -904,6 +917,14 @@ export default function ApprovalDetailPage() {
 
                 </div>
             </div>
+
+            {/* clock_out_review — Service Location full width under the grid,
+                so the address blocks and the map sit side by side */}
+            {isClockOutReview && (
+                <div className={styles.fullWidthRow}>
+                    <ClockOutLocation approvalId={approval._id} subjectContext={subjectContext} />
+                </div>
+            )}
 
             {/* ── Approve confirmation modal ─────────────────────────────── */}
             {/* Handles Approve / Mandate / Approve Payout for all non-mandate types.

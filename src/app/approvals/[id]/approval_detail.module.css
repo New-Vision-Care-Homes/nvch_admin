@@ -741,6 +741,49 @@
 	color: #374151;
 }
 
+/* Phone setup at clock-in — a <details> whose <summary> is the subheading row,
+   with "N settings off" / "All settings OK" pushed to the right. */
+.phoneSetup > summary {
+	cursor: pointer;
+	list-style: none;
+}
+
+.phoneSetup > summary::-webkit-details-marker {
+	display: none;
+}
+
+.phoneSetup[open] > summary {
+	margin-bottom: 10px;
+}
+
+.phoneSetupSummary {
+	margin-left: auto;
+	font-weight: 500;
+	color: #6b7280;
+}
+
+.phoneSetupSummaryBad {
+	color: #b91c1c;
+	font-weight: 600;
+}
+
+.phoneSetupChevron {
+	flex-shrink: 0;
+	color: #9ca3af;
+	transition: transform 0.15s ease;
+}
+
+.phoneSetup[open] .phoneSetupChevron {
+	transform: rotate(180deg);
+}
+
+/* ── Clock-out review layout (only this type gets these classes) ───────────── */
+
+/* Service Location under the two columns, full width */
+.fullWidthRow {
+	margin-top: 1.25rem;
+}
+
 /* ── Cancelled/decided banner ─────────────────────────────────────────────── */
 
 .decidedBanner {
