@@ -77,10 +77,10 @@ export const birthRule = yup
 		}
 	)
 
-	// 2. Custom Age Validation (Age must be between 16 and 100)
+	// 2. Custom Age Validation (Age must be between 5 and 100)
 	.test(
 		'age-range',
-		'Age must be between 16 and 100 years',
+		'Age must be between 5 and 100 years',
 		(value) => {
 			if (!value) return true;
 
@@ -101,8 +101,8 @@ export const birthRule = yup
 				age--;
 			}
 
-			// Enforce the 16 to 100 age range
-			if (age < 16 || age > 100) {
+			// Enforce the 5 to 100 age range
+			if (age < 5 || age > 100) {
 				return false;
 			}
 
