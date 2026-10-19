@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useShifts } from "@/hooks/useShifts";
 import { useClients } from "@/hooks/useClients";
 import { useCaregivers } from "@/hooks/useCaregivers";
@@ -92,6 +93,12 @@ export default function EditShiftPage() {
 	} = useShifts(id);
 
 	const [showInProgressModal, setShowInProgressModal] = useState(false);
+
+	// Completed-shift hours edit refused because the shift's clock-out review
+	// is still pending (409 CLOCK_OUT_REVIEW_PENDING) — the review sets the paid
+	// end time, so it must be decided first. null when not blocked; otherwise
+	// { approvalId } (approvalId may be null if the server didn't send it).
+	const [clockOutReviewBlock, setClockOutReviewBlock] = useState(null);
 
 	// ── Long-shift (>12h) confirmation ─────────────────────────────────────
 	// Shifts longer than 12 hours are allowed but unusual, so we warn before
@@ -385,10 +392,16 @@ export default function EditShiftPage() {
 			actualEndTime: actualEnd.isValid ? actualEnd.toUTC().toISO() : undefined,
 			reason: data.reason || undefined,
 		};
+		setClockOutReviewBlock(null);
 		try {
 			await updateCompletedShift({ id: shiftDetail._id, data: payload });
 			router.push(`/scheduling/${id}`);
-		} catch (err) { }
+		} catch (err) {
+			if (err?.response?.data?.code === "CLOCK_OUT_REVIEW_PENDING") {
+				setClockOutReviewBlock({ approvalId: err.response.data.details?.approvalId ?? null });
+			}
+			// All other errors are surfaced via actionShiftError from the hook.
+		}
 	}
 
 	function onSubmitCompleted(data) {
@@ -493,7 +506,28 @@ export default function EditShiftPage() {
 		return (
 			<PageLayout>
 				<Header onSave={cSubmit(onSubmitCompleted)} />
-				{actionShiftError && <ActionMessage variant="error" message={actionShiftError} />}
+				{clockOutReviewBlock ? (
+					// Pending clock-out review — point to it instead of the server's text
+					<ActionMessage
+						variant="error"
+						message={
+							<>
+								Decide the clock-out review first.
+								{clockOutReviewBlock.approvalId && (
+									<>
+										{" "}
+										<Link href={`/approvals/${clockOutReviewBlock.approvalId}`} className={styles.inlineLink}>
+											Open the review →
+										</Link>
+									</>
+								)}
+							</>
+						}
+						onClose={() => setClockOutReviewBlock(null)}
+					/>
+				) : (
+					actionShiftError && <ActionMessage variant="error" message={actionShiftError} />
+				)}
 
 				<div className={styles.completedNotice}>
 					<Clock size={15} style={{ flexShrink: 0 }} />
