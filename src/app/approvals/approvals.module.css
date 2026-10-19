@@ -131,6 +131,27 @@
 	text-overflow: ellipsis;
 }
 
+.rowTitleRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+/* Pill next to the name (e.g. "Explanation received") */
+.rowBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
 .rowSubtitle {
 	font-size: 0.8rem;
 	color: #6b7280;
