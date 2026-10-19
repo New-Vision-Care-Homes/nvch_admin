@@ -12,7 +12,7 @@ import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
 import Pagination from "@components/UI/Table/Pagination";
 import ConfirmDeleteModal from "@components/UI/Modal/ConfirmDeleteModal";
 import Link from "next/link";
-import { Plus, Eye, Search, Trash2 } from "lucide-react";
+import { Plus, Eye, Search, Trash2, Download, Loader2 } from "lucide-react";
 import ErrorState from "@/components/UI/Feedback/ErrorState";
 import EmptyState from "@/components/UI/Feedback/EmptyState";
 import { useClients } from "@/hooks/useClients";
@@ -23,6 +23,8 @@ import { canManageTarget } from "@/utils/permissions";
 import { ColorPill } from "@components/UI/Feedback/Badge";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { exportClientWorkbook } from "@/utils/excelExport/clientSheet";
+import logoImg from "@/assets/logo/nv.png";
 
 export default function Clients() {
 	const { profile } = useProfile();
@@ -70,6 +72,7 @@ export default function Clients() {
 		isActionPending,
 		deleteClient,
 		refetch,
+		fetchAllForExport,
 	} = useClients({
 		params: {
 			page:     currentPage,
@@ -79,6 +82,30 @@ export default function Clients() {
 			homeId,
 		},
 	});
+
+	const [isExporting, setIsExporting] = useState(false);
+	const handleExportAll = async () => {
+		setIsExporting(true);
+		try {
+			const exportParams = {
+				...(debouncedSearch && { search: debouncedSearch }),
+				...(homeId && { homeId }),
+				...(isActiveParam !== "" && { isActive: isActiveParam }),
+			};
+			const allClients = await fetchAllForExport(exportParams);
+			// Resolve the filter's raw homeId to a display name using the homes
+			// already loaded for the filter dropdown — the client list endpoint
+			// itself doesn't return a usable home name per client (see below).
+			const homeName = homeId ? (homes.find((h) => (h.id || h._id) === homeId)?.name ?? homeId) : null;
+			await exportClientWorkbook({
+				clients: allClients,
+				logoUrl: logoImg.src,
+				filters: { ...exportParams, homeName },
+			});
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	// Reset to page 1 when any filter changes — but not on the initial mount,
 	// which would otherwise wipe out a restored (persisted) page number.
@@ -131,11 +158,23 @@ export default function Clients() {
 					{/* Header */}
 					<PageHeader
 						title="Client Management"
-						actions={canCreate && (
-							<Link href="/clients/add_new_client">
-								<Button variant="primary" icon={<Plus size={16} />}>Add New Client</Button>
-							</Link>
-						)}
+						actions={
+							<>
+								<Button
+									variant="excel"
+									icon={isExporting ? <Loader2 size={14} className={styles.exportSpinner} /> : <Download size={14} />}
+									onClick={handleExportAll}
+									disabled={isExporting || isLoading}
+								>
+									{isExporting ? "Exporting…" : "Clients Export"}
+								</Button>
+								{canCreate && (
+									<Link href="/clients/add_new_client">
+										<Button variant="primary" icon={<Plus size={16} />}>Add New Client</Button>
+									</Link>
+								)}
+							</>
+						}
 					/>
 
 					{actionError && <p className={styles.actionError}>{actionError}</p>}

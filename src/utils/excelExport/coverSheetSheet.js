@@ -198,6 +198,7 @@ export async function exportCoverSheetToExcel(params) {
     wb.created = new Date();
 
     const ws = await buildCoverSheetSheet(wb, params);
+    // Payroll export: locked read-only. See lockSheet() in helpers.js.
     await lockSheet(ws);
     await downloadWorkbook(wb, `payroll_cover_sheet_${params.homeName || "home"}_${params.payYear}_period${params.periodNumber}.xlsx`);
 }

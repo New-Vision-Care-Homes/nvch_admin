@@ -63,8 +63,10 @@ export async function exportPayrollWorkbook({ homeName, homeId, payYear, periodN
         payYear, periodNumber, shifts, logoUrl,
     });
 
-    // Every tab in the combined package is read-only — recipients can view
-    // and print but not edit any of the three sheets.
+    // Payroll export: every tab in the combined package is locked read-only —
+    // recipients can view and print but not edit any of the three sheets.
+    // Non-payroll exports (homes, acknowledgments, standalone schedule) are
+    // intentionally left unlocked/editable — see lockSheet() in helpers.js.
     for (const ws of wb.worksheets) {
         await lockSheet(ws);
     }

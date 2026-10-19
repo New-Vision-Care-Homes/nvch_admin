@@ -3,7 +3,7 @@ import {
     C_NAVY, C_WHITE, C_INFO_BG, C_ROW_EVEN, C_ROW_ALT,
     C_TOTALS,
     thinSide, medSide, solidFill,
-    addFooter, downloadWorkbook, lockSheet,
+    addFooter, downloadWorkbook,
 } from "./helpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,7 +219,8 @@ export async function exportAckWorkbook({ acknowledgments, logoUrl, filters }) {
     wb.created    = new Date();
 
     await buildAckSheet(wb, { acknowledgments, logoUrl, filters });
-    await lockSheet(wb.worksheets[0]);
+    // Non-payroll export: left unlocked (editable). Only payroll exports are
+    // protected — see lockSheet() in helpers.js for the payroll-only locking rule.
 
     const datestamp = format(new Date(), "yyyy-MM-dd");
     await downloadWorkbook(wb, `overtime_acknowledgments_${datestamp}.xlsx`);
@@ -376,7 +377,8 @@ export async function exportSingleAckWorkbook({ ack, logoUrl }) {
     wb.created    = new Date();
 
     await buildSingleAckSheet(wb, { ack, logoUrl });
-    await lockSheet(wb.worksheets[0]);
+    // Non-payroll export: left unlocked (editable). Only payroll exports are
+    // protected — see lockSheet() in helpers.js for the payroll-only locking rule.
 
     const cg   = ack.caregiver ?? {};
     const name = [cg.firstName, cg.lastName].filter(Boolean).join("_").toLowerCase() || "caregiver";
