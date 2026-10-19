@@ -83,7 +83,7 @@ import {
 import { addDays, format, parseISO } from "date-fns";
 import { DateTime } from "luxon";
 import Image from "next/image";
-import { expandShiftDays, getTodayInHalifax } from "@/utils/timeHandling";
+import { expandShiftDays, getTodayInHalifax, utcToDateString } from "@/utils/timeHandling";
 
 import Sidebar from "@components/layout/Sidebar";
 import Navbar from "@components/layout/Navbar";
@@ -849,9 +849,12 @@ export default function ShiftBuilderPage() {
 	const { payPeriod, isPayPeriodLoading, payPeriodError } = usePayPeriod(periodOffset);
 
 	// Flat "yyyy-MM-dd" strings used in API calls and date comparisons.
+	// The bounds are Halifax start/end-of-day moments sent in UTC, so read the
+	// date in Halifax — slicing the UTC string put the end on the next
+	// period's first day (a 15-day grid).
 	// Empty strings while loading so the dates useMemo safely returns [].
-	const startDate = payPeriod?.periodStart?.slice(0, 10) ?? "";
-	const endDate   = payPeriod?.periodEnd?.slice(0, 10)   ?? "";
+	const startDate = utcToDateString(payPeriod?.periodStart, HALIFAX_TZ);
+	const endDate   = utcToDateString(payPeriod?.periodEnd,   HALIFAX_TZ);
 
 	// ── Global shift hours (editable in the legend at the bottom) ─────────────
 	// These apply to all Day / Night cells. Custom cells have their own time pickers.
@@ -1954,7 +1957,7 @@ export default function ShiftBuilderPage() {
 									</span>
 									<span className={styles.periodDates}>
 										{payPeriod
-											? `${format(parseISO(payPeriod.periodStart), "MMM d")} – ${format(parseISO(payPeriod.periodEnd), "MMM d, yyyy")}`
+											? `${format(parseISO(startDate), "MMM d")} – ${format(parseISO(endDate), "MMM d, yyyy")}`
 											: "Loading…"
 										}
 									</span>

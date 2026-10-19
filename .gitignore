@@ -43,3 +43,6 @@ next-env.d.ts
 # claude code — per-machine local config (absolute paths, machine-specific allow rules)
 .claude/settings.json
 .claude/settings.local.json
+
+# RuFlo / claude-flow (local tooling)
+.claude-flow/
