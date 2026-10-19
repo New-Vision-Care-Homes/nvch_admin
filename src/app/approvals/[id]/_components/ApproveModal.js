@@ -35,15 +35,15 @@ import Modal from "@components/UI/Modal/Modal";
 import Button from "@components/UI/Button/Button";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import { CheckCircle2, Loader, AlertTriangle, Banknote, DollarSign } from "lucide-react";
-import { formatDateOnly } from "@/utils/dates";
+import { DISPLAY_TZ, formatDateOnly } from "@/utils/dates";
 import styles from "../approval_detail.module.css";
 
 // Local copy — only used in this file. BankedHoursPayout.js has its own copy
 // for the same reason: small pure helper, no shared module needed yet.
 function formatPayPeriod(payPeriod) {
     if (!payPeriod) return "—";
-    const start = payPeriod.start ? formatDateOnly(payPeriod.start) : "";
-    const end   = payPeriod.end   ? formatDateOnly(payPeriod.end)   : "";
+    const start = payPeriod.start ? formatDateOnly(payPeriod.start, DISPLAY_TZ) : "";
+    const end   = payPeriod.end   ? formatDateOnly(payPeriod.end,   DISPLAY_TZ) : "";
     return start && end ? `${start} – ${end}` : start || end || "—";
 }
 
