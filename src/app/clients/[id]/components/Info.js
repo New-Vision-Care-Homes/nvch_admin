@@ -15,7 +15,7 @@ import {
 	emailRule,
 	phoneRule,
 	pinRule,
-	birthRule,
+	clientBirthRule,
 	shortTextRule,
 	longTextRule,
 	dateRule,
@@ -135,7 +135,7 @@ const schema = yup.object({
 		.string()
 		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
-	birth: birthRule,
+	birth: clientBirthRule,
 	maritalStatus: yup.string().max(50).nullable().optional(),
 	levelOfSupport: yup
 		.number()

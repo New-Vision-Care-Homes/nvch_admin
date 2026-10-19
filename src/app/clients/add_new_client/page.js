@@ -24,7 +24,7 @@ import {
 	longTextRule,
 	dateRule,
 	pinRule,
-	birthRule,
+	clientBirthRule,
 	addressComponentRule,
 } from "@/utils/validation";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
@@ -48,7 +48,7 @@ const schema = yup.object({
 	lastName: nameRule.required("Last name is required"),
 	email: emailRule,
 	phone: phoneRule,
-	birth: birthRule.required("Birth date is required"),
+	birth: clientBirthRule.required("Birth date is required"),
 	region: yup
 		.string()
 		.oneOf(

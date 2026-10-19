@@ -61,7 +61,8 @@ export const pinRule = yup
 		'Please enter a valid Canadian Postal Code (e.g., A1A 1A1)'
 	);
 
-export const birthRule = yup
+// Same age limits as the server: staff (caregivers) 16–100, clients 5–120.
+const makeBirthRule = (minAge, maxAge) => yup
 	.string()
 	.trim()
 	.required("Date of Birth is required.")
@@ -77,10 +78,10 @@ export const birthRule = yup
 		}
 	)
 
-	// 2. Custom Age Validation (Age must be between 5 and 100)
+	// 2. Custom Age Validation (Age must be between minAge and maxAge)
 	.test(
 		'age-range',
-		'Age must be between 5 and 100 years',
+		`Age must be between ${minAge} and ${maxAge} years`,
 		(value) => {
 			if (!value) return true;
 
@@ -101,14 +102,17 @@ export const birthRule = yup
 				age--;
 			}
 
-			// Enforce the 5 to 100 age range
-			if (age < 5 || age > 100) {
+			// Enforce the age range
+			if (age < minAge || age > maxAge) {
 				return false;
 			}
 
 			return true;
 		}
 	);
+
+export const birthRule = makeBirthRule(16, 100);
+export const clientBirthRule = makeBirthRule(5, 120);
 
 
 export const emailRule = yup
