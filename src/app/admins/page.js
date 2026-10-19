@@ -17,7 +17,7 @@ import Link from "next/link";
 import { Plus, Eye, Search, Trash2 } from "lucide-react";
 import EmptyState from "@components/UI/Feedback/EmptyState";
 import { useAdmins } from "@/hooks/useAdmins";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import { fullName } from "@/utils/formatting";
@@ -57,7 +57,7 @@ export default function Admins() {
 	if (statusFilter === "Active")   isActiveParam = true;
 	if (statusFilter === "Inactive") isActiveParam = false;
 
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	const {
 		admins,

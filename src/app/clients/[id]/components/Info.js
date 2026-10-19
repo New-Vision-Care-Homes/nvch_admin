@@ -15,7 +15,7 @@ import {
 	emailRule,
 	phoneRule,
 	pinRule,
-	birthRule,
+	clientBirthRule,
 	shortTextRule,
 	longTextRule,
 	dateRule,
@@ -25,7 +25,7 @@ import { useParams } from "next/navigation";
 import { useClients } from "@/hooks/useClients";
 import { useProfile } from "@/hooks/useProfile";
 import { canManageTarget } from "@/utils/permissions";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import HouseConflictModal from "@/components/UI/Modal/HouseConflictModal";
 import { useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
@@ -135,7 +135,7 @@ const schema = yup.object({
 		.string()
 		.oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region")
 		.required("Region is required"),
-	birth: birthRule,
+	birth: clientBirthRule,
 	maritalStatus: yup.string().max(50).nullable().optional(),
 	levelOfSupport: yup
 		.number()
@@ -278,7 +278,7 @@ export default function Info() {
 		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true, shouldDirty: true });
 	}
 
-	const { homes, fetchHome } = useHomes({ limit: 100 });
+	const { homes, fetchHome } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 	const watchHomeId = watch("homeId");
 	const watchNoHomeSelected = watch("noHomeSelected");
 	const watchStreet = watch("street");

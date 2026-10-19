@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
 import { useCaregivers } from "@/hooks/useCaregivers";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import PersonSearchField from "@/components/UI/Form/PersonSearchField";
 
@@ -173,7 +173,7 @@ export default function Page() {
 	});
 
 	const { addCaregiver, caregiverActionError, isCaregiverActionPending } = useCaregivers();
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 
 	/*

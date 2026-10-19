@@ -17,7 +17,7 @@ import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
 import { useParams } from "next/navigation";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useProfile } from "@/hooks/useProfile";
-import { useHomes } from "@/hooks/useHomes";
+import { useHomes, HOMES_DROPDOWN_LIMIT } from "@/hooks/useHomes";
 import { canManageTarget } from "@/utils/permissions";
 import ErrorState from "@components/UI/Feedback/ErrorState";
 import AddressAutocomplete from "@/components/UI/Form/AddressAutocomplete";
@@ -104,7 +104,7 @@ export default function Info() {
 	const { id } = useParams();
 
 	const { caregiverDetail, updateCaregiver, isCaregiverLoading, isCaregiverActionPending, caregiverFetchError } = useCaregivers(id);
-	const { homes } = useHomes({ limit: 100 });
+	const { homes } = useHomes({ limit: HOMES_DROPDOWN_LIMIT });
 
 	// update_assigned_caregivers only counts when the caregiver shares a region
 	// with the requester — same scoping the backend applies on save.

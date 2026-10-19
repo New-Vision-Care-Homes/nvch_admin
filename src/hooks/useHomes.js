@@ -2,6 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { homeService } from "@/services/api/services/homeService";
 
 /**
+ * Pages that load the full homes list into a dropdown/filter (rather than a
+ * paginated table) all pass this as their `limit`, so there's one place to
+ * raise it if the number of homes ever exceeds it.
+ */
+export const HOMES_DROPDOWN_LIMIT = 200;
+
+/**
  * Custom hook to manage Home (Housing Unit) operations.
  * @param {Object|string|number} arg - Query parameters for fetching homes OR homeId for fetching a single home
  */
