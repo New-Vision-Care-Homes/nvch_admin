@@ -21,6 +21,7 @@ import { ColorPill } from "@components/UI/Feedback/Badge";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
 import { REGION_COLORS } from "@/utils/dropdownList/region";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { effectiveReporting } from "../_components/ReportingTimeField";
 
 export default function HomeDetailPage() {
 	const { id } = useParams();
@@ -82,6 +83,8 @@ export default function HomeDetailPage() {
 		</div>
 	);
 
+	const reporting = effectiveReporting(home);
+
 	const gpsCenter = home?.gpsCoordinates
 		? { lat: home.gpsCoordinates.latitude, lng: home.gpsCoordinates.longitude }
 		: undefined;
@@ -133,6 +136,9 @@ export default function HomeDetailPage() {
 							</InfoItem>
 							<InfoItem label="Home Type">
 								{home.homeType ? <ColorPill label={home.homeType} color={HOME_TYPE_COLORS[home.homeType] ?? COLOR_FALLBACK} /> : "—"}
+							</InfoItem>
+							<InfoItem label="Reporting Time">
+								{reporting.reportingRequired ? `${reporting.reportingMinutes} min before shift start` : "Off"}
 							</InfoItem>
 							<InfoItem label="Notes">{home.notes || "—"}</InfoItem>
 						</div>
