@@ -52,8 +52,11 @@ function timeAgo(dateStr) {
 
 /** Groups a flat notifications array into { "Today": [...], "Yesterday": [...], ... } */
 function groupByDate(items) {
-	const today     = new Date().toDateString();
-	const yesterday = new Date(Date.now() - 86_400_000).toDateString();
+	const now       = new Date();
+	const today     = now.toDateString();
+	// The calendar day before today. Not `Date.now() - 24h`: right after the
+	// clocks spring forward that lands on the day before yesterday.
+	const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toDateString();
 	return items.reduce((acc, n) => {
 		const d = new Date(n.createdAt).toDateString();
 		const label =
