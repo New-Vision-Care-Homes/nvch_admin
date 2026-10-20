@@ -712,20 +712,127 @@
 	margin-top: 2px;
 }
 
-.plainList {
+/* ── Clock-out review: What Happened details ──────────────────────────────── */
+
+/* Times in order, joined by a thin line: clocked in → credited end → signed out */
+.whTimeline {
+	list-style: none;
+	margin: 0 0 16px;
+	padding: 0;
+	position: relative;
+}
+
+.whTimeline::before {
+	content: "";
+	position: absolute;
+	left: 5px;
+	top: 10px;
+	bottom: 10px;
+	width: 2px;
+	background: #e5e7eb;
+}
+
+.whTimelineItem {
+	position: relative;
+	display: grid;
+	grid-template-columns: 22px minmax(120px, max-content) 1fr;
+	align-items: center;
+	column-gap: 8px;
+	padding: 5px 0;
+}
+
+.whDot {
+	width: 12px;
+	height: 12px;
+	border-radius: 999px;
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px #d1d5db;
+	z-index: 1;
+}
+
+.whDot_in       { background: #16a34a; }   /* matches the clock-in pin */
+.whDot_credited { background: #2563eb; }
+.whDot_out      { background: #dc2626; }   /* matches the clock-out pin */
+
+.whTimelineLabel {
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+.whTimelineHint {
+	font-weight: 400;
+	color: #9ca3af;
+}
+
+.whTimelineValue {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.85rem;
+	color: #111827;
+	font-variant-numeric: tabular-nums;
+}
+
+
+/* Reminders: green tick + time pill + what it said */
+.whReminders {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 	display: flex;
 	flex-direction: column;
-	gap: 3px;
+	gap: 5px;
 }
 
-.plainListTime {
-	display: inline-block;
-	min-width: 72px;
-	color: #6b7280;
+.whReminders li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.83rem;
+	color: #374151;
+}
+
+.whReminderIcon {
+	flex-shrink: 0;
+	color: #16a34a;
+}
+
+.whReminderTime {
+	padding: 0 7px;
+	border-radius: 999px;
+	background: #f3f4f6;
+	color: #4b5563;
+	font-size: 0.75rem;
+	font-weight: 600;
 	font-variant-numeric: tabular-nums;
+}
+
+/* Small coloured chips (reminders "None sent", earlier reviews) */
+.whChip {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 10px;
+	border-radius: 999px;
+	border: 1px solid;
+	font-size: 0.78rem;
+	font-weight: 600;
+	width: fit-content;
+}
+
+.whChip_good    { color: #166534; background: #f0fdf4; border-color: #86efac; }
+.whChip_warning { color: #92400e; background: #fffbeb; border-color: #fcd34d; }
+.whChip_bad     { color: #991b1b; background: #fef2f2; border-color: #fca5a5; }
+
+@media (max-width: 640px) {
+	.whTimelineItem {
+		grid-template-columns: 22px 1fr;
+	}
+
+	.whTimelineValue {
+		grid-column: 2;
+	}
 }
 
 /* ── Clock-out review layout (only this type gets these classes) ───────────── */

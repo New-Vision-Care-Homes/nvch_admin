@@ -6,7 +6,7 @@ import ServiceLocationPanel from "@components/UI/Panel/ServiceLocationPanel";
 import AppActivityPanel from "@components/UI/Panel/AppActivityPanel";
 import {
     User, Home, CalendarDays, ExternalLink, ClockAlert,
-    MapPin, MessageSquare, BadgeCheck, Activity,
+    MapPin, MessageSquare, BadgeCheck, Activity, CheckCircle2,
 } from "lucide-react";
 import { formatDateTime, DISPLAY_TZ } from "@/utils/dates";
 import { utcToDisplayTime } from "@/utils/timeHandling";
@@ -140,43 +140,66 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
                                 <div className={styles.mutedText}>{TRIGGER_DESCRIPTIONS[ctx.trigger]}</div>
                             )}
                         </InfoField>
-                        <div className={styles.photoDetailsGrid}>
-                            <InfoField label="Clocked In (paid from)">
-                                {formatDateTime(clockIn.at)}
-                            </InfoField>
-                            <InfoField label="Signed Out At">
-                                {formatDateTime(clockOut.recordedAt)}
-                            </InfoField>
-                            <InfoField label="Credited End">
-                                {formatDateTime(clockOut.creditedEndTime)}
-                            </InfoField>
-                            <InfoField label="Hours Credited">
-                                {formatHours(ctx.hoursCredited)}
-                            </InfoField>
-                        </div>
-                        {clockOut.endEarlyReason && (
-                            <InfoField label="Reason for Ending Early">
-                                {clockOut.endEarlyReason}
-                            </InfoField>
-                        )}
-                        <InfoField label="Reminders Sent">
-                            {reminders.length === 0 ? "None" : (
-                                <ul className={styles.plainList}>
-                                    {reminders.map((reminder) => (
-                                        <li key={reminder.stage}>
-                                            <span className={styles.plainListTime}>{formatTime(reminder.at)}</span>
-                                            {REMINDER_LABELS[reminder.stage] ?? reminder.stage}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                    </div>
+
+                    {/* The times, in order — paid from, paid until, actually closed */}
+                    <ol className={styles.whTimeline}>
+                        <li className={styles.whTimelineItem}>
+                            <span className={`${styles.whDot} ${styles.whDot_in}`} />
+                            <span className={styles.whTimelineLabel}>Clocked in <span className={styles.whTimelineHint}>(paid from)</span></span>
+                            <span className={styles.whTimelineValue}>{formatDateTime(clockIn.at)}</span>
+                        </li>
+                        <li className={styles.whTimelineItem}>
+                            <span className={`${styles.whDot} ${styles.whDot_credited}`} />
+                            <span className={styles.whTimelineLabel}>Credited end <span className={styles.whTimelineHint}>(before the review)</span></span>
+                            <span className={styles.whTimelineValue}>{formatDateTime(clockOut.creditedEndTime)}</span>
+                        </li>
+                        <li className={styles.whTimelineItem}>
+                            <span className={`${styles.whDot} ${styles.whDot_out}`} />
+                            <span className={styles.whTimelineLabel}>Signed out</span>
+                            <span className={styles.whTimelineValue}>{formatDateTime(clockOut.recordedAt)}</span>
+                        </li>
+                    </ol>
+
+                    <InfoField label="Hours Credited">
+                        {formatHours(ctx.hoursCredited)}
+                    </InfoField>
+
+                    {clockOut.endEarlyReason && (
+                        <InfoField label="Reason for Ending Early">
+                            {clockOut.endEarlyReason}
                         </InfoField>
-                        <InfoField label="Clock-Out Reviews in the Last 30 Days">
+                    )}
+
+                    <InfoField label="Reminders Sent">
+                        {reminders.length === 0 ? (
+                            // Not reminded at all — worth noticing
+                            <span className={`${styles.whChip} ${styles.whChip_warning}`}>None sent</span>
+                        ) : (
+                            <ul className={styles.whReminders}>
+                                {reminders.map((reminder) => (
+                                    <li key={reminder.stage}>
+                                        <CheckCircle2 size={13} className={styles.whReminderIcon} />
+                                        <span className={styles.whReminderTime}>{formatTime(reminder.at)}</span>
+                                        {REMINDER_LABELS[reminder.stage] ?? reminder.stage}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </InfoField>
+
+                    <InfoField label="Clock-Out Reviews in the Last 30 Days">
+                        {/* Green: none · amber: some · red: any rejected */}
+                        <span className={`${styles.whChip} ${
+                            !prior?.total ? styles.whChip_good
+                                : prior.rejected ? styles.whChip_bad
+                                : styles.whChip_warning}`}
+                        >
                             {prior?.total
                                 ? `${prior.total} earlier review${prior.total === 1 ? "" : "s"}${prior.rejected ? ` · ${prior.rejected} rejected` : ""}`
                                 : "None"}
-                        </InfoField>
-                    </div>
+                        </span>
+                    </InfoField>
                 </CardContent>
             </Card>
 
