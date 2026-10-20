@@ -3,10 +3,11 @@
 // ─── PaidUntilField ───────────────────────────────────────────────────────────
 //
 // The "paid until" time picker for clock_out_review decisions, shared by
-// ApproveModal ("Approve until…") and the page's reject form. Both are pay
-// cuts, so the time must be at or after the clock-in (clockIn.at) and before
-// the credited end (originalActualEndTime) — paying until the credited end is
-// "Approve full shift". Mirrors the server's INVALID_PAID_UNTIL rule.
+// ApproveModal ("Approve until…") and the page's reject form. The time can be
+// anything from the clock-in (clockIn.at) up to and including the credited end
+// (originalActualEndTime). Note the server refuses the credited end itself on
+// a reject (INVALID_PAID_UNTIL — paying it all is an approve); that error is
+// shown by the reject form.
 //
 // The date is fixed to the shift's dates (shown as text, or a select for an
 // overnight shift); the time is a free <input type="time"> with no min/max, so
@@ -38,7 +39,8 @@ function paidUntilBounds(ctx) {
     const end   = Date.parse(ctx?.originalActualEndTime ?? "");
     if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
     const minMs = Math.ceil(start / MINUTE_MS) * MINUTE_MS;
-    const maxMs = Math.ceil(end / MINUTE_MS) * MINUTE_MS - MINUTE_MS;
+    // Whole minutes (the input has no seconds): up to the credited end itself.
+    const maxMs = Math.floor(end / MINUTE_MS) * MINUTE_MS;
     return maxMs >= minMs ? { startMs: start, minMs, maxMs } : null;
 }
 
