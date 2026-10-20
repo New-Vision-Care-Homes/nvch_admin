@@ -45,6 +45,10 @@
 .statusInactive { background-color: #fee2e2; color: #b91c1c; }
 
 /* ── Overview Card ───────────────────────────────────────────────── */
+.overviewCard {
+	margin-top: 0.75rem;
+}
+
 .overviewBody {
 	display: flex;
 	align-items: center;
