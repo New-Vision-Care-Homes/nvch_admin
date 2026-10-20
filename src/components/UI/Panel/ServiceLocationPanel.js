@@ -24,7 +24,7 @@
 // A (0, 0) location is the server's "no fix" placeholder for a system close,
 // so it's never drawn as a pin.
 
-import GeofenceMap from "./GeofenceMap";
+import GeofenceMap from "@components/UI/Map/GeofenceMap";
 import { MapPin, LogIn, LogOut, LocateFixed } from "lucide-react";
 import { utcToDisplayTime } from "@/utils/timeHandling";
 import { DISPLAY_TZ } from "@/utils/dates";

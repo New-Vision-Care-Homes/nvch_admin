@@ -728,55 +728,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-.cardSubheading {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	/* No top margin — the field above already leaves 16px (InfoField's margin-bottom). */
-	margin: 0 0 6px;
-	padding-top: 12px;
-	border-top: 1px solid #f3f4f6;
-	font-size: 0.8rem;
-	font-weight: 600;
-	color: #374151;
-}
-
-/* Phone setup at clock-in — a <details> whose <summary> is the subheading row,
-   with "N settings off" / "All settings OK" pushed to the right. */
-.phoneSetup > summary {
-	cursor: pointer;
-	list-style: none;
-}
-
-.phoneSetup > summary::-webkit-details-marker {
-	display: none;
-}
-
-.phoneSetup[open] > summary {
-	margin-bottom: 10px;
-}
-
-.phoneSetupSummary {
-	margin-left: auto;
-	font-weight: 500;
-	color: #6b7280;
-}
-
-.phoneSetupSummaryBad {
-	color: #b91c1c;
-	font-weight: 600;
-}
-
-.phoneSetupChevron {
-	flex-shrink: 0;
-	color: #9ca3af;
-	transition: transform 0.15s ease;
-}
-
-.phoneSetup[open] .phoneSetupChevron {
-	transform: rotate(180deg);
-}
-
 /* ── Clock-out review layout (only this type gets these classes) ───────────── */
 
 /* Service Location under the two columns, full width */

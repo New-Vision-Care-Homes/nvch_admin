@@ -6,7 +6,8 @@ import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
-import ServiceLocationPanel from "@/components/UI/Map/ServiceLocationPanel";
+import ServiceLocationPanel from "@/components/UI/Panel/ServiceLocationPanel";
+import AppActivityPanel from "@/components/UI/Panel/AppActivityPanel";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button/Button";
 import ErrorState from "@components/UI/Feedback/ErrorState";
@@ -20,6 +21,7 @@ import {
 	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History, XCircle,
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass, MapPinned,
+	Activity,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -81,6 +83,10 @@ export default function ShiftDetailPage() {
 	const alternateLocationStatus = ALTERNATE_LOCATION_STATUS[alternateLocation?.status] ?? ALTERNATE_LOCATION_STATUS.pending;
 
 	// The end-of-shift location check — the latest one (an extended shift can have several)
+	// App activity check + phone setup at clock-in (the App Activity panel)
+	const presence = shift.presence ?? null;
+	const device   = shift.clockInDevice ?? null;
+
 	const latestLocationCheck = [...(shift.locationChecks ?? [])]
 		.sort((a, b) => Date.parse(b.requestedAt ?? 0) - Date.parse(a.requestedAt ?? 0))[0] ?? null;
 
@@ -362,6 +368,19 @@ export default function ShiftDetailPage() {
 						</CardContent>
 					</Card>
 
+
+					{/* App Activity — shared with the clock-out review approval page. Hidden
+					    for shifts with neither (clocked in before the feature / older app). */}
+					{(presence || device) && (
+						<Card>
+							<CardHeader>
+								<span className={styles.cardTitleInner}><Activity size={15} /> App Activity</span>
+							</CardHeader>
+							<CardContent>
+								<AppActivityPanel presence={presence} device={device} />
+							</CardContent>
+						</Card>
+					)}
 
 					{/* Notes */}
 					<Card>

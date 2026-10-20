@@ -2,10 +2,11 @@
 
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import StatusBadge from "@components/UI/Feedback/Badge";
-import ServiceLocationPanel from "@components/UI/Map/ServiceLocationPanel";
+import ServiceLocationPanel from "@components/UI/Panel/ServiceLocationPanel";
+import AppActivityPanel from "@components/UI/Panel/AppActivityPanel";
 import {
     User, Home, CalendarDays, ExternalLink, ClockAlert,
-    MapPin, MessageSquare, Activity, Smartphone, BadgeCheck, ChevronDown,
+    MapPin, MessageSquare, BadgeCheck, Activity,
 } from "lucide-react";
 import { formatDateTime, DISPLAY_TZ } from "@/utils/dates";
 import { utcToDisplayTime } from "@/utils/timeHandling";
@@ -25,8 +26,8 @@ import styles from "../approval_detail.module.css";
 //
 //   ClockOutEvidence    — left column: What Happened (caregiver, house, shift
 //                         link, trigger, clock-in/out, credited end and hours,
-//                         reminders, prior reviews) and App Activity (status,
-//                         gaps, Low Power Mode, collapsible phone setup)
+//                         reminders, prior reviews) and App Activity
+//                         (AppActivityPanel, shared with the shift detail page)
 //   ClockOutOutcome     — right column, under Decision once decided:
 //                         subjectContext.decision (paid until, hours before/after)
 //   ClockOutExplanation — right column, after Decision/Outcome and before the
@@ -53,25 +54,6 @@ const REMINDER_LABELS = {
     "t0":    "At the end — \"Your shift has ended\"",
 };
 
-const PRESENCE_META = {
-    active:        { label: "App active",     tone: "success" },
-    not_active:    { label: "App not active", tone: "danger"  },
-    not_monitored: { label: "Not monitored",  tone: "neutral" },
-};
-
-// Phone setup at clock-in — [label, value → display text, value → is it OK?].
-// "unknown" / null values read as "Unknown" and aren't flagged either way.
-const DEVICE_FIELDS = [
-    ["locationPermission",  "Location Access",     { always: "Always", whileInUse: "While using the app", denied: "Denied" }, (v) => v === "always"],
-    ["locationAccuracy",    "Precise Location",    { full: "On", reduced: "Off (approximate)" },                              (v) => v === "full"],
-    ["notifications",       "Notifications",       { allowed: "Allowed", denied: "Denied" },                                  (v) => v === "allowed"],
-    ["backgroundRefresh",   "Background Refresh",  { available: "On", denied: "Off", restricted: "Restricted", not_applicable: "N/A (Android)" }, (v) => v === "available" || v === "not_applicable"],
-    ["batteryOptimization", "Battery Optimisation", { unrestricted: "Unrestricted", optimized: "Optimised", restricted: "Restricted", not_applicable: "N/A (iOS)" }, (v) => v === "unrestricted" || v === "not_applicable"],
-    ["powerSaving",         "Low Power Mode",      { true: "On", false: "Off" },                                              (v) => v === false],
-];
-
-const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
-
 /** "14:18" in business time — for times within a single shift. */
 function formatTime(iso) {
     return utcToDisplayTime(iso, DISPLAY_TZ) || "—";
@@ -91,22 +73,6 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
     const device    = clockIn.device ?? null;
     const reminders = ctx.remindersSent ?? [];
     const prior     = ctx.priorReviews30d ?? null;
-
-    // The open gap (no endedAt) is the current quiet stretch — its first missed
-    // check is when the app stopped answering.
-    const openGap      = presence?.gaps?.find((gap) => !gap.endedAt) ?? null;
-    const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
-
-    // Phone setup rows, and how many settings weaken the checks (for the summary).
-    // "Unknown" and "N/A" values are never counted as off.
-    const deviceRows = device
-        ? DEVICE_FIELDS.map(([key, label, valueLabels, isOk]) => {
-            const text  = valueLabels[String(device[key])] ?? "Unknown";
-            const known = text !== "Unknown" && !text.startsWith("N/A");
-            return { key, label, text, isBad: known && !isOk(device[key]) };
-        })
-        : [];
-    const weakSettings = deviceRows.filter((row) => row.isBad).length;
 
     return (
         <>
@@ -214,7 +180,7 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
                 </CardContent>
             </Card>
 
-            {/* ── App activity ─────────────────────────────────────────────── */}
+            {/* ── App activity (panel shared with the shift detail page) ───── */}
             <Card>
                 <CardHeader>
                     <span className={styles.cardTitleInner}>
@@ -223,83 +189,7 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
                     </span>
                 </CardHeader>
                 <CardContent>
-                    <InfoField label="Status">
-                        <StatusBadge label={presenceMeta.label} tone={presenceMeta.tone} size="pill" />
-                        <div className={styles.mutedText}>
-                            {!presence
-                                ? "The app wasn't checked during this shift."
-                                : presence.status === "not_active"
-                                ? `Not answering since ${formatTime(openGap?.firstMissedPingAt)}${presence.lastSeenAt ? ` (last reply ${formatTime(presence.lastSeenAt)})` : ""}`
-                                : presence.status === "active"
-                                ? `Last reply ${formatTime(presence.lastSeenAt)}`
-                                : "This phone or app version can't be checked."}
-                        </div>
-                    </InfoField>
-                    {presence && presence.status !== "not_monitored" && (
-                        <>
-                            <div className={styles.photoDetailsGrid}>
-                                <InfoField label="Checks Answered">
-                                    {`${presence.pingsAnswered ?? 0} of ${presence.pingsSent ?? 0}`}
-                                </InfoField>
-                                <InfoField label="Low Power Mode">
-                                    {presence.powerSavingSeenAt
-                                        ? `Seen on at ${formatTime(presence.powerSavingSeenAt)}`
-                                        : "Not seen"}
-                                </InfoField>
-                            </div>
-                            <InfoField label="Gaps">
-                                {!presence.gaps?.length ? "None" : (
-                                    <ul className={styles.plainList}>
-                                        {presence.gaps.map((gap) => (
-                                            <li key={gap.firstMissedPingAt}>
-                                                Not active {formatTime(gap.firstMissedPingAt)} – {gap.endedAt ? formatTime(gap.endedAt) : "clock-out"}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </InfoField>
-                            <p className={styles.mutedText} style={{ margin: "4px 0 16px" }}>
-                                &quot;Not active&quot; is a warning, not proof: no signal, a dead battery, Low Power Mode
-                                or the phone&apos;s own throttling can also leave checks unanswered.
-                            </p>
-                        </>
-                    )}
-                    {/* Phone setup — collapsed to a one-line summary; rarely needed in full */}
-                    {!device ? (
-                        <div className={styles.cardSubheading}>
-                            <Smartphone size={13} />
-                            Phone Setup at Clock-In
-                            <span className={styles.phoneSetupSummary}>Not reported — the app version used doesn&apos;t send it</span>
-                        </div>
-                    ) : (
-                        <details className={styles.phoneSetup}>
-                            <summary className={styles.cardSubheading}>
-                                <Smartphone size={13} />
-                                Phone Setup at Clock-In
-                                <span className={`${styles.phoneSetupSummary} ${weakSettings ? styles.phoneSetupSummaryBad : ""}`}>
-                                    {weakSettings
-                                        // "needs attention", not "off" — a setting can be wrong by being
-                                        // on (Low Power Mode) as well as off (notifications)
-                                        ? `${weakSettings} setting${weakSettings === 1 ? " needs" : "s need"} attention`
-                                        : "All settings OK"}
-                                </span>
-                                <ChevronDown size={14} className={styles.phoneSetupChevron} />
-                            </summary>
-                            <div className={styles.photoDetailsGrid}>
-                                <InfoField label="Phone">
-                                    {[PLATFORM_LABELS[device.platform] ?? device.platform, device.appVersion && `app ${device.appVersion}`]
-                                        .filter(Boolean).join(" · ") || "—"}
-                                </InfoField>
-                                {deviceRows.map(({ key, label, text, isBad }) => (
-                                    <InfoField key={key} label={label}>
-                                        <span style={isBad ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
-                                            {text}
-                                        </span>
-                                    </InfoField>
-                                ))}
-                            </div>
-                        </details>
-                    )}
+                    <AppActivityPanel presence={presence} device={device} />
                 </CardContent>
             </Card>
         </>
