@@ -21,205 +21,202 @@
 	overflow-y: auto;
 }
 
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 1rem;
-	border-bottom: 1px solid #DEE1E6;
-	padding-bottom: 1rem;
-}
-
-.headerActions {
-	display: flex;
-	gap: 0.75rem;
-}
-
-
-
+/* ── Status pill ─────────────────────────────────────────────────── */
 .statusPill {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.25rem 0.75rem;
+	padding: 0.15rem 0.45rem;
 	border-radius: 9999px;
-	font-size: 0.875rem;
-	font-weight: 500;
+	font-size: 0.72rem;
+	font-weight: 600;
+	flex-shrink: 0;
+	width: fit-content;
 }
 
-.statusActive {
-	background-color: #dcfce7;
-	color: #166534;
-}
+.statusActive  { background-color: #dcfce7; color: #166534; }
+.statusInactive { background-color: #fee2e2; color: #b91c1c; }
 
-.statusInactive {
-	background-color: #fee2e2;
-	color: #b91c1c;
-}
-
-.content {
+/* ── Overview Card ───────────────────────────────────────────────── */
+.overviewBody {
 	display: flex;
-	width: 100%;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 2rem;
-}
-
-.leftPanel {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
-	gap: 1.5rem;
-}
-
-.rightPanel {
-	display: flex;
-	flex-direction: column;
-	width: 300px;
-	/* Fixed width for the profile picture side */
-	gap: 1.5rem;
-}
-
-.row2 {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 1.5rem;
-	margin-bottom: 1rem;
-	align-items: stretch;
-	/* Make inputs same height */
-}
-
-/* Ensure info-fields look good in row2 as well */
-.row2>div {
-	flex: 1;
-}
-
-.text {
-	display: flex;
-	width: 100%;
-	justify-content: space-between;
-}
-
-.picture {
-	display: flex;
-	flex-direction: column;
 	align-items: center;
-	/* Center avatar and upload button */
-	gap: 1rem;
-	padding-top: 1rem;
+	gap: 1.5rem;
+	padding: 0.25rem 0;
 }
 
-.image {
-	object-fit: cover;
+.avatarWrap {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.avatar {
+	width: 88px;
+	height: 88px;
 	border-radius: 50%;
-	border: 4px solid #fff;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	object-fit: cover;
+	border: 3px solid #fff;
+	box-shadow: 0 0 0 2.5px #DBEAFE, 0 4px 14px rgba(28, 74, 110, 0.18);
+	display: block;
 }
 
-/* Modal specific styles for upload */
-.column {
+.uploadTrigger {
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	background: #1c4a6e;
+	border: 2px solid #fff;
 	display: flex;
-	flex-direction: column;
-}
-
-.centeredModalContainer {
-	display: flex;
-	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	text-align: center;
+	color: #fff;
+	cursor: pointer;
+	transition: background 0.15s;
+	padding: 0;
 }
 
-.uploadModalContent {
+.uploadTrigger:hover { background: #153956; }
+
+/* left + right sit side by side */
+.overviewInfo {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	align-items: flex-start;
+	gap: clamp(2rem, 6vw, 5rem);
+}
+
+/* left: name / id / badges stacked */
+.mainInfo {
 	display: flex;
 	flex-direction: column;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.fullName {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: #111827;
+	line-height: 1.2;
+}
+
+.idViewRow {
+	display: flex;
 	align-items: center;
-	gap: 1rem;
-	margin-top: 1.5rem;
+	gap: 5px;
 }
 
-.hiddenFileInput {
-	display: none;
+.idIcon {
+	color: #9CA3AF;
+	flex-shrink: 0;
 }
 
-.fileInputLabelCustom {
-	border: 1px solid #1C4A6EFF;
-	color: #1C4A6EFF;
-	padding: 0.5rem 1rem;
-	border-radius: 0.375rem;
-	cursor: pointer;
+.idText {
+	font-size: 0.78rem;
+	color: #6B7280;
 	font-weight: 500;
-	transition: background-color 0.2s;
 }
 
-.fileInputLabelCustom:hover {
-	background-color: #F3F4F6;
+/* ── Badges (status + admin level) ──────────────────────────── */
+.badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	align-items: center;
+	margin-top: 0.1rem;
 }
 
-.fileName {
-	font-size: 0.875rem;
-	color: #4B5563;
+.empBadge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.2rem 0.55rem;
+	border-radius: 9999px;
+	font-size: 0.72rem;
+	font-weight: 600;
+	background: #EFF6FF;
+	color: #1c4a6e;
+	border: 1px solid #DBEAFE;
+	text-transform: capitalize;
 }
 
-.errorMessage {
-	color: #DC2626;
-	font-size: 0.875rem;
+/* right: created / updated stacked */
+.timestamps {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	flex-shrink: 0;
 }
 
+.metaItem {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.metaIcon {
+	color: #9CA3AF;
+	flex-shrink: 0;
+}
+
+.metaLabel {
+	font-size: 0.67rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #9CA3AF;
+	margin-bottom: 0.1rem;
+}
+
+.metaValue {
+	font-size: 0.82rem;
+	font-weight: 500;
+	color: #374151;
+}
+
+/* ── Modal ───────────────────────────────────────────────────────── */
 .modalActions {
 	display: flex;
 	gap: 1rem;
 	margin-top: 1rem;
 }
 
-/* Custom Checkbox Group for Edit Mode */
-.checkboxGroup {
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-	margin-top: 0.5rem;
-}
-
-.checkboxLabel {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-	font-size: 1rem;
-	color: #374151;
-	/* gray-700 */
-	cursor: pointer;
-}
-
-.checkboxLabel input[type="checkbox"] {
-	width: 1.25rem;
-	height: 1.25rem;
-	color: #2563eb;
-	border: 1px solid #D1D5DB;
-	/* gray-300 */
-	border-radius: 4px;
-	cursor: pointer;
-}
-
-/* ── Responsive (≤ 768px) ── */
-@media (max-width: 768px) {
-	.header {
-		flex-wrap: wrap;
-		gap: 0.75rem;
+/* ── Responsive (≤ 860px) ──────────────────────────────────────── */
+@media (max-width: 860px) {
+	.overviewInfo {
+		gap: 1.25rem;
 	}
+}
 
-	.content {
+/* ── Responsive (≤ 640px) ──────────────────────────────────────── */
+@media (max-width: 640px) {
+	.overviewBody {
 		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 1rem;
 	}
 
-	.rightPanel {
+	.overviewInfo {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.75rem;
 		width: 100%;
 	}
 
-	.row2 {
-		grid-template-columns: 1fr;
+	.mainInfo {
+		align-items: center;
 	}
 
-	.text {
-		flex-direction: column;
-		gap: 0.5rem;
+	.badges {
+		justify-content: center;
+	}
+
+	.timestamps {
+		flex-direction: row;
+		gap: 1.5rem;
+		justify-content: center;
 	}
 }
