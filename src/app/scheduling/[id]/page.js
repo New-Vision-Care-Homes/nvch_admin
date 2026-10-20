@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
@@ -16,12 +17,13 @@ import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
+import { CLOCK_OUT_TRIGGER_LABELS } from "@/app/approvals/_utils/approvalMeta";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History, XCircle,
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass, MapPinned,
-	Activity,
+	Activity, ClockAlert,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -44,6 +46,14 @@ const ALTERNATE_LOCATION_STATUS = {
 	approved:  { label: "Approved",       tone: "success" },
 	rejected:  { label: "Declined",       tone: "danger"  },
 	cancelled: { label: "Cancelled",      tone: "neutral" },
+};
+
+// shift.clockOutReview.status → banner title + colour
+const CLOCK_OUT_REVIEW_STATUS = {
+	pending:   "Pending review",
+	approved:  "Approved",
+	rejected:  "Rejected",
+	cancelled: "Cancelled",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,6 +92,12 @@ export default function ShiftDetailPage() {
 	const alternateLocation       = shift.alternateLocation ?? null;
 	const alternateLocationStatus = ALTERNATE_LOCATION_STATUS[alternateLocation?.status] ?? ALTERNATE_LOCATION_STATUS.pending;
 
+	// Clock-out review — opened when the clock-out couldn't be verified at the home
+	const clockOutReview = shift.clockOutReview ?? null;
+	// Paying until the credited end = the full shift (an approve without a cut)
+	const paidFullShift = !!clockOutReview?.paidUntil && !!clockOutReview?.originalActualEndTime
+		&& Date.parse(clockOutReview.paidUntil) === Date.parse(clockOutReview.originalActualEndTime);
+
 	// The end-of-shift location check — the latest one (an extended shift can have several)
 	// App activity check + phone setup at clock-in (the App Activity panel)
 	const presence = shift.presence ?? null;
@@ -90,6 +106,8 @@ export default function ShiftDetailPage() {
 	const latestLocationCheck = [...(shift.locationChecks ?? [])]
 		.sort((a, b) => Date.parse(b.requestedAt ?? 0) - Date.parse(a.requestedAt ?? 0))[0] ?? null;
 
+	console.log("ShiftDetailPage: shift", shift);
+	
 	return (
 		<PageLayout>
 
@@ -108,6 +126,9 @@ export default function ShiftDetailPage() {
 						)}
 						{alternateLocation?.status === "pending" && (
 							<span className={styles.locationReviewPendingBadge}>Location Review Pending</span>
+						)}
+						{clockOutReview?.status === "pending" && (
+							<span className={styles.locationReviewPendingBadge}>Clock-Out Review Pending</span>
 						)}
 					</div>
 					<h1>Shift Details</h1>
@@ -170,6 +191,38 @@ export default function ShiftDetailPage() {
 						<span className={styles.endEarlyBannerTitle}>Shift Ended Early</span>
 						<span className={styles.endEarlyBannerReason}>{shift.endEarlyReason}</span>
 					</div>
+				</div>
+			)}
+
+			{/* ═══════════════════════════════════ CLOCK-OUT REVIEW BANNER */}
+			{/* Same shape as the end-early banner. The clock-out couldn't be verified at
+			    the home, so a reviewer decides how much of the shift to pay; the colour
+			    follows the review status and the evidence is on the review itself. */}
+			{clockOutReview && (
+				<div className={`${styles.reviewBanner} ${styles[`reviewBanner_${clockOutReview.status}`] ?? ""}`} role="status">
+					<ClockAlert size={18} className={styles.reviewBannerIcon} />
+					<div className={styles.reviewBannerBody}>
+						<span className={styles.reviewBannerTitle}>
+							Clock-Out Review · {CLOCK_OUT_REVIEW_STATUS[clockOutReview.status] ?? "Pending"}
+						</span>
+						<span className={styles.reviewBannerText}>
+							{CLOCK_OUT_TRIGGER_LABELS[clockOutReview.trigger] ?? "Clock-out not verified"}
+							{clockOutReview.status === "pending"
+								? clockOutReview.explanation
+									? " · explanation received"
+									: clockOutReview.explanationDueAt
+									? ` · explanation due ${utcToFullDisplay(clockOutReview.explanationDueAt, "America/Halifax")}`
+									: ""
+								: clockOutReview.paidUntil
+								? ` · paid until ${utcToFullDisplay(clockOutReview.paidUntil, "America/Halifax")}${paidFullShift ? " (full shift)" : ""}`
+								: ""}
+						</span>
+					</div>
+					{clockOutReview.approvalId && (
+						<Link href={`/approvals/${clockOutReview.approvalId}`} className={styles.reviewBannerLink}>
+							Open the review →
+						</Link>
+					)}
 				</div>
 			)}
 
