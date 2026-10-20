@@ -27,20 +27,6 @@
 	background-color: transparent;
 }
 
-.header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 1rem;
-	border-bottom: 1px solid #DEE1E6;
-	padding-bottom: 1rem;
-}
-
-.headerActions {
-	display: flex;
-	gap: 0.75rem;
-}
-
 /* ── Status pill ─────────────────────────────────────────────────── */
 .statusPill {
 	display: inline-flex;
@@ -65,6 +51,10 @@
 .statusInactive { background-color: #fee2e2; color: #b91c1c; }
 
 /* ── Overview Card ───────────────────────────────────────────────── */
+.overviewCard {
+	margin-top: 0.75rem;
+}
+
 .overviewBody {
 	display: flex;
 	align-items: center;

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
 import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button/Button";
 import { Card, CardHeader } from "@components/UI/Form/Card";
@@ -123,27 +124,28 @@ export default function Page() {
 						{inlineMessage.text}
 					</div>
 				)}
-				<div className={styles.header}>
-					<h1>Client Profile: {clientDetail.firstName} {clientDetail.lastName}</h1>
-					<div className={styles.headerActions}>
-						{canToggle && (
-							<Button
-								variant={clientDetail.isActive ? "dangerLight" : "successLight"}
-								icon={<Activity size={16} />}
-								onClick={handleActive}
-								disabled={isActionPending}
-							>
-								{clientDetail.isActive ? "Inactive" : "Active"}
-							</Button>
-						)}
-						<Link href="/clients">
-							<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
-						</Link>
-					</div>
-				</div>
+				<PageHeader
+					title={"Client Profile"}
+					actions={
+						<>
+							{canToggle && (
+								<Button
+									variant={clientDetail.isActive ? "dangerLight" : "successLight"}
+									icon={<Activity size={16} />}
+									onClick={handleActive}
+									disabled={isActionPending}
+								>
+									{clientDetail.isActive ? "Inactive" : "Active"}
+								</Button>
+							)}
+							<Link href="/clients">
+								<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
+							</Link>
+						</>
+					}
+				/>
 
-				<Card>
-					<CardHeader>Client Overview</CardHeader>
+				<Card className={styles.overviewCard}>
 					<div className={styles.overviewBody}>
 						<div className={styles.avatarWrap}>
 							<Image

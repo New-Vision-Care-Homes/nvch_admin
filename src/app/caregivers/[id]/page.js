@@ -186,7 +186,7 @@ export default function Page() {
 				<InlineBanner message={inlineMessage} />
 				{/* Header */}
 				<PageHeader
-					title={`Caregiver Profile: ${caregiverDetail.firstName} ${caregiverDetail.lastName}`}
+					title={"Caregiver Profile"}
 					actions={
 						<>
 							{canToggle && (
@@ -205,8 +205,7 @@ export default function Page() {
 				/>
 
 				{/* Caregiver Overview */}
-				<Card>
-					<CardHeader>Caregiver Overview</CardHeader>
+				<Card className={styles.overviewCard}>
 					<div className={styles.overviewBody}>
 						<div className={styles.avatarWrap}>
 							<Image
