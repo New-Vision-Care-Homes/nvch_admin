@@ -26,8 +26,6 @@
 
 import GeofenceMap from "@components/UI/Map/GeofenceMap";
 import { MapPin, LogIn, LogOut, LocateFixed } from "lucide-react";
-import { utcToDisplayTime } from "@/utils/timeHandling";
-import { DISPLAY_TZ } from "@/utils/dates";
 import styles from "./ServiceLocationPanel.module.css";
 
 const LOCATION_CHECK_LABELS = {
@@ -79,19 +77,49 @@ function LocationBlock({ tone, Icon, label, value, detail }) {
 }
 
 /**
- * Block content for a clock-in / clock-out: the address with the distance under
- * it; without an address, the distance from the site ("120 m from the site");
- * a note (e.g. a system close) when there's no location; "Recorded — see the
- * map" when there's a pin but the server sent neither an address nor a
- * distance. Returns null for "nothing to show".
+ * Block content for any point — clock-in, clock-out or location check — in one
+ * order:
+ *   1. the address, with the distance / inside-outside under it
+ *   2. a note when there's no location ("No location — closed by the system",
+ *      "No response", "Not sent — …"), with its own detail line if any
+ *   3. the distance / inside-outside ("120 m from the site · outside the geofence")
+ *   4. "Recorded — see the map" when there's only a pin
+ * Returns null for "nothing to show".
  */
-function describeClockPoint(point, position) {
-	const address = point?.location?.address || point?.address || null;
+function describePoint(point) {
+	if (!point) return null;
+	const position = describePosition(point);
+	const address = point.location?.address || point.address || null;
 	if (address) return { value: address, detail: position || null };
-	if (point?.note) return { value: point.note, detail: null };
+	if (point.note) return { value: point.note, detail: point.noteDetail ?? null };
 	if (position) return { value: position, detail: null };
-	if (isRealFix(point?.location)) return { value: "Recorded — see the map", detail: null };
+	if (isRealFix(point.location)) return { value: "Recorded — see the map", detail: null };
 	return null;
+}
+
+/**
+ * The location check as a point: a received check is a location with its
+ * distance and inside/outside; any other result is a note ("No response",
+ * "Not sent — app version too old", "Sent, no reply yet").
+ */
+function checkToPoint(check) {
+	if (!check) return null;
+	if (check.status === "received") {
+		const point = {
+			location:       { latitude: check.latitude, longitude: check.longitude },
+			distanceMeters: check.distanceMeters,
+			insideGeofence: check.insideGeofence,
+		};
+		// Received but nothing to show at all — still say it came back
+		return describePosition(point) || isRealFix(point.location) ? point : { note: LOCATION_CHECK_LABELS.received };
+	}
+	const reason = check.status === "not_sent" ? NOT_SENT_REASON_LABELS[check.notSentReason] : null;
+	return {
+		note: `${LOCATION_CHECK_LABELS[check.status] ?? check.status}${reason ? ` — ${reason}` : ""}`,
+		noteDetail: check.status === "no_response"
+			? "A phone whose app was swiped away can't answer — this isn't proof the caregiver had left."
+			: null,
+	};
 }
 
 export default function ServiceLocationPanel({
@@ -105,27 +133,15 @@ export default function ServiceLocationPanel({
 }) {
 	const hasMap = Number.isFinite(site?.latitude) && Number.isFinite(site?.longitude);
 
-	const clockInBlock  = describeClockPoint(clockIn,  describePosition(clockIn));
-	const clockOutBlock = describeClockPoint(clockOut, describePosition(clockOut));
+	const checkPoint = checkToPoint(locationCheck);
 
-	const checkPin = locationCheck?.status === "received" && isRealFix(locationCheck)
-		? { latitude: locationCheck.latitude, longitude: locationCheck.longitude }
-		: null;
+	// Same rule for all three blocks, and a pin wherever there's a real fix
+	const clockInBlock  = describePoint(clockIn);
+	const clockOutBlock = describePoint(clockOut);
+	const checkBlock    = describePoint(checkPoint);
+	const pin = (point) => (isRealFix(point?.location) ? point.location : null);
 
-	const checkValue = locationCheck && [
-		LOCATION_CHECK_LABELS[locationCheck.status] ?? locationCheck.status,
-		locationCheck.status === "not_sent" && NOT_SENT_REASON_LABELS[locationCheck.notSentReason]
-			? ` — ${NOT_SENT_REASON_LABELS[locationCheck.notSentReason]}` : "",
-		locationCheck.respondedAt ? ` at ${utcToDisplayTime(locationCheck.respondedAt, DISPLAY_TZ)}` : "",
-	].join("");
-	const checkDetail = locationCheck?.status === "received"
-		? [describePosition(locationCheck), locationCheck.staleFix && "older GPS fix", locationCheck.isMocked && "mocked location reported"]
-			.filter(Boolean).join(" · ")
-		: locationCheck?.status === "no_response"
-		? "A phone whose app was swiped away can't answer — this isn't proof the caregiver had left."
-		: null;
-
-	const hasBlocks = serviceAddress || clockInBlock || clockOutBlock || locationCheck;
+	const hasBlocks = serviceAddress || clockInBlock || clockOutBlock || checkBlock;
 
 	return (
 		<div className={styles.panel}>
@@ -142,14 +158,8 @@ export default function ServiceLocationPanel({
 					{clockOutBlock && (
 						<LocationBlock tone="red" Icon={LogOut} label="Clock Out" {...clockOutBlock} />
 					)}
-					{locationCheck && (
-						<LocationBlock
-							tone="amber"
-							Icon={LocateFixed}
-							label="Location Check (5 min before end)"
-							value={checkValue}
-							detail={checkDetail}
-						/>
+					{checkBlock && (
+						<LocationBlock tone="amber" Icon={LocateFixed} label="Location Check (5 min before end)" {...checkBlock} />
 					)}
 					{!hasBlocks && <p className={styles.empty}>No address recorded.</p>}
 				</div>
@@ -162,9 +172,9 @@ export default function ServiceLocationPanel({
 							center={{ latitude: site.latitude, longitude: site.longitude }}
 							radius={site.radius || 100}
 							height="100%"
-							clockInLocation={isRealFix(clockIn?.location) ? clockIn.location : null}
-							clockOutLocation={isRealFix(clockOut?.location) ? clockOut.location : null}
-							locationCheckLocation={checkPin}
+							clockInLocation={pin(clockIn)}
+							clockOutLocation={pin(clockOut)}
+							locationCheckLocation={pin(checkPoint)}
 						/>
 					</div>
 				) : (
