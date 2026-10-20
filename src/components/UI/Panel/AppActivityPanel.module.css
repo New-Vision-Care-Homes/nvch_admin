@@ -8,6 +8,39 @@
 	margin-top: 2px;
 }
 
+/* Status: label, badge and info icon on one row, the description under it.
+   Spaced like an InfoField (16px below). */
+.statusField {
+	margin-bottom: 16px;
+}
+
+.statusRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Same look as InfoField's label (Card.module.css .info_label) */
+.statusLabel {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+/* Info icon — hovering shows the browser's tooltip (its title), like a shift
+   on the scheduling page */
+.hint {
+	display: inline-flex;
+	color: #9ca3af;
+	cursor: help;
+}
+
+.hint:hover {
+	color: #6b7280;
+}
+
 .detailsGrid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -24,11 +57,24 @@
 	gap: 3px;
 }
 
-/* A phone setting that weakens the app activity / location checks */
-.bad {
+/* Phone setup values, coloured by state (see deviceRows in AppActivityPanel.js) */
+.setting_good {
+	color: #15803d;
+	font-weight: 600;
+}
+
+.setting_bad {
 	color: #b91c1c;
 	font-weight: 600;
 }
+
+/* Darker amber so it stays readable on white */
+.setting_unknown {
+	color: #b45309;
+	font-weight: 600;
+}
+
+/* setting_na — no class: "N/A (iOS)" / "N/A (Android)" stay plain */
 
 /* "Phone Setup at Clock-In" row — also the <summary> of the collapsible list */
 .subheading {

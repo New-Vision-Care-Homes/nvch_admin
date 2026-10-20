@@ -23,14 +23,14 @@
 
 import { InfoField } from "@components/UI/Form/Card";
 import StatusBadge from "@components/UI/Feedback/Badge";
-import { Smartphone, ChevronDown } from "lucide-react";
+import { Smartphone, ChevronDown, Info } from "lucide-react";
 import { formatDateTime, DISPLAY_TZ } from "@/utils/dates";
 import { utcToDisplayTime } from "@/utils/timeHandling";
 import styles from "./AppActivityPanel.module.css";
 
 const PRESENCE_META = {
-	active:        { label: "App active",     tone: "success" },
-	not_active:    { label: "App not active", tone: "danger"  },
+	active:        { label: "Active",     tone: "success" },
+	not_active:    { label: "Inactive", tone: "danger"  },
 	not_monitored: { label: "Not monitored",  tone: "neutral" },
 };
 
@@ -54,6 +54,10 @@ const DEVICE_FIELDS = [
 
 const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
 
+/** Shown when hovering the info icon next to the status. */
+const NOT_ACTIVE_HINT = "\"Not active\" is a warning, not proof: no signal, a dead battery, "
+	+ "Low Power Mode or the phone's own throttling can also leave checks unanswered.";
+
 /** "14:18" in business time — for times within a single shift. */
 function formatTime(iso) {
 	return utcToDisplayTime(iso, DISPLAY_TZ) || "—";
@@ -63,40 +67,61 @@ function formatTime(iso) {
 function describePresence(presence) {
 	if (!presence) return "The app wasn't checked during this shift.";
 	if (presence.status === "active") {
-		return `App active (checked ${formatDateTime(presence.lastSeenAt)})`;
+		return `checked ${formatDateTime(presence.lastSeenAt)}`;
 	}
 	if (presence.status === "not_active") {
 		// Live shifts carry silentSince; the approval snapshot only has the gaps,
 		// whose open one (no endedAt) is the current quiet stretch.
 		const since = presence.silentSince ?? presence.gaps?.find((gap) => !gap.endedAt)?.firstMissedPingAt;
 		const lastReply = presence.lastSeenAt ? ` (last reply ${formatTime(presence.lastSeenAt)})` : "";
-		return `App not active since ${formatDateTime(since)}${lastReply}`;
+		return `since ${formatDateTime(since)}${lastReply}`;
 	}
 	const reason = NOT_MONITORED_REASONS[presence.notMonitoredReason];
-	return reason ? `Not monitored — ${reason}` : "This phone or app version can't be checked.";
+	return reason ? `${reason}` : "This phone or app version can't be checked.";
 }
 
 export default function AppActivityPanel({ presence, device }) {
 	const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
 	const isMonitored  = presence && presence.status !== "not_monitored";
 
-	// Phone setup rows, and how many settings weaken the checks (for the summary).
-	// "Unknown" and "N/A" values are never counted.
+	// Phone setup rows. Each value gets a state that colours it:
+	//   good    — set up right (green)          e.g. Precise Location "On", Low Power Mode "Off"
+	//   bad     — weakens the checks (red)      e.g. Notifications "Denied", Low Power Mode "On"
+	//   unknown — the app couldn't tell (amber)
+	//   na      — doesn't apply to this phone (plain), e.g. "N/A (Android)"
+	// Only "bad" counts towards "N settings need attention".
 	const deviceRows = device
-		? DEVICE_FIELDS.map(([key, label, valueLabels, isOk]) => {
-			const text  = valueLabels[String(device[key])] ?? "Unknown";
-			const known = text !== "Unknown" && !text.startsWith("N/A");
-			return { key, label, text, isBad: known && !isOk(device[key]) };
-		})
+		? DEVICE_FIELDS
+			// Battery optimisation is an Android setting — iPhones have none, so hide it
+			.filter(([key]) => !(key === "batteryOptimization" && device.platform === "ios"))
+			.map(([key, label, valueLabels, isOk]) => {
+				const text  = valueLabels[String(device[key])] ?? "Unknown";
+				const state = text === "Unknown"     ? "unknown"
+					: text.startsWith("N/A")          ? "na"
+					: isOk(device[key])               ? "good"
+					: "bad";
+				return { key, label, text, state };
+			})
 		: [];
-	const weakSettings = deviceRows.filter((row) => row.isBad).length;
+	const weakSettings = deviceRows.filter((row) => row.state === "bad").length;
 
 	return (
 		<>
-			<InfoField label="Status">
-				<StatusBadge label={presenceMeta.label} tone={presenceMeta.tone} size="pill" />
+			{/* "Status" label, badge and hint on one row — InfoField would stack the label above */}
+			<div className={styles.statusField}>
+				<div className={styles.statusRow}>
+					<span className={styles.statusLabel}>Status</span>
+					<StatusBadge label={presenceMeta.label} tone={presenceMeta.tone} size="pill" />
+					{/* Hover hint — the browser's own tooltip (title), same as hovering a shift on
+					    the scheduling page. Only where checks ran, so "not active" can apply. */}
+					{isMonitored && presenceMeta.label === "Not active" && (
+						<span className={styles.hint} title={NOT_ACTIVE_HINT} aria-label={NOT_ACTIVE_HINT}>
+							<Info size={14} />
+						</span>
+					)}
+				</div>
 				<div className={styles.mutedText}>{describePresence(presence)}</div>
-			</InfoField>
+			</div>
 
 			{isMonitored && (
 				<>
@@ -121,10 +146,6 @@ export default function AppActivityPanel({ presence, device }) {
 							</ul>
 						)}
 					</InfoField>
-					<p className={styles.mutedText} style={{ margin: "4px 0 16px" }}>
-						&quot;Not active&quot; is a warning, not proof: no signal, a dead battery, Low Power Mode
-						or the phone&apos;s own throttling can also leave checks unanswered.
-					</p>
 				</>
 			)}
 
@@ -154,9 +175,9 @@ export default function AppActivityPanel({ presence, device }) {
 							{[PLATFORM_LABELS[device.platform] ?? device.platform, device.appVersion && `app ${device.appVersion}`]
 								.filter(Boolean).join(" · ") || "—"}
 						</InfoField>
-						{deviceRows.map(({ key, label, text, isBad }) => (
+						{deviceRows.map(({ key, label, text, state }) => (
 							<InfoField key={key} label={label}>
-								<span className={isBad ? styles.bad : undefined}>{text}</span>
+								<span className={styles[`setting_${state}`]}>{text}</span>
 							</InfoField>
 						))}
 					</div>
