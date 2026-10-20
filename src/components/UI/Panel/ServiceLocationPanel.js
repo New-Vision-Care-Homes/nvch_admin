@@ -80,8 +80,10 @@ function LocationBlock({ tone, Icon, label, value, detail }) {
 
 /**
  * Block content for a clock-in / clock-out: the address with the distance under
- * it; without an address the distance is the value; with neither, the note
- * (or "Recorded — see the map" when there is a pin). Returns null for "nothing to show".
+ * it; without an address, the distance from the site ("120 m from the site");
+ * a note (e.g. a system close) when there's no location; "Recorded — see the
+ * map" when there's a pin but the server sent neither an address nor a
+ * distance. Returns null for "nothing to show".
  */
 function describeClockPoint(point, position) {
 	const address = point?.location?.address || point?.address || null;
@@ -103,7 +105,7 @@ export default function ServiceLocationPanel({
 }) {
 	const hasMap = Number.isFinite(site?.latitude) && Number.isFinite(site?.longitude);
 
-	const clockInBlock  = describeClockPoint(clockIn,  formatMeters(clockIn?.distanceMeters) && `${formatMeters(clockIn.distanceMeters)} from the site`);
+	const clockInBlock  = describeClockPoint(clockIn,  describePosition(clockIn));
 	const clockOutBlock = describeClockPoint(clockOut, describePosition(clockOut));
 
 	const checkPin = locationCheck?.status === "received" && isRealFix(locationCheck)
