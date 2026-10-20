@@ -106,7 +106,6 @@ export default function ShiftDetailPage() {
 	const latestLocationCheck = [...(shift.locationChecks ?? [])]
 		.sort((a, b) => Date.parse(b.requestedAt ?? 0) - Date.parse(a.requestedAt ?? 0))[0] ?? null;
 
-	console.log("ShiftDetailPage: shift", shift);
 	
 	return (
 		<PageLayout>
