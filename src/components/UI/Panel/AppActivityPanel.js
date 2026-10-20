@@ -114,7 +114,7 @@ export default function AppActivityPanel({ presence, device }) {
 					<StatusBadge label={presenceMeta.label} tone={presenceMeta.tone} size="pill" />
 					{/* Hover hint — the browser's own tooltip (title), same as hovering a shift on
 					    the scheduling page. Only where checks ran, so "not active" can apply. */}
-					{isMonitored && presenceMeta.label === "Not active" && (
+					{isMonitored && presenceMeta.label === "Inactive" && (
 						<span className={styles.hint} title={NOT_ACTIVE_HINT} aria-label={NOT_ACTIVE_HINT}>
 							<Info size={14} />
 						</span>
