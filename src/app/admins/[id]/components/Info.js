@@ -7,15 +7,16 @@ import * as yup from "yup";
 import { Card, CardContent, InfoField, InputField } from "@components/UI/Form/Card";
 import Button from "@components/UI/Button/Button";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
-import { Edit, Save, X, Mail, Phone, Briefcase, Globe, Calendar } from "lucide-react";
+import { Edit, Save, X, Mail, Phone, Briefcase, Globe, Calendar, Network } from "lucide-react";
 import { useParams } from "next/navigation";
 import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
 import { formatDateOnly, toDateInput } from "@/utils/dates";
 import { getLabel } from "@/utils/formatting";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { DEPARTMENT_OPTIONS } from "@/utils/dropdownList/department";
-import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
+import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_OPTIONS, DIRECT_LEADER_SLOTS_BY_LEVEL, DIRECT_LEADER_FIELD_LABELS } from "@/utils/dropdownList/adminLevel";
 import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
+import DirectLeaderField from "../../_components/DirectLeaderField";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/Feedback/ErrorState";
@@ -23,6 +24,10 @@ import { useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
 import tabStyles from "./tabPanel.module.css";
 import styles from "./info.module.css";
+
+// Levels whose two slots (supervisor, manager) need at least one filled,
+// rather than one specific slot being independently required.
+const EITHER_OR_LEVELS = ["team_lead", "office_admin", "payroll"];
 
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
@@ -38,7 +43,49 @@ const schema = yup.object({
 		.required("Please select at least one region"),
 	adminId: IdRule.required("Admin ID is required"),
 	employeeStartDate: dateRule,
+	// Direct Leader requirements per level: team_lead/office_admin/payroll need
+	// at least one of supervisor+manager; supervisor needs manager; manager
+	// needs administrator; administrator/super render no fields at all.
+	// Deliberately does NOT account for the backend's "no leader available
+	// yet" waiver (the requirement lifts once no eligible admin exists for a
+	// slot) — that's backend-state-dependent and replicating it here risks
+	// blocking valid saves; rely on the backend's DIRECT_LEADER_REQUIRED
+	// error in that edge case instead.
+	directLeaderSupervisor: yup.string().nullable().optional()
+		.test("direct-leader-supervisor-or-manager", function (value) {
+			const { adminLevel, directLeaderManager } = this.parent;
+			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderManager) {
+				return this.createError({ message: "Please choose at least one direct leader" });
+			}
+			return true;
+		}),
+	directLeaderManager: yup.string().nullable().optional()
+		.test("direct-leader-manager-required", function (value) {
+			const { adminLevel, directLeaderSupervisor } = this.parent;
+			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderSupervisor) {
+				return this.createError({ message: "Please choose at least one direct leader" });
+			}
+			if (adminLevel === "supervisor" && !value) {
+				return this.createError({ message: "Manager is required" });
+			}
+			return true;
+		}),
+	directLeaderAdministrator: yup.string().nullable()
+		.when("adminLevel", {
+			is: "manager",
+			then: (s) => s.required("Administrator is required"),
+			otherwise: (s) => s.optional(),
+		}),
 });
+
+// Maps a Direct Leader slot name to the flat form field that holds it —
+// react-hook-form fields here are flat (matching this codebase's convention
+// of nesting only when the API payload is assembled in onSubmit).
+const SLOT_FORM_FIELD = {
+	supervisor: "directLeaderSupervisor",
+	manager: "directLeaderManager",
+	administrator: "directLeaderAdministrator",
+};
 
 const cleanFetchedData = (user) => ({
 	firstName: user?.firstName || "",
@@ -50,6 +97,9 @@ const cleanFetchedData = (user) => ({
 	regions: Array.isArray(user?.regions) && user.regions.length > 0 ? user.regions : (user?.region ? [user.region] : []),
 	adminId: user?.employeeId || "",
 	employeeStartDate: toDateInput(user?.employeeStartDate),
+	directLeaderSupervisor: user?.directLeaders?.supervisor || "",
+	directLeaderManager: user?.directLeaders?.manager || "",
+	directLeaderAdministrator: user?.directLeaders?.administrator || "",
 });
 
 // The update endpoint replaces the whole admin record, so saving the Info
@@ -72,14 +122,20 @@ export default function Info() {
 
 	// The backend rejects update on a super admin unless the requester is a
 	// super admin, regardless of slugs (assertCanManageUser).
-	const canTouchTarget = profile?.adminLevel === "super" || user?.adminLevel !== "super";
+	const actingIsSuper = profile?.adminLevel === "super";
+	const canTouchTarget = actingIsSuper || user?.adminLevel !== "super";
 	const canEdit = canTouchTarget && profile?.permissionSlugs?.includes("update_admin");
+	// Setting/changing/clearing a Direct Leader slot needs assign_direct_leaders
+	// on top of update_admin (super bypasses). A form whose editor lacks this
+	// should leave directLeaders out of the request entirely — not send it as
+	// unchanged — so canAssignDirectLeaders also gates whether onSubmit includes it.
+	const canAssignDirectLeaders = actingIsSuper || profile?.permissionSlugs?.includes("assign_direct_leaders");
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [status, setStatus] = useState(null);
 
-	const { register, handleSubmit, setValue, watch, formState: { errors, isDirty }, reset } = useForm({
+	const { register, control, handleSubmit, setValue, watch, formState: { errors, isDirty }, reset } = useForm({
 		resolver: yupResolver(schema),
 		defaultValues: cleanFetchedData(null),
 	});
@@ -92,6 +148,10 @@ export default function Info() {
 	}, [isDirty, setTabIsDirty, setRouteIsDirty]);
 
 	const selectedRegions = watch("regions") || [];
+	// Reflects the admin level even when its <select> isn't rendered (read-only
+	// cases) — watch() reads from RHF's retained values, not just mounted inputs.
+	const selectedAdminLevel = watch("adminLevel");
+	const directLeaderSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[selectedAdminLevel] || [];
 
 	useEffect(() => {
 		if (user && !isInitialized) {
@@ -113,6 +173,15 @@ export default function Info() {
 			employeeStartDate: data.employeeStartDate,
 			permissionsGroup: groupIdsOf(user?.permissionsGroup),
 		};
+
+		if (canAssignDirectLeaders) {
+			const applicableSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[data.adminLevel] || [];
+			body.directLeaders = {
+				supervisor: applicableSlots.includes("supervisor") ? (data.directLeaderSupervisor || null) : null,
+				manager: applicableSlots.includes("manager") ? (data.directLeaderManager || null) : null,
+				administrator: applicableSlots.includes("administrator") ? (data.directLeaderAdministrator || null) : null,
+			};
+		}
 
 		updateAdmin({ id, data: body }, {
 			onSuccess: () => {
@@ -149,6 +218,15 @@ export default function Info() {
 		{ key: "department", icon: Briefcase, label: "Department", value: d.department },
 		{ key: "regions", icon: Globe, label: "Regions", value: regionList.length ? regionList.map(r => getLabel(REGION_OPTIONS, r)).join(", ") : null },
 		{ key: "employeeStartDate", icon: Calendar, label: "Employee Start Date", value: d.employeeStartDate ? formatDateOnly(d.employeeStartDate) : null },
+		...directLeaderSlots.map((slot) => {
+			const info = d.directLeadersInfo?.[slot];
+			return {
+				key: `directLeader_${slot}`,
+				icon: Network,
+				label: DIRECT_LEADER_FIELD_LABELS[selectedAdminLevel]?.[slot] ?? slot,
+				value: info ? `${info.firstName} ${info.lastName}` : null,
+			};
+		}),
 	];
 
 	return (
@@ -214,12 +292,13 @@ export default function Info() {
 								</div>
 								<div className={styles.card_row_2}>
 									<div style={{ flex: 1 }}>
-										{d.adminLevel === "super" ? (
-											// Super Admin is intentionally hidden from ADMIN_LEVEL_OPTIONS (not
-											// assignable via the UI), so a <select> bound to it would have no
+										{(d.adminLevel === "super" || !actingIsSuper) ? (
+											// Only a super admin may change an admin's level, and Super Admin
+											// itself is intentionally hidden from ADMIN_LEVEL_OPTIONS (not
+											// assignable via the UI) — a <select> bound to it would have no
 											// matching <option> and silently reset the field to empty, blocking
-											// saves on any other field. Show it read-only instead.
-											<InfoField label="Admin Level">{ADMIN_LEVEL_LABEL.super}</InfoField>
+											// saves on any other field. Show it read-only in both cases.
+											<InfoField label="Admin Level">{ADMIN_LEVEL_LABEL[d.adminLevel] ?? d.adminLevel}</InfoField>
 										) : (
 											<InputField
 												label="Admin Level"
@@ -255,6 +334,35 @@ export default function Info() {
 									/>
 									<div style={{ flex: 1 }} />
 								</div>
+								{directLeaderSlots.length > 1 && (
+									<p className={styles.groupLabel}>
+										Choose at least one Direct Leader<span className={styles.requiredMark}>*</span>
+									</p>
+								)}
+								{directLeaderSlots.length > 0 && (
+									<div className={styles.card_row_2}>
+										{directLeaderSlots.map((slot) => {
+											const info = d.directLeadersInfo?.[slot];
+											return (
+												<div key={slot} style={{ flex: 1 }}>
+													<DirectLeaderField
+														label={DIRECT_LEADER_FIELD_LABELS[selectedAdminLevel]?.[slot] ?? slot}
+														name={SLOT_FORM_FIELD[slot]}
+														control={control}
+														error={errors[SLOT_FORM_FIELD[slot]]}
+														slot={slot}
+														adminLevel={selectedAdminLevel}
+														excludeId={id}
+														fallbackDisplayName={info ? `${info.firstName} ${info.lastName}` : ""}
+														readOnly={!canAssignDirectLeaders}
+														required={directLeaderSlots.length === 1}
+													/>
+												</div>
+											);
+										})}
+										{directLeaderSlots.length === 1 && <div style={{ flex: 1 }} />}
+									</div>
+								)}
 								<div style={{ marginBottom: "1rem" }}>
 									<RegionCheckboxGroup
 										label="Regions"

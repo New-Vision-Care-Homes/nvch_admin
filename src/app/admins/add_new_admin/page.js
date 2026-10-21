@@ -15,10 +15,11 @@ import ActionMessage from "@/components/UI/Feedback/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import RegionCheckboxGroup from "@/components/UI/Form/RegionCheckboxGroup";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
-import { ADMIN_LEVEL_OPTIONS } from "@/utils/dropdownList/adminLevel";
+import { ADMIN_LEVEL_OPTIONS, DIRECT_LEADER_SLOTS_BY_LEVEL, DIRECT_LEADER_FIELD_LABELS } from "@/utils/dropdownList/adminLevel";
 import { DEPARTMENT_OPTIONS } from "@/utils/dropdownList/department";
 import { IdRule, nameRule, emailRule, phoneRule, passwordRule, dateRule } from "@/utils/validation";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
+import DirectLeaderField from "../_components/DirectLeaderField";
 
 const TIMEZONE_OPTIONS = [
 	{ label: "Newfoundland Time (America/St_Johns)", value: "America/St_Johns" },
@@ -29,6 +30,10 @@ const TIMEZONE_OPTIONS = [
 	{ label: "Mountain Time (America/Edmonton)", value: "America/Edmonton" },
 	{ label: "Pacific Time (America/Vancouver)", value: "America/Vancouver" },
 ];
+
+// Levels whose two slots (supervisor, manager) need at least one filled,
+// rather than one specific slot being independently required.
+const EITHER_OR_LEVELS = ["team_lead", "office_admin", "payroll"];
 
 const schema = yup.object({
 	adminId: IdRule.required("Admin ID is required"),
@@ -54,7 +59,49 @@ const schema = yup.object({
 		.array()
 		.min(1, "Please select at least one permission group")
 		.required("Please select at least one permission group"),
+	// Direct Leader requirements per level: team_lead/office_admin/payroll need
+	// at least one of supervisor+manager; supervisor needs manager; manager
+	// needs administrator; administrator/super render no fields at all.
+	// Deliberately does NOT account for the backend's "no leader available
+	// yet" waiver (the requirement lifts once no eligible admin exists for a
+	// slot) — that's backend-state-dependent and replicating it here risks
+	// blocking valid saves; rely on the backend's DIRECT_LEADER_REQUIRED
+	// error in that edge case instead.
+	directLeaderSupervisor: yup.string().nullable().optional()
+		.test("direct-leader-supervisor-or-manager", function (value) {
+			const { adminLevel, directLeaderManager } = this.parent;
+			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderManager) {
+				return this.createError({ message: "Please choose at least one direct leader" });
+			}
+			return true;
+		}),
+	directLeaderManager: yup.string().nullable().optional()
+		.test("direct-leader-manager-required", function (value) {
+			const { adminLevel, directLeaderSupervisor } = this.parent;
+			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderSupervisor) {
+				return this.createError({ message: "Please choose at least one direct leader" });
+			}
+			if (adminLevel === "supervisor" && !value) {
+				return this.createError({ message: "Manager is required" });
+			}
+			return true;
+		}),
+	directLeaderAdministrator: yup.string().nullable()
+		.when("adminLevel", {
+			is: "manager",
+			then: (s) => s.required("Administrator is required"),
+			otherwise: (s) => s.optional(),
+		}),
 });
+
+// Maps a Direct Leader slot name to the flat form field that holds it —
+// react-hook-form fields here are flat (matching this codebase's convention
+// of nesting only when the API payload is assembled in onSubmit).
+const SLOT_FORM_FIELD = {
+	supervisor: "directLeaderSupervisor",
+	manager: "directLeaderManager",
+	administrator: "directLeaderAdministrator",
+};
 
 export default function Page() {
 	const router = useRouter();
@@ -79,6 +126,7 @@ export default function Page() {
 
 	const {
 		register,
+		control,
 		handleSubmit,
 		setValue,
 		watch,
@@ -89,6 +137,9 @@ export default function Page() {
 			permissionsGroup: [], // Initialize array so Yup can validate it properly
 			regions: [], // Initialize array so Yup can validate it properly
 			timezone: "America/Halifax",
+			directLeaderSupervisor: "",
+			directLeaderManager: "",
+			directLeaderAdministrator: "",
 		}
 	});
 
@@ -98,6 +149,8 @@ export default function Page() {
 	}, [isDirty, setIsDirty]);
 
 	const selectedRegions = watch("regions") || [];
+	const selectedAdminLevel = watch("adminLevel");
+	const directLeaderSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[selectedAdminLevel] || [];
 
 	const onSubmit = (data) => {
 		const body = {
@@ -110,6 +163,11 @@ export default function Page() {
 			role: "admin",
 			phone: data.phone,
 			adminLevel: data.adminLevel,
+			directLeaders: {
+				supervisor: directLeaderSlots.includes("supervisor") ? (data.directLeaderSupervisor || null) : null,
+				manager: directLeaderSlots.includes("manager") ? (data.directLeaderManager || null) : null,
+				administrator: directLeaderSlots.includes("administrator") ? (data.directLeaderAdministrator || null) : null,
+			},
 			department: data.department,
 			timezone: data.timezone,
 			employeeStartDate: data.employeeStartDate,
@@ -223,6 +281,34 @@ export default function Page() {
 								</div>
 							</CardContent>
 						</Card>
+
+						{/* Direct Leaders — only the slots this admin level has */}
+						{directLeaderSlots.length > 0 && (
+							<Card>
+								<CardHeader>Direct Leaders</CardHeader>
+								<CardContent>
+									{directLeaderSlots.length > 1 && (
+										<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+											Choose at least one Direct Leader <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
+										</p>
+									)}
+									<div className={styles.row2}>
+										{directLeaderSlots.map((slot) => (
+											<DirectLeaderField
+												key={slot}
+												label={DIRECT_LEADER_FIELD_LABELS[selectedAdminLevel]?.[slot] ?? slot}
+												name={SLOT_FORM_FIELD[slot]}
+												control={control}
+												error={errors[SLOT_FORM_FIELD[slot]]}
+												slot={slot}
+												adminLevel={selectedAdminLevel}
+												required={directLeaderSlots.length === 1}
+											/>
+										))}
+									</div>
+								</CardContent>
+							</Card>
+						)}
 
 						{/* Permissions */}
 						<Card>

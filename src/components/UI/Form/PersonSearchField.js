@@ -6,6 +6,7 @@ import { Search, X, User, Loader2 } from "lucide-react";
 import { useCaregivers } from "@/hooks/useCaregivers";
 import { useClients } from "@/hooks/useClients";
 import { useAdmins } from "@/hooks/useAdmins";
+import { useDebounce } from "@/hooks/useDebounce";
 import { InfoField } from "@/components/UI/Form/Card";
 import styles from "./PersonSearchField.module.css";
 
@@ -37,18 +38,6 @@ import styles from "./PersonSearchField.module.css";
 | Yup schema (field stores the backend _id string):
 |   caregiverId: yup.string().required("Please select a caregiver")
 */
-
-// ── Debounce hook ──────────────────────────────────────────────────────────────
-function useDebounce(value, delay) {
-	const [debounced, setDebounced] = useState(value);
-	useEffect(() => {
-		const timer = setTimeout(() => setDebounced(value), delay);
-		return () => clearTimeout(timer);
-	}, [value, delay]);
-	return debounced;
-}
-
-
 
 // ── Inner display component ────────────────────────────────────────────────────
 function PersonSearchInput({

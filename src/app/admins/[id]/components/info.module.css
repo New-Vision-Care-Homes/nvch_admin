@@ -104,6 +104,28 @@
 	font-weight: 400;
 }
 
+/* ─── Edit Mode: Direct Leader group label ─── */
+.groupLabel {
+	display: inline-flex;
+	align-items: center;
+	margin-bottom: 0.75rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	background: #EFF6FF;
+	border-left: 3px solid var(--color-primary);
+	border-radius: 0 6px 6px 0;
+	padding: 0.3rem 0.75rem;
+}
+
+.requiredMark {
+	color: #E53E3E;
+	font-weight: 700;
+	margin-left: 0.2rem;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
 	.card_row_2 {

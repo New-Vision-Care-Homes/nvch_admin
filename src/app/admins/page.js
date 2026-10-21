@@ -28,7 +28,9 @@ import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
 
 export default function Admins() {
 	const { profile } = useProfile();
-	const canCreate = profile?.permissionSlugs?.includes("create_admin");
+	// Only super admins may create an admin (see project spec), not just
+	// holders of the create_admin slug.
+	const canCreate = profile?.adminLevel === "super" && profile?.permissionSlugs?.includes("create_admin");
 	const canDeleteAdmin = (admin) =>
 		profile?.permissionSlugs?.includes("delete_admin") &&
 		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");

@@ -76,5 +76,22 @@ export const adminService = {
 	toggleStatus: async (id) => {
 		const { data } = await axiosClient.put(API_ENDPOINTS.ADMINS.TOGGLE_STATUS(id));
 		return data;
-	}
+	},
+
+	/**
+	 * Fetch the admins eligible to fill one Direct Leader slot for a given
+	 * admin level (requires assign_direct_leaders; super admins bypass).
+	 * @param {Object} params - { adminLevel, slot, search, excludeId }
+	 * @returns {Promise<{eligibleLevels: string[], items: Array}>}
+	 */
+	getDirectLeaderOptions: async ({ adminLevel, slot, search, excludeId } = {}) => {
+		const queryParams = new URLSearchParams();
+		if (adminLevel) queryParams.append('adminLevel', adminLevel);
+		if (slot) queryParams.append('slot', slot);
+		if (search) queryParams.append('search', search);
+		if (excludeId) queryParams.append('excludeId', excludeId);
+
+		const { data } = await axiosClient.get(`${API_ENDPOINTS.ADMINS.DIRECT_LEADER_OPTIONS}?${queryParams.toString()}`);
+		return data?.data;
+	},
 };

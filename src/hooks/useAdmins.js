@@ -146,3 +146,34 @@ export const useAdmins = (options = {}) => {
 		refetch: adminsQuery.refetch,
 	};
 };
+
+/**
+ * Fetches the admins eligible to fill one Direct Leader slot (supervisor,
+ * manager, or administrator) for a given admin level — the picklist behind
+ * GET /api/auth/admin/direct-leader-options.
+ *
+ * Requires the assign_direct_leaders permission slug (super admins bypass);
+ * a 403 here just means the field should have been left out of the form.
+ */
+export const useDirectLeaderOptions = ({ adminLevel, slot, search, excludeId, enabled = true } = {}) => {
+	const params = { adminLevel, slot, search, excludeId };
+
+	const query = useQuery({
+		queryKey: ["directLeaderOptions", params],
+		queryFn: () => adminService.getDirectLeaderOptions(params),
+		enabled: enabled && !!adminLevel && !!slot,
+		placeholderData: keepPreviousData,
+	});
+
+	const getErrorMessage = (err) =>
+		err?.response?.data?.details?.[0]?.msg ||
+		err?.response?.data?.error ||
+		"Failed to load direct leader options";
+
+	return {
+		eligibleLevels: query.data?.eligibleLevels ?? [],
+		items: query.data?.items ?? [],
+		isLoading: query.isLoading,
+		error: query.error ? getErrorMessage(query.error) : null,
+	};
+};

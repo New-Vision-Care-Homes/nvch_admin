@@ -26,7 +26,11 @@ export const PERMISSION_SCHEMAS = [
 			"view_admin",
 			"toggle_admin_status",
 			// Admin may sign in to the mobile app. Portal access does not require this.
-			"access_app"
+			"access_app",
+			// Required (on top of update_admin) to set/change/clear an admin's
+			// Direct Leader slot, and to call the direct-leader-options picklist.
+			// Super admins bypass this regardless of group membership.
+			"assign_direct_leaders"
 		]
 	},
 	{

@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
 		BY_ID: (id) => `/api/auth/admin/users/${id}`,
 		CREATE: '/api/auth/register',
 		TOGGLE_STATUS: (id) => `/api/auth/admin/users/${id}/toggle-status`,
+		DIRECT_LEADER_OPTIONS: '/api/auth/admin/direct-leader-options',
 	},
 
 	/* All related endpoints for caregivers */
