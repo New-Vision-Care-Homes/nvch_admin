@@ -54,11 +54,6 @@ const REMINDER_LABELS = {
     "t0":    "At the end — \"Your shift has ended\"",
 };
 
-/** "14:18" in business time — for times within a single shift. */
-function formatTime(iso) {
-    return utcToDisplayTime(iso, DISPLAY_TZ) || "—";
-}
-
 function formatHours(hours) {
     return Number.isFinite(hours) ? `${Math.round(hours * 100) / 100} h` : "—";
 }
@@ -180,7 +175,7 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
                                 {reminders.map((reminder) => (
                                     <li key={reminder.stage}>
                                         <CheckCircle2 size={13} className={styles.whReminderIcon} />
-                                        <span className={styles.whReminderTime}>{formatTime(reminder.at)}</span>
+                                        <span className={styles.whReminderTime}>{utcToDisplayTime(reminder.at, DISPLAY_TZ)}</span>
                                         {REMINDER_LABELS[reminder.stage] ?? reminder.stage}
                                     </li>
                                 ))}

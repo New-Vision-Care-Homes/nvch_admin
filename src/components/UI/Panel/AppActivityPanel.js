@@ -58,11 +58,6 @@ const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
 const NOT_ACTIVE_HINT = "\"Inactive\" is a warning, not proof: no signal, a dead battery, "
 	+ "Low Power Mode or the phone's own throttling can also leave checks unanswered.";
 
-/** "14:18" in business time — for times within a single shift. */
-function formatTime(iso) {
-	return utcToDisplayTime(iso, DISPLAY_TZ) || "—";
-}
-
 /** The line under the status badge: "App active (checked …)" / "App inactive since …". */
 function describePresence(presence) {
 	if (!presence) return "The app wasn't checked during this shift.";
@@ -73,7 +68,7 @@ function describePresence(presence) {
 		// Live shifts carry silentSince; the approval snapshot only has the gaps,
 		// whose open one (no endedAt) is the current quiet stretch.
 		const since = presence.silentSince ?? presence.gaps?.find((gap) => !gap.endedAt)?.firstMissedPingAt;
-		const lastReply = presence.lastSeenAt ? ` (last reply ${formatTime(presence.lastSeenAt)})` : "";
+		const lastReply = presence.lastSeenAt ? ` (last reply ${utcToDisplayTime(presence.lastSeenAt, DISPLAY_TZ)})` : "";
 		return `since ${formatDateTime(since)}${lastReply}`;
 	}
 	const reason = NOT_MONITORED_REASONS[presence.notMonitoredReason];
@@ -131,7 +126,7 @@ export default function AppActivityPanel({ presence, device }) {
 						</InfoField>
 						<InfoField label="Low Power Mode">
 							{presence.powerSavingSeenAt
-								? `Seen on at ${formatTime(presence.powerSavingSeenAt)}`
+								? `Seen on at ${utcToDisplayTime(presence.powerSavingSeenAt, DISPLAY_TZ)}`
 								: "Not seen"}
 						</InfoField>
 					</div>
@@ -140,7 +135,7 @@ export default function AppActivityPanel({ presence, device }) {
 							<ul className={styles.plainList}>
 								{presence.gaps.map((gap) => (
 									<li key={gap.firstMissedPingAt}>
-										Inactive {formatTime(gap.firstMissedPingAt)} – {gap.endedAt ? formatTime(gap.endedAt) : "clock-out"}
+										Inactive {utcToDisplayTime(gap.firstMissedPingAt, DISPLAY_TZ)} – {gap.endedAt ? utcToDisplayTime(gap.endedAt, DISPLAY_TZ) : "clock-out"}
 									</li>
 								))}
 							</ul>
