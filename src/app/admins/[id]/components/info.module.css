@@ -1,0 +1,128 @@
+/* ─── Layout ─── */
+.body {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.card_row_2 {
+	display: flex;
+	gap: 1rem;
+	width: 100%;
+}
+
+/* ─── View Mode: Name Display ─── */
+.name_display {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.4rem;
+	margin-bottom: 1.25rem;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid #E5E7EB;
+}
+
+.name_text {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	line-height: 1.2;
+}
+
+.name_badge {
+	display: inline-flex;
+	align-items: center;
+	background: #DBEAFE;
+	color: var(--color-primary);
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 0.2rem 0.55rem;
+	border-radius: 4px;
+	width: fit-content;
+}
+
+/* ─── View Mode: Contact Rows ─── */
+.contact_list {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 2rem;
+}
+
+.contact_row {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	padding: 0.875rem 0;
+	border-bottom: 1px solid #F3F4F6;
+}
+
+/* remove border from the last grid row (bottom 2 items in a 2-col layout) */
+.contact_list .contact_row:nth-last-child(-n+2) {
+	border-bottom: none;
+}
+
+.contact_icon_wrap {
+	width: 40px;
+	height: 40px;
+	min-width: 40px;
+	border-radius: 10px;
+	background: #EFF6FF;
+	border: 1px solid #DBEAFE;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-primary);
+}
+
+.contact_detail {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	min-width: 0;
+}
+
+.contact_label {
+	font-size: 0.7rem;
+	font-weight: 700;
+	color: var(--color-secondary);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.contact_value {
+	font-size: 0.92rem;
+	font-weight: 500;
+	color: #111827;
+}
+
+.contact_value_empty {
+	font-size: 0.88rem;
+	color: #9CA3AF;
+	font-style: italic;
+	font-weight: 400;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+	.card_row_2 {
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+}
+
+@media (max-width: 640px) {
+	.contact_list {
+		grid-template-columns: 1fr;
+	}
+
+	.contact_list .contact_row:nth-last-child(-n+2) {
+		border-bottom: 1px solid #F3F4F6;
+	}
+
+	.contact_list .contact_row:last-child {
+		border-bottom: none;
+		padding-bottom: 0.25rem;
+	}
+}

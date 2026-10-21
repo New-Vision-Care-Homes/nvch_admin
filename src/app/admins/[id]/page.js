@@ -2,78 +2,37 @@
 
 import React, { useState, useEffect } from "react";
 import PageLayout from "@components/layout/PageLayout";
+import PageHeader from "@components/layout/PageHeader";
+import Tabs from "./components/Tabs";
 import Button from "@components/UI/Button/Button";
-import { Card, CardHeader, CardContent, InfoField, InputField } from "@components/UI/Form/Card";
+import { Card, CardHeader } from "@components/UI/Form/Card";
 import styles from "./admin_profile.module.css";
 import Image from "next/image";
 import defaultAvatar from "@/assets/img/navbar/avatar.jpg";
-import GuardedLink from "@components/UI/Button/GuardedLink";
-import { Activity, Undo2, Upload, Edit, Save, X } from "lucide-react";
+import { Activity, Calendar, Clock, Hash, Undo2, Upload } from "lucide-react";
 import Modal from "@components/UI/Modal/Modal";
 import InlineBanner from "@components/UI/Feedback/InlineBanner";
 import StatusToggleConfirmModal from "@components/UI/Modal/StatusToggleConfirmModal";
-import { useParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { IdRule, nameRule, emailRule, phoneRule, dateRule } from "@/utils/validation";
-import { ColorPill } from "@components/UI/Feedback/Badge";
-import { REGION_OPTIONS, REGION_COLORS } from "@/utils/dropdownList/region";
-import { DEPARTMENT_OPTIONS, DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
-import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
-import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
-import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
+import { useParams, useRouter } from "next/navigation";
 import { useAdmins } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
 import ErrorState from "@components/UI/Feedback/ErrorState";
-import { usePermissionGroups } from "@/hooks/usePermissions";
 import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
-import { useRouteDirty } from "@/context/RouteDirtyContext";
-
-const ADMIN_LEVEL_OPTIONS = [
-	{ label: "Super Admin", value: "super" },
-	{ label: "Manager", value: "manager" },
-	{ label: "Supervisor", value: "supervisor" },
-	{ label: "Office Admin", value: "office_admin" },
-	{ label: "Team Lead", value: "team_lead" },
-	{ label: "Payroll Admin", value: "payroll" },
-];
-
-const schema = yup.object({
-	firstName: nameRule.required("First name is required"),
-	lastName: nameRule.required("Last name is required"),
-	email: emailRule.required("Email is required"),
-	phone: phoneRule,
-	adminLevel: yup.string().required("Admin level is required"),
-	department: yup.string().required("Department is required"),
-	regions: yup
-		.array()
-		.of(yup.string().oneOf(REGION_OPTIONS.map(o => o.value), "Please select a valid region"))
-		.min(1, "Please select at least one region")
-		.required("Please select at least one region"),
-	adminId: IdRule.required("Admin ID is required"),
-	employeeStartDate: dateRule,
-	permissionsGroup: yup
-		.array()
-		.min(1, "Please select at least one permission group")
-		.required("Please select at least one permission group"),
-});
+import { formatDateTime } from "@/utils/dates";
+import { ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
 
 export default function Page() {
 	const { id } = useParams(); // The userId (MongoDB ObjectId) for the admin
+	const router = useRouter();
 
 	const {
 		adminDetail: user,
 		isLoading,
 		fetchError,
-		updateAdmin,
 		isActionPending,
 		toggleAdminStatus,
 	} = useAdmins({ adminId: id });
 
-	// --- Editing State & Form Setup ---
-	const [isEditing, setIsEditing] = useState(false);
-	const { permissionGroups } = usePermissionGroups();
 
 	const { profile } = useProfile();
 	// The backend rejects update/toggle/delete on a super admin unless the
@@ -87,35 +46,7 @@ export default function Page() {
 	const isSelf = profile?.id != null && String(profile.id) === String(id);
 	const canUploadPicture = isSelf || canEdit;
 
-	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
-
-	const { register, handleSubmit, setValue, watch, formState: { errors, isDirty }, reset } = useForm({
-		resolver: yupResolver(schema),
-		defaultValues: {
-			permissionsGroup: [],
-			regions: []
-		}
-	});
-
-	const { setIsDirty } = useRouteDirty();
-	useEffect(() => {
-		setIsDirty(isDirty);
-	}, [isDirty, setIsDirty]);
-
-	const selectedRegions = watch("regions") || [];
-
-	const toggleGroup = (groupId) => {
-		setSelectedGroupIds(prev => {
-			const next = new Set(prev);
-			if (next.has(groupId)) next.delete(groupId);
-			else next.add(groupId);
-
-			setValue("permissionsGroup", Array.from(next), { shouldValidate: true, shouldDirty: true });
-			return next;
-		});
-	};
-
-	// --- Image Upload States & Hooks ---
+	// --- Image Upload States ---
 	const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
 	// Modal state for general success/error messages
@@ -123,36 +54,6 @@ export default function Page() {
 	const [isStatusConfirmModalOpen, setIsStatusConfirmModalOpen] = useState(false);
 	const [inlineMessage, setInlineMessage] = useState(null);
 	const [message, setMessage] = useState("");
-
-
-
-	// --- API Calls and Handlers (User Data) ---
-	useEffect(() => {
-		if (user) {
-			reset({
-				firstName: user.firstName,
-				lastName: user.lastName,
-				email: user.email,
-				phone: user.phone,
-				adminLevel: user.adminLevel || "",
-				department: user.department || "",
-				regions: Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []),
-				adminId: user.employeeId || "",
-				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
-			});
-
-			// Initialize selected groups
-			const pg = user.permissionsGroup;
-			const initialSelected = new Set();
-			if (Array.isArray(pg)) {
-				pg.forEach(pid => initialSelected.add(typeof pid === 'string' ? pid : pid._id));
-			} else if (pg) {
-				initialSelected.add(typeof pg === 'string' ? pg : pg._id);
-			}
-			setSelectedGroupIds(initialSelected);
-			setValue("permissionsGroup", Array.from(initialSelected));
-		}
-	}, [user, reset, setValue]);
 
 	const handleActive = () => {
 		setIsStatusConfirmModalOpen(true);
@@ -179,73 +80,6 @@ export default function Page() {
 		setIsStatusConfirmModalOpen(false);
 	};
 
-	const onSubmit = (data) => {
-		const body = {
-			employeeId: data.adminId,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			email: data.email,
-			phone: data.phone,
-			adminLevel: data.adminLevel,
-			department: data.department,
-			regions: data.regions,
-			employeeStartDate: data.employeeStartDate,
-			permissionsGroup: Array.isArray(data.permissionsGroup) ? data.permissionsGroup : [data.permissionsGroup].filter(Boolean),
-		};
-
-		updateAdmin({ id, data: body }, {
-			onSuccess: () => {
-				setIsEditing(false);
-				setMessage("Admin updated successfully!");
-				setIsGeneralModalOpen(true);
-			},
-			onError: (err) => {
-				const data = err?.response?.data;
-				let msg;
-				if (Array.isArray(data?.details) && data.details.length > 0) {
-					msg = data.details.map(d => d.msg || d).filter(Boolean).join("; ");
-				} else {
-					msg = data?.error || data?.message || "An unexpected error occurred";
-				}
-				setMessage(msg);
-				setIsGeneralModalOpen(true);
-			}
-		});
-	};
-
-	const startEditing = () => {
-		if (user) {
-			reset({
-				firstName: user.firstName,
-				lastName: user.lastName,
-				email: user.email,
-				phone: user.phone,
-				adminLevel: user.adminLevel || "",
-				department: user.department || "",
-				regions: Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []),
-				adminId: user.employeeId || "",
-				employeeStartDate: user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "",
-			});
-
-			const pg = user.permissionsGroup;
-			const initialSelected = new Set();
-			if (Array.isArray(pg)) {
-				pg.forEach(pid => initialSelected.add(typeof pid === 'string' ? pid : pid._id));
-			} else if (pg) {
-				initialSelected.add(typeof pg === 'string' ? pg : pg._id);
-			}
-			setSelectedGroupIds(initialSelected);
-			setValue("permissionsGroup", Array.from(initialSelected));
-		}
-		setIsEditing(true);
-	};
-
-	const cancelEditing = () => {
-		setIsEditing(false);
-	};
-
-
-
 	function handleGeneralModalCancel() {
 		setIsGeneralModalOpen(false);
 	}
@@ -263,321 +97,92 @@ export default function Page() {
 		<>
 			<PageLayout>
 				<InlineBanner message={inlineMessage} />
-				<form onSubmit={handleSubmit(onSubmit)}>
-					{/* Header */}
-					<div className={styles.header}>
-						<h1>{isEditing ? `Edit Admin Profile: ${user.firstName} ${user.lastName}` : `Admin Profile: ${user.firstName} ${user.lastName}`}</h1>
-						<div className={styles.headerActions}>
-							{!isEditing ? (
-								<>
-									{canEdit && (
-										<Button
-											variant="primary"
-											icon={<Edit size={16} />}
-											onClick={startEditing}
-											type="button"
-										>
-											Edit
-										</Button>
-									)}
-									{canToggle && (
-										<Button
-											variant={activeStatus ? "dangerLight" : "successLight"}
-											icon={<Activity size={16} />}
-											onClick={handleActive}
-											type="button"
-										>
-											{activeStatus ? "Inactive" : "Active"}
-										</Button>
-									)}
-									<GuardedLink href="/admins">
-										<Button variant="secondary" icon={<Undo2 size={16} />} type="button">Back</Button>
-									</GuardedLink>
-								</>
-							) : (
-								<>
-									<Button
-										variant="secondary"
-										icon={<X size={16} />}
-										onClick={cancelEditing}
-										type="button"
-										disabled={isActionPending}
-									>
-										Cancel
-									</Button>
-									<Button
-										variant="primary"
-										icon={<Save size={16} />}
-										type="submit"
-										disabled={isActionPending}
-									>
-										{isActionPending ? "Saving..." : "Save"}
-									</Button>
-								</>
+
+				{/* Header */}
+				<PageHeader
+					title={`Admin Profile: ${user.firstName} ${user.lastName}`}
+					actions={
+						<>
+							{canToggle && (
+								<Button
+									variant={activeStatus ? "dangerLight" : "successLight"}
+									icon={<Activity size={16} />}
+									onClick={handleActive}
+									disabled={isActionPending}
+								>
+									{activeStatus ? "Inactive" : "Active"}
+								</Button>
+							)}
+							<Button variant="secondary" icon={<Undo2 size={16} />} onClick={() => router.back()}>Back</Button>
+						</>
+					}
+				/>
+
+				{/* Admin Overview */}
+				<Card>
+					<CardHeader>Admin Overview</CardHeader>
+					<div className={styles.overviewBody}>
+						<div className={styles.avatarWrap}>
+							<Image
+								src={user.profilePictureUrl || defaultAvatar}
+								alt="Profile Photo"
+								width={88}
+								height={88}
+								className={styles.avatar}
+								unoptimized
+							/>
+							{canUploadPicture && (
+								<button
+									className={styles.uploadTrigger}
+									onClick={() => setIsImageModalOpen(true)}
+									title="Upload photo"
+								>
+									<Upload size={13} />
+								</button>
 							)}
 						</div>
-					</div>
 
-					{/* Admin Details */}
-					<div className={styles.content}>
-						<div className={styles.leftPanel}>
-							{/* Basic Info */}
-							<Card>
-								<CardHeader>Basic Information</CardHeader>
-								<CardContent>
-									{!isEditing ? (
-										<>
-											<div className={styles.row2}>
-												<InfoField label="Admin ID">{user.employeeId}</InfoField>
-												<InfoField label="Status">
-													<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
-														{activeStatus ? "Active" : "Inactive"}
-													</span>
-												</InfoField>
-											</div>
-											<div className={styles.row2}>
-												<InfoField label="First Name">{user.firstName}</InfoField>
-												<InfoField label="Last Name">{user.lastName}</InfoField>
-											</div>
-											<div className={styles.row2}>
-												<InfoField label="Email">{user.email}</InfoField>
-												<InfoField label="Phone">{user.phone}</InfoField>
-											</div>
-										</>
-									) : (
-										<>
-											<div className={styles.row2}>
-												<InputField label="Admin ID" name="adminId" register={register} error={errors.adminId} />
-												<div style={{ flex: 1 }}></div>
-											</div>
-											<div className={styles.row2}>
-												<InputField label="First Name" name="firstName" register={register} error={errors.firstName} />
-												<InputField label="Last Name" name="lastName" register={register} error={errors.lastName} />
-											</div>
-											<div className={styles.row2}>
-												<InputField label="Email" name="email" register={register} error={errors.email} />
-												<InputField label="Phone" name="phone" type="phone" register={register} error={errors.phone} />
-											</div>
-										</>
+						<div className={styles.overviewInfo}>
+							<div className={styles.mainInfo}>
+								<div className={styles.fullName}>{user.firstName} {user.lastName}</div>
+								<div className={styles.idViewRow}>
+									<Hash size={13} className={styles.idIcon} />
+									<span className={styles.idText}>{user.employeeId || "—"}</span>
+								</div>
+								<div className={styles.badges}>
+									<span className={`${styles.statusPill} ${activeStatus ? styles.statusActive : styles.statusInactive}`}>
+										{activeStatus ? "Active" : "Inactive"}
+									</span>
+									{user.adminLevel && (
+										<span className={styles.empBadge}>{ADMIN_LEVEL_LABEL[user.adminLevel] ?? user.adminLevel}</span>
 									)}
-								</CardContent>
-							</Card>
+								</div>
+							</div>
 
-							{/* Role & Department */}
-							<Card>
-								<CardHeader>Role &amp; Department</CardHeader>
-								<CardContent>
-									{!isEditing ? (
-										<>
-											<div className={styles.row2}>
-												<InfoField label="Role">Admin</InfoField>
-												<InfoField label="Admin Level">
-												{user.adminLevel ? (
-													<ColorPill label={ADMIN_LEVEL_LABEL[user.adminLevel] ?? user.adminLevel} color={ADMIN_LEVEL_COLORS[user.adminLevel] ?? COLOR_FALLBACK} />
-												) : <span style={{ color: "#94a3b8" }}>—</span>}
-											</InfoField>
-											</div>
-											<div className={styles.row2}>
-												<InfoField label="Department">
-												{user.department ? (
-													<ColorPill label={user.department} color={DEPARTMENT_COLORS[user.department] ?? COLOR_FALLBACK} />
-												) : <span style={{ color: "#94a3b8" }}>—</span>}
-												</InfoField>
-												<InfoField label="Regions">
-												{(() => {
-													const regionList = Array.isArray(user.regions) && user.regions.length > 0 ? user.regions : (user.region ? [user.region] : []);
-													if (!regionList.length) return <span style={{ color: "#94a3b8" }}>—</span>;
-													return <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>{regionList.map((r) => <ColorPill key={r} label={r} color={REGION_COLORS[r] ?? COLOR_FALLBACK} />)}</div>;
-												})()}
-												</InfoField>
-											</div>
-											<div className={styles.row2}>
-												<InfoField label="Employee Start Date">{user.employeeStartDate ? user.employeeStartDate.slice(0, 10) : "—"}</InfoField>
-												<div style={{ flex: 1 }} />
-											</div>
-										</>
-									) : (
-										<>
-											<div className={styles.row2}>
-												<InfoField label="Role">Admin</InfoField>
-												<InputField
-													label="Admin Level"
-													name="adminLevel"
-													type="select"
-													register={register}
-													error={errors.adminLevel}
-													options={ADMIN_LEVEL_OPTIONS}
-													required
-												/>
-											</div>
-											<div className={styles.row2}>
-												<InputField
-													label="Department"
-													name="department"
-													type="select"
-													register={register}
-													error={errors.department}
-													options={DEPARTMENT_OPTIONS}
-													required
-												/>
-												<InputField
-													label="Employee Start Date"
-													name="employeeStartDate"
-													type="date"
-													register={register}
-													error={errors.employeeStartDate}
-													required
-												/>
-											</div>
-											<div style={{ marginBottom: "1rem" }}>
-												<RegionCheckboxGroup
-													label="Regions"
-													required
-													value={selectedRegions}
-													onChange={(next) => setValue("regions", next, { shouldValidate: true, shouldDirty: true })}
-													error={errors.regions}
-												/>
-											</div>
-										</>
-									)}
-								</CardContent>
-							</Card>
-
-							{/* Permissions */}
-							<Card>
-								<CardHeader>Permission Groups</CardHeader>
-								<CardContent>
-									{!isEditing ? (
-										<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-											{Array.from(selectedGroupIds).length > 0 ? Array.from(selectedGroupIds).map(id => {
-												const group = permissionGroups.find(g => g._id === id);
-												if (!group) return null;
-												const groupSlugs = group.permissions || [];
-												return (
-													<div key={id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-														<span style={{ display: 'inline-flex', alignItems: 'center', background: '#f3f4f6', color: '#1f2937', padding: '6px 12px', borderRadius: '6px', fontWeight: '600', fontSize: '0.95rem', width: 'fit-content' }}>
-															<Activity size={14} style={{ marginRight: '6px', color: '#6b7280' }} />
-															{group.name}
-														</span>
-														{groupSlugs.length > 0 && (
-															<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '0.5rem' }}>
-																{groupSlugs.map(slug => (
-																	<span key={slug} style={{
-																		display: 'inline-block',
-																		background: '#e5e7eb',
-																		color: '#374151',
-																		padding: '2px 8px',
-																		borderRadius: '4px',
-																		fontSize: '0.78rem',
-																		fontWeight: '500',
-																	}}>
-																		{slug}
-																	</span>
-																))}
-															</div>
-														)}
-													</div>
-												);
-											}) : <span style={{ color: '#6b7280' }}>No permission groups assigned.</span>}
-										</div>
-									) : (
-										<>
-											<p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-secondary)', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-												Select Group <span style={{ color: '#E53E3E', fontWeight: 700, fontSize: '0.85rem' }}>*</span>
-											</p>
-											{permissionGroups.length === 0 ? (
-												<p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-													No permission groups found.
-												</p>
-											) : (
-												<div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-													{permissionGroups.map(group => {
-														const isChecked = selectedGroupIds.has(group._id);
-														const groupSlugs = group.permissions || [];
-
-														return (
-															<div key={group._id} style={{
-																border: `1px solid ${isChecked ? '#3b82f6' : 'var(--border-primary)'}`,
-																borderRadius: '8px',
-																padding: '1rem',
-																background: isChecked ? '#eff6ff' : '#fafafa',
-																transition: 'background 0.15s, border-color 0.15s',
-															}}>
-																<label className="checkboxLabel" style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '0.6rem', display: 'flex' }}>
-																	<input
-																		type="checkbox"
-																		checked={isChecked}
-																		onChange={() => toggleGroup(group._id)}
-																	/>
-																	{group.name}
-																</label>
-																{groupSlugs.length > 0 && (
-																	<div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', paddingLeft: '1.75rem' }}>
-																		{groupSlugs.map(slug => (
-																			<span key={slug} style={{
-																				display: 'inline-block',
-																				background: isChecked ? '#dbeafe' : '#e5e7eb',
-																				color: isChecked ? '#1d4ed8' : '#374151',
-																				padding: '2px 8px',
-																				borderRadius: '4px',
-																				fontSize: '0.78rem',
-																				fontWeight: '500',
-																				transition: 'background 0.15s, color 0.15s',
-																			}}>
-																				{slug}
-																			</span>
-																		))}
-																	</div>
-																)}
-															</div>
-														);
-													})}
-												</div>
-											)}
-
-											{errors.permissionsGroup && (
-												<p style={{ color: "#b91c1c", fontSize: "0.85rem", marginTop: "1rem", display: "flex", alignItems: "center", gap: "6px" }}>
-													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-													{errors.permissionsGroup.message}
-												</p>
-											)}
-										</>
-									)}
-								</CardContent>
-							</Card>
-						</div>
-
-						{/* Picture Side Panel */}
-						<div className={styles.rightPanel}>
-							<Card>
-								<CardHeader>Profile Picture</CardHeader>
-								<CardContent>
-									<div className={styles.picture}>
-										<Image
-											src={user.profilePictureUrl || defaultAvatar}
-											alt="Profile Photo"
-											width={120}
-											height={120}
-											className={styles.image}
-											unoptimized
-										/>
-										{canUploadPicture && (
-											<Button
-												variant="secondary"
-												size="sm"
-												icon={<Upload size={16} />}
-												onClick={() => setIsImageModalOpen(true)}
-												type="button"
-											>
-												Upload Picture
-											</Button>
-										)}
+							<div className={styles.timestamps}>
+								<div className={styles.metaItem}>
+									<Calendar size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Created</div>
+										<div className={styles.metaValue}>{formatDateTime(user.createdAt)}</div>
 									</div>
-								</CardContent>
-							</Card>
+								</div>
+								<div className={styles.metaItem}>
+									<Clock size={13} className={styles.metaIcon} />
+									<div>
+										<div className={styles.metaLabel}>Last Updated</div>
+										<div className={styles.metaValue}>{formatDateTime(user.updatedAt)}</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
-				</form>
+				</Card>
+
+				{/* Tabbed Content */}
+				<div className={styles.tabs}>
+					<Tabs />
+				</div>
 			</PageLayout>
 
 			{/* Status Confirmation Modal */}

@@ -1,0 +1,172 @@
+/* ─── View Mode: assigned group list ─── */
+.groupList {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.groupRow {
+	display: flex;
+	gap: 1.25rem;
+	align-items: flex-start;
+	padding: 0.875rem 1.25rem;
+	background: #F8FAFF;
+	border: 1px solid #C7D7F0;
+	border-left: 3px solid var(--color-primary);
+	border-radius: 8px;
+}
+
+.groupIconWrap {
+	width: 40px;
+	height: 40px;
+	min-width: 40px;
+	border-radius: 50%;
+	background: #EFF6FF;
+	border: 1.5px solid #DBEAFE;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-primary);
+	flex-shrink: 0;
+}
+
+.groupInfo {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	flex: 1;
+	min-width: 0;
+	padding-top: 0.1rem;
+}
+
+.groupName {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--color-primary);
+}
+
+.emptyText {
+	font-size: 0.88rem;
+	color: #9CA3AF;
+	font-style: italic;
+	padding: 0.25rem 0;
+}
+
+/* ─── Shared: slug pills ─── */
+.slugGrid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.slugPill {
+	display: inline-block;
+	background: #EFF6FF;
+	color: #1D4ED8;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 500;
+}
+
+/* ─── Edit Mode: selectable group cards ─── */
+.selectLabel {
+	display: inline-flex;
+	align-items: center;
+	margin-bottom: 0.75rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: var(--color-primary);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	background: #EFF6FF;
+	border-left: 3px solid var(--color-primary);
+	border-radius: 0 6px 6px 0;
+	padding: 0.3rem 0.75rem;
+}
+
+.requiredMark {
+	color: #E53E3E;
+	font-weight: 700;
+	margin-left: 0.2rem;
+}
+
+.editGroupList {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.editGroupCard {
+	border: 1px solid var(--border-primary, #E5E7EB);
+	border-radius: 8px;
+	padding: 1rem;
+	background: #FAFAFA;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.editGroupCardActive {
+	border-color: #3B82F6;
+	background: #EFF6FF;
+}
+
+.editGroupHeader {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-weight: 600;
+	font-size: 0.95rem;
+	cursor: pointer;
+}
+
+.editGroupHeader input[type="checkbox"] {
+	width: 1.1rem;
+	height: 1.1rem;
+	accent-color: #1c4a6e;
+	cursor: pointer;
+}
+
+.editGroupIconWrap {
+	width: 32px;
+	height: 32px;
+	min-width: 32px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #DBEAFE;
+	color: var(--color-primary);
+}
+
+.editGroupSlugs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding-left: 2.6rem;
+	margin-top: 0.6rem;
+}
+
+.editSlugPill {
+	display: inline-block;
+	background: #E5E7EB;
+	color: #374151;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.78rem;
+	font-weight: 500;
+	transition: background 0.15s, color 0.15s;
+}
+
+.editSlugPillActive {
+	background: #DBEAFE;
+	color: #1D4ED8;
+}
+
+.errorText {
+	color: #B91C1C;
+	font-size: 0.85rem;
+	margin-top: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
