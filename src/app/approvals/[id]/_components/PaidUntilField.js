@@ -138,11 +138,11 @@ export default function PaidUntilField({ value, onChange, subjectContext, error 
                         }}
                     >
                         {dates.map((d) => (
-                            <option key={d} value={d}>{formatDateOnly(d, DISPLAY_TZ)}</option>
+                            <option key={d} value={d}>{formatDateOnly(d)}</option>
                         ))}
                     </select>
                 ) : (
-                    <span className={styles.paidUntilDate}>{formatDateOnly(date, DISPLAY_TZ)}</span>
+                    <span className={styles.paidUntilDate}>{formatDateOnly(date)}</span>
                 )}
                 <input
                     type="time"
