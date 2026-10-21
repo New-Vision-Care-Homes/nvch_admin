@@ -14,7 +14,7 @@
 //   shift page    — shift.presence / shift.clockInDevice (live)
 //   approval page — subjectContext.presence / subjectContext.clockIn.device
 //                   (a snapshot taken when the review opened)
-// The snapshot has no silentSince or notMonitoredReason, so "not active since"
+// The snapshot has no silentSince or notMonitoredReason, so "inactive since"
 // falls back to the open gap's first missed check, and the reason is optional.
 //
 // Props:
@@ -55,7 +55,7 @@ const DEVICE_FIELDS = [
 const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
 
 /** Shown when hovering the info icon next to the status. */
-const NOT_ACTIVE_HINT = "\"Not active\" is a warning, not proof: no signal, a dead battery, "
+const NOT_ACTIVE_HINT = "\"Inactive\" is a warning, not proof: no signal, a dead battery, "
 	+ "Low Power Mode or the phone's own throttling can also leave checks unanswered.";
 
 /** "14:18" in business time — for times within a single shift. */
@@ -63,7 +63,7 @@ function formatTime(iso) {
 	return utcToDisplayTime(iso, DISPLAY_TZ) || "—";
 }
 
-/** The line under the status badge: "App active (checked …)" / "App not active since …". */
+/** The line under the status badge: "App active (checked …)" / "App inactive since …". */
 function describePresence(presence) {
 	if (!presence) return "The app wasn't checked during this shift.";
 	if (presence.status === "active") {
@@ -113,7 +113,7 @@ export default function AppActivityPanel({ presence, device }) {
 					<span className={styles.statusLabel}>Status</span>
 					<StatusBadge label={presenceMeta.label} tone={presenceMeta.tone} size="pill" />
 					{/* Hover hint — the browser's own tooltip (title), same as hovering a shift on
-					    the scheduling page. Only where checks ran, so "not active" can apply. */}
+					    the scheduling page. Only where checks ran, so "inactive" can apply. */}
 					{isMonitored && presenceMeta.label === "Inactive" && (
 						<span className={styles.hint} title={NOT_ACTIVE_HINT} aria-label={NOT_ACTIVE_HINT}>
 							<Info size={14} />
@@ -140,7 +140,7 @@ export default function AppActivityPanel({ presence, device }) {
 							<ul className={styles.plainList}>
 								{presence.gaps.map((gap) => (
 									<li key={gap.firstMissedPingAt}>
-										Not active {formatTime(gap.firstMissedPingAt)} – {gap.endedAt ? formatTime(gap.endedAt) : "clock-out"}
+										Inactive {formatTime(gap.firstMissedPingAt)} – {gap.endedAt ? formatTime(gap.endedAt) : "clock-out"}
 									</li>
 								))}
 							</ul>
