@@ -25,7 +25,7 @@
 // so it's never drawn as a pin.
 
 import GeofenceMap from "@components/UI/Map/GeofenceMap";
-import { MapPin, LogIn, LogOut, LocateFixed } from "lucide-react";
+import { MapPin, LogIn, LogOut, LocateFixed, TriangleAlert, History } from "lucide-react";
 import styles from "./ServiceLocationPanel.module.css";
 
 const LOCATION_CHECK_LABELS = {
@@ -46,7 +46,10 @@ function formatMeters(meters) {
 	return Number.isFinite(meters) ? `${Math.round(meters)} m` : null;
 }
 
-/** "120 m from the site · outside the geofence" — whatever is known. */
+/**
+ * "120 m from the site · outside the geofence" — whatever is known. A null
+ * insideGeofence (no geofence to compare against) says neither.
+ */
 function describePosition({ distanceMeters, insideGeofence } = {}) {
 	const parts = [];
 	const distance = formatMeters(distanceMeters);
@@ -62,8 +65,13 @@ function isRealFix(location) {
 		&& !(location.latitude === 0 && location.longitude === 0);
 }
 
-/** One coloured block: label, main value, and an optional muted line under it. */
-function LocationBlock({ tone, Icon, label, value, detail }) {
+const FLAG_ICONS = { warning: TriangleAlert, stale: History };
+
+/**
+ * One coloured block: label, main value, an optional muted line under it, and
+ * any flags ({ kind: "warning" | "stale", text }) as their own lines below.
+ */
+function LocationBlock({ tone, Icon, label, value, detail, flags }) {
 	return (
 		<div className={`${styles.block} ${styles[tone]}`}>
 			<div className={styles.blockIcon}><Icon size={13} /></div>
@@ -71,6 +79,15 @@ function LocationBlock({ tone, Icon, label, value, detail }) {
 				<p className={styles.blockLabel}>{label}</p>
 				<p className={styles.blockValue}>{value}</p>
 				{detail && <p className={styles.blockDetail}>{detail}</p>}
+				{flags?.map(({ kind, text }) => {
+					const FlagIcon = FLAG_ICONS[kind];
+					return (
+						<p key={kind} className={`${styles.blockFlag} ${styles[`flag_${kind}`]}`}>
+							<FlagIcon size={12} className={styles.blockFlagIcon} />
+							<span>{text}</span>
+						</p>
+					);
+				})}
 			</div>
 		</div>
 	);
@@ -84,34 +101,59 @@ function LocationBlock({ tone, Icon, label, value, detail }) {
  *      "No response", "Not sent — …"), with its own detail line if any
  *   3. the distance / inside-outside ("120 m from the site · outside the geofence")
  *   4. "Recorded — see the map" when there's only a pin
- * Returns null for "nothing to show".
+ * Any point.flags are passed through. Returns null for "nothing to show".
  */
 function describePoint(point) {
 	if (!point) return null;
+	const flags = point.flags?.length ? point.flags : null;
 	const position = describePosition(point);
 	const address = point.location?.address || point.address || null;
-	if (address) return { value: address, detail: position || null };
-	if (point.note) return { value: point.note, detail: point.noteDetail ?? null };
-	if (position) return { value: position, detail: null };
-	if (isRealFix(point.location)) return { value: "Recorded — see the map", detail: null };
+	if (address) return { value: address, detail: position || null, flags };
+	if (point.note) return { value: point.note, detail: point.noteDetail ?? null, flags };
+	if (position) return { value: position, detail: null, flags };
+	if (isRealFix(point.location)) return { value: "Recorded — see the map", detail: null, flags };
 	return null;
 }
 
 /**
+ * Warnings about how trustworthy a received fix is: a fake-GPS app was on, or
+ * the reading was old / the phone's cached last-known location.
+ */
+function checkFlags(check) {
+	const flags = [];
+	if (check.isMocked === true) {
+		flags.push({ kind: "warning", text: "Fake GPS app was on — this location can't be trusted" });
+	}
+	if (check.fixSource === "lastKnown") {
+		flags.push({ kind: "stale", text: "Cached reading — the phone's last known location, not a fresh fix" });
+	} else if (check.staleFix === true) {
+		flags.push({ kind: "stale", text: "Old reading — the GPS fix was out of date" });
+	}
+	return flags;
+}
+
+/**
  * The location check as a point: a received check is a location with its
- * distance and inside/outside; any other result is a note ("No response",
- * "Not sent — app version too old", "Sent, no reply yet").
+ * distance and inside/outside (plus fake-GPS / old-reading flags); a received
+ * check with a fixError is a note with the reason; any other result is a note
+ * ("No response", "Not sent — app version too old", "Sent, no reply yet").
  */
 function checkToPoint(check) {
 	if (!check) return null;
 	if (check.status === "received") {
+		const flags = checkFlags(check);
+		// The phone answered but couldn't get a location
+		if (check.fixError) {
+			return { note: "Received — no location", noteDetail: String(check.fixError), flags };
+		}
 		const point = {
 			location:       { latitude: check.latitude, longitude: check.longitude },
 			distanceMeters: check.distanceMeters,
 			insideGeofence: check.insideGeofence,
+			flags,
 		};
 		// Received but nothing to show at all — still say it came back
-		return describePosition(point) || isRealFix(point.location) ? point : { note: LOCATION_CHECK_LABELS.received };
+		return describePosition(point) || isRealFix(point.location) ? point : { note: LOCATION_CHECK_LABELS.received, flags };
 	}
 	const reason = check.status === "not_sent" ? NOT_SENT_REASON_LABELS[check.notSentReason] : null;
 	return {

@@ -102,6 +102,25 @@
 	margin: 2px 0 0;
 }
 
+/* Flags under a block: fake GPS (warning), old / cached reading (stale) */
+.blockFlag {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.3rem;
+	font-size: 0.76rem;
+	font-weight: 600;
+	line-height: 1.4;
+	margin: 4px 0 0;
+}
+
+.blockFlagIcon {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.flag_warning { color: #b91c1c; }
+.flag_stale   { color: #92400e; }
+
 /* ── Narrow container: blocks above, map below ───────────────────────────── */
 @container (max-width: 560px) {
 	.layout {
