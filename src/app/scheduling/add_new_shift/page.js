@@ -500,7 +500,7 @@ export default function AddNewShiftPage() {
 				setRestError({
 					message: err.response.data.error,
 					details: err.response.data.details,
-					title:   err.response.data.title || localShiftLabel(data.startTime, data.endTime, HALIFAX_TZ)
+					title:   err.response.data.title || localShiftLabel(pendingData.startTime, pendingData.endTime, HALIFAX_TZ)
 				});
 			}
 			// actionShiftError displays any non-CAPACITY error automatically.
