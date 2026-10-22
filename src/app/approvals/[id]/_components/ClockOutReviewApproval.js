@@ -40,6 +40,8 @@ import styles from "../approval_detail.module.css";
 //   subjectContext  {object}  — approval.subjectContext
 //   caregiverName   {string}  — ClockOutEvidence
 //   onNavigateShift {fn}      — ClockOutEvidence: open the shift detail page
+//   isPending       {boolean} — ClockOutExplanation: approval is still pending,
+//                               so a closed window reads "deadline passed"
 //   approvalId      {string}  — ClockOutLocation: keys the map per approval
 
 const TRIGGER_DESCRIPTIONS = {
@@ -216,10 +218,9 @@ export function ClockOutEvidence({ subjectContext, caregiverName, onNavigateShif
 
 // ─── Right column: the caregiver's side ───────────────────────────────────────
 
-export function ClockOutExplanation({ subjectContext }) {
+export function ClockOutExplanation({ subjectContext, isPending }) {
     const ctx         = subjectContext ?? {};
     const explanation = ctx.explanation ?? null;
-    const decision    = ctx.decision ?? null;
 
     return (
         <>
@@ -244,13 +245,15 @@ export function ClockOutExplanation({ subjectContext }) {
                                 </InfoField>
                             </div>
                         </>
-                    ) : decision ? (
-                        <p className={styles.mutedText} style={{ margin: 0 }}>No explanation was submitted.</p>
-                    ) : (
+                    ) : ctx.explanationOpen ? (
                         <p className={styles.mutedText} style={{ margin: 0 }}>
                             Not submitted yet — they have until <strong>{formatDateTime(ctx.explanationDueAt)}</strong>.
                             {ctx.awaitingExplanation && " Pay can't be reduced until they explain or the deadline passes."}
                         </p>
+                    ) : isPending ? (
+                        <p className={styles.mutedText} style={{ margin: 0 }}>Deadline passed, no explanation was sent.</p>
+                    ) : (
+                        <p className={styles.mutedText} style={{ margin: 0 }}>No explanation was sent.</p>
                     )}
                 </CardContent>
             </Card>

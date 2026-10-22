@@ -741,7 +741,7 @@ export default function ApprovalDetailPage() {
                     {isClockOutReview && (
                         <>
                             <ClockOutOutcome subjectContext={subjectContext} />
-                            <ClockOutExplanation subjectContext={subjectContext} />
+                            <ClockOutExplanation subjectContext={subjectContext} isPending={isPending} />
                         </>
                     )}
 
