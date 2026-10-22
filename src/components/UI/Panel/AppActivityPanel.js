@@ -14,8 +14,6 @@
 //   shift page    — shift.presence / shift.clockInDevice (live)
 //   approval page — subjectContext.presence / subjectContext.clockIn.device
 //                   (a snapshot taken when the review opened)
-// The snapshot has no silentSince or notMonitoredReason, so "inactive since"
-// falls back to the open gap's first missed check, and the reason is optional.
 //
 // Props:
 //   presence {object|null}  the app activity check — null when the shift was never checked
@@ -34,7 +32,7 @@ const PRESENCE_META = {
 	not_monitored: { label: "Not monitored",  tone: "neutral" },
 };
 
-// presence.notMonitoredReason (live shifts only)
+// presence.notMonitoredReason
 const NOT_MONITORED_REASONS = {
 	no_device:               "no registered phone",
 	app_version_unsupported: "app version too old",
@@ -66,18 +64,15 @@ const resolveLabel = (label, platform) =>
 const NOT_ACTIVE_HINT = "\"Inactive\" is a warning, not proof: no signal, a dead battery, "
 	+ "Battery Saver/Low Power Mode or the phone's own throttling can also leave checks unanswered.";
 
-/** The line under the status badge: "App active (checked …)" / "App inactive since …". */
+/** The line under the status badge: "checked …" / "since …". */
 function describePresence(presence) {
 	if (!presence) return "The app wasn't checked during this shift.";
 	if (presence.status === "active") {
 		return `checked ${formatDateTime(presence.lastSeenAt)}`;
 	}
 	if (presence.status === "not_active") {
-		// Live shifts carry silentSince; the approval snapshot only has the gaps,
-		// whose open one (no endedAt) is the current quiet stretch.
-		const since = presence.silentSince ?? presence.gaps?.find((gap) => !gap.endedAt)?.firstMissedPingAt;
 		const lastReply = presence.lastSeenAt ? ` (last reply ${utcToDisplayTime(presence.lastSeenAt, DISPLAY_TZ)})` : "";
-		return `since ${formatDateTime(since)}${lastReply}`;
+		return `since ${formatDateTime(presence.silentSince)}${lastReply}`;
 	}
 	const reason = NOT_MONITORED_REASONS[presence.notMonitoredReason];
 	return reason ? `${reason}` : "This phone or app version can't be checked.";
@@ -86,7 +81,7 @@ function describePresence(presence) {
 export default function AppActivityPanel({ presence, device }) {
 	const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
 	const isMonitored  = presence && presence.status !== "not_monitored";
-
+	
 	// Phone setup rows. Each value gets a state that colours it:
 	//   good    — set up right (green)          e.g. Precise Location "On", Low Power Mode "Off"
 	//   bad     — weakens the checks (red)      e.g. Notifications "Denied", Low Power Mode "On"
