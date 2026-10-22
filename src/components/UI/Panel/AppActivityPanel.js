@@ -34,9 +34,9 @@ const PRESENCE_META = {
 
 // presence.notMonitoredReason
 const NOT_MONITORED_REASONS = {
-	no_device:               "no registered phone",
-	app_version_unsupported: "app version too old",
-	push_unavailable:        "notifications unavailable",
+	no_device:               "No registered phone",
+	app_version_unsupported: "App version is too old",
+	push_unavailable:        "Notifications unavailable",
 };
 
 /** Android calls the power-saving setting "Battery Saver"; iPhone calls it "Low Power Mode". */
