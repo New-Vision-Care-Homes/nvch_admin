@@ -90,35 +90,38 @@ function formatRangeEnd(ms, bounds) {
 /**
  * Validate the picker value.
  *
- * @returns {{ paidUntil: string|null, hours: number|null, error: string }}
- *   paidUntil — UTC ISO string for the API, only when valid
- *   hours     — what the shift would pay, rounded to 2 decimals
- *   error     — "" when valid or still empty
+ * @returns {{ paidUntil: string|null, hours: number|null, error: string, isFullShift: boolean }}
+ *   paidUntil   — UTC ISO string for the API, only when valid
+ *   hours       — what the shift would pay, rounded to 2 decimals
+ *   error       — "" when valid or still empty
+ *   isFullShift — the time is the credited end itself, so it pays the full shift
  */
 export function checkPaidUntil(value, ctx, includeEnd = true) {
-    if (!value) return { paidUntil: null, hours: null, error: "" };
+    if (!value) return { paidUntil: null, hours: null, error: "", isFullShift: false };
     const bounds = paidUntilBounds(ctx, includeEnd);
     const ms = Date.parse(localDateToUtc(value, DISPLAY_TZ) ?? "");
     if (!bounds || !Number.isFinite(ms) || ms < bounds.minMs || ms > bounds.maxMs) {
         return {
-            paidUntil: null,
-            hours:     null,
-            error:     bounds
-                ? `Choose a time from ${formatRangeEnd(bounds.minMs, bounds)} to ${formatRangeEnd(bounds.maxMs, bounds)}.`
-                : "The clock-in or credited end is missing, so the paid time can't be set here.",
+            paidUntil:   null,
+            hours:       null,
+            isFullShift: false,
+            error:       bounds
+                  ? `Choose a time from ${formatRangeEnd(bounds.minMs, bounds)} to ${formatRangeEnd(bounds.maxMs, bounds)}.`
+                  : "The clock-in or credited end is missing, so the paid time can't be set here.",
         };
     }
     return {
-        paidUntil: new Date(ms).toISOString(),
-        hours:     Math.round(((ms - bounds.startMs) / 3_600_000) * 100) / 100,
-        error:     "",
+        paidUntil:   new Date(ms).toISOString(),
+        hours:       Math.round(((ms - bounds.startMs) / 3_600_000) * 100) / 100,
+        error:       "",
+        isFullShift: includeEnd && ms === bounds.maxMs,
     };
 }
 
 export default function PaidUntilField({ value, onChange, subjectContext, error, includeEnd = true }) {
     const bounds = paidUntilBounds(subjectContext, includeEnd);
     const dates  = paidUntilDates(bounds);
-    const { hours } = checkPaidUntil(value, subjectContext, includeEnd);
+    const { hours, isFullShift } = checkPaidUntil(value, subjectContext, includeEnd);
     const credited  = subjectContext?.hoursCredited;
 
     // The date lives here too, so picking a date before a time isn't lost
@@ -164,6 +167,10 @@ export default function PaidUntilField({ value, onChange, subjectContext, error,
             {/* Hint/error line — paidUntilHint keeps its text from widening the modal */}
             {error ? (
                 <span className={`${styles.approveFieldError} ${styles.paidUntilHint}`}>{error}</span>
+            ) : isFullShift ? (
+                <span className={`${styles.mutedText} ${styles.paidUntilHint}`}>
+                    That&apos;s the credited end, so the full shift is paid.
+                </span>
             ) : hours != null ? (
                 <span className={`${styles.mutedText} ${styles.paidUntilHint}`}>
                     Pays about {hours} h{Number.isFinite(credited) ? ` instead of ${credited} h` : ""}.

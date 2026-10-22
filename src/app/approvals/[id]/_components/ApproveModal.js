@@ -20,7 +20,8 @@
 //                            pays the shift as credited (no paidUntil); in
 //                            "until" mode it adds a required "pay until" time
 //                            (PaidUntilField) and the note becomes the required
-//                            reason (the caregiver sees it)
+//                            reason (the caregiver sees it). Picking the credited
+//                            end itself in "until" mode counts as a full shift
 //
 // An optional note textarea is available for all types.
 //
@@ -110,9 +111,12 @@ export default function ApproveModal({
     // ── Clock-out "Approve until…" validation ────────────────────────────────
     // A pay cut: the time is required (and must be before the credited end),
     // and so is the reason. Missing values just keep Confirm disabled; only an
-    // out-of-range time shows a message.
-    const isPayCut   = subjectType === "clock_out_review" && clockOutMode === "until";
-    const paidUntil  = isPayCut ? checkPaidUntil(paidUntilInput, subjectContext) : null;
+    // out-of-range time shows a message. Picking the credited end itself pays
+    // the full shift, so it's treated like "Approve Full Shift" (no reason
+    // needed, no paidUntil sent).
+    const isUntilMode = subjectType === "clock_out_review" && clockOutMode === "until";
+    const paidUntil   = isUntilMode ? checkPaidUntil(paidUntilInput, subjectContext) : null;
+    const isPayCut    = isUntilMode && !paidUntil.isFullShift;
     const isIncomplete = isPayCut && (!paidUntil.paidUntil || !reason.trim());
 
     const hasError = !!hoursError || !!reasonError || !!paidUntil?.error || isIncomplete;
@@ -151,7 +155,7 @@ export default function ApproveModal({
                      subjectType === "paid_sick_time_request"  ? "Approve Paid Sick Time"    :
                      subjectType === "caregiver_device_change" ? "Approve Device Change" :
                      subjectType === "alternate_location_clock_in" ? "Approve Alternate Location" :
-                     subjectType === "clock_out_review"        ? (isPayCut ? "Approve Until…" : "Approve Full Shift") :
+                     subjectType === "clock_out_review"        ? (isUntilMode ? "Approve Until…" : "Approve Full Shift") :
                      "Approve Certificate"}
                 </h2>
 
@@ -349,7 +353,7 @@ export default function ApproveModal({
                     </div>
                 )}
 
-                {isPayCut && (
+                {isUntilMode && (
                     <PaidUntilField
                         value={paidUntilInput}
                         onChange={setPaidUntilInput}
