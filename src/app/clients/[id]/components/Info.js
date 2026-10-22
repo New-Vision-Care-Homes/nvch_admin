@@ -192,6 +192,10 @@ const schema = yup.object({
 	longitude: yup.number().nullable().optional(),
 });
 
+// The address fields are read-only and filled from the search box, so each
+// field shows its own error and the search box just prompts a new search.
+const ADDRESS_FIELDS = ["street", "city", "state", "pinCode", "country"];
+
 function PersonView({ obj, phoneKey = "phone" }) {
 	const name = obj?.name || "";
 	const phone = obj?.[phoneKey] || "";
@@ -269,11 +273,11 @@ export default function Info() {
 	// mutation path is this callback, so shouldDirty is required or selecting
 	// an address here would never mark the form dirty.
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
-		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
-		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
-		if (state) setValue("state", state, { shouldValidate: true, shouldDirty: true });
-		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
-		if (postalCode) setValue("pinCode", postalCode, { shouldValidate: true, shouldDirty: true });
+		setValue("street", street || "", { shouldValidate: true, shouldDirty: true });
+		setValue("city", city || "", { shouldValidate: true, shouldDirty: true });
+		setValue("state", state || "", { shouldValidate: true, shouldDirty: true });
+		setValue("country", country || "", { shouldValidate: true, shouldDirty: true });
+		setValue("pinCode", postalCode || "", { shouldValidate: true, shouldDirty: true });
 		if (latitude !== undefined) setValue("latitude", latitude, { shouldValidate: true, shouldDirty: true });
 		if (longitude !== undefined) setValue("longitude", longitude, { shouldValidate: true, shouldDirty: true });
 	}
@@ -657,6 +661,8 @@ export default function Info() {
 										fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
 										unitName="unit"
 										unitError={errors.unit}
+										errors={errors}
+										error={watchNoHomeSelected && ADDRESS_FIELDS.some((field) => errors[field]) ? "Please search the address here" : ""}
 										isEditing={true}
 										currentAddress={[watchStreet, watchCity, watchState, watchPinCode, watchCountry].filter(Boolean).join(", ")}
 										disabled={!watchNoHomeSelected}
