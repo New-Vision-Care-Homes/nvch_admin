@@ -74,8 +74,6 @@
 	font-weight: 600;
 }
 
-/* setting_na — no class: "N/A (iOS)" / "N/A (Android)" stay plain */
-
 /* "Phone Setup at Clock-In" row — also the <summary> of the collapsible list */
 .subheading {
 	display: flex;

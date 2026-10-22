@@ -39,26 +39,29 @@ const NOT_MONITORED_REASONS = {
 	push_unavailable:        "Notifications unavailable",
 };
 
-/** Android calls the power-saving setting "Battery Saver"; iPhone calls it "Low Power Mode". */
-const POWER_SAVING_LABEL = { android: "Battery Saver", default: "Low Power Mode" };
-
 // Phone setup at clock-in — [key, label, value → display text, value → is it OK?].
-// A label is a string, or { [platform]: label, default: label } where the phone names it differently.
 // "unknown" / null values read as "Unknown" and aren't flagged either way.
-const DEVICE_FIELDS = [
+const SHARED_DEVICE_FIELDS = [
 	["locationPermission",  "Location Access",      { always: "Always", whileInUse: "While using the app", denied: "Denied" }, (v) => v === "always"],
 	["locationAccuracy",    "Precise Location",     { full: "On", reduced: "Off (approximate)" },                              (v) => v === "full"],
 	["notifications",       "Notifications",        { allowed: "Allowed", denied: "Denied" },                                  (v) => v === "allowed"],
-	["backgroundRefresh",   "Background Refresh",   { available: "On", denied: "Off", restricted: "Restricted", not_applicable: "N/A (Android)" }, (v) => v === "available" || v === "not_applicable"],
-	["batteryOptimization", "Battery Optimisation", { unrestricted: "Unrestricted", optimized: "Optimised", restricted: "Restricted", not_applicable: "N/A (iOS)" }, (v) => v === "unrestricted" || v === "not_applicable"],
-	["powerSaving",         POWER_SAVING_LABEL,     { true: "On", false: "Off" },                                              (v) => v === false],
 ];
 
-const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
+// Each platform lists only the settings its phones have. An unknown platform gets the shared ones.
+const DEVICE_FIELDS = {
+	ios: [
+		...SHARED_DEVICE_FIELDS,
+		["backgroundRefresh",   "Background Refresh",       { available: "On", denied: "Off", restricted: "Restricted" },             (v) => v === "available"],
+		["powerSaving",         "Low Power Mode",           { true: "On", false: "Off" },                                              (v) => v === false],
+	],
+	android: [
+		...SHARED_DEVICE_FIELDS,
+		["batteryOptimization", "Battery Optimisation",     { unrestricted: "Unrestricted", optimized: "Optimised", restricted: "Restricted" }, (v) => v === "unrestricted"],
+		["powerSaving",         "Battery Saver",            { true: "On", false: "Off" },                                              (v) => v === false],
+	],
+};
 
-/** A DEVICE_FIELDS label as this phone names it. */
-const resolveLabel = (label, platform) =>
-	typeof label === "string" ? label : label[platform] ?? label.default;
+const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
 
 /** Shown when hovering the info icon next to the status. */
 const NOT_ACTIVE_HINT = "\"Inactive\" is a warning, not proof: no signal, a dead battery, "
@@ -81,25 +84,22 @@ function describePresence(presence) {
 export default function AppActivityPanel({ presence, device }) {
 	const presenceMeta = PRESENCE_META[presence?.status] ?? PRESENCE_META.not_monitored;
 	const isMonitored  = presence && presence.status !== "not_monitored";
+	// What this phone calls its power-saving setting, for the "Seen on at" row
+	const powerSavingLabel = DEVICE_FIELDS[device?.platform]?.find(([key]) => key === "powerSaving")?.[1] ?? "Low Power Mode";
 	
 	// Phone setup rows. Each value gets a state that colours it:
 	//   good    — set up right (green)          e.g. Precise Location "On", Low Power Mode "Off"
 	//   bad     — weakens the checks (red)      e.g. Notifications "Denied", Low Power Mode "On"
 	//   unknown — the app couldn't tell (amber)
-	//   na      — doesn't apply to this phone (plain), e.g. "N/A (Android)"
 	// Only "bad" counts towards "N settings need attention".
 	const deviceRows = device
-		? DEVICE_FIELDS
-			// Battery optimisation is an Android setting — iPhones have none, so hide it
-			.filter(([key]) => !(key === "batteryOptimization" && device.platform === "ios"))
-			.map(([key, label, valueLabels, isOk]) => {
-				const text  = valueLabels[String(device[key])] ?? "Unknown";
-				const state = text === "Unknown"     ? "unknown"
-					: text.startsWith("N/A")          ? "na"
-					: isOk(device[key])               ? "good"
-					: "bad";
-				return { key, label: resolveLabel(label, device.platform), text, state };
-			})
+		? (DEVICE_FIELDS[device.platform] ?? SHARED_DEVICE_FIELDS).map(([key, label, valueLabels, isOk]) => {
+			const text  = valueLabels[String(device[key])] ?? "Unknown";
+			const state = text === "Unknown"     ? "unknown"
+				: isOk(device[key])               ? "good"
+				: "bad";
+			return { key, label, text, state };
+		})
 		: [];
 	const weakSettings = deviceRows.filter((row) => row.state === "bad").length;
 
@@ -127,7 +127,7 @@ export default function AppActivityPanel({ presence, device }) {
 						<InfoField label="Checks Answered">
 							{`${presence.pingsAnswered ?? 0} of ${presence.pingsSent ?? 0}`}
 						</InfoField>
-						<InfoField label={resolveLabel(POWER_SAVING_LABEL, device?.platform)}>
+						<InfoField label={powerSavingLabel}>
 							{presence.powerSavingSeenAt
 								? `Seen on at ${utcToDisplayTime(presence.powerSavingSeenAt, DISPLAY_TZ)}`
 								: "Not seen"}
