@@ -81,9 +81,13 @@ const STATUS_META = {
  *
  * @param {"pending"|"approved"|"rejected"|"cancelled"} status
  * @param {string} subjectType  — e.g. "caregiver_certificate", "overtime_mandate"
+ * @param {object} [subjectContext] — used by clock_out_review to say whether hours changed
  * @returns {{ title: string, msg: string, variant: string }|null}
  */
-function getBannerMeta(status, subjectType) {
+function getBannerMeta(status, subjectType, subjectContext) {
+    const clockOutDecision = subjectContext?.decision;
+    const clockOutHoursChanged = clockOutDecision != null
+        && clockOutDecision.hoursAfter !== clockOutDecision.hoursBefore;
     const maps = {
         overtime_acknowledgment: {
             approved:  { title: "Acknowledged", msg: "The caregiver has signed the overtime waiver.",                                    variant: "approved"  },
@@ -121,7 +125,9 @@ function getBannerMeta(status, subjectType) {
             cancelled: { title: "Cancelled",         msg: "This request was cancelled before a decision was made.",                                                    variant: "cancelled" },
         },
         clock_out_review: {
-            approved:  { title: "Clock-Out Approved", msg: "The shift is paid until the time shown under Outcome, and its hours were updated to match.",       variant: "approved"  },
+            approved:  { title: "Clock-Out Approved", msg: clockOutHoursChanged
+                ? "The shift is paid until the time shown under Outcome, and its hours were updated to match."
+                : "The shift is paid until the time shown under Outcome.", variant: "approved"  },
             rejected:  { title: "Clock-Out Rejected", msg: "The caregiver is paid only until the time shown under Outcome. The cut is recorded on the shift's hours.", variant: "rejected"  },
             cancelled: { title: "Cancelled",          msg: "This review was cancelled without a decision. The shift's hours were not changed.",                variant: "cancelled" },
         },
@@ -304,7 +310,7 @@ export default function ApprovalDetailPage() {
     const isPending   = approval.status === "pending";
     const isDecided   = approval.status === "approved" || approval.status === "rejected";
     const subjectType = approval.subjectType;
-    const banner      = getBannerMeta(approval.status, subjectType);
+    const banner      = getBannerMeta(approval.status, subjectType, approval.subjectContext);
 
     const subjectContext  = approval.subjectContext ?? {};
     const caregiverName   = subjectContext.caregiverName  ?? "—";
