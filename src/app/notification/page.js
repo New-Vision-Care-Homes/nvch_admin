@@ -242,7 +242,6 @@ const BUCKET_ORDER = ["approval", "action", "info"];
 /**
  * Portal shift notification types that deep-link to the shift detail page.
  * All of these carry data.shiftId and are tappable per the API spec.
- * `broadcast` is intentionally excluded — it has no destination.
  */
 const SHIFT_TYPES = new Set([
 	"shift_missed",
@@ -279,6 +278,13 @@ const CERTIFICATE_EXPIRY_TYPES = new Set(["caregiver_certificate_expiring_soon"]
 const ALLOWABLE_HOURS_TYPES = new Set(["client_allowable_hours_changed"]);
 
 /**
+ * Broadcast — routes to its own detail page so the full message, recipient
+ * target, and any attachments are viewable (the list card only shows a
+ * truncated preview).
+ */
+const BROADCAST_TYPES = new Set(["broadcast"]);
+
+/**
  * Types hidden from the list entirely (not just unstyled) — showing them
  * with no icon/colour and a dead "tap to view details" CTA would be more
  * confusing than not showing them at all.
@@ -298,6 +304,7 @@ function NotificationCard({ notification: n, onClick }) {
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);
 	const isCertExpiryLink  = CERTIFICATE_EXPIRY_TYPES.has(n.type);
 	const isAllowableHoursLink = ALLOWABLE_HOURS_TYPES.has(n.type);
+	const isBroadcastLink = BROADCAST_TYPES.has(n.type);
 
 	return (
 		<div
@@ -335,7 +342,7 @@ function NotificationCard({ notification: n, onClick }) {
 			{/* Time + deep-link hint */}
 			<div className={styles.meta}>
 				<span className={styles.time}>{timeAgo(n.createdAt)}</span>
-				{(isShiftLink || isApprovalLink || isHouseReviewLink || isCertExpiryLink || isAllowableHoursLink) && (
+				{(isShiftLink || isApprovalLink || isHouseReviewLink || isCertExpiryLink || isAllowableHoursLink || isBroadcastLink) && (
 					<ExternalLink size={13} className={styles.linkIcon} />
 				)}
 			</div>
@@ -505,7 +512,12 @@ export default function NotificationsPage() {
 			router.push(`/notification/${n._id}`);
 			return;
 		}
-		// broadcast, training_*, and other non-admin-tappable types: no navigation, just mark read.
+		// Broadcast → its own detail page (full message, target, attachments).
+		if (BROADCAST_TYPES.has(n.type)) {
+			router.push(`/notification/${n._id}`);
+			return;
+		}
+		// training_* and other non-admin-tappable types: no navigation, just mark read.
 	};
 
 	const handleFilterChange = (next) => {

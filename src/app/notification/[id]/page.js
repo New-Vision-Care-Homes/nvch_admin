@@ -11,7 +11,8 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { formatDateTime } from "@/utils/dates";
 import {
 	Undo2, ArrowRight, TrendingUp, TrendingDown, Minus,
-	User, Home, Clock, FileText, ImageIcon, ExternalLink, ShieldAlert,
+	User, Home, Clock, FileText, ImageIcon, ExternalLink, ShieldAlert, CheckCheck,
+	Megaphone, Mail, Quote,
 } from "lucide-react";
 import styles from "./notification_detail.module.css";
 
@@ -55,6 +56,67 @@ export default function Page() {
 
 	const d = notificationDetail.data || {};
 	const isImageDoc = d.document?.mimeType && IMAGE_MIME_TYPES.has(d.document.mimeType);
+	const isBroadcast = notificationDetail.type === "broadcast";
+
+	if (isBroadcast) {
+		const isReadNow = !!notificationDetail.readAt;
+
+		return (
+			<PageLayout>
+				<PageHeader
+					title="Notification"
+					actions={
+						<Link href="/notification">
+							<Button variant="secondary" icon={<Undo2 size={16} />}>Back</Button>
+						</Link>
+					}
+				/>
+
+				<div className={styles.cardStack}>
+					<Card>
+						<CardContent>
+							<div className={styles.broadcastHero}>
+								<div className={styles.broadcastIconBadge}>
+									<Megaphone size={24} />
+								</div>
+								<div className={styles.broadcastHeroText}>
+									<h2 className={styles.broadcastTitle}>{notificationDetail.title}</h2>
+									<div className={styles.broadcastPillRow}>
+										<span className={styles.broadcastPill}>
+											<Megaphone size={11} />
+											Broadcast
+										</span>
+										<span className={isReadNow ? styles.statusPillRead : styles.statusPillUnread}>
+											{isReadNow ? <CheckCheck size={11} /> : <Mail size={11} />}
+											{isReadNow ? "Read" : "Unread"}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							<div className={styles.messageQuote}>
+								<Quote size={18} className={styles.messageQuoteIcon} />
+								<p className={styles.messageText}>{notificationDetail.body || "No message content."}</p>
+							</div>
+
+							<div className={styles.heroMeta}>
+								<span className={styles.metaText}>
+									<Clock size={13} />
+									Created {formatDateTime(notificationDetail.createdAt)}
+								</span>
+								<span className={styles.metaText}>
+									<CheckCheck size={13} />
+									{isReadNow
+										? `Read ${formatDateTime(notificationDetail.readAt)}`
+										: "Not read yet"}
+								</span>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</PageLayout>
+		);
+	}
 
 	return (
 		<PageLayout>
