@@ -447,7 +447,7 @@ export default function Info() {
 									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
 									unitName="unit"
 									unitError={errors.unit}
-									error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
+									error={(errors.street || errors.city || errors.state || errors.pincode || errors.country) ? "Address is required, please search the address here" : ""}
 									isEditing={true}
 									currentAddress={[watchStreet, watchCity, watchState, watchPincode, watchCountry].filter(Boolean).join(", ")}
 								/>
