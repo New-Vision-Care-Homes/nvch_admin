@@ -141,11 +141,11 @@ export default function Info() {
 	// mutation path is this callback, so shouldDirty is required or selecting
 	// an address here would never mark the form dirty.
 	function handleAddressSelect({ street, city, state, country, postalCode, latitude, longitude }) {
-		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
-		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
-		if (state) setValue("state", state, { shouldValidate: true, shouldDirty: true });
-		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
-		if (postalCode) setValue("pincode", postalCode, { shouldValidate: true, shouldDirty: true });
+		setValue("street", street || "", { shouldValidate: true, shouldDirty: true });
+		setValue("city", city || "", { shouldValidate: true, shouldDirty: true });
+		setValue("state", state || "", { shouldValidate: true, shouldDirty: true });
+		setValue("country", country || "", { shouldValidate: true, shouldDirty: true });
+		setValue("pincode", postalCode || "", { shouldValidate: true, shouldDirty: true });
 		if (latitude != null && longitude != null) setGpsCoordinates({ latitude, longitude });
 	}
 
