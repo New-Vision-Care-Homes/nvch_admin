@@ -23,6 +23,8 @@
 //   label       – optional – label text shown above the input. Default: "Search Address"
 //   placeholder – optional – placeholder text inside the input.
 //   error       – optional – error message string from yup validation.
+//   errors      – optional – react-hook-form errors object; each auto-filled
+//                            field shows its own error underneath it.
 //   id          – optional – HTML id for the input element.
 //
 // RESTRICTIONS:
@@ -399,22 +401,22 @@ export default function AddressAutocomplete({
                   </div>
                 )}
                 <div style={{ flex: 2 }}>
-                  <InputField label="Street" name={fieldNames.street} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Street" name={fieldNames.street} register={register} error={errors?.[fieldNames.street]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <InputField label="City" name={fieldNames.city} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="City" name={fieldNames.city} register={register} error={errors?.[fieldNames.city]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
               </div>
               <div className={styles.addrRow}>
                 <div style={{ flex: 1 }}>
-                  <InputField label="Province/State" name={fieldNames.state} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Province/State" name={fieldNames.state} register={register} error={errors?.[fieldNames.state]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <InputField label="Postal Code" name={fieldNames.postalCode} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Postal Code" name={fieldNames.postalCode} register={register} error={errors?.[fieldNames.postalCode]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 {fieldNames.country && (
                   <div style={{ flex: 1 }}>
-                    <InputField label="Country" name={fieldNames.country} register={register} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                    <InputField label="Country" name={fieldNames.country} register={register} error={errors?.[fieldNames.country]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                   </div>
                 )}
               </div>

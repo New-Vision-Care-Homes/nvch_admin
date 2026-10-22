@@ -92,6 +92,10 @@ const schema = yup.object({
 	relationship: shortTextRule.optional(),
 });
 
+// The address fields are read-only and filled from the search box, so each
+// field shows its own error and the search box just prompts a new search.
+const ADDRESS_FIELDS = ["street", "city", "state", "pincode", "country"];
+
 
 export default function Info() {
 	const { profile } = useProfile();
@@ -447,7 +451,8 @@ export default function Info() {
 									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pincode", country: "country" }}
 									unitName="unit"
 									unitError={errors.unit}
-									error={(errors.street || errors.city || errors.state || errors.pincode || errors.country) ? "Address is required, please search the address here" : ""}
+									errors={errors}
+									error={ADDRESS_FIELDS.some((field) => errors[field]) ? "Please search the address here" : ""}
 									isEditing={true}
 									currentAddress={[watchStreet, watchCity, watchState, watchPincode, watchCountry].filter(Boolean).join(", ")}
 								/>

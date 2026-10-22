@@ -115,6 +115,10 @@ const schema = yup.object({
 	emergencyRelationship: shortTextRule.required("Emergency Contact Relationship is required"),
 });
 
+// The address fields are read-only and filled from the search box, so each
+// field shows its own error and the search box just prompts a new search.
+const ADDRESS_FIELDS = ["street", "city", "state", "pinCode", "country"];
+
 
 /*
 |--------------------------------------------------------------------------
@@ -380,7 +384,7 @@ export default function Page() {
 									fieldNames={{ street: "street", city: "city", state: "state", postalCode: "pinCode", country: "country" }}
 									unitName="unit"
 									unitError={errors.unit}
-									error={(errors.street || errors.city || errors.state || errors.country) ? "Address is required, please search the address here" : ""}
+									error={ADDRESS_FIELDS.some((field) => errors[field]) ? "Please search the address here" : ""}
 								/>
 							</CardContent>
 						</Card>
