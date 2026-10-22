@@ -463,11 +463,16 @@ export default function ShiftDetailPage() {
 							site={shift.geofence ? { latitude: mapCenter.lat, longitude: mapCenter.lng, radius: shift.geofence.radius } : null}
 							noMapText="No location data available for this shift."
 							serviceAddress={geofenceAddressStr}
-							clockIn={{ location: shift.startLocation, address: shift.startLocation?.address }}
+							clockIn={{
+								location:       shift.startLocation,
+								address:        shift.startLocation?.address,
+								insideGeofence: shift.startLocation?.insideGeofence,
+							}}
 							clockOut={{
 								location:       shift.endLocation,
 								address:        shift.endLocation?.address,
 								distanceMeters: shift.endLocation?.distanceMeters,
+								insideGeofence: shift.endLocation?.insideGeofence,
 								// (0, 0) is the server's "no fix" placeholder when it closed the shift itself
 								note: shift.endLocation?.latitude === 0 && shift.endLocation?.longitude === 0
 									? "No location — closed by the system"

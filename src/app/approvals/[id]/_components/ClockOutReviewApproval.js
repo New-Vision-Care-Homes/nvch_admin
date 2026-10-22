@@ -329,7 +329,11 @@ export function ClockOutLocation({ approvalId, subjectContext }) {
                         site={site}
                         noMapText="No map — this shift's location isn't a circle geofence."
                         serviceAddress={site?.address}
-                        clockIn={{ location: clockIn.location, distanceMeters: clockIn.distanceMeters }}
+                        clockIn={{
+                            location:       clockIn.location,
+                            distanceMeters: clockIn.distanceMeters,
+                            insideGeofence: clockIn.insideGeofence,
+                        }}
                         clockOut={isServerClose
                             ? { note: "No location — closed by the system" }
                             : {

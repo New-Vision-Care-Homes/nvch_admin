@@ -14,8 +14,11 @@
 //   site          {{ latitude, longitude, radius }|null}  null → no map, just the blocks
 //   noMapText     {string}   shown in place of the map when site is null
 //   serviceAddress{string}
-//   clockIn       {{ location, address, distanceMeters }}
+//   clockIn       {{ location, address, distanceMeters, insideGeofence }}
 //   clockOut      {{ location, address, distanceMeters, insideGeofence, note }}
+//                 insideGeofence — true / false adds "inside" / "outside the
+//                        geofence"; null or missing says neither (same rule
+//                        for clock-in, clock-out and the location check)
 //                 note — replaces the value when there's no location
 //                        (e.g. "No location — closed by the system")
 //   locationCheck {object|null}  the end-of-shift GPS check, as stored on the shift
