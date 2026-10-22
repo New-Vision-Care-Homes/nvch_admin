@@ -238,3 +238,11 @@
 	/* Dropdown stays in viewport on very small screens */
 	.dropdown { max-height: 160px; }
 }
+
+/* Link inside an error banner (e.g. "Open the review →" for a pending clock-out review) */
+.inlineLink {
+	color: inherit;
+	font-weight: 600;
+	text-decoration: underline;
+	white-space: nowrap;
+}

@@ -613,9 +613,10 @@ export default function PayrollDetailPage() {
                     </button>
                 )}
 
-                {/* Declined alternate-location clock-ins never block export, but
-                    this banner is the only way to the exceptions page, so they
-                    get a softer one of their own when nothing else is listed */}
+                {/* Declined alternate-location clock-ins and rejected clock-out
+                    reviews never block export, but this banner is the only way to
+                    the exceptions page, so they get a softer one of their own when
+                    nothing else is listed */}
                 {!exceptionsLoading && exceptionCount === 0 && reviewOnlyCount > 0 && (
                     <button
                         className={`${styles.exceptionBanner} ${styles.exceptionBannerInfo}`}
@@ -623,7 +624,7 @@ export default function PayrollDetailPage() {
                     >
                         <Info size={15} className={styles.exceptionBannerIcon} />
                         <span className={styles.exceptionBannerText}>
-                            {reviewOnlyCount} declined alternate-location clock-in{reviewOnlyCount !== 1 ? "s" : ""} to review. These don&apos;t block export.
+                            {reviewOnlyCount} declined clock-in/clock-out review{reviewOnlyCount !== 1 ? "s" : ""} to check. These don&apos;t block export.
                         </span>
                         <span className={styles.exceptionBannerCta}>View Exceptions →</span>
                     </button>

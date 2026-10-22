@@ -98,13 +98,14 @@ export const useApprovals = (options = {}) => {
 
 	// ── Approve ─────────────────────────────────────────────────────────────────
 	const approveMutation = useMutation({
-		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate, hours }) => {
+		mutationFn: ({ id, reason, startDate, expiryDate, renewalDate, hours, paidUntil }) => {
 			const body = {};
 			if (reason)      body.reason      = reason;
 			if (startDate)   body.startDate   = startDate;
 			if (expiryDate)  body.expiryDate  = expiryDate;
 			if (renewalDate) body.renewalDate  = renewalDate;
 			if (hours != null) body.hours     = hours; // paid_sick_time_request only
+			if (paidUntil)   body.paidUntil   = paidUntil; // clock_out_review only — omitted pays the full shift
 			return approvalService.approve(id, body);
 		},
 		onSuccess: (_, variables) => {
@@ -117,7 +118,11 @@ export const useApprovals = (options = {}) => {
 
 	// ── Reject ──────────────────────────────────────────────────────────────────
 	const rejectMutation = useMutation({
-		mutationFn: ({ id, reason }) => approvalService.reject(id, { reason }),
+		mutationFn: ({ id, reason, paidUntil }) => {
+			const body = { reason };
+			if (paidUntil) body.paidUntil = paidUntil; // clock_out_review only (required there)
+			return approvalService.reject(id, body);
+		},
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["approval", variables.id] });
 			queryClient.invalidateQueries({ queryKey: ["approvals"] });

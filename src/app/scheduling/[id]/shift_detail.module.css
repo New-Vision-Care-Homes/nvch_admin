@@ -157,30 +157,6 @@
 }
 
 /* ── Location section ────────────────────────────────────────────────────── */
-.locationLayout {
-	display: flex;
-	gap: 1.5rem;
-	align-items: flex-start;
-}
-
-.locationInfo {
-	display: flex;
-	flex-direction: column;
-	gap: 0.625rem;
-	min-width: 200px;
-	flex: 1;
-	justify-content: flex-start;
-	padding-top: 0.125rem;
-}
-
-.mapWrap {
-	flex: 2.5;
-	min-width: 0;
-	height: 300px;
-	border-radius: 10px;
-	overflow: hidden;
-	border: 1px solid #e5e7eb;
-}
 
 /* ── Address blocks ──────────────────────────────────────────────────────── */
 .addrBlock {
@@ -193,9 +169,6 @@
 	border-style: solid;
 }
 
-.addrBlockBlue  { background: #eff6ff; border-color: #bfdbfe; }
-.addrBlockGreen { background: #f0fdf4; border-color: #bbf7d0; }
-.addrBlockRed   { background: #fff1f2; border-color: #fecdd3; }
 .addrBlockAmber { background: #fffbeb; border-color: #fde68a; }
 
 .addrBlockIcon {
@@ -205,9 +178,6 @@
 	align-items: center;
 }
 
-.addrBlockBlue  .addrBlockIcon { color: #2563eb; }
-.addrBlockGreen .addrBlockIcon { color: #16a34a; }
-.addrBlockRed   .addrBlockIcon { color: #dc2626; }
 .addrBlockAmber .addrBlockIcon { color: #d97706; }
 
 .addrBlockLabel {
@@ -218,17 +188,7 @@
 	margin: 0 0 2px;
 }
 
-.addrBlockBlue  .addrBlockLabel { color: #1d4ed8; }
-.addrBlockGreen .addrBlockLabel { color: #15803d; }
-.addrBlockRed   .addrBlockLabel { color: #b91c1c; }
 .addrBlockAmber .addrBlockLabel { color: #b45309; }
-
-.addrBlockVal {
-	font-size: 0.82rem;
-	color: #1e293b;
-	line-height: 1.4;
-	margin: 0;
-}
 
 /* ── Alternate clock-in (amber block under the map) ──────────────────────── */
 .alternateLocationBody {
@@ -923,6 +883,64 @@
 }
 
 /* ── End early banner ────────────────────────────────────────────────────── */
+/* ── Clock-out review banner — same shape as the end-early banner below;
+      colour follows clockOutReview.status ───────────────────────────────── */
+.reviewBanner {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	border: 1px solid;
+	border-left-width: 4px;
+	border-radius: 10px;
+	padding: 0.9rem 1.1rem;
+	margin-bottom: 1.5rem;
+}
+
+.reviewBanner_pending   { background: #fffbeb; border-color: #fcd34d; border-left-color: #d97706; color: #92400e; }
+.reviewBanner_approved  { background: #f0fdf4; border-color: #86efac; border-left-color: #16a34a; color: #166534; }
+.reviewBanner_rejected  { background: #fef2f2; border-color: #fca5a5; border-left-color: #dc2626; color: #991b1b; }
+.reviewBanner_cancelled { background: #f9fafb; border-color: #e5e7eb; border-left-color: #9ca3af; color: #374151; }
+
+.reviewBannerIcon {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.reviewBannerBody {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.reviewBannerTitle {
+	font-size: 0.92rem;
+	font-weight: 700;
+}
+
+.reviewBannerText {
+	font-size: 0.85rem;
+	line-height: 1.5;
+	opacity: 0.9;
+	overflow-wrap: anywhere;
+}
+
+/* "Open the review →" — right end of the banner, centred vertically */
+.reviewBannerLink {
+	align-self: center;
+	flex-shrink: 0;
+	white-space: nowrap;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: inherit;
+	text-decoration: none;
+}
+
+.reviewBannerLink:hover {
+	text-decoration: underline;
+}
+
 .endEarlyBanner {
 	display: flex;
 	align-items: flex-start;
@@ -1167,19 +1185,6 @@
 		grid-template-columns: 1fr 1fr;
 	}
 
-	.locationLayout {
-		flex-direction: column;
-	}
-
-	.locationInfo {
-		min-width: 0;
-	}
-
-	.mapWrap {
-		width: 100%;
-		height: 240px;
-	}
-
 	.pageHeader {
 		flex-direction: column;
 		align-items: flex-start;
@@ -1203,10 +1208,6 @@
 
 	.timeGrid {
 		grid-template-columns: 1fr;
-	}
-
-	.mapWrap {
-		height: 200px;
 	}
 
 	.pageHeader h1 {

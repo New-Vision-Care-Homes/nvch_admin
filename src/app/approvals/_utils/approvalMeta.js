@@ -34,3 +34,12 @@ export const ACK_STATUS_META = {
 	declined:     { label: "Declined",     badgeKey: "ackBadgeDeclined"     },
 	cancelled:    { label: "Cancelled",    badgeKey: "ackBadgeCancelled"    },
 };
+
+// ─── Clock-out review ─────────────────────────────────────────────────────────
+
+/** What closed the shift (subjectContext.trigger) for a clock_out_review. */
+export const CLOCK_OUT_TRIGGER_LABELS = {
+	server_auto:     "Signed out by the system",
+	app_auto:        "Signed out by the app",
+	off_site_manual: "Clocked out off-site",
+};

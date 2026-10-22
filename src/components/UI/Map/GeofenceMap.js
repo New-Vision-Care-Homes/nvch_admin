@@ -26,7 +26,8 @@ function pinIcon(color) {
 /**
  * GeofenceMap
  * A reusable Google Map component that shows a location pin + geofence circle.
- * Optionally renders clock-in (green) and clock-out (red) pins when provided.
+ * Optionally renders clock-in (green), clock-out (red) and end-of-shift
+ * location-check (amber) pins when provided.
  */
 export default function GeofenceMap({
 	center,
@@ -36,6 +37,7 @@ export default function GeofenceMap({
 	className = "",
 	clockInLocation = null,
 	clockOutLocation = null,
+	locationCheckLocation = null,
 }) {
 	/* ==========================================================================
 		SCOPE: State & References
@@ -47,6 +49,7 @@ export default function GeofenceMap({
 	const circleRef = useRef(null);
 	const clockInMarkerRef = useRef(null);
 	const clockOutMarkerRef = useRef(null);
+	const locationCheckMarkerRef = useRef(null);
 	const [pinsOverlap, setPinsOverlap] = useState(false);
 
 	/* ==========================================================================
@@ -150,12 +153,29 @@ export default function GeofenceMap({
 			clockOutMarkerRef.current = coMarker;
 		}
 
-		// Auto-fit bounds when clock pins are present so all markers are visible
-		if (hasCi || hasCo) {
+		// Location check marker — amber pin (the GPS reading taken shortly before
+		// the scheduled end, e.g. for a clock-out review)
+		const lcLat = locationCheckLocation?.latitude ?? locationCheckLocation?.lat;
+		const lcLng = locationCheckLocation?.longitude ?? locationCheckLocation?.lng;
+		const hasLc = lcLat != null && lcLng != null;
+		if (hasLc) {
+			const lcMarker = new window.google.maps.Marker({
+				position: { lat: lcLat, lng: lcLng },
+				map: mapInstance,
+				draggable: false,
+				icon: pinIcon("#f59e0b"),
+				title: "Location Check",
+			});
+			locationCheckMarkerRef.current = lcMarker;
+		}
+
+		// Auto-fit bounds when extra pins are present so all markers are visible
+		if (hasCi || hasCo || hasLc) {
 			const bounds = new window.google.maps.LatLngBounds();
 			bounds.extend(mapCenter);
 			if (hasCi) bounds.extend({ lat: ciRenderLat, lng: ciLng });
 			if (hasCo) bounds.extend({ lat: coLat, lng: coLng });
+			if (hasLc) bounds.extend({ lat: lcLat, lng: lcLng });
 			mapInstance.fitBounds(bounds, 80);
 		}
 
@@ -190,7 +210,7 @@ export default function GeofenceMap({
 		SCOPE: Render
 	========================================================================== */
 	const wrapperStyle = { height };
-	const showLegend = clockInLocation || clockOutLocation;
+	const showLegend = clockInLocation || clockOutLocation || locationCheckLocation;
 
 	if (loadError) {
 		return (
@@ -229,6 +249,12 @@ export default function GeofenceMap({
 						<div className={styles.legendItem}>
 							<span className={styles.legendDot} style={{ background: "#ef4444" }} />
 							<span>Clock Out</span>
+						</div>
+					)}
+					{locationCheckLocation && (
+						<div className={styles.legendItem}>
+							<span className={styles.legendDot} style={{ background: "#f59e0b" }} />
+							<span>Location Check</span>
 						</div>
 					)}
 					{pinsOverlap && (

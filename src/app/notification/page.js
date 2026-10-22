@@ -10,28 +10,13 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useProfile } from "@/hooks/useProfile";
 import { usePersistedState } from "@/hooks/usePersistedState";
 import styles from "./notification.module.css";
+import { TYPE_CONFIG, APPROVAL_SUBJECT_ICONS, getNotificationIcon } from "@/utils/notificationIcons";
 import {
-	Bell,
-	AlertTriangle,
-	Clock,
 	Megaphone,
-	CircleOff,
 	CheckCheck,
 	ExternalLink,
-	ClipboardCheck,
-	PiggyBank,
-	House,
 	ChevronDown,
 	Info,
-	Smartphone,
-	Timer,
-	Scale,
-	Banknote,
-	DollarSign,
-	FileWarning,
-	AlarmClockCheck,
-	MapPin,
-	Thermometer,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,60 +53,6 @@ function groupByDate(items) {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-
-/**
- * Maps each notification type to an icon component + colour palette.
- * Portal-only: per the notification spec, shift_assigned, shifts_bulk_created,
- * shift_starting_soon, training_assigned, and training_outcome surface on
- * mobile only and are intentionally omitted here. approval_decided is kept —
- * the portal does receive it in practice.
- */
-const TYPE_CONFIG = {
-	// Shift lifecycle
-	shift_missed:                { Icon: AlertTriangle,  color: "#dc2626", bg: "#fef2f2" },
-	shift_late_start:            { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
-	shift_missed_reporting:      { Icon: AlertTriangle,  color: "#ea580c", bg: "#fff7ed" },
-	shift_late_reporting:        { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
-	shift_auto_ended:            { Icon: CircleOff,      color: "#6b7280", bg: "#f3f4f6" },
-	// Payroll / house-hours review — house icon with a small corner badge
-	// signalling *why* it's flagged (overdue vs. not started).
-	house_hours_review_overdue:  { Icon: House, color: "#dc2626", bg: "#fef2f2", BadgeIcon: AlertTriangle, badgeColor: "#dc2626" },
-	// Purple is reserved for approval_requested (see APPROVAL_SUBJECT_ICONS) —
-	// this used to share that purple, which muddied "purple = needs approval".
-	house_hours_review_not_done: { Icon: House, color: "#2563eb", bg: "#eff6ff", BadgeIcon: Clock,         badgeColor: "#2563eb" },
-	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
-	caregiver_device_enrolled:   { Icon: Smartphone,     color: "#0891b2", bg: "#ecfeff" },
-	// Broadcasts & approvals — broadcast gets its own color, shared with nothing
-	// else, so it reads as its own distinct category at a glance.
-	broadcast:                   { Icon: Megaphone,      color: "#db2777", bg: "#fdf2f8" },
-	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
-	// A caregiver's certificate is nearing its expiryDate — admin-facing copy of
-	// the reminder (the caregiver gets their own mobile-only copy of this event).
-	caregiver_certificate_expiring_soon: { Icon: FileWarning, color: "#ca8a04", bg: "#fefce8" },
-	// A client's weekly allowable hours were changed. Recipients are resolved by
-	// permission slug, not by home/region — distinct indigo so it doesn't read
-	// as a house-hours-review item (which uses blue).
-	client_allowable_hours_changed: { Icon: AlarmClockCheck, color: "#4f46e5", bg: "#eef2ff" },
-};
-
-/**
- * Icon override for approval_requested notifications, keyed by the approval's
- * subjectType (n.data?.subjectType) — mirrors the icons ApprovalRow.js uses
- * per type in the queue list. Every approval_requested notification keeps the
- * same purple color/bg from TYPE_CONFIG regardless of subject type — only the
- * icon differs — so "purple" reads as "needs your approval" at a glance.
- * caregiver_certificate has no entry here; it falls back to the default
- * ClipboardCheck icon from TYPE_CONFIG.
- */
-const APPROVAL_SUBJECT_ICONS = {
-	overtime_acknowledgment: Timer,
-	overtime_mandate:        Scale,
-	banked_hours_payout:     Banknote,
-	vacation_pay_request:    DollarSign,
-	paid_sick_time_request:  Thermometer,
-	caregiver_device_change: Smartphone,
-	alternate_location_clock_in: MapPin,
-};
 
 /**
  * One legend row per approval subject type, shown under "Needs Approval"
@@ -168,6 +99,11 @@ const APPROVAL_SUBJECT_LEGEND = [
 		subjectType: "alternate_location_clock_in",
 		label:       "Alternate Location Clock-In",
 		description: "A caregiver started a shift outside its location and sent an explanation and a photo for review.",
+	},
+	{
+		subjectType: "clock_out_review",
+		label:       "Clock-Out Review",
+		description: "A caregiver's clock-out couldn't be verified at the home and you need to decide how much of the shift to pay.",
 	},
 ];
 
@@ -294,11 +230,7 @@ const HIDDEN_TYPES = new Set(["approval_decided"]);
 // ─── NotificationCard ─────────────────────────────────────────────────────────
 
 function NotificationCard({ notification: n, onClick }) {
-	const { Icon: baseIcon, color, bg, BadgeIcon, badgeColor } =
-		TYPE_CONFIG[n.type] ?? { Icon: Bell, color: "#6b7280", bg: "#f9fafb" };
-	// Every approval_requested notification stays purple (color/bg above) —
-	// only the icon varies by subject type, so purple always means "needs approval".
-	const Icon = (n.type === "approval_requested" && APPROVAL_SUBJECT_ICONS[n.data?.subjectType]) || baseIcon;
+	const { Icon, color, bg, BadgeIcon, badgeColor } = getNotificationIcon(n);
 	const isShiftLink       = SHIFT_TYPES.has(n.type);
 	const isApprovalLink    = APPROVAL_TYPES.has(n.type);
 	const isHouseReviewLink = HOUSE_REVIEW_TYPES.has(n.type);

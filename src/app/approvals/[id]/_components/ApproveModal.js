@@ -16,19 +16,27 @@
 //                            cut makes the note required (the caregiver sees it)
 //   overtime_mandate       — text description only; no extra summary block
 //   caregiver_device_change, alternate_location_clock_in — text description only
+//   clock_out_review       — shows the shift's credited pay. In "full" mode it
+//                            pays the shift as credited (no paidUntil); in
+//                            "until" mode it adds a required "pay until" time
+//                            (PaidUntilField) and the note becomes the required
+//                            reason (the caregiver sees it). Picking the credited
+//                            end itself in "until" mode counts as a full shift
 //
 // An optional note textarea is available for all types.
 //
 // The reason / note is managed as local state here — it
 // never need to live in the parent. When the admin confirms, onConfirm(reason,
-// { hours }) is called — hours only set when a sick-time request is cut — and
+// { hours, paidUntil }) is called — hours only set when a sick-time request is
+// cut, paidUntil only for a clock-out review's "Approve until…" — and
 // the parent is responsible for calling the API and closing the modal on success.
 //
 // Props:
 //   isOpen           {boolean}
 //   onClose          {fn}                   called on Cancel or backdrop click
-//   onConfirm        {fn(reason: string, extra: { hours?: number })}   called when admin clicks Confirm
-//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout" | "vacation_pay_request" | "paid_sick_time_request" | "caregiver_device_change" | "alternate_location_clock_in"
+//   onConfirm        {fn(reason: string, extra: { hours?: number, paidUntil?: string })}   called when admin clicks Confirm
+//   subjectType      {string}               "caregiver_certificate" | "overtime_mandate" | "banked_hours_payout" | "vacation_pay_request" | "paid_sick_time_request" | "caregiver_device_change" | "alternate_location_clock_in" | "clock_out_review"
+//   clockOutMode     {"full"|"until"}       clock_out_review only — which approve button opened the modal
 //   caregiverName    {string}
 //   subjectContext   {object}               approval.subjectContext
 //   isEditingDates   {boolean}              true when admin has cert dates in edit mode
@@ -40,8 +48,9 @@ import { useState } from "react";
 import Modal from "@components/UI/Modal/Modal";
 import Button from "@components/UI/Button/Button";
 import ActionMessage from "@components/UI/Feedback/ActionMessage";
-import { CheckCircle2, Loader, AlertTriangle, Banknote, DollarSign, Thermometer } from "lucide-react";
-import { DISPLAY_TZ, formatDateOnly } from "@/utils/dates";
+import { CheckCircle2, Loader, AlertTriangle, Banknote, DollarSign, Thermometer, ClockAlert } from "lucide-react";
+import { DISPLAY_TZ, formatDateOnly, formatDateTime } from "@/utils/dates";
+import PaidUntilField, { checkPaidUntil, defaultPaidUntil } from "./PaidUntilField";
 import styles from "../approval_detail.module.css";
 
 // Local copy — only used in this file. BankedHoursPayout.js has its own copy
@@ -64,8 +73,13 @@ export default function ApproveModal({
     draftDates,
     isApprovePending,
     approveError,
+    clockOutMode = "full",
 }) {
     const [reason, setReason] = useState("");
+
+    // clock_out_review "Approve until…" only — starts at the caregiver's own
+    // "time I left" when they gave one.
+    const [paidUntilInput, setPaidUntilInput] = useState(() => defaultPaidUntil(subjectContext));
 
     // paid_sick_time_request only — blank means "pay what was requested".
     const [hours,      setHours]      = useState("");
@@ -94,16 +108,32 @@ export default function ApproveModal({
         ? "A note is required when paying fewer hours than requested."
         : "";
 
-    const hasError = !!hoursError || !!reasonError;
+    // ── Clock-out "Approve until…" validation ────────────────────────────────
+    // A pay cut: the time is required (and must be before the credited end),
+    // and so is the reason. Missing values just keep Confirm disabled; only an
+    // out-of-range time shows a message. Picking the credited end itself pays
+    // the full shift, so it's treated like "Approve Full Shift" (no reason
+    // needed, no paidUntil sent).
+    const isUntilMode = subjectType === "clock_out_review" && clockOutMode === "until";
+    const paidUntil   = isUntilMode ? checkPaidUntil(paidUntilInput, subjectContext) : null;
+    const isPayCut    = isUntilMode && !paidUntil.isFullShift;
+    const isIncomplete = isPayCut && (!paidUntil.paidUntil || !reason.trim());
+
+    const hasError = !!hoursError || !!reasonError || !!paidUntil?.error || isIncomplete;
 
     function handleClose() {
         setReason("");
         setHours("");
+        setPaidUntilInput(defaultPaidUntil(subjectContext));
         onClose();
     }
 
     function handleConfirm() {
         if (hasError) return;
+        if (isPayCut) {
+            onConfirm(reason, { paidUntil: paidUntil.paidUntil });
+            return;
+        }
         // Paying exactly what was requested is the same as omitting hours.
         onConfirm(reason, isCut ? { hours: hoursValue } : {});
     }
@@ -125,6 +155,7 @@ export default function ApproveModal({
                      subjectType === "paid_sick_time_request"  ? "Approve Paid Sick Time"    :
                      subjectType === "caregiver_device_change" ? "Approve Device Change" :
                      subjectType === "alternate_location_clock_in" ? "Approve Alternate Location" :
+                     subjectType === "clock_out_review"        ? (isUntilMode ? "Approve Until…" : "Approve Full Shift") :
                      "Approve Certificate"}
                 </h2>
 
@@ -142,6 +173,10 @@ export default function ApproveModal({
                         ? `${caregiverName}'s account will be bound to the new device. Their session on the old device ends immediately, and they must sign in again on the new one.`
                         : subjectType === "alternate_location_clock_in"
                         ? `This confirms ${caregiverName} was allowed to start the shift from this location. It doesn't change the shift's times or pay.`
+                        : subjectType === "clock_out_review"
+                        ? (isPayCut
+                            ? `${caregiverName} will be paid only until the time you choose, and the shift's hours will be updated. Your reason is recorded on the shift and sent to the caregiver.`
+                            : `${caregiverName} will be paid for the shift as credited. Nothing about the shift's hours changes.`)
                         : "Are you sure you want to approve this? Please verify the issue and expiry dates are correct before confirming."}
                 </p>
 
@@ -288,13 +323,54 @@ export default function ApproveModal({
                     </div>
                 )}
 
+                {/* clock_out_review — the shift's pay as it stands */}
+                {subjectType === "clock_out_review" && (
+                    <div className={styles.approveModalDatesCheck}>
+                        <div className={styles.approveModalDatesCheckHeader}>
+                            <ClockAlert size={13} />
+                            Credited Pay
+                        </div>
+                        <div className={styles.approveModalDatesCheckGrid}>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Clocked In</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {formatDateTime(subjectContext.clockIn?.at)}
+                                </span>
+                            </div>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Credited End</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {formatDateTime(subjectContext.originalActualEndTime)}
+                                </span>
+                            </div>
+                            <div className={styles.approveModalDatesCheckRow}>
+                                <span className={styles.approveModalDatesCheckLabel}>Hours Credited</span>
+                                <span className={styles.approveModalDatesCheckValue}>
+                                    {subjectContext.hoursCredited != null ? `${subjectContext.hoursCredited} h` : "—"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isUntilMode && (
+                    <PaidUntilField
+                        value={paidUntilInput}
+                        onChange={setPaidUntilInput}
+                        subjectContext={subjectContext}
+                        error={paidUntil.error}
+                    />
+                )}
+
                 <ActionMessage variant="error" message={approveError} />
 
-                {/* Note — optional for all approval types, except a sick-time cut,
-                    where the caregiver sees it as the explanation */}
+                {/* Note — optional for all approval types, except a sick-time cut
+                    or a clock-out "Approve until…", where the caregiver sees it */}
                 <div className={styles.approveReasonField}>
                     <label className={styles.approveReasonLabel}>
-                        {isCut
+                        {isPayCut
+                            ? <>Reason <span style={{ color: "#dc2626" }}>*</span></>
+                            : isCut
                             ? <>Note <span style={{ color: "#dc2626" }}>*</span></>
                             : "Note (optional)"}
                     </label>
@@ -303,6 +379,8 @@ export default function ApproveModal({
                         rows={2}
                         placeholder={subjectType === "paid_sick_time_request"
                             ? "Add a note — required if paying fewer hours; the caregiver sees it…"
+                            : isPayCut
+                            ? "Explain why the shift is paid only until this time — the caregiver sees it…"
                             : "Add an optional note…"}
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
@@ -333,6 +411,7 @@ export default function ApproveModal({
                          subjectType === "banked_hours_payout"     ? "Confirm Payout"   :
                          subjectType === "vacation_pay_request"    ? "Confirm Payout"   :
                          subjectType === "alternate_location_clock_in" ? "Approve Location" :
+                         subjectType === "clock_out_review"        ? (isPayCut ? "Approve Pay Cut" : "Approve Full Shift") :
                          "Confirm Approve"}
                     </Button>
                 </div>

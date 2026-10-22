@@ -1,12 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { useShifts } from "@/hooks/useShifts";
 import { useAdmins } from "@/hooks/useAdmins";
 import { utcToFullDisplay } from "@/utils/timeHandling";
 import { personName } from "@/utils/formatting";
-import GeofenceMap from "@/components/UI/Map/GeofenceMap";
+import ServiceLocationPanel from "@/components/UI/Panel/ServiceLocationPanel";
+import AppActivityPanel from "@/components/UI/Panel/AppActivityPanel";
 import PageLayout from "@components/layout/PageLayout";
 import Button from "@components/UI/Button/Button";
 import ErrorState from "@components/UI/Feedback/ErrorState";
@@ -15,11 +17,13 @@ import ActionMessage from "@components/UI/Feedback/ActionMessage";
 import StatusBadge, { ColorPill } from "@components/UI/Feedback/Badge";
 import { Card, CardHeader, CardContent, InfoField } from "@components/UI/Form/Card";
 import { SHIFT_STATUS_TONE } from "@/utils/shiftStatus";
+import { CLOCK_OUT_TRIGGER_LABELS } from "@/app/approvals/_utils/approvalMeta";
 import {
 	Clock, MapPin, User, FileText, Undo2, Edit,
 	UserCheck, AlertTriangle, Home, Flag,
 	CheckCircle2, Loader, History, XCircle,
 	Timer, ClipboardList, CalendarDays, LogIn, LogOut, Hourglass, MapPinned,
+	Activity, ClockAlert,
 } from "lucide-react";
 import styles from "./shift_detail.module.css";
 import { HOME_TYPE_COLORS } from "@/utils/dropdownList/homeType";
@@ -42,6 +46,14 @@ const ALTERNATE_LOCATION_STATUS = {
 	approved:  { label: "Approved",       tone: "success" },
 	rejected:  { label: "Declined",       tone: "danger"  },
 	cancelled: { label: "Cancelled",      tone: "neutral" },
+};
+
+// shift.clockOutReview.status → banner title + colour
+const CLOCK_OUT_REVIEW_STATUS = {
+	pending:   "Pending review",
+	approved:  "Approved",
+	rejected:  "Rejected",
+	cancelled: "Cancelled",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,6 +92,21 @@ export default function ShiftDetailPage() {
 	const alternateLocation       = shift.alternateLocation ?? null;
 	const alternateLocationStatus = ALTERNATE_LOCATION_STATUS[alternateLocation?.status] ?? ALTERNATE_LOCATION_STATUS.pending;
 
+	// Clock-out review — opened when the clock-out couldn't be verified at the home
+	const clockOutReview = shift.clockOutReview ?? null;
+	// Paying until the credited end = the full shift (an approve without a cut)
+	const paidFullShift = !!clockOutReview?.paidUntil && !!clockOutReview?.originalActualEndTime
+		&& Date.parse(clockOutReview.paidUntil) === Date.parse(clockOutReview.originalActualEndTime);
+
+	// The end-of-shift location check — the latest one (an extended shift can have several)
+	// App activity check + phone setup at clock-in (the App Activity panel)
+	const presence = shift.presence ?? null;
+	const device   = shift.clockInDevice ?? null;
+
+	const latestLocationCheck = [...(shift.locationChecks ?? [])]
+		.sort((a, b) => Date.parse(b.requestedAt ?? 0) - Date.parse(a.requestedAt ?? 0))[0] ?? null;
+
+	
 	return (
 		<PageLayout>
 
@@ -98,6 +125,9 @@ export default function ShiftDetailPage() {
 						)}
 						{alternateLocation?.status === "pending" && (
 							<span className={styles.locationReviewPendingBadge}>Location Review Pending</span>
+						)}
+						{clockOutReview?.status === "pending" && (
+							<span className={styles.locationReviewPendingBadge}>Clock-Out Review Pending</span>
 						)}
 					</div>
 					<h1>Shift Details</h1>
@@ -160,6 +190,38 @@ export default function ShiftDetailPage() {
 						<span className={styles.endEarlyBannerTitle}>Shift Ended Early</span>
 						<span className={styles.endEarlyBannerReason}>{shift.endEarlyReason}</span>
 					</div>
+				</div>
+			)}
+
+			{/* ═══════════════════════════════════ CLOCK-OUT REVIEW BANNER */}
+			{/* Same shape as the end-early banner. The clock-out couldn't be verified at
+			    the home, so a reviewer decides how much of the shift to pay; the colour
+			    follows the review status and the evidence is on the review itself. */}
+			{clockOutReview && (
+				<div className={`${styles.reviewBanner} ${styles[`reviewBanner_${clockOutReview.status}`] ?? ""}`} role="status">
+					<ClockAlert size={18} className={styles.reviewBannerIcon} />
+					<div className={styles.reviewBannerBody}>
+						<span className={styles.reviewBannerTitle}>
+							Clock-Out Review · {CLOCK_OUT_REVIEW_STATUS[clockOutReview.status] ?? "Pending"}
+						</span>
+						<span className={styles.reviewBannerText}>
+							{CLOCK_OUT_TRIGGER_LABELS[clockOutReview.trigger] ?? "Clock-out not verified"}
+							{clockOutReview.status === "pending"
+								? clockOutReview.explanation
+									? " · explanation received"
+									: clockOutReview.explanationDueAt
+									? ` · explanation due ${utcToFullDisplay(clockOutReview.explanationDueAt, "America/Halifax")}`
+									: ""
+								: clockOutReview.paidUntil
+								? ` · paid until ${utcToFullDisplay(clockOutReview.paidUntil, "America/Halifax")}${paidFullShift ? " (full shift)" : ""}`
+								: ""}
+						</span>
+					</div>
+					{clockOutReview.approvalId && (
+						<Link href={`/approvals/${clockOutReview.approvalId}`} className={styles.reviewBannerLink}>
+							Open the review →
+						</Link>
+					)}
 				</div>
 			)}
 
@@ -359,6 +421,19 @@ export default function ShiftDetailPage() {
 					</Card>
 
 
+					{/* App Activity — shared with the clock-out review approval page. Hidden
+					    for shifts with neither (clocked in before the feature / older app). */}
+					{(presence || device) && (
+						<Card>
+							<CardHeader>
+								<span className={styles.cardTitleInner}><Activity size={15} /> App Activity</span>
+							</CardHeader>
+							<CardContent>
+								<AppActivityPanel presence={presence} device={device} />
+							</CardContent>
+						</Card>
+					)}
+
 					{/* Notes */}
 					<Card>
 						<CardHeader>
@@ -383,55 +458,28 @@ export default function ShiftDetailPage() {
 						<span className={styles.cardTitleInner}><MapPin size={15} /> Service Location</span>
 					</CardHeader>
 					<CardContent>
-						{shift.geofence ? (
-							<div className={styles.locationLayout}>
-								{/* Address info panel */}
-								<div className={styles.locationInfo}>
-									{geofenceAddressStr && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockBlue}`}>
-											<div className={styles.addrBlockIcon}><MapPin size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Service Address</p>
-												<p className={styles.addrBlockVal}>{geofenceAddressStr}</p>
-											</div>
-										</div>
-									)}
-									{shift.startLocation?.address && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockGreen}`}>
-											<div className={styles.addrBlockIcon}><LogIn size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Clock In Address</p>
-												<p className={styles.addrBlockVal}>{shift.startLocation.address}</p>
-											</div>
-										</div>
-									)}
-									{shift.endLocation?.address && (
-										<div className={`${styles.addrBlock} ${styles.addrBlockRed}`}>
-											<div className={styles.addrBlockIcon}><LogOut size={13} /></div>
-											<div>
-												<p className={styles.addrBlockLabel}>Clock Out Address</p>
-												<p className={styles.addrBlockVal}>{shift.endLocation.address}</p>
-											</div>
-										</div>
-									)}
-									{!geofenceAddressStr && !shift.startLocation?.address && !shift.endLocation?.address && (
-										<p className={styles.emptyText}>No address recorded.</p>
-									)}
-								</div>
-								{/* Map */}
-								<div className={styles.mapWrap}>
-									<GeofenceMap
-										center={mapCenter}
-										radius={shift.geofence.radius || 100}
-										height="300px"
-										clockInLocation={shift.startLocation ?? null}
-										clockOutLocation={shift.endLocation ?? null}
-									/>
-								</div>
-							</div>
-						) : (
-							<p className={styles.emptyText}>No location data available for this shift.</p>
-						)}
+						<ServiceLocationPanel
+							mapKey={shift._id}
+							site={shift.geofence ? { latitude: mapCenter.lat, longitude: mapCenter.lng, radius: shift.geofence.radius } : null}
+							noMapText="No location data available for this shift."
+							serviceAddress={geofenceAddressStr}
+							clockIn={{
+								location:       shift.startLocation,
+								address:        shift.startLocation?.address,
+								insideGeofence: shift.startLocation?.insideGeofence,
+							}}
+							clockOut={{
+								location:       shift.endLocation,
+								address:        shift.endLocation?.address,
+								distanceMeters: shift.endLocation?.distanceMeters,
+								insideGeofence: shift.endLocation?.insideGeofence,
+								// (0, 0) is the server's "no fix" placeholder when it closed the shift itself
+								note: shift.endLocation?.latitude === 0 && shift.endLocation?.longitude === 0
+									? "No location — closed by the system"
+									: null,
+							}}
+							locationCheck={latestLocationCheck}
+						/>
 
 						{/* Clocked in outside the geofence — the photo stays on the approval, so none here */}
 						{alternateLocation && (

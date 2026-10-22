@@ -1,0 +1,131 @@
+/* ── AppActivityPanel ────────────────────────────────────────────────────── */
+/* Same look as the clock-out review approval page, where the panel started. */
+
+.mutedText {
+	font-size: 0.8rem;
+	color: #6b7280;
+	line-height: 1.5;
+	margin-top: 2px;
+}
+
+/* Status: label, badge and info icon on one row, the description under it.
+   Spaced like an InfoField (16px below). */
+.statusField {
+	margin-bottom: 16px;
+}
+
+.statusRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Same look as InfoField's label (Card.module.css .info_label) */
+.statusLabel {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-secondary);
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+/* Info icon — hovering shows the browser's tooltip (its title), like a shift
+   on the scheduling page */
+.hint {
+	display: inline-flex;
+	color: #9ca3af;
+	cursor: help;
+}
+
+.hint:hover {
+	color: #6b7280;
+}
+
+.detailsGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 16px;
+	margin-top: 8px;
+}
+
+.plainList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+/* Phone setup values, coloured by state (see deviceRows in AppActivityPanel.js) */
+.setting_good {
+	color: #15803d;
+	font-weight: 600;
+}
+
+.setting_bad {
+	color: #b91c1c;
+	font-weight: 600;
+}
+
+/* Darker amber so it stays readable on white */
+.setting_unknown {
+	color: #b45309;
+	font-weight: 600;
+}
+
+/* "Phone Setup at Clock-In" row — also the <summary> of the collapsible list */
+.subheading {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	/* No top margin — the field above already leaves 16px (InfoField's margin-bottom). */
+	margin: 0 0 6px;
+	padding-top: 12px;
+	border-top: 1px solid #f3f4f6;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: #374151;
+}
+
+/* Phone setup: a <details> whose <summary> is the subheading row, with
+   "N settings need attention" / "All settings OK" pushed to the right. */
+.phoneSetup > summary {
+	cursor: pointer;
+	list-style: none;
+}
+
+.phoneSetup > summary::-webkit-details-marker {
+	display: none;
+}
+
+.phoneSetup[open] > summary {
+	margin-bottom: 10px;
+}
+
+.phoneSetupSummary {
+	margin-left: auto;
+	font-weight: 500;
+	color: #6b7280;
+}
+
+.phoneSetupSummaryBad {
+	color: #b91c1c;
+	font-weight: 600;
+}
+
+.phoneSetupChevron {
+	flex-shrink: 0;
+	color: #9ca3af;
+	transition: transform 0.15s ease;
+}
+
+.phoneSetup[open] .phoneSetupChevron {
+	transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+	.detailsGrid {
+		grid-template-columns: 1fr;
+	}
+}

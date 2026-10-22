@@ -3,54 +3,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-	Bell, LogOut, Menu, AlertTriangle, Clock, CircleOff, Megaphone, X, ClipboardCheck,
-	PiggyBank, House, Smartphone, FileWarning, AlarmClockCheck, MapPin,
-} from "lucide-react";
+import { Bell, LogOut, Menu, X } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import styles from "./Navbar.module.css";
 import logoImg from "@/assets/logo/nv.png";
 import avatarImg from "@/assets/img/navbar/avatar.jpg";
 import { useProfile } from "@/hooks/useProfile";
 import { useNotifications } from "@/hooks/useNotifications";
+import { getNotificationIcon } from "@/utils/notificationIcons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Portal-only, matching notification/page.js's TYPE_CONFIG: shift_assigned,
- * shifts_bulk_created, shift_starting_soon, training_assigned, and
- * training_outcome surface on mobile only.
- */
-const TYPE_CONFIG = {
-	// Shift lifecycle
-	shift_missed:                { Icon: AlertTriangle,  color: "#dc2626", bg: "#fef2f2" },
-	shift_late_start:            { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
-	shift_missed_reporting:      { Icon: AlertTriangle,  color: "#ea580c", bg: "#fff7ed" },
-	shift_late_reporting:        { Icon: Clock,          color: "#d97706", bg: "#fffbeb" },
-	shift_auto_ended:            { Icon: CircleOff,      color: "#6b7280", bg: "#f3f4f6" },
-	// Payroll / house-hours review
-	house_hours_review_overdue:  { Icon: House,          color: "#dc2626", bg: "#fef2f2" },
-	house_hours_review_not_done: { Icon: House,          color: "#7c3aed", bg: "#f5f3ff" },
-	bank_cap_exceeded:           { Icon: PiggyBank,      color: "#d97706", bg: "#fffbeb" },
-	caregiver_device_enrolled:   { Icon: Smartphone,     color: "#0891b2", bg: "#ecfeff" },
-	// Broadcasts & approvals
-	broadcast:                   { Icon: Megaphone,      color: "#dc2626", bg: "#fef2f2" },
-	approval_requested:          { Icon: ClipboardCheck, color: "#7c3aed", bg: "#f5f3ff" },
-	caregiver_certificate_expiring_soon: { Icon: FileWarning, color: "#ca8a04", bg: "#fefce8" },
-	client_allowable_hours_changed: { Icon: AlarmClockCheck, color: "#4f46e5", bg: "#eef2ff" },
-};
-
-/**
- * Icon/colour override for approval_requested notifications, keyed by the
- * approval's subjectType — mirrors notification/page.js's
- * APPROVAL_SUBJECT_CONFIG. Only caregiver_device_change and
- * alternate_location_clock_in get a distinct icon; every other subject type
- * keeps the generic approval_requested look.
- */
-const APPROVAL_SUBJECT_CONFIG = {
-	caregiver_device_change:     { Icon: Smartphone, color: "#0891b2", bg: "#ecfeff" },
-	alternate_location_clock_in: { Icon: MapPin,     color: "#2563eb", bg: "#eff6ff" },
-};
 
 /**
  * Types hidden from the dropdown preview entirely — matches
@@ -231,10 +193,7 @@ export default function Navbar({ onMenuToggle = () => {} }) {
 											<p className={styles.dropdownEmpty}>No notifications yet</p>
 										) : (
 											recentNotifications.map(n => {
-												const { Icon, color, bg } =
-													APPROVAL_SUBJECT_CONFIG[n.data?.subjectType] ??
-													TYPE_CONFIG[n.type] ??
-													{ Icon: Bell, color: "#6b7280", bg: "#f3f4f6" };
+												const { Icon, color, bg } = getNotificationIcon(n);
 												return (
 													<div
 														key={n._id}

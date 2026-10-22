@@ -1,8 +1,8 @@
 "use client";
 
-import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone, MapPin, Thermometer } from "lucide-react";
-import { formatDateOnly } from "@/utils/dates";
-import { timeAgo, formatCertName } from "../_utils/approvalMeta";
+import { ClipboardCheck, User, ExternalLink, Timer, Scale, Banknote, DollarSign, Smartphone, MapPin, Thermometer, ClockAlert } from "lucide-react";
+import { formatDateOnly, DISPLAY_TZ } from "@/utils/dates";
+import { timeAgo, formatCertName, CLOCK_OUT_TRIGGER_LABELS } from "../_utils/approvalMeta";
 import styles from "../approvals.module.css";
 
 const ROW_TYPE_META = {
@@ -76,14 +76,27 @@ const ROW_TYPE_META = {
 			? `${ctx.homeName || "Client visit"} · ${Math.round(ctx.distanceMeters)} m away`
 			: `${ctx.homeName || "Client visit"} · Alternate location clock-in`,
 	},
+	clock_out_review: {
+		Icon: ClockAlert,
+		iconColor: "#ff5500",
+		iconBg:    "#fff2eb",
+		SubtitleIcon: ClockAlert,
+		getSubtitle: (ctx) => [
+			ctx.homeName || "Client visit",
+			CLOCK_OUT_TRIGGER_LABELS[ctx.trigger] ?? "Clock-out review",
+			ctx.shiftStartTime ? formatDateOnly(ctx.shiftStartTime, DISPLAY_TZ) : null,
+		].filter(Boolean).join(" · "),
+		getBadge: (ctx) => ctx.explanation ? "Explanation received" : null,
+	},
 };
 
 export default function ApprovalRow({ approval, onClick }) {
 	const ctx  = approval.subjectContext ?? {};
 	const name = ctx.caregiverName ?? "Unknown caregiver";
-	const { Icon, iconColor, iconBg, SubtitleIcon, getSubtitle } =
+	const { Icon, iconColor, iconBg, SubtitleIcon, getSubtitle, getBadge } =
 		ROW_TYPE_META[approval.subjectType] ?? ROW_TYPE_META.caregiver_certificate;
 	const subtitle = getSubtitle(ctx);
+	const badge    = getBadge?.(ctx);
 
 	return (
 		<div
@@ -99,7 +112,18 @@ export default function ApprovalRow({ approval, onClick }) {
 			</div>
 
 			<div className={styles.rowBody}>
-				<span className={styles.rowTitle}>{name}</span>
+				<div className={styles.rowTitleRow}>
+					<span className={styles.rowTitle}>{name}</span>
+					{badge && (
+						// Same palette as the row's icon; the border is the icon colour at 40% opacity.
+						<span
+							className={styles.rowBadge}
+							style={{ color: iconColor, background: iconBg, borderColor: `${iconColor}66` }}
+						>
+							{badge}
+						</span>
+					)}
+				</div>
 				<span className={styles.rowSubtitle}>
 					<SubtitleIcon size={11} style={{ verticalAlign: "middle", marginRight: 3 }} />
 					{subtitle}
