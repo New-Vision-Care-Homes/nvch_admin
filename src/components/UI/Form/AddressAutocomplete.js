@@ -24,7 +24,9 @@
 //   placeholder – optional – placeholder text inside the input.
 //   error       – optional – error message string from yup validation.
 //   errors      – optional – react-hook-form errors object; each auto-filled
-//                            field shows its own error underneath it.
+//                            field shows its own error underneath it. If every
+//                            field is missing (and `error` is set), only
+//                            "Address is required, ..." shows under the search box.
 //   id          – optional – HTML id for the input element.
 //
 // RESTRICTIONS:
@@ -112,6 +114,15 @@ export default function AddressAutocomplete({
   const placesServiceRef = useRef(null); // Google PlacesService instance
   const containerRef = useRef(null); // wrapper div — used for click-outside
   const debounceRef = useRef(null); // stores the debounce timer ID
+
+  // ── Address errors ────────────────────────────────────────────────────────
+  // If every address field is missing, show one message under the search box
+  // instead of "... is required" under each field. Only done when the parent
+  // shows a search box error, so the field errors never all disappear.
+  const addressFieldNames = [fieldNames.street, fieldNames.city, fieldNames.state, fieldNames.postalCode, fieldNames.country].filter(Boolean);
+  const isAddressEmpty = Boolean(error) && addressFieldNames.every((name) => errors?.[name]?.type === "required");
+  const searchError = isAddressEmpty ? "Address is required, please search the address here" : error;
+  const fieldError = (name) => (isAddressEmpty ? undefined : errors?.[name]);
 
   // ── Load Google Maps JavaScript API ───────────────────────────────────────
   // useGoogleMapsLoader injects the Google Maps <script> tag into the page.
@@ -350,7 +361,7 @@ export default function AddressAutocomplete({
         </div>
 
         {/* Validation error message (comes from react-hook-form / yup) */}
-        {error && <p className={styles.errorText}>{error}</p>}
+        {searchError && <p className={styles.errorText}>{searchError}</p>}
 
         {/* Suggestions dropdown — only rendered when there are results to show */}
         {isOpen && suggestions.length > 0 && (
@@ -401,22 +412,22 @@ export default function AddressAutocomplete({
                   </div>
                 )}
                 <div style={{ flex: 2 }}>
-                  <InputField label="Street" name={fieldNames.street} register={register} error={errors?.[fieldNames.street]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Street" name={fieldNames.street} register={register} error={fieldError(fieldNames.street)} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <InputField label="City" name={fieldNames.city} register={register} error={errors?.[fieldNames.city]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="City" name={fieldNames.city} register={register} error={fieldError(fieldNames.city)} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
               </div>
               <div className={styles.addrRow}>
                 <div style={{ flex: 1 }}>
-                  <InputField label="Province/State" name={fieldNames.state} register={register} error={errors?.[fieldNames.state]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Province/State" name={fieldNames.state} register={register} error={fieldError(fieldNames.state)} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <InputField label="Postal Code" name={fieldNames.postalCode} register={register} error={errors?.[fieldNames.postalCode]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                  <InputField label="Postal Code" name={fieldNames.postalCode} register={register} error={fieldError(fieldNames.postalCode)} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                 </div>
                 {fieldNames.country && (
                   <div style={{ flex: 1 }}>
-                    <InputField label="Country" name={fieldNames.country} register={register} error={errors?.[fieldNames.country]} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
+                    <InputField label="Country" name={fieldNames.country} register={register} error={fieldError(fieldNames.country)} readOnly style={{ backgroundColor: "#f3f4f6", color: "#6b7280" }} tabIndex={-1} />
                   </div>
                 )}
               </div>
