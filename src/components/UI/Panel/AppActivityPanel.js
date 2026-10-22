@@ -41,7 +41,11 @@ const NOT_MONITORED_REASONS = {
 	push_unavailable:        "notifications unavailable",
 };
 
+/** Android calls the power-saving setting "Battery Saver"; iPhone calls it "Low Power Mode". */
+const POWER_SAVING_LABEL = { android: "Battery Saver", default: "Low Power Mode" };
+
 // Phone setup at clock-in — [key, label, value → display text, value → is it OK?].
+// A label is a string, or { [platform]: label, default: label } where the phone names it differently.
 // "unknown" / null values read as "Unknown" and aren't flagged either way.
 const DEVICE_FIELDS = [
 	["locationPermission",  "Location Access",      { always: "Always", whileInUse: "While using the app", denied: "Denied" }, (v) => v === "always"],
@@ -49,14 +53,18 @@ const DEVICE_FIELDS = [
 	["notifications",       "Notifications",        { allowed: "Allowed", denied: "Denied" },                                  (v) => v === "allowed"],
 	["backgroundRefresh",   "Background Refresh",   { available: "On", denied: "Off", restricted: "Restricted", not_applicable: "N/A (Android)" }, (v) => v === "available" || v === "not_applicable"],
 	["batteryOptimization", "Battery Optimisation", { unrestricted: "Unrestricted", optimized: "Optimised", restricted: "Restricted", not_applicable: "N/A (iOS)" }, (v) => v === "unrestricted" || v === "not_applicable"],
-	["powerSaving",         "Low Power Mode",       { true: "On", false: "Off" },                                              (v) => v === false],
+	["powerSaving",         POWER_SAVING_LABEL,     { true: "On", false: "Off" },                                              (v) => v === false],
 ];
 
 const PLATFORM_LABELS = { ios: "iPhone", android: "Android" };
 
+/** A DEVICE_FIELDS label as this phone names it. */
+const resolveLabel = (label, platform) =>
+	typeof label === "string" ? label : label[platform] ?? label.default;
+
 /** Shown when hovering the info icon next to the status. */
 const NOT_ACTIVE_HINT = "\"Inactive\" is a warning, not proof: no signal, a dead battery, "
-	+ "Low Power Mode or the phone's own throttling can also leave checks unanswered.";
+	+ "Battery Saver/Low Power Mode or the phone's own throttling can also leave checks unanswered.";
 
 /** The line under the status badge: "App active (checked …)" / "App inactive since …". */
 function describePresence(presence) {
@@ -95,7 +103,7 @@ export default function AppActivityPanel({ presence, device }) {
 					: text.startsWith("N/A")          ? "na"
 					: isOk(device[key])               ? "good"
 					: "bad";
-				return { key, label, text, state };
+				return { key, label: resolveLabel(label, device.platform), text, state };
 			})
 		: [];
 	const weakSettings = deviceRows.filter((row) => row.state === "bad").length;
@@ -124,7 +132,7 @@ export default function AppActivityPanel({ presence, device }) {
 						<InfoField label="Checks Answered">
 							{`${presence.pingsAnswered ?? 0} of ${presence.pingsSent ?? 0}`}
 						</InfoField>
-						<InfoField label="Low Power Mode">
+						<InfoField label={resolveLabel(POWER_SAVING_LABEL, device?.platform)}>
 							{presence.powerSavingSeenAt
 								? `Seen on at ${utcToDisplayTime(presence.powerSavingSeenAt, DISPLAY_TZ)}`
 								: "Not seen"}
