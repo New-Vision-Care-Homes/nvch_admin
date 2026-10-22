@@ -47,7 +47,7 @@ import DeviceChangeApproval   from "./_components/DeviceChangeApproval";
 import AlternateLocationApproval from "./_components/AlternateLocationApproval";
 import { ClockOutEvidence, ClockOutOutcome, ClockOutExplanation, ClockOutLocation } from "./_components/ClockOutReviewApproval";
 import ApproveModal           from "./_components/ApproveModal";
-import PaidUntilField, { checkPaidUntil, defaultPaidUntil } from "./_components/PaidUntilField";
+import PaidUntilField, { checkPaidUntil } from "./_components/PaidUntilField";
 import MandateRejectModal     from "./_components/MandateRejectModal";
 import RejectReasonField      from "@components/UI/Form/RejectReasonField";
 
@@ -319,7 +319,7 @@ export default function ApprovalDetailPage() {
     // it too (CLOCK_OUT_REVIEW_AWAITING_EXPLANATION).
     const isClockOutReview = subjectType === "clock_out_review";
     const isPayCutBlocked  = isClockOutReview && subjectContext.awaitingExplanation === true;
-    const rejectPaidUntilCheck = isClockOutReview ? checkPaidUntil(rejectPaidUntil, subjectContext) : null;
+    const rejectPaidUntilCheck = isClockOutReview ? checkPaidUntil(rejectPaidUntil, subjectContext, false) : null;
 
     const decidedByName = subjectType === "overtime_acknowledgment"
         ? caregiverName
@@ -386,7 +386,7 @@ export default function ApprovalDetailPage() {
         const missingPaidUntil = isClockOutReview && !rejectPaidUntilCheck.paidUntil;
         if (missingReason) setRejectReasonErr("Please provide a reason for rejection.");
         if (missingPaidUntil && !rejectPaidUntilCheck.error) {
-            setRejectPaidUntilErr("Choose the time the caregiver actually left.");
+            setRejectPaidUntilErr("Select the end time covered by the actual payment made to the caregiver.");
         }
         if (missingReason || missingPaidUntil) return;
         try {
@@ -402,9 +402,8 @@ export default function ApprovalDetailPage() {
         }
     };
 
-    /** Open the inline reject form — for a clock-out review, starting at the caregiver's "time I left". */
+    /** Open the inline reject form — for a clock-out review, starting at empty". */
     const openRejectForm = () => {
-        if (isClockOutReview) setRejectPaidUntil(defaultPaidUntil(subjectContext));
         setShowRejectForm(true);
     };
 
@@ -861,6 +860,7 @@ export default function ApprovalDetailPage() {
                                                     }}
                                                     subjectContext={subjectContext}
                                                     error={rejectPaidUntilCheck.error || rejectPaidUntilErr}
+                                                    includeEnd={false}
                                                 />
                                             )}
                                             <RejectReasonField

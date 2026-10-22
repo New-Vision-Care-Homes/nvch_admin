@@ -5,9 +5,9 @@
 // The "paid until" time picker for clock_out_review decisions, shared by
 // ApproveModal ("Approve until…") and the page's reject form. The time can be
 // anything from the clock-in (clockIn.at) up to and including the credited end
-// (originalActualEndTime). Note the server refuses the credited end itself on
-// a reject (INVALID_PAID_UNTIL — paying it all is an approve); that error is
-// shown by the reject form.
+// (originalActualEndTime). With includeEnd false (the reject form) the latest
+// time is one minute before the credited end — the server refuses the credited
+// end itself on a reject (INVALID_PAID_UNTIL — paying it all is an approve).
 //
 // The date is fixed to the shift's dates (shown as text, or a select for an
 // overnight shift); the time is a free <input type="time"> with no min/max, so
@@ -21,6 +21,8 @@
 //   onChange       {fn(string)}
 //   subjectContext {object}  approval.subjectContext
 //   error          {string}  message from checkPaidUntil(), shown under the input
+//   includeEnd     {boolean} whether the credited end itself can be picked (default true);
+//                            false ends the range a minute before it
 
 import { useState } from "react";
 import { DateTime } from "luxon";
@@ -32,15 +34,17 @@ const MINUTE_MS = 60_000;
 
 /**
  * The selectable range, in whole minutes (the input has no seconds): from the
- * first minute at or after the clock-in to the last minute before the credited end.
+ * first minute at or after the clock-in to the credited end's minute, or the
+ * minute before it when the end isn't included.
  */
-function paidUntilBounds(ctx) {
+function paidUntilBounds(ctx, includeEnd = true) {
     const start = Date.parse(ctx?.clockIn?.at ?? "");
     const end   = Date.parse(ctx?.originalActualEndTime ?? "");
     if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
     const minMs = Math.ceil(start / MINUTE_MS) * MINUTE_MS;
-    // Whole minutes (the input has no seconds): up to the credited end itself.
-    const maxMs = Math.floor(end / MINUTE_MS) * MINUTE_MS;
+    // Whole minutes (the input has no seconds): up to the credited end itself,
+    // or one minute before it when the end isn't included.
+    const maxMs = Math.floor(end / MINUTE_MS) * MINUTE_MS - (includeEnd ? 0 : MINUTE_MS);
     return maxMs >= minMs ? { startMs: start, minMs, maxMs } : null;
 }
 
@@ -60,13 +64,19 @@ function paidUntilDates(bounds) {
     return dates;
 }
 
-/** The caregiver's "time I left", when it falls in range — a sensible starting value. */
-export function defaultPaidUntil(ctx) {
+/**
+ * The starting value: the caregiver's "time I left" when it falls in the range
+ * (credited end included), else "". The reject form never gets one (isReject).
+ */
+export function defaultPaidUntil(ctx, isReject = false) {
+    if (isReject) return "";
     const bounds = paidUntilBounds(ctx);
     const leftAt = Date.parse(ctx?.explanation?.leftAt ?? "");
     if (!bounds || !Number.isFinite(leftAt)) return "";
-    const clamped = Math.min(Math.max(leftAt, bounds.minMs), bounds.maxMs);
-    return utcToInputDateTime(new Date(clamped).toISOString(), DISPLAY_TZ);
+    // Whole minutes, as the input shows it
+    const leftAtMs = Math.floor(leftAt / MINUTE_MS) * MINUTE_MS;
+    if (leftAtMs < bounds.minMs || leftAtMs > bounds.maxMs) return "";
+    return utcToInputDateTime(new Date(leftAtMs).toISOString(), DISPLAY_TZ);
 }
 
 /** "8:04 AM" when the whole range is on one day (the date is already fixed), else the full date-time. */
@@ -85,9 +95,9 @@ function formatRangeEnd(ms, bounds) {
  *   hours     — what the shift would pay, rounded to 2 decimals
  *   error     — "" when valid or still empty
  */
-export function checkPaidUntil(value, ctx) {
+export function checkPaidUntil(value, ctx, includeEnd = true) {
     if (!value) return { paidUntil: null, hours: null, error: "" };
-    const bounds = paidUntilBounds(ctx);
+    const bounds = paidUntilBounds(ctx, includeEnd);
     const ms = Date.parse(localDateToUtc(value, DISPLAY_TZ) ?? "");
     if (!bounds || !Number.isFinite(ms) || ms < bounds.minMs || ms > bounds.maxMs) {
         return {
@@ -105,10 +115,10 @@ export function checkPaidUntil(value, ctx) {
     };
 }
 
-export default function PaidUntilField({ value, onChange, subjectContext, error }) {
-    const bounds = paidUntilBounds(subjectContext);
+export default function PaidUntilField({ value, onChange, subjectContext, error, includeEnd = true }) {
+    const bounds = paidUntilBounds(subjectContext, includeEnd);
     const dates  = paidUntilDates(bounds);
-    const { hours } = checkPaidUntil(value, subjectContext);
+    const { hours } = checkPaidUntil(value, subjectContext, includeEnd);
     const credited  = subjectContext?.hoursCredited;
 
     // The date lives here too, so picking a date before a time isn't lost
