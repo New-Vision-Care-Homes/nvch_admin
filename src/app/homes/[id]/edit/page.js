@@ -20,6 +20,7 @@ import ReportingTimeField, { reportingTimeSchema, reportingPayload, effectiveRep
 import { HOME_TYPE_OPTIONS } from "@/utils/dropdownList/homeType";
 import { REGION_OPTIONS } from "@/utils/dropdownList/region";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
+import { pinRule, addressComponentRule } from "@/utils/validation";
 
 const toBoolean = (value) => {
 	if (value === true || value === "true") return true;
@@ -40,9 +41,18 @@ const schema = yup.object({
 
 	openedAt: yup.date().nullable(),
 	notes: yup.string().nullable(),
+	street: addressComponentRule.required("Street is required"),
+	city: addressComponentRule.required("City is required"),
+	province: addressComponentRule.required("Province is required"),
+	postalCode: pinRule,
+	country: addressComponentRule.required("Country is required"),
 	unit: yup.string().trim().max(50, "Unit cannot exceed 50 characters").matches(/^[a-zA-Z0-9]*$/, "Unit can only contain letters and numbers").optional(),
 	...reportingTimeSchema,
 });
+
+// The address fields are read-only and filled from the search box, so each
+// field shows its own error and the search box just prompts a new search.
+const ADDRESS_FIELDS = ["street", "city", "province", "postalCode", "country"];
 
 
 
@@ -145,11 +155,11 @@ export default function EditHomePage() {
 	const handleAddressSelect = useCallback((data) => {
 		const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-		if (street) setValue("street", street, { shouldValidate: true, shouldDirty: true });
-		if (city) setValue("city", city, { shouldValidate: true, shouldDirty: true });
-		if (state) setValue("province", state, { shouldValidate: true, shouldDirty: true });
-		if (country) setValue("country", country, { shouldValidate: true, shouldDirty: true });
-		if (postalCode) setValue("postalCode", postalCode, { shouldValidate: true, shouldDirty: true });
+		setValue("street", street || "", { shouldValidate: true, shouldDirty: true });
+		setValue("city", city || "", { shouldValidate: true, shouldDirty: true });
+		setValue("province", state || "", { shouldValidate: true, shouldDirty: true });
+		setValue("country", country || "", { shouldValidate: true, shouldDirty: true });
+		setValue("postalCode", postalCode || "", { shouldValidate: true, shouldDirty: true });
 
 		setMapAddress([street, city, state, postalCode, country].filter(Boolean).join(", "));
 
@@ -357,6 +367,8 @@ export default function EditHomePage() {
 										register={register}
 										unitName="unit"
 										unitError={errors.unit}
+										errors={errors}
+										error={ADDRESS_FIELDS.some((field) => errors[field]) ? "Please search the address here" : ""}
 										isEditing={true}
 										currentAddress={mapAddress}
 									/>
