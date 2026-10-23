@@ -20,6 +20,7 @@ import ErrorState from "@components/UI/Feedback/ErrorState";
 import ProfilePictureModal from "@components/UI/Modal/ProfilePictureModal";
 import { formatDateTime } from "@/utils/dates";
 import { ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
+import { canManageAdmin } from "@/utils/permissions";
 
 export default function Page() {
 	const { id } = useParams(); // The userId (MongoDB ObjectId) for the admin
@@ -35,15 +36,23 @@ export default function Page() {
 
 
 	const { profile } = useProfile();
-	// The backend rejects update/toggle/delete on a super admin unless the
-	// requester is a super admin, regardless of slugs (assertCanManageUser).
-	const canTouchTarget = profile?.adminLevel === "super" || user?.adminLevel !== "super";
-	const canEdit = canTouchTarget && profile?.permissionSlugs?.includes("update_admin");
-	// The activate/deactivate endpoint requires toggle_admin_status.
-	const canToggle = canTouchTarget && profile?.permissionSlugs?.includes("toggle_admin_status");
-	// Picture upload: always allowed on your own profile; for another admin it
-	// needs the same update rights as editing them.
+	const actingIsSuper = profile?.adminLevel === "super";
 	const isSelf = profile?.id != null && String(profile.id) === String(id);
+	// Editing from this admin-management page — including your own record —
+	// requires super (or outranking the target); self-edit is NOT a bypass
+	// here. A non-super admin edits their own limited info via the separate
+	// Settings > Profile self-service page instead. Supers also bypass the
+	// update_admin slug requirement itself (per the backend's "supers bypass
+	// all slug checks" rule), so this doesn't block a super whose profile
+	// happens not to list that slug explicitly.
+	const canEdit = canManageAdmin(profile, user) && (actingIsSuper || profile?.permissionSlugs?.includes("update_admin"));
+	// Deactivating/activating follows the same rank+bypass rule, but — unlike
+	// editing — you may never toggle your own account.
+	const canToggle = !isSelf && canManageAdmin(profile, user) && (actingIsSuper || profile?.permissionSlugs?.includes("toggle_admin_status"));
+	// Picture upload is the one exception that's still always allowed on your
+	// own profile, regardless of rank — unlike the rest of this page's edit
+	// capability, which now requires super (or outranking yourself, which is
+	// never true) to touch your own record at all.
 	const canUploadPicture = isSelf || canEdit;
 
 	// --- Image Upload States ---

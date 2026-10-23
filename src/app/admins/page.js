@@ -25,15 +25,25 @@ import { ColorPill } from "@components/UI/Feedback/Badge";
 import { ADMIN_LEVEL_COLORS, ADMIN_LEVEL_LABEL } from "@/utils/dropdownList/adminLevel";
 import { DEPARTMENT_COLORS } from "@/utils/dropdownList/department";
 import { COLOR_FALLBACK } from "@/utils/dropdownList/shared";
+import { canManageAdmin } from "@/utils/permissions";
 
 export default function Admins() {
 	const { profile } = useProfile();
-	// Only super admins may create an admin (see project spec), not just
-	// holders of the create_admin slug.
-	const canCreate = profile?.adminLevel === "super" && profile?.permissionSlugs?.includes("create_admin");
-	const canDeleteAdmin = (admin) =>
-		profile?.permissionSlugs?.includes("delete_admin") &&
-		(profile?.adminLevel === "super" || admin?.adminLevel !== "super");
+	const actingIsSuper = profile?.adminLevel === "super";
+	// Only super admins may create an admin (see project spec). Super admins
+	// bypass all slug checks on the backend, so this doesn't also require the
+	// create_admin slug — requiring it here would wrongly hide the button for
+	// a super whose profile doesn't happen to list that slug explicitly.
+	const canCreate = actingIsSuper;
+	// Deleting another admin needs the caller to rank strictly above them (or
+	// be a super admin, who also bypasses the delete_admin slug requirement)
+	// — you may never delete your own account, regardless of rank.
+	const canDeleteAdmin = (admin) => {
+		const isSelf = profile?.id != null && String(profile.id) === String(admin?.id ?? admin?._id);
+		return !isSelf &&
+			canManageAdmin(profile, admin) &&
+			(actingIsSuper || profile?.permissionSlugs?.includes("delete_admin"));
+	};
 
 	// --- State ---
 	// Filters persist to sessionStorage so they're still applied (and the

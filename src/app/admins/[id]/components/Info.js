@@ -17,17 +17,14 @@ import { DEPARTMENT_OPTIONS } from "@/utils/dropdownList/department";
 import { ADMIN_LEVEL_LABEL, ADMIN_LEVEL_OPTIONS, DIRECT_LEADER_SLOTS_BY_LEVEL, DIRECT_LEADER_FIELD_LABELS } from "@/utils/dropdownList/adminLevel";
 import RegionCheckboxGroup from "@components/UI/Form/RegionCheckboxGroup";
 import DirectLeaderField from "../../_components/DirectLeaderField";
-import { useAdmins } from "@/hooks/useAdmins";
+import { useAdmins, useDirectLeaderOptions } from "@/hooks/useAdmins";
 import { useProfile } from "@/hooks/useProfile";
+import { canManageAdmin } from "@/utils/permissions";
 import ErrorState from "@components/UI/Feedback/ErrorState";
 import { useTabDirty } from "@/context/TabDirtyContext";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
 import tabStyles from "./tabPanel.module.css";
 import styles from "./info.module.css";
-
-// Levels whose two slots (supervisor, manager) need at least one filled,
-// rather than one specific slot being independently required.
-const EITHER_OR_LEVELS = ["team_lead", "office_admin", "payroll"];
 
 const schema = yup.object({
 	firstName: nameRule.required("First name is required"),
@@ -43,39 +40,13 @@ const schema = yup.object({
 		.required("Please select at least one region"),
 	adminId: IdRule.required("Admin ID is required"),
 	employeeStartDate: dateRule,
-	// Direct Leader requirements per level: team_lead/office_admin/payroll need
-	// at least one of supervisor+manager; supervisor needs manager; manager
-	// needs administrator; administrator/super render no fields at all.
-	// Deliberately does NOT account for the backend's "no leader available
-	// yet" waiver (the requirement lifts once no eligible admin exists for a
-	// slot) — that's backend-state-dependent and replicating it here risks
-	// blocking valid saves; rely on the backend's DIRECT_LEADER_REQUIRED
-	// error in that edge case instead.
-	directLeaderSupervisor: yup.string().nullable().optional()
-		.test("direct-leader-supervisor-or-manager", function (value) {
-			const { adminLevel, directLeaderManager } = this.parent;
-			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderManager) {
-				return this.createError({ message: "Please choose at least one direct leader" });
-			}
-			return true;
-		}),
-	directLeaderManager: yup.string().nullable().optional()
-		.test("direct-leader-manager-required", function (value) {
-			const { adminLevel, directLeaderSupervisor } = this.parent;
-			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderSupervisor) {
-				return this.createError({ message: "Please choose at least one direct leader" });
-			}
-			if (adminLevel === "supervisor" && !value) {
-				return this.createError({ message: "Manager is required" });
-			}
-			return true;
-		}),
-	directLeaderAdministrator: yup.string().nullable()
-		.when("adminLevel", {
-			is: "manager",
-			then: (s) => s.required("Administrator is required"),
-			otherwise: (s) => s.optional(),
-		}),
+	// Direct Leader requirements aren't expressed here — they depend on
+	// canAssignDirectLeaders and on whether the picker actually has any
+	// eligible admin ("no leader available yet" waiver), neither of which a
+	// static yup schema can see. Checked manually in onSubmit instead.
+	directLeaderSupervisor: yup.string().nullable().optional(),
+	directLeaderManager: yup.string().nullable().optional(),
+	directLeaderAdministrator: yup.string().nullable().optional(),
 });
 
 // Maps a Direct Leader slot name to the flat form field that holds it —
@@ -120,16 +91,20 @@ export default function Info() {
 	const { adminDetail: user, updateAdmin, isLoading, fetchError, isActionPending } = useAdmins({ adminId: id });
 	const { profile } = useProfile();
 
-	// The backend rejects update on a super admin unless the requester is a
-	// super admin, regardless of slugs (assertCanManageUser).
 	const actingIsSuper = profile?.adminLevel === "super";
-	const canTouchTarget = actingIsSuper || user?.adminLevel !== "super";
-	const canEdit = canTouchTarget && profile?.permissionSlugs?.includes("update_admin");
+	// Editing from this admin-management page — including your own record —
+	// requires super (or outranking the target); self-edit is NOT a bypass
+	// here. A non-super admin edits their own limited info via the separate
+	// Settings > Profile self-service page instead. Supers also bypass the
+	// update_admin slug requirement itself (per the backend's "supers bypass
+	// all slug checks" rule).
+	const canEdit = canManageAdmin(profile, user) && (actingIsSuper || profile?.permissionSlugs?.includes("update_admin"));
 	// Setting/changing/clearing a Direct Leader slot needs assign_direct_leaders
-	// on top of update_admin (super bypasses). A form whose editor lacks this
-	// should leave directLeaders out of the request entirely — not send it as
-	// unchanged — so canAssignDirectLeaders also gates whether onSubmit includes it.
-	const canAssignDirectLeaders = actingIsSuper || profile?.permissionSlugs?.includes("assign_direct_leaders");
+	// on top of the same rank+update_admin requirement as any other edit
+	// (super bypasses). A form whose editor lacks this should leave
+	// directLeaders out of the request entirely — not send it as unchanged —
+	// so canAssignDirectLeaders also gates whether onSubmit includes it.
+	const canAssignDirectLeaders = canEdit && (actingIsSuper || profile?.permissionSlugs?.includes("assign_direct_leaders"));
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
@@ -153,6 +128,57 @@ export default function Info() {
 	const selectedAdminLevel = watch("adminLevel");
 	const directLeaderSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[selectedAdminLevel] || [];
 
+	// Changing the admin level always clears any in-progress Direct Leader
+	// picks and makes the user choose again for the new level, rather than
+	// silently carrying over a pick that may no longer be valid (or even
+	// shown). Wired directly onto the Admin Level <select>'s onChange below,
+	// not a useEffect watching selectedAdminLevel — reset() (on initial load
+	// and on Cancel) also changes adminLevel back to its saved value without
+	// ever firing the select's onChange, so hooking the DOM event itself is
+	// the only way to catch "the user changed this" without also matching
+	// reset-restored values.
+	const clearDirectLeaderPicks = () => {
+		setValue("directLeaderSupervisor", "", { shouldDirty: true });
+		setValue("directLeaderManager", "", { shouldDirty: true });
+		setValue("directLeaderAdministrator", "", { shouldDirty: true });
+	};
+
+	// Baseline (unfiltered) eligibility check per slot — shares a cache entry
+	// with DirectLeaderField's own initial (pre-search) query for the same
+	// params, so this doesn't cost an extra request. Only used to implement
+	// the backend's "no leader available yet" waiver in onSubmit below, so
+	// only enabled while actually editing (not on every view of this tab) and
+	// only when the user can edit these fields at all.
+	const supervisorOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "supervisor",
+		excludeId: id,
+		enabled: isEditing && canAssignDirectLeaders && directLeaderSlots.includes("supervisor"),
+	});
+	const managerOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "manager",
+		excludeId: id,
+		enabled: isEditing && canAssignDirectLeaders && directLeaderSlots.includes("manager"),
+	});
+	const administratorOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "administrator",
+		excludeId: id,
+		enabled: isEditing && canAssignDirectLeaders && directLeaderSlots.includes("administrator"),
+	});
+	// True unless a query has settled, for the current params, with a
+	// confirmed-empty result. isFetching (not isLoading) covers both the
+	// initial fetch and a background refetch after adminLevel changes —
+	// placeholderData keeps the previous level's items/isLoading looking
+	// "settled" while that refetch is in flight, which isLoading alone
+	// wouldn't catch. A fetch error also counts as "unknown", not "empty".
+	const hasEligible = {
+		supervisor: supervisorOptions.isFetching || !!supervisorOptions.error || supervisorOptions.items.length > 0,
+		manager: managerOptions.isFetching || !!managerOptions.error || managerOptions.items.length > 0,
+		administrator: administratorOptions.isFetching || !!administratorOptions.error || administratorOptions.items.length > 0,
+	};
+
 	useEffect(() => {
 		if (user && !isInitialized) {
 			reset(cleanFetchedData(user));
@@ -161,6 +187,25 @@ export default function Info() {
 	}, [user, isInitialized, reset]);
 
 	const onSubmit = (data) => {
+		const applicableSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[data.adminLevel] || [];
+
+		// Only enforce this when the user can actually edit these fields — a
+		// read-only admin whose level happens to need a Direct Leader they
+		// never see shouldn't be blocked from saving anything else. And only
+		// when at least one eligible admin exists for one of the slots — the
+		// backend's own "no leader available yet" waiver.
+		if (canAssignDirectLeaders && applicableSlots.length > 0) {
+			const anyFilled = applicableSlots.some(slot => !!data[SLOT_FORM_FIELD[slot]]);
+			const anyEligible = applicableSlots.some(slot => hasEligible[slot]);
+			if (!anyFilled && anyEligible) {
+				const message = applicableSlots.length === 1
+					? `${DIRECT_LEADER_FIELD_LABELS[data.adminLevel]?.[applicableSlots[0]] ?? "A direct leader"} is required`
+					: "Please choose at least one direct leader.";
+				setStatus({ variant: "error", text: message });
+				return;
+			}
+		}
+
 		const body = {
 			employeeId: data.adminId,
 			firstName: data.firstName,
@@ -175,7 +220,6 @@ export default function Info() {
 		};
 
 		if (canAssignDirectLeaders) {
-			const applicableSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[data.adminLevel] || [];
 			body.directLeaders = {
 				supervisor: applicableSlots.includes("supervisor") ? (data.directLeaderSupervisor || null) : null,
 				manager: applicableSlots.includes("manager") ? (data.directLeaderManager || null) : null,
@@ -292,12 +336,9 @@ export default function Info() {
 								</div>
 								<div className={styles.card_row_2}>
 									<div style={{ flex: 1 }}>
-										{(d.adminLevel === "super" || !actingIsSuper) ? (
-											// Only a super admin may change an admin's level, and Super Admin
-											// itself is intentionally hidden from ADMIN_LEVEL_OPTIONS (not
-											// assignable via the UI) — a <select> bound to it would have no
-											// matching <option> and silently reset the field to empty, blocking
-											// saves on any other field. Show it read-only in both cases.
+										{!actingIsSuper ? (
+											// Only a super admin may change an admin's level at all — show
+											// it read-only for everyone else.
 											<InfoField label="Admin Level">{ADMIN_LEVEL_LABEL[d.adminLevel] ?? d.adminLevel}</InfoField>
 										) : (
 											<InputField
@@ -306,8 +347,23 @@ export default function Info() {
 												type="select"
 												register={register}
 												error={errors.adminLevel}
-												options={ADMIN_LEVEL_OPTIONS}
+												// Super Admin is intentionally hidden from ADMIN_LEVEL_OPTIONS
+												// (not assignable to someone who isn't already one) — but a
+												// <select> bound to a value with no matching <option> shows
+												// blank and silently resets the field, blocking saves on any
+												// other field. So when the target IS currently a Super Admin,
+												// add it back in just for this select, so the super-acting
+												// editor sees a real option (and may change it if they choose).
+												options={d.adminLevel === "super" ? [{ label: "Super Admin", value: "super" }, ...ADMIN_LEVEL_OPTIONS] : ADMIN_LEVEL_OPTIONS}
 												required
+												onChange={(e) => {
+													// register(name)'s own onChange must still run — this prop
+													// replaces it (InputField spreads {...rest} after
+													// {...register(name)}), so the field's value would never
+													// reach react-hook-form otherwise.
+													register("adminLevel").onChange(e);
+													clearDirectLeaderPicks();
+												}}
 											/>
 										)}
 									</div>

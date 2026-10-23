@@ -169,7 +169,7 @@ export default function DirectLeaderField({
 	// Skip the request entirely in read-only mode: the viewer already lacks
 	// assign_direct_leaders (that's why this is read-only), so calling the
 	// options endpoint here would just be a guaranteed, wasted 403.
-	const { items, isLoading, error: fetchError } = useDirectLeaderOptions({
+	const { items, isFetching, error: fetchError } = useDirectLeaderOptions({
 		adminLevel,
 		slot,
 		search: debouncedSearch.trim() || undefined,
@@ -190,7 +190,7 @@ export default function DirectLeaderField({
 					label={label}
 					error={error}
 					people={items}
-					isFetching={isLoading}
+					isFetching={isFetching}
 					fetchError={fetchError}
 					value={value ?? ""}
 					onChange={onChange}

@@ -174,6 +174,12 @@ export const useDirectLeaderOptions = ({ adminLevel, slot, search, excludeId, en
 		eligibleLevels: query.data?.eligibleLevels ?? [],
 		items: query.data?.items ?? [],
 		isLoading: query.isLoading,
+		// Distinct from isLoading: stays true during a background refetch too
+		// (e.g. adminLevel changing re-keys the query) even while
+		// placeholderData keeps showing the previous key's items/isLoading as
+		// settled — callers that need to know "is this result trustworthy for
+		// the current params" should check this, not just isLoading.
+		isFetching: query.isFetching,
 		error: query.error ? getErrorMessage(query.error) : null,
 	};
 };

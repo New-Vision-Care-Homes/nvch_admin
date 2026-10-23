@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { adminOutranks } from "./dropdownList/adminLevel";
 
 /**
  * Shared by the add-new and edit permission-group forms — kept here (rather
@@ -195,6 +196,28 @@ export const canManageTarget = (profile, target, allSlug, assignedSlug) => {
 	if (!assignedSlug || !slugs.includes(assignedSlug)) return false;
 	const requesterRegions = toRegions(profile);
 	return toRegions(target).some(r => requesterRegions.includes(r));
+};
+
+/**
+ * Whether `profile` (the signed-in admin) may edit, deactivate or delete
+ * `target` (another admin), by rank alone. Callers still need to separately
+ * check the relevant permission slug (update_admin / toggle_admin_status /
+ * delete_admin) — but a super bypasses that slug check too (the backend
+ * bypasses all slug checks for supers), so it must be written as
+ * `actingIsSuper || profile?.permissionSlugs?.includes(slug)`, never a bare
+ * slug check, or a super lacking that slug on their profile would wrongly
+ * see the action hidden. Callers also decide whether to allow or block the
+ * self case — editing your own profile is fine, but toggling or deleting
+ * your own account is never allowed, regardless of rank.
+ *
+ * Supers bypass; nobody but a super may act on a super target; otherwise the
+ * acting admin must rank strictly above the target (Administrator > Manager
+ * = Payroll Admin > Office Admin > Supervisor > Team Lead).
+ */
+export const canManageAdmin = (profile, target) => {
+	if (profile?.adminLevel === "super") return true;
+	if (target?.adminLevel === "super") return false;
+	return adminOutranks(profile?.adminLevel, target?.adminLevel);
 };
 
 export const ALL_PERMISSION_SLUGS = PERMISSION_SCHEMAS.reduce((acc, current) => {

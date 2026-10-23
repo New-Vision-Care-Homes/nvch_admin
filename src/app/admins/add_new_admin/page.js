@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -10,7 +10,7 @@ import { Card, CardHeader, CardContent, InputField } from "@components/UI/Form/C
 import Button from "@components/UI/Button/Button";
 import styles from "./add_new_admin.module.css";
 import { useRouter } from "next/navigation";
-import { useAdmins } from "@/hooks/useAdmins";
+import { useAdmins, useDirectLeaderOptions } from "@/hooks/useAdmins";
 import ActionMessage from "@/components/UI/Feedback/ActionMessage";
 import { usePermissionGroups } from "@/hooks/usePermissions";
 import RegionCheckboxGroup from "@/components/UI/Form/RegionCheckboxGroup";
@@ -30,10 +30,6 @@ const TIMEZONE_OPTIONS = [
 	{ label: "Mountain Time (America/Edmonton)", value: "America/Edmonton" },
 	{ label: "Pacific Time (America/Vancouver)", value: "America/Vancouver" },
 ];
-
-// Levels whose two slots (supervisor, manager) need at least one filled,
-// rather than one specific slot being independently required.
-const EITHER_OR_LEVELS = ["team_lead", "office_admin", "payroll"];
 
 const schema = yup.object({
 	adminId: IdRule.required("Admin ID is required"),
@@ -59,39 +55,13 @@ const schema = yup.object({
 		.array()
 		.min(1, "Please select at least one permission group")
 		.required("Please select at least one permission group"),
-	// Direct Leader requirements per level: team_lead/office_admin/payroll need
-	// at least one of supervisor+manager; supervisor needs manager; manager
-	// needs administrator; administrator/super render no fields at all.
-	// Deliberately does NOT account for the backend's "no leader available
-	// yet" waiver (the requirement lifts once no eligible admin exists for a
-	// slot) — that's backend-state-dependent and replicating it here risks
-	// blocking valid saves; rely on the backend's DIRECT_LEADER_REQUIRED
-	// error in that edge case instead.
-	directLeaderSupervisor: yup.string().nullable().optional()
-		.test("direct-leader-supervisor-or-manager", function (value) {
-			const { adminLevel, directLeaderManager } = this.parent;
-			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderManager) {
-				return this.createError({ message: "Please choose at least one direct leader" });
-			}
-			return true;
-		}),
-	directLeaderManager: yup.string().nullable().optional()
-		.test("direct-leader-manager-required", function (value) {
-			const { adminLevel, directLeaderSupervisor } = this.parent;
-			if (EITHER_OR_LEVELS.includes(adminLevel) && !value && !directLeaderSupervisor) {
-				return this.createError({ message: "Please choose at least one direct leader" });
-			}
-			if (adminLevel === "supervisor" && !value) {
-				return this.createError({ message: "Manager is required" });
-			}
-			return true;
-		}),
-	directLeaderAdministrator: yup.string().nullable()
-		.when("adminLevel", {
-			is: "manager",
-			then: (s) => s.required("Administrator is required"),
-			otherwise: (s) => s.optional(),
-		}),
+	// Direct Leader requirements aren't expressed here — they depend on
+	// whether the picker actually has any eligible admin ("no leader
+	// available yet" waiver), which a static yup schema can't see. Checked
+	// manually in onSubmit instead.
+	directLeaderSupervisor: yup.string().nullable().optional(),
+	directLeaderManager: yup.string().nullable().optional(),
+	directLeaderAdministrator: yup.string().nullable().optional(),
 });
 
 // Maps a Direct Leader slot name to the flat form field that holds it —
@@ -110,6 +80,9 @@ export default function Page() {
 
 	// selectedGroupIds: Set of permission group _ids the admin will be assigned
 	const [selectedGroupIds, setSelectedGroupIds] = useState(new Set());
+	// Pre-submit validation message that doesn't come from the API (currently
+	// just the Direct Leader "choose one" check — see onSubmit).
+	const [formError, setFormError] = useState(null);
 
 	const toggleGroup = (groupId) => {
 		setSelectedGroupIds(prev => {
@@ -152,7 +125,67 @@ export default function Page() {
 	const selectedAdminLevel = watch("adminLevel");
 	const directLeaderSlots = DIRECT_LEADER_SLOTS_BY_LEVEL[selectedAdminLevel] || [];
 
+	// Changing the admin level always clears any in-progress Direct Leader
+	// picks and makes the user choose again for the new level, rather than
+	// carrying over a pick that may no longer be valid (or even shown).
+	const prevAdminLevelRef = useRef(selectedAdminLevel);
+	useEffect(() => {
+		if (prevAdminLevelRef.current !== selectedAdminLevel) {
+			setValue("directLeaderSupervisor", "");
+			setValue("directLeaderManager", "");
+			setValue("directLeaderAdministrator", "");
+			prevAdminLevelRef.current = selectedAdminLevel;
+		}
+	}, [selectedAdminLevel, setValue]);
+
+	// Baseline (unfiltered) eligibility check per slot — shares a cache entry
+	// with DirectLeaderField's own initial (pre-search) query for the same
+	// params, so this doesn't cost an extra request. Only used to implement
+	// the backend's "no leader available yet" waiver in onSubmit below: a
+	// slot's requirement is waived once we've confirmed nobody is eligible to
+	// fill it yet.
+	const supervisorOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "supervisor",
+		enabled: directLeaderSlots.includes("supervisor"),
+	});
+	const managerOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "manager",
+		enabled: directLeaderSlots.includes("manager"),
+	});
+	const administratorOptions = useDirectLeaderOptions({
+		adminLevel: selectedAdminLevel,
+		slot: "administrator",
+		enabled: directLeaderSlots.includes("administrator"),
+	});
+	// True unless a query has settled, for the current params, with a
+	// confirmed-empty result. isFetching (not isLoading) covers both the
+	// initial fetch and a background refetch after adminLevel changes —
+	// placeholderData keeps the previous level's items/isLoading looking
+	// "settled" while that refetch is in flight, which isLoading alone
+	// wouldn't catch. A fetch error also counts as "unknown", not "empty".
+	const hasEligible = {
+		supervisor: supervisorOptions.isFetching || !!supervisorOptions.error || supervisorOptions.items.length > 0,
+		manager: managerOptions.isFetching || !!managerOptions.error || managerOptions.items.length > 0,
+		administrator: administratorOptions.isFetching || !!administratorOptions.error || administratorOptions.items.length > 0,
+	};
+
 	const onSubmit = (data) => {
+		setFormError(null);
+
+		if (directLeaderSlots.length > 0) {
+			const anyFilled = directLeaderSlots.some(slot => !!data[SLOT_FORM_FIELD[slot]]);
+			const anyEligible = directLeaderSlots.some(slot => hasEligible[slot]);
+			if (!anyFilled && anyEligible) {
+				const message = directLeaderSlots.length === 1
+					? `${DIRECT_LEADER_FIELD_LABELS[data.adminLevel]?.[directLeaderSlots[0]] ?? "A direct leader"} is required`
+					: "Please choose at least one direct leader.";
+				setFormError(message);
+				return;
+			}
+		}
+
 		const body = {
 			employeeId: data.adminId,
 			email: data.email,
@@ -198,8 +231,8 @@ export default function Page() {
 				/>
 
 				{/* Action Error Banner */}
-				{actionError && (
-					<ActionMessage variant="error" message={actionError} />
+				{(formError || actionError) && (
+					<ActionMessage variant="error" message={formError || actionError} />
 				)}
 
 				<div className={styles.content}>

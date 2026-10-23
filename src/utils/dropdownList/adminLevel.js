@@ -28,32 +28,50 @@ export const ADMIN_LEVEL_LABEL = {
 	payroll:       "Payroll Admin",
 };
 
-// Which Direct Leader slot(s) an admin of each level has. team_lead,
-// office_admin and payroll each have two (only one required — see the yup
-// schemas in Info.js/add_new_admin/page.js); supervisor and manager have
-// exactly one; administrator/super have none (outside the hierarchy).
+// Which Direct Leader slot(s) an admin of each level has. team_lead and
+// office_admin each have two (only one required — enforced in onSubmit, not
+// yup, in Info.js/add_new_admin/page.js); supervisor, manager and payroll
+// have exactly one; administrator/super have none (outside the hierarchy).
 export const DIRECT_LEADER_SLOTS_BY_LEVEL = {
 	team_lead:     ["supervisor", "manager"],
-	office_admin:  ["supervisor", "manager"],
-	payroll:       ["supervisor", "manager"],
+	office_admin:  ["manager", "administrator"],
+	payroll:       ["administrator"],
 	supervisor:    ["manager"],
 	manager:       ["administrator"],
 	administrator: [],
 	super:         [],
 };
 
-// Display label per (level, slot) — NOT the same as the slot name. The
-// backend's eligibility table means a slot's actual eligible pool for a
-// given level doesn't always match its raw name, so the label is chosen to
-// reflect who the picker will actually show rather than the backend field
-// name: e.g. office_admin's "supervisor" slot can only be filled by a
-// Manager/Payroll Admin/Administrator, so it's labeled "Manager", and
-// payroll's "supervisor" slot can only be filled by an Administrator, so
-// it's labeled "Administrator".
+// Display label per (level, slot) — kept separate from the slot name itself
+// since a slot's eligible pool for a given level doesn't always match its
+// raw backend name, so the label can diverge from the slot even though every
+// value below happens to equal its own slot's name right now.
 export const DIRECT_LEADER_FIELD_LABELS = {
-	team_lead:     { supervisor: "Supervisor",    manager: "Manager" },
-	office_admin:  { supervisor: "Manager",       manager: "Administrator" },
-	payroll:       { supervisor: "Administrator", manager: "Manager" },
+	team_lead:     { supervisor: "Supervisor", manager: "Manager" },
+	office_admin:  { manager: "Manager",       administrator: "Administrator" },
+	payroll:       { administrator: "Administrator" },
 	supervisor:    { manager: "Manager" },
 	manager:       { administrator: "Administrator" },
+};
+
+// Numeric rank for "who may edit/deactivate/delete whom" — higher outranks
+// lower. Manager and Payroll Admin share a rank, so neither may act on the
+// other. Super Admin has no entry here: it's a bypass handled separately by
+// callers, not a rank to compare against.
+export const ADMIN_RANK = {
+	administrator: 5,
+	manager:       4,
+	payroll:       4,
+	office_admin:  3,
+	supervisor:    2,
+	team_lead:     1,
+};
+
+// True only when actingLevel ranks strictly above targetLevel — equal rank
+// (e.g. manager vs payroll) or either level missing from the table (super,
+// or an unrecognized value) returns false.
+export const adminOutranks = (actingLevel, targetLevel) => {
+	const actingRank = ADMIN_RANK[actingLevel];
+	const targetRank = ADMIN_RANK[targetLevel];
+	return actingRank != null && targetRank != null && actingRank > targetRank;
 };

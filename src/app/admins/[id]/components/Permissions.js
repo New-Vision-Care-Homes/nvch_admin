@@ -41,10 +41,14 @@ export default function Permissions() {
 	const { permissionGroups } = usePermissionGroups();
 	const { profile } = useProfile();
 
-	// The backend rejects update on a super admin unless the requester is a
-	// super admin, regardless of slugs (assertCanManageUser).
-	const canTouchTarget = profile?.adminLevel === "super" || user?.adminLevel !== "super";
-	const canEdit = canTouchTarget && profile?.permissionSlugs?.includes("update_admin");
+	// permissionsGroup is a super-only field for admin targets (there's no
+	// rank-based exception, and no self exception either — a non-super admin
+	// can't grant themselves more access by editing their own groups), so
+	// this tab's edit capability requires super specifically, not just rank.
+	// No separate update_admin slug check — a super bypasses all slug checks
+	// on the backend, so requiring it here could wrongly hide this tab for a
+	// super whose profile doesn't happen to list that slug explicitly.
+	const canEdit = profile?.adminLevel === "super";
 
 	const [isEditing, setIsEditing] = useState(false);
 	const [isInitialized, setIsInitialized] = useState(false);
