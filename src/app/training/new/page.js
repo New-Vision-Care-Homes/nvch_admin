@@ -17,6 +17,7 @@ import { CERTIFICATE_OPTIONS } from "@/utils/dropdownList/certificate";
 import PayRulesSection, { EMPLOYMENT_STATUS_OPTIONS } from "../_components/PayRulesSection";
 import PersonMultiSelect from "../_components/PersonMultiSelect";
 import { useRouteDirty } from "@/context/RouteDirtyContext";
+import { pinRule, addressComponentRule } from "@/utils/validation";
 import { X, Save, Loader } from "lucide-react";
 import styles from "./new.module.css";
 
@@ -30,10 +31,10 @@ const schema = yup.object({
     site: yup.object({
         name: yup.string().trim().required("Site name is required."),
     }),
-    geofenceStreet:     yup.string().required("Please search and select a site address."),
-    geofenceCity:       yup.string().required("City is required."),
-    geofenceProvince:   yup.string().required("Province is required."),
-    geofencePostalCode: yup.string().required("Postal code is required."),
+    geofenceStreet:     addressComponentRule.required("Street is required."),
+    geofenceCity:       addressComponentRule.required("City is required."),
+    geofenceProvince:   addressComponentRule.required("Province is required."),
+    geofencePostalCode: pinRule,
     startTime: yup.string().required("Start time is required."),
     endTime:   yup.string().required("End time is required.")
         .test("after-start", "End time must be after start time.", function(value) {
@@ -71,6 +72,10 @@ const schema = yup.object({
         })
     ).optional(),
 });
+
+// The address fields are read-only and filled from the search box, so each
+// field shows its own error and the search box just prompts a new search.
+const ADDRESS_FIELDS = ["geofenceStreet", "geofenceCity", "geofenceProvince", "geofencePostalCode"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -118,10 +123,10 @@ export default function CreateTrainingPage() {
     const handleAddressSelect = useCallback((data) => {
         const { street, city, state, postalCode, country, latitude, longitude } = data;
 
-        if (street)     setValue("geofenceStreet", street, { shouldValidate: false, shouldDirty: true });
-        if (city)       setValue("geofenceCity", city, { shouldValidate: false, shouldDirty: true });
-        if (state)      setValue("geofenceProvince", state, { shouldValidate: false, shouldDirty: true });
-        if (postalCode) setValue("geofencePostalCode", postalCode, { shouldValidate: false, shouldDirty: true });
+        setValue("geofenceStreet", street || "", { shouldValidate: true, shouldDirty: true });
+        setValue("geofenceCity", city || "", { shouldValidate: true, shouldDirty: true });
+        setValue("geofenceProvince", state || "", { shouldValidate: true, shouldDirty: true });
+        setValue("geofencePostalCode", postalCode || "", { shouldValidate: true, shouldDirty: true });
 
         const fullAddress = [street, city, state, postalCode, country].filter(Boolean).join(", ");
         setGeofenceAddress(fullAddress);
@@ -263,7 +268,8 @@ export default function CreateTrainingPage() {
                                         placeholder="Start typing an address..."
                                         id="training-address-autocomplete"
                                         register={register}
-                                        error={errors.geofenceStreet?.message}
+                                        errors={errors}
+                                        error={ADDRESS_FIELDS.some((field) => errors[field]) ? "Please search the address here" : ""}
                                         mode="split"
                                         fieldNames={{
                                             street:     "geofenceStreet",
